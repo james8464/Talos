@@ -3,6 +3,8 @@
 import argparse
 import hmac
 import json
+import math
+import statistics
 import os
 import re
 import secrets
@@ -16,12 +18,16 @@ from pathlib import Path
 from typing import Callable
 
 from agent import model_text, parse_event, plan
-from room_dialogue import sensor_answer, decision
+from room_dialogue import decision, explicit_reminder, sensor_answer
 from room_research import external_request, public_answer, search_web
 from agent_memory import STATE_PATH, insert_decision, open_memory
 from local_actions import inbox_items
 from room_queue import enqueue, next_event, observe_presence, presence, retry_event
 from transcript_memory import TEXT_SESSION, insert_transcripts, recent_messages
+
+class ModelUnavailable(RuntimeError):
+    pass
+
 
 DEFAULT_PORT = 8765
 ROOM_INSTRUCTIONS = (
@@ -42,13 +48,20 @@ def record_slow_stage(db, stage, elapsed_ms):
     """, (stage, elapsed_ms))
 
 
+def voice_latency(db):
+    values = [row[0] for row in db.execute("SELECT elapsed_ms FROM room_voice_latency ORDER BY elapsed_ms")]
+    return {"samples": len(values), "median_ms": statistics.median(values) if values else None,
+            "p95_ms": values[math.ceil(0.95 * len(values)) - 1] if values else None}
+
+
 class Room:
-    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True, voice=None, online=True):
+    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True, voice=None, online=True, model_state=None):
         self.db_path = db_path
         self.model = model
         self.apply = apply
         self.speak = speak and apply
         self.online = online
+        self.model_state = model_state or (lambda: "ready")
         self.voice = voice
         self.turn_lock = threading.Lock()
         self.worker_lock = threading.Lock()
@@ -82,6 +95,8 @@ class Room:
             return "I couldn't reach web search.", []
         if not sources:
             return "I couldn't find a web result for that.", []
+        if self.model_state() != "ready":
+            return "I found these sources.", sources
         try:
             reply = model_text([
                 {"role": "system", "content": "Answer the question briefly using only the supplied "
@@ -122,9 +137,13 @@ class Room:
                 proposal = decision("ignore", "")
             elif quick:
                 proposal = decision("reply", quick)
+            elif reminder := explicit_reminder(text):
+                proposal = reminder
             elif lookup:
                 answer, sources = self.public_lookup(lookup)
                 proposal = decision("reply", answer)
+            elif (state := self.model_state()) != "ready":
+                raise ModelUnavailable(f"The local language model is {state}. Sensor checks and timed reminders are available.")
             else:
                 context = self.context(db, conversational_turn=True, input_channel=source,
                                        recent_dialogue=dialogue, voice_archiving=remember_voice,
@@ -161,7 +180,11 @@ class Room:
                 action = outcome["status"] if outcome else "shadow"
                 detail = proposal["detail"]
                 disposition = proposal["disposition"]
-                if disposition == "act" and action == "applied":
+                if proposal["tool"] == "set_reminder" and action == "applied":
+                    minutes = proposal["remind_in_minutes"]
+                    unit = "minute" if minutes == 1 else "minutes"
+                    reply = f"Reminder set for {minutes} {unit} from now. {detail}"
+                elif disposition == "act" and action == "applied":
                     reply = f"Done. {detail}"
                 elif disposition == "act" and proposal["tool"] != "speak":
                     reply = f"No change made. Proposed action: {detail}"
@@ -202,6 +225,8 @@ class Room:
                 with db:
                     db.execute("UPDATE room_events SET status = 'done' WHERE id = ?", (row["id"],))
                 return True
+            if self.model_state() != "ready":
+                return False
             try:
                 proposal = plan(
                     db, event, model=self.model, room_context=self.context(db), private_context=False,
@@ -277,8 +302,8 @@ class Room:
         with closing(open_memory(self.db_path)) as db:
             match method, path:
                 case "GET", "/v1/status":
-                    return 200, self.context(db, model=self.model, local_actions=self.apply,
-                                             proactive_speech=self.speak,
+                    return 200, self.context(db, model=self.model, model_state=self.model_state(), local_actions=self.apply,
+                                             proactive_speech=self.speak, voice_latency=voice_latency(db),
                                              voice=self.voice.name if self.voice else None,
                                              queued=db.execute(
                                                  "SELECT COUNT(*) FROM room_events WHERE status = 'pending'"
@@ -295,6 +320,21 @@ class Room:
                     return 200, {"items": inbox_items(db, limit=50)}
                 case "POST", "/v1/turn":
                     return 200, self.turn(db, body)
+                case "POST", "/v1/voice/latency":
+                    turn, elapsed = body.get("id"), body.get("elapsed_ms")
+                    if type(turn) is not int or not 1 <= turn <= 2**63 - 1 or type(elapsed) is not int or not 0 <= elapsed <= 300000:
+                        raise ValueError("Expected a voice turn ID and elapsed milliseconds.")
+                    with db:
+                        cursor = db.execute("""INSERT INTO room_voice_latency(decision_id, elapsed_ms)
+                            SELECT id, ? FROM decisions WHERE id = ? AND json_extract(event, '$.kind') = 'voice_turn'
+                            ON CONFLICT(decision_id) DO NOTHING""", (elapsed, turn))
+                        if cursor.rowcount:
+                            db.execute("""DELETE FROM room_voice_latency WHERE decision_id IN (
+                                SELECT decision_id FROM room_voice_latency ORDER BY decision_id DESC LIMIT -1 OFFSET 64
+                            )""")
+                        elif not db.execute("SELECT 1 FROM room_voice_latency WHERE decision_id = ?", (turn,)).fetchone():
+                            raise ValueError("Unknown voice turn.")
+                    return 200, {"id": turn}
                 case "POST", "/v1/presence":
                     occupied = body.get("occupied")
                     if "occupied" not in body or (occupied is not None and type(occupied) is not bool):
@@ -311,7 +351,7 @@ class Room:
                             return 429, {"error": "Room event queue is full."}
                         return 202, {"event_id": enqueue(db, event)}
                 case "GET", "/v1/speech":
-                    return 200, {"item": self.speech(db)}
+                    return 200, {"item": self.speech(db), "model_state": self.model_state()}
                 case "POST", "/v1/speech/ack":
                     if not self.speak:
                         return 403, {"error": "Room announcements are disabled."}
@@ -359,6 +399,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(body, dict):
                     raise ValueError("Expected a JSON object.")
             status, data = self.server.room.route(method, self.path, body)
+        except ModelUnavailable as error:
+            status, data = 503, {"error": str(error)}
         except (ValueError, OverflowError) as error:
             status, data = 400, {"error": str(error)}
         except (OSError, RuntimeError, sqlite3.Error) as error:

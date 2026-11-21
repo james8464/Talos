@@ -42,7 +42,7 @@ class RoomDialogueTests(unittest.TestCase):
     def test_compact_response_can_apply_reminder_without_generating_planning_prose(self):
         short = {"action": "set_reminder", "minutes": 10, "text": "Check the oven."}
         with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=json.dumps(short)) as model:
-            self.assertEqual(self.turn("Remind me in ten minutes to check the oven.")["action"], "applied")
+            self.assertEqual(self.turn("In ten minutes, could you remind me about the oven?")["action"], "applied")
             self.assertEqual(model.call_args.kwargs["schema"]["required"], ["action", "text"])
         with closing(open_memory(self.room.db_path)) as db:
             self.assertEqual(db.execute("SELECT kind FROM inbox").fetchone()[0], "reminder")
@@ -133,6 +133,22 @@ class RoomDialogueTests(unittest.TestCase):
             db.execute("PRAGMA user_version = 2")
             db.execute("INSERT INTO room_presence VALUES (1, 1, '2000-01-01')")
         with closing(open_memory(self.room.db_path)) as db:
-            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 3)
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 4)
             self.assertEqual(db.execute("SELECT occupied FROM room_presence").fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT count(*) FROM room_slow_stages").fetchone()[0], 0)
+
+    def test_local_reminder_duration_and_boundaries(self):
+        from room_dialogue import explicit_reminder
+        for duration, minutes in [("twenty-five minutes", 25), ("an hour", 60), ("30 days", 43200)]:
+            result = explicit_reminder(f"Hey Talos, please remind me in {duration} to check the oven.")
+            self.assertEqual((result["remind_in_minutes"], result["detail"]), (minutes, "check the oven"))
+        for duration in ("zero minutes", "31 days", "one hour and ten minutes", "two seconds"):
+            self.assertIsNone(explicit_reminder(f"Remind me in {duration} to check the oven."))
+        self.assertIsNone(explicit_reminder("She said remind me in 10 minutes to eat."))
+        self.assertIsNone(explicit_reminder("Don't remind me in 10 minutes to eat."))
+
+    def test_exact_reminder_in_shadow_mode_leaves_inbox_untouched(self):
+        self.room = Room(self.room.db_path, "local", apply=False)
+        receipt = self.turn("Remind me in 2 hours to stretch.")
+        self.assertEqual(receipt["action"], "shadow")
+        self.assertEqual(self.room.route("GET", "/v1/inbox", {})[1]["items"], [])

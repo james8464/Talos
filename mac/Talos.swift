@@ -133,6 +133,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var draft = ""
     @Published var occupancy = "Camera off"
     @Published var previewSession: AVCaptureSession?
+    @Published var modelState = ""
     @Published var voiceLabel = "Voice: connecting"
     @Published var liveTranscript = ""
     @Published var lastTiming = ""
@@ -157,6 +158,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var utteranceTimer: Task<Void, Never>?
     private var recognitionLimit: Task<Void, Never>?
     private var speechEpoch = UUID()
+    private var activity: VoiceEndpoint?
+    private var playbackMeasurement: (id: Int, speechEnd: TimeInterval)?
     private var currentText = ""
     private var recognitionFailures = 0
     private var microphoneStarting = false
@@ -195,6 +198,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 if !announcedStartup || reconnecting {
                     do {
                         let result = try await client?.request("status")
+                        modelState = result?["model_state"] as? String ?? ""
                         kokoroVoice = result?["voice"] as? String
                         voiceLabel = kokoroVoice.map { "Voice: Kokoro · \($0)" } ?? "Voice: macOS fallback"
                         status = "Connected"
@@ -268,7 +272,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         request = buffer
         let epoch = UUID()
         speechEpoch = epoch
-        input.installTap(onBus: 0, bufferSize: 1024, format: format) { audio, _ in buffer.append(audio) }
+        let endpoint = VoiceEndpoint()
+        activity = endpoint
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { audio, _ in
+            endpoint.observe(audio, at: ProcessInfo.processInfo.systemUptime)
+            buffer.append(audio)
+        }
         tapInstalled = true
         do {
             engine.prepare()
@@ -290,10 +299,16 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     self.currentText = text
                     self.liveTranscript = Self.normalizeAddress(text)
                     self.utteranceTimer?.cancel()
+                    let partialAt = ProcessInfo.processInfo.systemUptime
                     self.utteranceTimer = Task {
-                        guard (try? await Task.sleep(for: .milliseconds(650))) != nil,
-                              self.speechEpoch == epoch else { return }
-                        self.commitVoice()
+                        while self.speechEpoch == epoch && !Task.isCancelled {
+                            let delay = endpoint.remaining(afterPartial: partialAt, now: ProcessInfo.processInfo.systemUptime)
+                            if delay <= 0 {
+                                self.commitVoice()
+                                return
+                            }
+                            try? await Task.sleep(for: .seconds(delay))
+                        }
                     }
                 }
                 if final && !self.currentText.isEmpty {
@@ -336,6 +351,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         request = nil
         recognition = nil
         currentText = ""
+        activity = nil
         liveTranscript = ""
     }
 
@@ -352,13 +368,20 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
 
     private func commitVoice() {
         let text = Self.normalizeAddress(currentText)
-        if !text.isEmpty { send(text, source: "voice") }
+        if text.count > 800 {
+            stopRecognition()
+            addLine("Talos", "That turn was too long. Could you split it into two?")
+            beginRecognition()
+        } else if !text.isEmpty {
+            send(text, source: "voice")
+        }
     }
 
     func send(_ text: String, source: String = "text") {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !busy, !speaking, let client else { return }
         guard text.count <= 800 else { status = "Send up to 800 characters per turn."; return }
+        let speechEnd = source == "voice" ? activity?.lastActivity : nil
         busy = true
         stopRecognition()
         addLine("You", text)
@@ -385,11 +408,17 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                             }
                         }
                     }
-                    if source == "voice" || microphone { say(reply, turnStart: submitted) }
+                    if source == "voice" || microphone {
+                        if let speechEnd, let id = result["id"] as? Int {
+                            playbackMeasurement = (id, speechEnd)
+                        }
+                        say(reply, turnStart: submitted)
+                    }
                 }
                 status = "Connected"
             } catch {
                 status = error.localizedDescription
+                addLine("Service", status)
             }
             busy = false
             beginRecognition()
@@ -461,6 +490,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 self.pendingAcknowledgment = nil
             }
             let result = try await client?.request("speech")
+            modelState = result?["model_state"] as? String ?? ""
             endpointFailures = 0
             guard microphone || cameraRunning, !busy, !speaking, currentText.isEmpty,
                   let item = result?["item"] as? [String: Any],
@@ -525,6 +555,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     finalClip = index == clips.count - 1
                     player = audio
                     guard audio.play() else { throw RoomError("Kokoro audio could not play.") }
+                    if index == 0 { recordPlaybackStart() }
                     played += 1
                     voiceLabel = "Voice: Kokoro · \(kokoroVoice)"
                     if let turnStart, index == 0 {
@@ -554,8 +585,23 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         return clips.isEmpty ? [text] : clips
     }
 
+    private func recordPlaybackStart() {
+        guard let measurement = playbackMeasurement else { return }
+        playbackMeasurement = nil
+        let elapsed = Int((ProcessInfo.processInfo.systemUptime - measurement.speechEnd) * 1000)
+        lastTiming += " · speech end to playback \(elapsed) ms"
+        Task {
+            _ = try? await client?.request("voice/latency", body: ["id": measurement.id, "elapsed_ms": elapsed])
+        }
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        Task { @MainActor in recordPlaybackStart() }
+    }
+
     private func finishSpeech(delivered: Bool) {
         if delivered, let speechID { pendingAcknowledgment = speechID }
+        playbackMeasurement = nil
         speechID = nil
         speaking = false
         player = nil
@@ -620,6 +666,7 @@ struct RoomView: View {
             Text(room.status).foregroundStyle(.secondary)
             HStack {
                 Text(room.voiceLabel)
+                if !room.modelState.isEmpty { Text("Model: \(room.modelState)") }
                 if !room.lastTiming.isEmpty { Text(room.lastTiming) }
             }.font(.caption).foregroundStyle(.secondary)
             HStack {

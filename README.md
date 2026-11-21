@@ -13,14 +13,19 @@ cd /Users/james/Developer/Talos
 python3 run_talos.py
 ```
 
-The launcher builds the native app, starts its own Ollama process on loopback port 11435,
-prepares a local Qwen3 4B model on the first run, and opens Talos. The model store lives
+The launcher builds and opens the native app. It starts its own Ollama server on
+loopback port 11435 and prepares a local Qwen3 4B model on the first run. The model store lives
 under `models/ollama`, so this startup path works independently of a missing external
 Ollama disk or an existing Ollama instance on port 11434. Keep the launcher running.
 The first model download needs internet access. Use `--offline` for subsequent runs if
 you prefer to require an already downloaded model. Use `--model NAME` to select a
-different locally runnable Ollama model. The launcher preloads the text model before opening
-the app and keeps it warm between turns. Voice turns use a smaller planning budget.
+different locally runnable Ollama model. The launcher loads the model in the background and keeps it warm between turns.
+The app shows model readiness. Sensor checks and explicit timed reminders work during
+model startup. The launcher restarts its own model process if it exits. Voice turns use a smaller planning budget.
+
+Say “Remind me in one minute to stretch” to set a local reminder even while the model
+loads. Whole minutes, hours and days are supported on this path. Other phrasing goes to
+the normal planner.
 
 Listen for **“Talos online”** after the app connects. The default voice is Kokoro
 `bm_george`. Its models and Python environment are prepared on the first online run.
@@ -99,6 +104,7 @@ The remaining routes take an Authorization Bearer header with the token in `stat
 | `GET /v1/status` | Room presence, model, and queue state |
 | `POST /v1/turn` | Conversation or a local task, with `text`, `source`, and optional `remember` |
 | `POST /v1/voice` | Synthesize up to 600 characters with the configured local Kokoro voice |
+| `POST /v1/voice/latency` | Record estimated speech-end to playback-start time for a completed voice turn |
 | `POST /v1/presence` | Presence signal with `occupied` set to true, false, or null |
 | `POST /v1/events` | Queue an observation with `kind` and `summary` |
 | `GET /v1/events/{id}` | Look up the processing state and decision receipt |
@@ -111,6 +117,27 @@ Run `python3 -m unittest discover -s tests -v` to validate the local service. To
 live setup, speak a phrase only you know, request a local timer, then leave and re-enter
 the camera's view. Check the text reply, listening and room indicators, and the event
 receipts. Arriving and leaving should stay silent. The Mac app requires an active desktop session and approved device permissions.
+
+### Repeat the room acceptance checks
+
+The acceptance suite sends authenticated HTTP requests over connected local sockets into
+an isolated database. It can wait through a one-minute reminder, restart the room service
+at the application layer, verify deferred delivery and acknowledgment, and render a new reply
+with the installed Kokoro voice. For real spoken replies, `GET /v1/status` includes the sample count, median and 95th
+percentile for the last 64 reported turns. The native client measures from the last
+above-threshold microphone buffer to the start of software playback.
+
+On a Mac the suite can also feed the synthesized waveform to the same
+end-of-speech timing code used by the microphone.
+
+```sh
+TALOS_TEST_REAL_MINUTE=1 TALOS_TEST_KOKORO=1 state/kokoro-env/bin/python -m unittest discover -s tests -v
+```
+
+Set `TALOS_TEST_OLLAMA=1` and `TALOS_OLLAMA_PORT=11435` when the project model server is
+running to exercise an open-ended question and a follow-up with Qwen. The tests use
+synthetic turns. Physical speech recognition, room acoustics and camera detection still
+need verification with the Mac's devices.
 
 ## Optional legacy browser benchmark
 

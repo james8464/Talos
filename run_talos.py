@@ -7,7 +7,8 @@ import socket
 import subprocess
 import sys
 import tempfile
-import time
+import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 from agent_memory import STATE_PATH
@@ -24,11 +25,11 @@ SOURCES = ROOT / "mac"
 
 
 def build_app() -> Path:
-    source = SOURCES / "Talos.swift"
+    sources = sorted(SOURCES.glob("*.swift"))
     plist = SOURCES / "Info.plist"
     executable = BUNDLE / "Contents" / "MacOS" / "Talos"
     if executable.is_file() and executable.stat().st_mtime >= max(
-        source.stat().st_mtime, plist.stat().st_mtime
+        plist.stat().st_mtime, *(source.stat().st_mtime for source in sources)
     ):
         return BUNDLE
     STATE.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -41,7 +42,7 @@ def build_app() -> Path:
         subprocess.run(
             ["swiftc", "-swift-version", "5", "-O", "-parse-as-library",
              "-module-cache-path", str(STATE / "swift-cache"),
-             str(source), "-o", str(macos / "Talos")], check=True,
+             *map(str, sources), "-o", str(macos / "Talos")], check=True,
         )
         subprocess.run(["/usr/bin/codesign", "--force", "--sign", "-", str(app)], check=True)
         if BUNDLE.exists():
@@ -58,28 +59,102 @@ def check_bind(port: int) -> None:
             raise RuntimeError(f"Cannot open Talos loopback port {port}: {error}") from error
 
 
-def prepare_model(process: subprocess.Popen, ollama: str, model: str, env: dict, offline: bool) -> None:
-    for _ in range(60):
-        if process.poll() is not None:
-            raise RuntimeError("The project Ollama server exited during startup.")
+class ProjectModel:
+    """Own only this launcher's processes. The room stays available during model recovery."""
+
+    def __init__(self, model, port, offline):
+        self.model, self.port, self.offline = model, port, offline
+        self.state = "starting"
+        self.stopping = threading.Event()
+        self.lock = threading.Lock()
+        self.children = set()
+        self.worker = threading.Thread(target=self.run, name="talos-model", daemon=True)
+
+    @contextmanager
+    def child(self, args, env):
+        with self.lock:
+            if self.stopping.is_set():
+                raise RuntimeError("Model shutdown requested.")
+            process = subprocess.Popen(args, env=env)
+            self.children.add(process)
         try:
-            request_ollama_json("GET", "/api/tags", timeout=1)
-        except RuntimeError:
-            time.sleep(0.25)
-        else:
-            break
-    else:
-        raise RuntimeError("The project Ollama server did not become reachable.")
-    try:
-        check_ollama_model(model)
-    except RuntimeError:
-        if offline:
-            raise
-        if "cloud" in model.lower():
-            raise RuntimeError("Select a locally runnable model tag.")
-        print(f"Preparing local model {model}. The first download requires internet access.", flush=True)
-        subprocess.run([ollama, "pull", model], env=env, check=True)
-        check_ollama_model(model)
+            yield process
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+            with self.lock:
+                self.children.discard(process)
+
+    def serve(self):
+        ollama = shutil.which("ollama")
+        if not ollama:
+            raise RuntimeError("Install Ollama for open-ended conversation.")
+        check_bind(self.port)
+        env = {**os.environ, "OLLAMA_NO_CLOUD": "1", "OLLAMA_MODELS": str(MODEL_DIR),
+               "OLLAMA_HOST": f"127.0.0.1:{self.port}"}
+        with self.child([ollama, "serve"], env) as server:
+            for _ in range(60):
+                if server.poll() is not None or self.stopping.is_set():
+                    raise RuntimeError("Project Ollama stopped during startup.")
+                try:
+                    request_ollama_json("GET", "/api/tags", timeout=1)
+                    break
+                except RuntimeError:
+                    self.stopping.wait(0.25)
+            else:
+                raise RuntimeError("Project Ollama did not become reachable.")
+            try:
+                check_ollama_model(self.model)
+            except RuntimeError:
+                if self.offline or "cloud" in self.model.lower():
+                    raise
+                self.state = "preparing model"
+                with self.child([ollama, "pull", self.model], env) as pull:
+                    if pull.wait() != 0:
+                        raise RuntimeError("The local model download failed.")
+                check_ollama_model(self.model)
+            self.state = "warming up"
+            warm_model(self.model)
+            self.state = "ready"
+            server.wait()
+            if not self.stopping.is_set():
+                raise RuntimeError("Project Ollama exited.")
+
+    def run(self):
+        retry = 2
+        while not self.stopping.is_set():
+            try:
+                self.state = "starting"
+                self.serve()
+            except (OSError, RuntimeError) as error:
+                if self.stopping.is_set():
+                    break
+                if self.state == "ready":
+                    retry = 2
+                self.state = "unavailable"
+                print(f"Talos model: {error} Retrying in {retry}s.", file=sys.stderr, flush=True)
+                self.stopping.wait(retry)
+                retry = min(60, retry * 2)
+
+    def close(self):
+        self.stopping.set()
+        with self.lock:
+            children = list(self.children)
+        for process in children:
+            if process.poll() is None:
+                process.terminate()
+        for process in children:
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        self.worker.join(timeout=8)
 
 
 def prepare_voice(voice_name: str, *, offline: bool) -> KokoroVoice | None:
@@ -102,13 +177,10 @@ def prepare_voice(voice_name: str, *, offline: bool) -> KokoroVoice | None:
 
 def warm_model(model: str) -> None:
     print(f"Warming local model {model}.", flush=True)
-    try:
-        request_ollama_json("POST", "/api/generate", timeout=90, payload={
-            "model": model, "prompt": "", "stream": False, "keep_alive": -1,
-            "options": {"num_ctx": 8192},
-        })
-    except RuntimeError as error:
-        print(f"Model warm-up did not finish: {error}", file=sys.stderr, flush=True)
+    request_ollama_json("POST", "/api/generate", timeout=90, payload={
+        "model": model, "prompt": "", "stream": False, "keep_alive": -1,
+        "options": {"num_ctx": 8192},
+    })
 
 
 def main() -> int:
@@ -123,7 +195,7 @@ def main() -> int:
     parser.add_argument("--headless", action="store_true", help="Run the endpoint without opening the app.")
     parser.add_argument("--build-only", action="store_true", help="Build the native app without starting models.")
     args = parser.parse_args()
-    process = None
+    backend = None
     try:
         if args.build_only:
             print(build_app())
@@ -133,26 +205,20 @@ def main() -> int:
         ):
             raise ValueError("Choose two different ports between 1024 and 65535.")
         check_bind(args.port)
-        check_bind(args.ollama_port)
         app = None if args.headless else build_app()
-        ollama = shutil.which("ollama")
-        if not ollama:
-            raise RuntimeError("Install Ollama to run the local model. The native app has already been built.")
         voice = None if args.system_voice else prepare_voice(args.voice, offline=args.offline)
         MODEL_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
         os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
-        env = {**os.environ, "OLLAMA_NO_CLOUD": "1", "OLLAMA_MODELS": str(MODEL_DIR),
-               "OLLAMA_HOST": f"127.0.0.1:{args.ollama_port}"}
-        process = subprocess.Popen([ollama, "serve"], env=env)
-        prepare_model(process, ollama, args.model, env, args.offline)
-        warm_model(args.model)
+        backend = ProjectModel(args.model, args.ollama_port, args.offline)
+        backend.worker.start()
 
         def launch_app() -> None:
             if app:
                 subprocess.run(["/usr/bin/open", "-n", str(app), "--args",
                                 "--token-file", str(TOKEN_PATH), "--port", str(args.port)], check=True)
 
-        run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice, online=not args.offline),
+        run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice, online=not args.offline,
+                            model_state=lambda: backend.state),
             TOKEN_PATH, ready=launch_app)
     except KeyboardInterrupt:
         return 0
@@ -160,13 +226,8 @@ def main() -> int:
         print(f"Talos startup: {error}", file=sys.stderr)
         return 1
     finally:
-        if process is not None and process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
+        if backend is not None:
+            backend.close()
     return 0
 
 

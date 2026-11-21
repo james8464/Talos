@@ -28,6 +28,34 @@ def sensor_answer(message, source, occupied):
     return None
 
 
+_SMALL_NUMBERS = ("zero one two three four five six seven eight nine ten eleven twelve thirteen "
+                  "fourteen fifteen sixteen seventeen eighteen nineteen").split()
+_NUMBERS = {word: value for value, word in enumerate(_SMALL_NUMBERS)}
+for tens, word in enumerate("twenty thirty forty fifty sixty seventy eighty ninety".split(), 2):
+    _NUMBERS[word] = tens * 10
+    for units in range(1, 10):
+        _NUMBERS[f"{word} {_SMALL_NUMBERS[units]}"] = tens * 10 + units
+_NUMBERS.update(a=1, an=1)
+
+
+def explicit_reminder(message):
+    """Resolve an unambiguous duration locally. Leave other wording to the planner."""
+    match = re.fullmatch(
+        r"(?:(?:hey[, ]+)?talos[, ]+)?(?:please +)?remind me in "
+        r"([a-z]+(?:[ -][a-z]+)?|[0-9]{1,5}) (minutes?|hours?|days?) to (.+?)[.!]?",
+        message.strip(), re.I,
+    )
+    if match is None:
+        return None
+    number, unit, task = match.groups()
+    number = number.lower().replace("-", " ")
+    amount = int(number) if number.isdecimal() else _NUMBERS.get(number, 0)
+    minutes = amount * {"minute": 1, "hour": 60, "day": 1440}[unit.lower().rstrip("s")]
+    if not 1 <= minutes <= MAX_REMINDER_MINUTES or len(task.strip()) > 400 or not task.strip():
+        return None
+    return decision("set_reminder", task.strip(), minutes)
+
+
 def decision(action, detail, minutes=0):
     disposition = "act" if action in LOCAL_WRITES else action
     return {"disposition": disposition, "tool": action if disposition == "act" else "none",

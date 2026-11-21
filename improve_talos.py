@@ -13,7 +13,7 @@ from pathlib import Path
 from agent_memory import STATE_PATH, open_memory
 
 ROOT = Path(__file__).resolve().parent
-SOURCE_PATTERNS = ("*.py", "mac/*.swift", "mac/Info.plist", "tests/test_*.py",
+SOURCE_PATTERNS = ("*.py", "mac/*.swift", "mac/Info.plist", "tests/test_*.py", "tests/*.swift",
                    "README.md", "pyproject.toml")
 
 
