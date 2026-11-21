@@ -23,7 +23,7 @@ different locally runnable Ollama model. The launcher loads the model in the bac
 The app shows model readiness. Sensor checks and explicit timed reminders work during
 model startup. The launcher restarts its own model process if it exits. Voice turns use a smaller planning budget.
 
-Say “Remind me in one minute to stretch” to set a local reminder even while the model
+Say “Hey Talos, remind me in one minute to stretch” to set a local reminder even while the model
 loads. Whole minutes, hours and days are supported on this path. Other phrasing goes to
 the normal planner.
 
@@ -34,9 +34,17 @@ macOS speech. The app labels the active voice and any fallback.
 
 Room mode starts when the service connects. On first launch, grant macOS microphone,
 speech recognition, and camera permissions. Each sensor has its own off switch. The microphone pauses during inference and playback. The speech client uses
-on-device recognition and shows words as it hears them. It biases recognition toward
-Talos's name and corrects “tell us” in clear forms of direct address. The app shows reply,
+on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,
 decision time, queue time, and time from transcript submission to first audio.
+
+Start each hands-free turn with **“Hey Talos”**, including follow-ups. The Mac checks the
+final transcript for that opening before sending a turn to the service. For a longer
+request, choose **Dictate a message**, pause as needed, then finish dictation, review the
+text, and press **Send**. Dictated messages keep the voice transcript retention setting.
+
+Try “Hey Talos, add buy paper to my to-do list.” For “Hey Talos, remind me to take out
+the recycling,” Talos asks for the delay. Reply “Hey Talos, in fifteen minutes” within
+two minutes to create the reminder. These requests work while the language model is loading.
 
 The camera card shows a live local preview and a **Person detected** or **No person detected**
 result. The endpoint receives occupancy only. Enable **Remember voice transcripts**
@@ -62,13 +70,13 @@ builds and signs `state/Talos.app` without starting a model.
 
 ### Public questions and web search
 
-Say “Search the web for the next lunar eclipse” to send that query to DuckDuckGo
+Say “Hey Talos, search the web for the next lunar eclipse” to send that query to DuckDuckGo
 through DDGS. The first search uses uv to install the pinned search client. Talos reads
 up to four result snippets, answers with the local model, and shows the titles and URLs.
 Typed questions that need current public facts also let the planner choose search. The
 spoken path requires a search request. Search receives the current query only.
 
-Say “Ask Respan why the Moon has phases” to try the explicitly named free model route.
+Say “Hey Talos, ask Respan why the Moon has phases” to try the explicitly named free model route.
 Set `RESPAN_API_KEY` or put the key in `state/respan.key` with owner-only permissions.
 Only the question after “Ask Respan” goes to that provider. The room loop continues
 using Ollama. Provider errors and rate limits surface in the reply. `--offline` disables

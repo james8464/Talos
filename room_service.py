@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Callable
 
 from agent import model_text, parse_event, plan
-from room_dialogue import decision, explicit_reminder, sensor_answer
+from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer
 from room_research import external_request, public_answer, search_web
 from agent_memory import STATE_PATH, insert_decision, open_memory
 from local_actions import inbox_items
@@ -67,6 +67,7 @@ class Room:
         self.worker_lock = threading.Lock()
         self.voice_window: list[dict[str, str]] = []
         self.voice_window_updated = 0.0
+        self.pending_reminders: dict[str, tuple[float, str]] = {}
 
     def context(self, db: sqlite3.Connection, **extra) -> dict:
         occupied = presence(db)
@@ -108,6 +109,42 @@ class Room:
             reply = "I found these sources."
         return reply[:600], sources
 
+    def local_request(self, db, text, session, archive, started):
+        pending = self.pending_reminders.pop(session, None)
+        continuation = None
+        if pending and started - pending[0] < 120:
+            duration = re.fullmatch(r"(?:in )?([a-z0-9 -]+ (?:minutes?|hours?|days?))[.!?]?",
+                                    text.strip(), re.I)
+            if re.fullmatch(r"(?:cancel(?: it)?|never ?mind)[.!]?", text.strip(), re.I):
+                continuation = decision("reply", "Okay. I haven't set that reminder.")
+            elif duration:
+                continuation = explicit_reminder(f"Remind me in {duration[1]} to {pending[1]}")
+                if continuation is None:
+                    self.pending_reminders[session] = pending
+                    continuation = decision("ask", "Please give a whole number of minutes, hours, or days, up to 30 days.")
+        if continuation:
+            return continuation
+        if reminder := explicit_reminder(text):
+            return reminder
+        elif task := explicit_task(text):
+            return task
+        elif re.fullmatch(r"(?:what(?:'s| is) on my (?:to[ -]?do|task) list|list my tasks)[?.!]?",
+                          text.strip(), re.I):
+            if not archive:
+                return decision("reply", "Ask in the message field to review your saved task list.")
+            else:
+                rows = db.execute("SELECT text FROM inbox WHERE kind = 'task' AND acknowledged_at IS NULL "
+                                  "ORDER BY id DESC LIMIT 4").fetchall()
+                titles = [row["text"] for row in rows[:3]]
+                summary = "Your task list is empty."
+                if titles:
+                    summary = ("Your latest tasks: " if len(rows) > 3 else "Your tasks: ") + "; ".join(titles)
+                return decision("reply", summary[:595])
+        elif subject := reminder_subject(text):
+            self.pending_reminders[session] = (started, subject)
+            return decision("ask", "How long from now should I remind you?")
+        return None
+
     def turn(self, db: sqlite3.Connection, body: dict) -> dict:
         text, source = body.get("text"), body.get("source", "text")
         remember_voice = body.get("remember", False)
@@ -133,12 +170,13 @@ class Room:
             sources = []
             quick = sensor_answer(text, source, current)
             lookup = external_request(text)
-            if source == "voice" and re.fullmatch(r"(hello|hi|hey|uh+|um+|hmm+)[.!,? ]*", text.strip(), re.I):
+            local = self.local_request(db, text, session, archive, started)
+            if local:
+                proposal = local
+            elif source == "voice" and re.fullmatch(r"(hello|hi|hey|uh+|um+|hmm+)[.!,? ]*", text.strip(), re.I):
                 proposal = decision("ignore", "")
             elif quick:
                 proposal = decision("reply", quick)
-            elif reminder := explicit_reminder(text):
-                proposal = reminder
             elif lookup:
                 answer, sources = self.public_lookup(lookup)
                 proposal = decision("reply", answer)
@@ -184,6 +222,8 @@ class Room:
                     minutes = proposal["remind_in_minutes"]
                     unit = "minute" if minutes == 1 else "minutes"
                     reply = f"Reminder set for {minutes} {unit} from now. {detail}"
+                elif proposal["tool"] == "create_task" and action == "applied":
+                    reply = f"Added to your task list: {detail}"
                 elif disposition == "act" and action == "applied":
                     reply = f"Done. {detail}"
                 elif disposition == "act" and proposal["tool"] != "speak":
