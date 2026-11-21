@@ -33,6 +33,11 @@ def sensor_answer(message, source, occupied):
     if words in ("can you see me", "do you see me", "can you see anyone", "do you see anyone",
                  "is anyone in the room", "is there anyone in the room", "am i in the room"):
         return visibility
+    if words in ("whose voice is this", "who is speaking", "who s speaking",
+                 "who is talking", "who s talking") or re.fullmatch(
+        r"(?:can|do) you (?:recogni[sz]e|identify) (?:my voice|me by my voice)", words
+    ):
+        return IDENTITY if source == "voice" else TYPED
     if words in ("who am i", "do you recognize me", "do you recognise me"):
         return IDENTITY
     return None
