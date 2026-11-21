@@ -119,13 +119,6 @@ class Room:
     def local_request(self, db, text, session, archive, started):
         correction = re.fullmatch(r"(?:actually[, ]+)?(?:make that|i meant)\s+(?:in )?([a-z0-9 -]+ (?:minutes?|hours?|days?))[.!? ]*",
                                   text.strip(), re.I)
-        if correction and session == "native_voice":
-            receipt = self.last_voice_reminder
-            timing = explicit_reminder(f"Remind me in {correction[1]} to check")
-            if receipt and started - receipt[1] < 45 and timing:
-                return {**decision("reply", "Updating the last reminder."), "amend_id": receipt[0],
-                        "minutes": timing["remind_in_minutes"]}
-            return decision("reply", "I need a recent voice reminder and a valid delay to change it.")
         if re.fullmatch(r"(?:what (?:still )?needs my attention|why are you (?:doing that|tracking (?:this|that))|(?:show|list) my goals|what are you working on)[?.! ]*", text.strip(), re.I):
             rows = db.execute("SELECT id FROM goals WHERE status='active' ORDER BY deadline LIMIT 5").fetchall()
             if not rows:
@@ -148,6 +141,8 @@ class Room:
         if pending and started - pending[0] < 120:
             duration = re.fullmatch(r"(?:in )?([a-z0-9 -]+ (?:minutes?|hours?|days?))[.!?]?",
                                     text.strip(), re.I)
+            if correction and session == "native_voice":
+                duration = correction
             if re.fullmatch(r"(?:cancel(?: it)?|never ?mind)[.!]?", text.strip(), re.I):
                 continuation = decision("reply", "Okay. I haven't set that reminder.")
             elif duration:
@@ -156,7 +151,14 @@ class Room:
                     self.pending_reminders[session] = pending
                     continuation = decision("ask", "Please give a whole number of minutes, hours, or days, up to 30 days.")
         if continuation:
-            return continuation
+            return {**continuation, "answers_pending_reminder": True}
+        if correction and session == "native_voice":
+            receipt = self.last_voice_reminder
+            timing = explicit_reminder(f"Remind me in {correction[1]} to check")
+            if receipt and started - receipt[1] < 45 and timing:
+                return {**decision("reply", "Updating the last reminder."), "amend_id": receipt[0],
+                        "minutes": timing["remind_in_minutes"]}
+            return decision("reply", "I need a recent voice reminder and a valid delay to change it.")
         order = work_order(text) or note_request(text) or project_brief(db, text, archive)
         if order:
             return order
@@ -207,9 +209,6 @@ class Room:
             sources = []
             quick = sensor_answer(text, source, current)
             lookup = None if follow_up else external_request(text)
-            pending_reply = session in self.pending_reminders and re.fullmatch(
-                r"(?:in )?[a-z0-9 -]+ (?:minutes?|hours?|days?)[.!? ]*", text.strip(), re.I
-            )
             local = self.local_request(db, text, session, archive, started)
             if local:
                 proposal = local
@@ -239,7 +238,7 @@ class Room:
                     if not re.fullmatch(r"(hello|hi|hey)( talos)?[.!, ]*", text, re.I):
                         proposal = decision("ignore", "")
             if follow_up and (proposal.get("steps") or proposal["disposition"] == "act") and not (
-                pending_reply and local and local["tool"] == "set_reminder"
+                local and local.get("answers_pending_reminder") and local["tool"] == "set_reminder"
             ):
                 proposal = decision("reply", "Start a new action with Hey Talos.")
             planned = monotonic()
