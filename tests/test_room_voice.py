@@ -1,6 +1,7 @@
 import base64
 import io
 import tempfile
+import sys
 import unittest
 import wave
 from pathlib import Path
@@ -12,6 +13,19 @@ from room_voice import STARTUP_LINE, prepare_assets, wav_base64
 
 
 class RoomVoiceTests(unittest.TestCase):
+    def test_voice_starts_without_prerender_and_only_reuses_standard_responses(self):
+        from room_voice import KokoroVoice
+        model = Mock()
+        model.create.return_value = (object(), 24000)
+        with patch.dict(sys.modules, {"kokoro_onnx": SimpleNamespace(Kokoro=lambda *args: model)}), patch("room_voice.wav_base64", return_value="fixture"):
+            voice = KokoroVoice(Path("."), "bm_george")
+            model.create.assert_not_called()
+            for _ in range(2):
+                voice.speak("How long from now should I remind you?")
+                voice.speak("Synthetic private reply.")
+            self.assertEqual(model.create.call_count, 3)
+            self.assertNotIn("Synthetic private reply.", voice.fixed_lines)
+
     def test_wav_transport_contains_playable_pcm(self):
         samples = Mock()
         clipped = samples.clip.return_value

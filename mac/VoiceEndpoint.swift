@@ -93,12 +93,34 @@ struct ConversationFocus {
         return nil
     }
 
-    static func conversationalInterruption(_ words: String, playback: String) -> Bool {
+    static func removePlaybackPrefix(_ words: String, playback: String) -> String {
+        func token(_ part: Substring) -> String { part.lowercased().trimmingCharacters(in: .punctuationCharacters) }
+        let parts = words.split(whereSeparator: { $0.isWhitespace })
+        let heard = parts.map(token)
+        let said = playback.split(whereSeparator: { $0.isWhitespace }).map(token)
+        guard heard.count >= 3, said.count >= 2 else { return words }
+        var matched = 0
+        for start in said.indices where said[start] == heard[0] {
+            var count = 0
+            while count < heard.count && start + count < said.count && heard[count] == said[start + count] { count += 1 }
+            matched = max(matched, count)
+        }
+        guard matched >= 2, matched < parts.count else { return words }
+        return String(words[parts[matched].startIndex...])
+    }
+
+    static func conversationalInterruption(_ words: String, playback: String, allowSpeech: Bool = false) -> Bool {
         func normalize(_ text: String) -> String {
             text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).joined(separator: " ")
         }
         let heard = normalize(words)
         guard !heard.isEmpty, !normalize(playback).contains(heard) else { return false }
+        if allowSpeech {
+            let tokens = heard.split(separator: " ")
+            let output = Set(normalize(playback).split(separator: " "))
+            if ["stop", "wait", "pause"].contains(heard) { return true }
+            if tokens.count >= 2 && tokens.contains(where: { !output.contains($0) }) { return true }
+        }
         return heard.range(of: #"^(?:hold on|hang on|wait a second|one second|stop there|wait (?:i|that|actually)|no (?:i meant|sorry)|actually (?:i|it|what|make|the)|sorry i meant)\b"#,
                            options: .regularExpression) != nil
     }

@@ -165,7 +165,7 @@ class RoomDialogueTests(unittest.TestCase):
             db.execute("PRAGMA user_version = 2")
             db.execute("INSERT INTO room_presence VALUES (1, 1, '2000-01-01')")
         with closing(open_memory(self.room.db_path)) as db:
-            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 7)
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 8)
             self.assertEqual(db.execute("SELECT occupied FROM room_presence").fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT count(*) FROM room_slow_stages").fetchone()[0], 0)
 

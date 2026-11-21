@@ -28,6 +28,7 @@ class LocalRuntimeTests(unittest.TestCase):
             voices.write_bytes(b"fixture")
             local_runtime.check_model_files(models_dir)
 
+    @patch.dict("os.environ", TALOS_OLLAMA_PORT="11434")
     def test_checks_model_via_loopback(self):
         with patch("local_runtime.http.client.HTTPConnection") as factory:
             connection = factory.return_value
