@@ -752,7 +752,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             return
         }
         if !useFacing { facingOffer = nil; facingContext = nil }
-        let followUp = focus.isFollowUp(finalText, at: now)
+        let followUp = focus.isFollowUp(finalText, at: now) || (!interruptedPlayback.isEmpty && roomRequest(finalText) == nil)
         focus.clear()
         if !useFacing && needsContinuation(text) && text.range(of: #"(?i)^(?:(?:please|could you|can you) )?(?:remind|add|create|save|make a note|record)\b"#, options: .regularExpression) != nil {
             if draft.isEmpty {

@@ -166,6 +166,24 @@ class RefinementTests(unittest.TestCase):
             )
         self.assertNotIn("draft.md", self.request("/v1/context/brief")["reply"])
 
+    def test_interrupting_with_new_reminder_cannot_arm_a_later_action(self):
+        self.room.model_state = lambda: "warming"
+        response = self.request(
+            "/v1/turn",
+            {
+                "text": "Remind me to check the mailbox.",
+                "source": "voice",
+                "follow_up": True,
+            },
+        )
+        self.assertIn("Hey Talos", response["reply"])
+        self.request(
+            "/v1/turn",
+            {"text": "In five minutes.", "source": "voice", "follow_up": True},
+            expected_error=503,
+        )
+        self.assertEqual(self.request("/v1/inbox")["items"], [])
+
     def test_saved_fact_corrected_across_restarts(self):
         def turn(text, **opts):
             return self.request("/v1/turn", dict(text=text, **opts))["reply"]

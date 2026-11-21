@@ -127,7 +127,7 @@ class Room:
             reply = "I found these sources."
         return reply[:600], sources
 
-    def local_request(self, db, text, session, archive, started):
+    def local_request(self, db, text, session, archive, started, *, follow_up=False):
         correction = re.fullmatch(r"(?:actually[, ]+)?(?:make that|i meant)\s+(?:in )?([a-z0-9 -]+ (?:minutes?|hours?|days?))[.!? ]*",
                                   text.strip(), re.I)
         if re.fullmatch(r"(?:what (?:still )?needs my attention|why are you (?:doing that|tracking (?:this|that))|(?:show|list) my goals|what are you working on)[?.! ]*", text.strip(), re.I):
@@ -190,6 +190,8 @@ class Room:
                     summary = ("Your latest tasks: " if len(rows) > 3 else "Your tasks: ") + "; ".join(titles)
                 return decision("reply", summary[:595])
         elif subject := reminder_subject(text):
+            if follow_up:
+                return decision("reply", "Start a new action with Hey Talos.")
             self.pending_reminders[session] = (started, subject)
             return decision("ask", "How long from now should I remind you?")
         return None
@@ -332,7 +334,7 @@ class Room:
             sources = []
             quick = sensor_answer(text, source, current)
             lookup = None if follow_up else external_request(text)
-            local = self.local_request(db, text, session, archive, started)
+            local = self.local_request(db, text, session, archive, started, follow_up=follow_up)
             if local:
                 proposal = local
             elif source == "voice" and re.fullmatch(r"(hello|hi|hey|uh+|um+|hmm+)[.!,? ]*", text.strip(), re.I):
