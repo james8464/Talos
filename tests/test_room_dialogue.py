@@ -33,6 +33,19 @@ class RoomDialogueTests(unittest.TestCase):
                 self.assertEqual(self.turn("Talos, can you see me?", occupied=value)["reply"], expected)
             self.assertEqual(self.turn("Can you see me?")["reply"], EMPTY)
 
+    def test_current_sensor_questions_use_the_input_channel_and_latest_observation(self):
+        with patch("room_service.plan", side_effect=AssertionError("unexpected planner call")):
+            for occupied, reply in ((True, VISIBLE), (False, EMPTY), (None, UNKNOWN)):
+                self.room.route("POST", "/v1/presence", {"occupied": occupied})
+                self.assertEqual(self.turn("Talos, can you see me right now?")["reply"], reply)
+                self.assertEqual(self.turn("Is there anyone in the room now?")["reply"], reply)
+            self.assertEqual(self.turn("Can you hear me now, Talos?")["reply"], HEARD)
+            self.assertEqual(self.turn("Can you hear me now?", source="text")["reply"], TYPED)
+        with patch("room_service.plan", return_value=decision("reply", "Which photo?")) as planner:
+            self.assertEqual(self.turn("Talos, can you see anyone in the photo right now?")["reply"],
+                             "Which photo?")
+            planner.assert_called_once()
+
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
         for proposal in (decision("ignore", ""), decision("reply", "Hello.")):
             with patch("room_service.plan", return_value=proposal):
