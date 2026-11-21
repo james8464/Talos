@@ -51,6 +51,7 @@ struct MeetingRequest {
 struct ScheduledMeeting {
     let title: String
     let start: Date
+    var binding = ""
 }
 
 @MainActor
@@ -70,6 +71,48 @@ final class MeetingCalendar {
         return Self.firstMeeting(store.events(matching: predicate), within: interval)
     }
 
+    func matching(_ words: String) async throws -> ScheduledMeeting? {
+        if !connected, try await !store.requestFullAccessToEvents() { throw NSError(domain: EKErrorDomain, code: 1) }
+        let start = Date()
+        let end = Calendar.current.date(byAdding: .day, value: 14, to: start)!
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
+        let tokens = Set(words.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted))
+        let days = Calendar(identifier: .gregorian).weekdaySymbols.map { $0.lowercased() }
+        let wantedDay = days.firstIndex(where: tokens.contains)
+        let generic: Set<String> = ["", "s","my","the","next","a","meeting","review","call","tomorrow","today"]
+        let project = tokens.subtracting(generic.union(days))
+        let matches = store.events(matching: predicate).filter { event in
+            let title = Set((event.title ?? "").lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted))
+            return project.isSubset(of: title) &&
+                (wantedDay == nil || Calendar.current.component(.weekday, from: event.startDate) == wantedDay! + 1) &&
+                (!tokens.contains("tomorrow") || Calendar.current.isDateInTomorrow(event.startDate)) &&
+                (!tokens.contains("today") || Calendar.current.isDateInToday(event.startDate))
+        }
+        let interval = DateInterval(start: start, end: end)
+        let candidates = matches.compactMap { Self.firstMeeting([$0], within: interval) }
+        if Set(candidates.map { $0.title.lowercased() }).count > 1 {
+            throw NSError(domain: "Talos.Calendar", code: 2, userInfo: [NSLocalizedDescriptionKey: "More than one event matches. Include the exact meeting title or weekday."])
+        }
+        return candidates.min { $0.start < $1.start }
+    }
+
+    func observation(binding: String, deadline: Date?) -> (state: String, start: Date?) {
+        guard connected else { return ("unavailable", nil) }
+        guard let data = binding.data(using: .utf8),
+              let keys = try? JSONDecoder().decode([String].self, from: data), keys.count == 2 else { return ("missing", nil) }
+        var event: EKEvent?
+        if keys[1].isEmpty { event = store.event(withIdentifier: keys[0]) }
+        else if let deadline, let original = Double(keys[1]) {
+            let anchor = Date(timeIntervalSince1970: original)
+            let pred = store.predicateForEvents(withStart: min(deadline, anchor).addingTimeInterval(-30 * 86400),
+                                                end: max(deadline, anchor).addingTimeInterval(30 * 86400), calendars: nil)
+            event = store.events(matching: pred).first { $0.calendarItemIdentifier == keys[0] && $0.occurrenceDate == anchor }
+        }
+        guard let event, event.status != .canceled,
+              !(event.attendees ?? []).contains(where: { $0.isCurrentUser && $0.participantStatus == .declined }) else { return ("missing", nil) }
+        return ("confirmed", event.startDate)
+    }
+
     static func firstMeeting(_ events: [EKEvent], within interval: DateInterval) -> ScheduledMeeting? {
         let first = events.filter { event in
             !event.isAllDay && event.status != .canceled && event.startDate >= interval.start
@@ -77,6 +120,10 @@ final class MeetingCalendar {
                 && !(event.attendees ?? []).contains { $0.isCurrentUser && $0.participantStatus == .declined }
         }.min { $0.startDate < $1.startDate }
         guard let first else { return nil }
-        return ScheduledMeeting(title: first.title ?? "Untitled event", start: first.startDate)
+        let recurring = first.hasRecurrenceRules || first.isDetached
+        let keys = recurring ? [first.calendarItemIdentifier, String((first.occurrenceDate ?? first.startDate).timeIntervalSince1970)] :
+            [first.eventIdentifier ?? "", ""]
+        let binding = (try? JSONEncoder().encode(keys)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        return ScheduledMeeting(title: first.title ?? "Untitled event", start: first.startDate, binding: binding)
     }
 }

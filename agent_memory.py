@@ -20,7 +20,7 @@ def open_memory(path: Path) -> sqlite3.Connection:
     database.row_factory = sqlite3.Row
     try:
         database.execute("PRAGMA foreign_keys = ON")
-        if database.execute("PRAGMA user_version").fetchone()[0] < 5:
+        if database.execute("PRAGMA user_version").fetchone()[0] < 6:
             with database:
                 database.execute("BEGIN IMMEDIATE")
                 version = database.execute("PRAGMA user_version").fetchone()[0]
@@ -51,7 +51,10 @@ def open_memory(path: Path) -> sqlite3.Connection:
                     database.execute("""CREATE TABLE IF NOT EXISTS room_plans (
                         id TEXT PRIMARY KEY, request TEXT NOT NULL, steps TEXT NOT NULL, remaining TEXT NOT NULL
                     )""")
-                    database.execute("PRAGMA user_version = 5")
+                if version < 6:
+                    from goal_store import initialize_goals
+                    initialize_goals(database)
+                    database.execute("PRAGMA user_version = 6")
     except sqlite3.Error:
         database.close()
         raise

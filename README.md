@@ -33,12 +33,15 @@ Use `--voice am_michael` to select another English Kokoro voice or `--system-voi
 macOS speech. The app labels the active voice and any fallback.
 
 Room mode starts when the service connects. On first launch, grant macOS microphone,
-speech recognition, and camera permissions. Each sensor has its own off switch. The microphone pauses during inference and playback. The speech client uses
+speech recognition, and camera permissions. Each sensor has its own off switch. During playback the microphone accepts an explicit “Hey Talos, stop” interruption. During response planning it pauses. The speech client uses
 on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,
 decision time, queue time, and time from transcript submission to first audio.
 
-Start each hands-free turn with **“Hey Talos”**, including follow-ups. The Mac checks the
-final transcript for that opening before sending a turn to the service. For a longer
+Start a new hands-free request with **“Hey Talos”**. You can also say the name first and then speak.
+For eight seconds after a voice reply, Talos accepts a linked follow-up such as “And what about Friday?”
+or a delay in response to a reminder question. “Actually, make that five minutes” corrects the
+last single voice reminder. A follow-up can amend that reminder or answer a pending question.
+Starting another action requires addressing Talos again. For a longer
 request, choose **Dictate a message**, pause as needed, then finish dictation, review the
 text, and press **Send**. Dictated messages keep the voice transcript retention setting.
 
@@ -67,6 +70,62 @@ endpoint becomes unreachable.
 
 For development, `--headless` starts the service without opening the app, and `--build-only`
 builds and signs `state/Talos.app` without starting a model.
+
+### Track a meeting goal
+
+Type “Get me ready for the Atlas review” to find a timed event in the next two weeks.
+Review the matched event and save the goal. You can also open **Goals**, enter an outcome
+and date manually, and choose a project folder. Use words from a filename for **Required
+document name**. Talos checks Markdown, plain text and CSV files and shows the relative
+path, modification time and an excerpt. Competing candidate files appear for review.
+Saved commitments and tasks are matched by topic and retain their record IDs.
+
+The goal survives a restart. A moved Calendar event updates its existing reminder.
+Pause or resume tracking in **Goals**. Choose when to receive updates, or keep changes
+in the goal history. A zero reminder lead switches off the scheduled reminder.
+The Mac must be running with Calendar read access for event changes to reach the service.
+
+### Test speech in a practice room
+
+When the physical room is available for a test, switch off its live microphone to prevent
+both apps from hearing the same request. From this directory run the following command
+with the project's local Ollama instance available.
+
+```sh
+python3 run_talos.py --room-trial
+```
+
+The practice window starts with both sensors off. Its inbox, goals, history and token use
+a temporary directory. Switch on the practice microphone, use synthetic names and compare
+these cases with **Use local model for mid-sentence pauses** off and on.
+
+| Say or do | Check |
+| --- | --- |
+| “Hey Talos, can you hear me?” | The answer confirms hearing. Record the displayed time from detected speech end to playback start. |
+| “Hey Talos, remind me in ten minutes to” … pause for two seconds … “check the blue folder” | One reminder with the full subject. Record an early cutoff if the subject is lost. |
+| “Actually, make that five minutes” immediately after the reply | The existing reminder changes. |
+| Ask another person to remind you about the red folder | Talos stays silent and creates no item. |
+| During a long reply, say “Hey Talos, stop” | Playback stops, then a new addressed question works. |
+
+Repeat each case from the usual speaking position, including one run with another person
+talking. Note the final caption, any unintended action and any discrepancy between the
+displayed playback timestamp and what you heard. Quit the trial window and press Ctrl-C
+in its terminal to remove the temporary state. Restore the live microphone when finished.
+
+The synthetic transcript benchmark compares installed local Ollama models independently
+of the microphone and speaker.
+
+```sh
+TALOS_OLLAMA_PORT=11435 PYTHONPATH=. python3 tests/compare_turn_models.py qwen3:4b qwen3:8b
+```
+
+With the pinned Pipecat environment installed, the same script can call its upstream
+Smart Turn analyzer on labeled synthetic waveforms. Supply mono 16 kHz PCM16 WAVs
+ending at the pause, up to eight seconds each. Each flag can appear several times.
+
+```sh
+PYTHONPATH=. python tests/compare_turn_models.py --audio-hold midphrase.wav --audio-end finished.wav
+```
 
 ### Public questions and web search
 

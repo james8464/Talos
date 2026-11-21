@@ -20,6 +20,8 @@ from uuid import uuid4
 
 from agent import model_text, parse_event, plan
 from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer
+import goal_store
+from turn_timing import classify
 from room_work import apply_order, note_request, project_brief, propose_work, saved_brief, work_order
 from room_research import external_request, public_answer, search_web
 from agent_memory import STATE_PATH, insert_decision, open_memory
@@ -67,8 +69,11 @@ class Room:
         self.voice = voice
         self.turn_lock = threading.Lock()
         self.worker_lock = threading.Lock()
+        self.endpoint_probe = threading.Lock()
+        self.next_goal_check = 0.0
         self.voice_window: list[dict[str, str]] = []
         self.voice_window_updated = 0.0
+        self.last_voice_reminder = None
         self.pending_reminders: dict[str, tuple[float, str]] = {}
 
     def context(self, db: sqlite3.Connection, **extra) -> dict:
@@ -112,6 +117,32 @@ class Room:
         return reply[:600], sources
 
     def local_request(self, db, text, session, archive, started):
+        correction = re.fullmatch(r"(?:actually[, ]+)?(?:make that|i meant)\s+(?:in )?([a-z0-9 -]+ (?:minutes?|hours?|days?))[.!? ]*",
+                                  text.strip(), re.I)
+        if correction and session == "native_voice":
+            receipt = self.last_voice_reminder
+            timing = explicit_reminder(f"Remind me in {correction[1]} to check")
+            if receipt and started - receipt[1] < 45 and timing:
+                return {**decision("reply", "Updating the last reminder."), "amend_id": receipt[0],
+                        "minutes": timing["remind_in_minutes"]}
+            return decision("reply", "I need a recent voice reminder and a valid delay to change it.")
+        if re.fullmatch(r"(?:what (?:still )?needs my attention|why are you (?:doing that|tracking (?:this|that))|(?:show|list) my goals|what are you working on)[?.! ]*", text.strip(), re.I):
+            rows = db.execute("SELECT id FROM goals WHERE status='active' ORDER BY deadline LIMIT 5").fetchall()
+            if not rows:
+                return decision("reply", "I have no active goals.")
+            if text.lower().startswith("why") and not archive:
+                return decision("reply", "You asked me to track a goal. Its saved instructions and last check are in Goals.")
+            if not archive:
+                return decision("reply", "Your active goals and their sources are in the Goals panel.")
+            lines = []
+            for row in rows:
+                goal = goal_store.describe(db,row["id"])
+                risks = goal["observation"].get("risks", [])
+                if text.lower().startswith("why"):
+                    lines.append(f"You asked me to {goal['outcome']}. Latest update: {goal['history'][0]['reason']}")
+                    continue
+                lines.append(goal["outcome"] + ": " + (", ".join(risks) if risks else "no current blockers"))
+            return decision("reply", ". ".join(lines)[:590])
         pending = self.pending_reminders.pop(session, None)
         continuation = None
         if pending and started - pending[0] < 120:
@@ -158,6 +189,7 @@ class Room:
         event = parse_event(json.dumps({"kind": f"{source}_turn", "summary": text}))
         archive = source == "text" or remember_voice
         session = TEXT_SESSION if source == "text" else "native_voice"
+        follow_up = source == "voice" and body.get("follow_up") is True
         received = monotonic()
         with self.turn_lock:
             started = monotonic()
@@ -174,7 +206,10 @@ class Room:
                     raise ValueError("occupied must be true, false, or null.")
             sources = []
             quick = sensor_answer(text, source, current)
-            lookup = external_request(text)
+            lookup = None if follow_up else external_request(text)
+            pending_reply = session in self.pending_reminders and re.fullmatch(
+                r"(?:in )?[a-z0-9 -]+ (?:minutes?|hours?|days?)[.!? ]*", text.strip(), re.I
+            )
             local = self.local_request(db, text, session, archive, started)
             if local:
                 proposal = local
@@ -198,11 +233,15 @@ class Room:
                                 private_context=archive, max_lookups=1 if source == "voice" else 3,
                                 max_tokens=256 if source == "voice" else 512, room_context=context)
                 if proposal["disposition"] == "research":
-                    answer, sources = self.public_lookup(("web", text))
+                    answer, sources = ("Say Hey Talos to start a public search.", []) if follow_up else self.public_lookup(("web", text))
                     proposal = decision("reply", answer)
                 if source == "voice" and re.fullmatch(r"(hello|hi|hey)[.!, ]*", proposal["detail"], re.I):
                     if not re.fullmatch(r"(hello|hi|hey)( talos)?[.!, ]*", text, re.I):
                         proposal = decision("ignore", "")
+            if follow_up and (proposal.get("steps") or proposal["disposition"] == "act") and not (
+                pending_reply and local and local["tool"] == "set_reminder"
+            ):
+                proposal = decision("reply", "Start a new action with Hey Talos.")
             planned = monotonic()
             # Leave any speech requested during a dialogue to the caller's playback path.
             with db:
@@ -216,7 +255,19 @@ class Room:
                 steps = proposal.get("steps")
                 receipts = []
                 fresh = True
-                if steps:
+                if local and "amend_id" in local:
+                    minutes = local["minutes"]
+                    due = datetime.now(UTC) + timedelta(minutes=minutes)
+                    changed = self.apply and db.execute(
+                        "UPDATE inbox SET due_at=? WHERE id=? AND kind='reminder' AND acknowledged_at IS NULL",
+                        (due.isoformat(), local["amend_id"]),
+                    ).rowcount == 1
+                    reply = f"Changed the reminder to {minutes} minutes from now." if changed else "That reminder could not be changed."
+                    action, tool = ("applied" if changed else "skipped"), "amend_reminder"
+                    receipt = {"disposition": "act", "tool": tool, "target_id": local["amend_id"]}
+                    decision_id = insert_decision(db, receipt_event, receipt, apply=False)
+                    db.execute("INSERT INTO action_outcomes(decision_id,status) VALUES(?,?)", (decision_id, action))
+                elif steps:
                     receipts, reply, fresh = apply_order(db, steps, receipt_event, apply=self.apply,
                                                          archive=archive, request_id=body.get("request_id"))
                     decision_id = receipts[0]["id"]
@@ -234,6 +285,10 @@ class Room:
                 if archive:
                     insert_transcripts(db, session, exchange)
             if source == "voice":
+                if tool == "set_reminder" and action == "applied":
+                    self.last_voice_reminder = (decision_id, monotonic())
+                elif tool != "amend_reminder":
+                    self.last_voice_reminder = None
                 self.voice_window = [*self.voice_window, *exchange][-6:]
                 if exchange:
                     self.voice_window_updated = monotonic()
@@ -277,6 +332,11 @@ class Room:
 
     def step(self) -> bool:
         with self.worker_lock, closing(open_memory(self.db_path)) as db:
+            if self.apply and monotonic() >= self.next_goal_check:
+                self.next_goal_check = monotonic() + 30
+                ids = db.execute("SELECT id FROM goals WHERE status='active'").fetchall()
+                for goal in ids:
+                    goal_store.refresh_in_background(db, goal["id"])
             row = next_event(db)
             if row is None:
                 return False
@@ -349,6 +409,15 @@ class Room:
     def route(self, method: str, path: str, body: dict) -> tuple[int, dict]:
         if method == "GET" and path == "/health":
             return 200, {"service": "talos"}
+        if method == "POST" and path == "/v1/voice/endpoint":
+            if self.model_state() != "ready" or not self.endpoint_probe.acquire(blocking=False):
+                return 200, {"hold": False, "available": False}
+            try:
+                return 200, {**classify(body.get("text"), self.model), "available": True}
+            except RuntimeError:
+                return 200, {"hold": False, "available": False}
+            finally:
+                self.endpoint_probe.release()
         if method == "POST" and path == "/v1/voice":
             if self.voice is None:
                 return 503, {"error": "Kokoro voice is unavailable."}
@@ -407,6 +476,25 @@ class Room:
                             insert_transcripts(db, TEXT_SESSION, [{"role": "user", "content": row["request"]},
                                                                   {"role": "assistant", "content": reply}])
                     return 200, {"steps": receipts, "reply": reply, "remaining": row["remaining"]}
+                case "GET", "/v1/goals":
+                    ids = db.execute("SELECT id FROM goals WHERE status IN ('active','paused') ORDER BY deadline,id")
+                    return 200, {"goals": [goal_store.describe(db,r["id"]) for r in ids]}
+                case "POST", ("/v1/goals/save" | "/v1/goals/calendar" | "/v1/goals/close" | "/v1/goals/pause" | "/v1/goals/resume" | "/v1/goals/check"):
+                    if not self.apply:
+                        return 403, {"error": "Goal changes are disabled in shadow mode."}
+                    with db:
+                        db.execute("BEGIN IMMEDIATE")
+                        if path.endswith("/save"):
+                            return 200, goal_store.save_goal(db,body)
+                        if path.endswith("/calendar"):
+                            goal_store.calendar_update(db,body)
+                        elif path.endswith(("/pause", "/resume")):
+                            return 200, goal_store.pause_goal(db, body.get("id"), path.endswith("/pause"))
+                        elif path.endswith("/close"):
+                            return 200, goal_store.close_goal(db,body.get("id"),body.get("status"))
+                        else:
+                            goal_store.refresh(db,body.get("id"))
+                        return 200, goal_store.describe(db,body.get("id"))
                 case "POST", "/v1/meeting/brief":
                     topic = body.get("topic")
                     brief = saved_brief(db, topic)

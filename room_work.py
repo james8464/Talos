@@ -118,15 +118,23 @@ def project_brief(db, text, private_context):
     return decision("reply", brief["reply"])
 
 
-def saved_brief(db, topic):
-    if not isinstance(topic, str) or not 1 <= len(topic.strip()) <= 160:
-        raise ValueError("Use a briefing topic between 1 and 160 characters.")
+def topic_terms(topic):
     generic = {"the", "a", "an", "of", "with", "on", "for", "and", "meeting", "weekly",
                "monthly", "daily", "sync", "review", "check", "in", "tomorrow", "call"}
-    terms = list(dict.fromkeys(t for t in re.findall(r"[^\W_]+", topic.casefold()) if t not in generic))
+    return list(dict.fromkeys(t for t in re.findall(r"[^\W_]+", topic.casefold()) if t not in generic))
+
+
+def saved_brief(db, topic, *, exclude_topics=()):
+    if not isinstance(topic, str) or not 1 <= len(topic.strip()) <= 160:
+        raise ValueError("Use a briefing topic between 1 and 160 characters.")
+    terms = topic_terms(topic)
     if not terms:
         return {"reply": "Give me a project or client name to find the relevant local records.", "items": [], "excerpts": []}
     query = " AND ".join(f'"{t}"' for t in terms)
+    for other in exclude_topics:
+        specific = set(topic_terms(other))
+        if specific > set(terms):
+            query += " NOT (" + " AND ".join(f'"{t}"' for t in sorted(specific)) + ")"
     rows = db.execute("""
         SELECT i.id, i.kind, i.text, i.due_at FROM inbox_search s JOIN inbox i ON i.id = s.rowid
         WHERE inbox_search MATCH ? AND i.acknowledged_at IS NULL

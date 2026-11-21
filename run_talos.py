@@ -24,16 +24,18 @@ MODEL_DIR = ROOT / "models" / "ollama"
 SOURCES = ROOT / "mac"
 
 
-def build_app() -> Path:
+def build_app(*, trial_dir: Path | None = None) -> Path:
+    state = trial_dir or STATE
+    bundle = state / "Talos.app" if trial_dir else BUNDLE
     sources = sorted(SOURCES.glob("*.swift"))
     plist = SOURCES / "Info.plist"
-    executable = BUNDLE / "Contents" / "MacOS" / "Talos"
+    executable = bundle / "Contents" / "MacOS" / "Talos"
     if executable.is_file() and executable.stat().st_mtime >= max(
         plist.stat().st_mtime, *(source.stat().st_mtime for source in sources)
     ):
-        return BUNDLE
-    STATE.mkdir(mode=0o700, parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="talos-build-", dir=STATE) as directory:
+        return bundle
+    state.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="talos-build-", dir=state) as directory:
         app = Path(directory) / "Talos.app"
         contents = app / "Contents"
         macos = contents / "MacOS"
@@ -41,14 +43,14 @@ def build_app() -> Path:
         shutil.copyfile(plist, contents / "Info.plist")
         subprocess.run(
             ["swiftc", "-swift-version", "5", "-O", "-parse-as-library",
-             "-module-cache-path", str(STATE / "swift-cache"),
+             "-module-cache-path", str(state / "swift-cache"),
              *map(str, sources), "-o", str(macos / "Talos")], check=True,
         )
         subprocess.run(["/usr/bin/codesign", "--force", "--sign", "-", str(app)], check=True)
-        if BUNDLE.exists():
-            shutil.rmtree(BUNDLE)
-        app.rename(BUNDLE)
-    return BUNDLE
+        if bundle.exists():
+            shutil.rmtree(bundle)
+        app.rename(bundle)
+    return bundle
 
 
 def check_bind(port: int) -> None:
@@ -183,6 +185,35 @@ def warm_model(model: str) -> None:
     })
 
 
+def run_trial(args) -> None:
+    """Reuse the room's installed models but isolate the app, token and all receipts."""
+    port = args.port if args.port != DEFAULT_PORT else 8876
+    check_bind(port)
+    os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
+    check_ollama_model(args.model)
+    voice = None if args.system_voice else prepare_voice(args.voice, offline=True)
+    with tempfile.TemporaryDirectory(prefix="talos-room-trial-") as directory:
+        trial = Path(directory)
+        bundle = None if args.headless else build_app(trial_dir=trial)
+        token = trial / "room.token"
+        app_process = None
+
+        def launch() -> None:
+            nonlocal app_process
+            if bundle is None:
+                return
+            app_process = subprocess.Popen([str(bundle / "Contents/MacOS/Talos"), "--room-trial",
+                                            "--token-file", str(token), "--port", str(port)])
+
+        try:
+            run(port, Room(trial / "trial.sqlite", args.model, voice=voice, online=False),
+                token, ready=launch)
+        finally:
+            if app_process and app_process.poll() is None:
+                app_process.terminate()
+                app_process.wait(timeout=5)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build and launch the Talos room app and endpoint.")
     parser.add_argument("--model", default="qwen3:4b")
@@ -194,9 +225,13 @@ def main() -> int:
     parser.add_argument("--shadow", action="store_true", help="Evaluate actions without writing or speaking them.")
     parser.add_argument("--headless", action="store_true", help="Run the endpoint without opening the app.")
     parser.add_argument("--build-only", action="store_true", help="Build the native app without starting models.")
+    parser.add_argument("--room-trial", action="store_true", help="Open an offline practice room with temporary data and sensors initially off.")
     args = parser.parse_args()
     backend = None
     try:
+        if args.room_trial:
+            run_trial(args)
+            return 0
         if args.build_only:
             print(build_app())
             return 0
