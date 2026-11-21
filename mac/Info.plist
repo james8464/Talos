@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key><string>Talos</string>
+    <key>CFBundleIdentifier</key><string>local.talos.room</string>
+    <key>CFBundleName</key><string>Talos</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>NSMicrophoneUsageDescription</key><string>Talos hears you while its microphone is enabled.</string>
+    <key>NSSpeechRecognitionUsageDescription</key><string>Talos uses on-device speech recognition.</string>
+    <key>NSCameraUsageDescription</key><string>Talos detects room occupancy on this Mac. It sends occupancy signals to the local Talos endpoint.</string>
+</dict>
+</plist>

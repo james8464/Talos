@@ -1,0 +1,215 @@
+# Talos
+
+Talos is a local room assistant with a native Mac app, a local HTTP endpoint, searchable
+conversation memory, and a background planner.
+
+## Run the room assistant
+
+On a Mac with Python 3.12 or later, Xcode command-line tools, and Ollama installed, run:
+
+```sh
+cd /Users/james/Developer/Talos
+python3 run_talos.py
+```
+
+The launcher builds the native app, starts its own Ollama process on loopback port 11435,
+prepares a local Qwen3 4B model on the first run, and opens Talos. The model store lives
+under `models/ollama`, so this startup path works independently of a missing external
+Ollama disk or an existing Ollama instance on port 11434. Keep the launcher running.
+The first model download needs internet access. Use `--offline` for subsequent runs if
+you prefer to require an already downloaded model. Use `--model NAME` to select a
+different locally runnable Ollama model.
+
+Click **Start room mode** and grant the Mac microphone, speech recognition, and camera
+permissions. Then speak naturally. The microphone is active while its indicator says on,
+and pauses during inference and playback. The speech client requires on-device recognition.
+The camera detects changes in occupancy and sends only a presence signal to the endpoint.
+It cannot recognize an individual or describe the room. Enable **Remember voice transcripts**
+if you want Talos to archive those turns locally. A voice request that creates a task,
+reminder, note, or alert keeps the resulting local item.
+
+The planner can react to occupancy changes without a prompt. It checks whether an event still
+matches the room before acting and can schedule one follow-up when it decides to wait.
+Local actions apply by default in room mode. Use `--shadow` to evaluate what it would do
+and see conversational replies with no inbox changes or proactive announcements. Reminders
+and alerts display their details in the app and use a generic spoken notification. Stop
+the stack with Ctrl-C in the launcher terminal. The app pauses its room sensors if the
+endpoint becomes unreachable.
+
+For development, `--headless` starts the service without opening the app, and `--build-only`
+builds and signs `state/Talos.app` without starting a model.
+
+### Local API
+
+The user-facing endpoint binds to `http://127.0.0.1:8765`. `GET /health` checks the server.
+The remaining routes take an Authorization Bearer header with the token in `state/room.token`.
+
+| Route | Purpose |
+| --- | --- |
+| `GET /v1/status` | Room presence, model, and queue state |
+| `POST /v1/turn` | Conversation or a local task, with `text`, `source`, and optional `remember` |
+| `POST /v1/presence` | Presence signal with `occupied` set to true, false, or null |
+| `POST /v1/events` | Queue an observation with `kind` and `summary` |
+| `GET /v1/events/{id}` | Look up the processing state and decision receipt |
+| `GET /v1/inbox` | Review open local items |
+| `GET /v1/speech` | Fetch the next ready room announcement |
+| `POST /v1/speech/ack` | Acknowledge a delivered announcement by `id` |
+
+Run `python3 -m unittest discover -s tests -v` to validate the local service. To verify a
+live setup, speak a phrase only you know, request a local timer, then leave and re-enter
+the camera's view. Check the text reply, listening and room indicators, and the event
+receipts. The Mac app requires an active desktop session and approved device permissions.
+
+## Optional legacy browser benchmark
+
+On an Apple Silicon Mac with [uv](https://docs.astral.sh/uv/getting-started/installation/) and [Ollama](https://docs.ollama.com/), run from the project directory.
+
+```sh
+uv sync --python 3.12
+mkdir -p models
+uv run hf download mlx-community/whisper-base-mlx config.json weights.npz --revision 1e3e249 --local-dir models/whisper-base-mlx
+
+curl --fail --location --output models/kokoro-v1.0.onnx \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.onnx
+curl --fail --location --output models/voices-v1.0.bin \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+```
+
+Start a local Ollama server in a separate terminal. If the Ollama app is already listening on port 11434, quit that instance first so the command starts with the explicit local-only setting. Leave the server terminal open.
+
+```sh
+OLLAMA_NO_CLOUD=1 OLLAMA_HOST=127.0.0.1:11434 ollama serve
+```
+
+Back in the project terminal, download the baseline model once, then start Talos.
+
+```sh
+ollama pull qwen2.5:1.5b
+uv run --no-sync python bot.py --check
+uv run --no-sync python bot.py
+```
+
+Open [the local Pipecat test client](http://127.0.0.1:7860), connect, and allow microphone access. Disconnect or close the page to end the session. Before each reply, Talos trims the in-memory history to up to 12 messages and 6,000 characters, plus its system instructions. By default the voice session is ephemeral. Use `--remember` to archive its text turns and
+enable recall across sessions. The voice client processes audio in memory. This is a development
+runner for short tests. Unattended voice service, ambient address detection, and hardware room
+sensors are future milestones.
+
+## Talk to Talos and check its abilities
+
+`python3 agent.py status` reports which capabilities exist and checks the prerequisites for
+voice and text with no microphone access. For a text-only trial, start Ollama with cloud
+features disabled as shown above. In another Terminal window, use the project directory:
+
+```sh
+cd /Users/james/Developer/Talos
+ollama pull qwen2.5:1.5b
+python3 agent.py chat
+```
+
+If your existing Ollama models are on an external drive, mount the drive first. To use a
+project-local model store instead, start the loopback server from the project directory as
+shown below, after quitting any existing Ollama server on port 11434. This leaves your
+existing Ollama model location unchanged.
+
+```sh
+mkdir -p models/ollama
+OLLAMA_NO_CLOUD=1 OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS="$PWD/models/ollama" ollama serve
+```
+
+Speech models and Pipecat are required only for the browser voice session.
+
+Try these questions and compare the replies with `/status`:
+
+1. **Perception.** Ask "Can you see or hear me right now?" In the text console, Talos
+   receives typed text. In a working browser voice session, read a novel phrase aloud
+   and ask Talos to repeat it. Talos has no camera integration.
+2. **Personality.** Ask "Roast the fact that I have 40 browser tabs open, in one sentence."
+   Follow with a serious request and see whether it drops the sarcasm.
+3. **Memory.** Tell Talos a made-up detail, quit with `/quit`, reopen the console, and ask
+   about that detail. The `recall` command can verify whether the transcript was saved.
+4. **Tool use.** Enter `/task Remind me in one minute to test the speakers.` in the console.
+   It proposes the task in shadow mode. Relaunch with `python3 agent.py chat --apply`
+   and try again to allow the local action. Use `/inbox` to verify that the reminder
+   exists. In a second terminal, run `python3 agent.py watch` to see it become due.
+
+Leave the default text console in shadow mode for evaluation. Use a separate test database
+for synthetic memory and actions, for example `python3 agent.py --db /tmp/talos-test.sqlite3 chat`.
+
+## Local memory
+
+Use the loopback Ollama server and the local model from setup. The commands in this section
+and the planner use Python 3.12+ with SQLite FTS5. They work independently of Pipecat and the
+speech models.
+
+```sh
+python3 agent.py chat "The spare bike key is in the blue drawer."
+python3 agent.py chat "Where did I leave the spare bike key?"
+python3 agent.py recall "spare bike key"
+python3 agent.py transcript
+```
+
+Completed text exchanges are saved locally. To save and recall active browser voice sessions,
+start the voice client with `uv run --no-sync python bot.py --remember`. Enable this for a voice
+session whose participants know it is being transcribed. The archive contains text turns, and
+Talos retrieves relevant excerpts for the model. Earlier sessions that were never saved are
+unavailable for recall. The `transcript` command prints the full saved archive as JSON lines.
+
+## Autonomous planner and local tools
+
+By default the planner works in shadow mode. Give it a new observation and it can look up
+conversation memory, its inbox, previous decisions and feedback, or the current time. It can
+perform up to three read-only lookups before deciding whether to act, ask, wait, or ignore.
+Review the result and tell it what you would change:
+
+```sh
+python3 agent.py listen <<'JSONL'
+{"kind":"synthetic","summary":"Rain started while the window is open. Nobody is in the room."}
+{"kind":"synthetic","summary":"The window has just been closed."}
+JSONL
+python3 agent.py history
+python3 agent.py feedback 1 "If the situation has already resolved, skip the alert."
+```
+
+Use the ID shown by `history` when giving feedback. Relevant older corrections and recent
+reviews are retrieved for future decisions. The stored feedback informs the next decision
+through its context.
+
+Use `--apply` to authorize writes to the local inbox. Talos can create a task, save a note,
+log an alert, or schedule a reminder. Use `task` for a direct request from the terminal, or
+`listen --apply` for an event stream from a local producer you control.
+
+```sh
+python3 agent.py task --apply "Remind me in 10 minutes to bring in the laundry."
+python3 agent.py inbox
+python3 agent.py watch
+```
+
+`watch` prints due alerts and reminders in its terminal. It can run in parallel with a
+listener, and it uses no model calls. Use `python3 agent.py done ITEM_ID` to acknowledge an
+entry. Pending reminders survive restarts, and a new watcher prints any due, unacknowledged
+entries again. In `history`, a decision's action status records whether its effect was applied,
+blocked, or skipped. A `speak` proposal is currently available for evaluation in shadow mode.
+A `wait` proposal can be reconsidered when another observation arrives.
+
+Use `--db PATH` before the subcommand to isolate a test. The default database
+`state/agent.sqlite3` contains conversations, observations, feedback, decisions, and inbox items.
+Use `--model NAME` before the subcommand to compare a different locally installed Ollama model.
+The default is the small latency baseline, and the planner uses
+[structured output](https://docs.ollama.com/capabilities/structured-outputs). No model runs
+while the listener waits for input.
+
+## Verify and benchmark
+
+Use `bot.py --check` to diagnose Python, Pipecat installation, speech model files, and the local Ollama model without starting audio. Run the unit tests without models or third-party dependencies using `python3 -m unittest discover -s tests -v`.
+
+During a conversation, the terminal reports server-side turn timing from Pipecat. Use its transcription, model, and synthesis breakdown to see where time goes. For audible response latency and interruption time, measure at the speaker. The server cannot measure browser buffering or when sound reaches the listener.
+
+For the live acceptance check, block WAN access once the assets are installed, leaving the local network interface active for browser WebRTC. Start a new session and verify a reply and follow-up. Test with headphones first, then with room speakers. Measure elapsed time from the end of your speech to first audible output, and from your interruption to playback stopping. Collect median and 95th-percentile times for warm turns, record cold starts separately, and record average wall power at idle and in use. No live latency or power results have been measured yet.
+
+The installed model is a deliberately small latency baseline. A larger local model may give better answers. Compare them on the same prompts before making a hardware decision. For the always-available version, keep cheap sensors and voice activity detection active and invoke heavier models only when a turn or room event needs them.
+
+## Upstream components
+
+[Pipecat examples](https://github.com/pipecat-ai/pipecat/tree/main/examples) · [Whisper MLX](https://huggingface.co/mlx-community/whisper-base-mlx) · [Ollama local-only mode](https://docs.ollama.com/faq) · [Qwen2.5 1.5B](https://ollama.com/library/qwen2.5:1.5b) · [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx)
+
+See [the technical research memo](Talos-technical-research.md) for architecture alternatives and proposed latency targets.

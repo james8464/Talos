@@ -1,0 +1,9 @@
+[project]
+name = "talos-room-assistant"
+version = "0.1.0"
+description = "Local voice runtime for Talos"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pipecat-ai[kokoro,mlx-whisper,ollama,runner,webrtc,whisper]==1.16.0",
+]
+
