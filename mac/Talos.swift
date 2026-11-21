@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import Foundation
 import Speech
@@ -10,7 +11,7 @@ struct RoomClient {
 
     func request(_ path: String, body: [String: Any]? = nil) async throws -> [String: Any] {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/v1/\(path)")!)
-        request.timeoutInterval = path == "turn" ? 250 : 5
+        request.timeoutInterval = path == "turn" ? 150 : path == "voice" ? 20 : 5
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let body {
             request.httpMethod = "POST"
@@ -121,7 +122,7 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
 }
 
 @MainActor
-final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
+final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
     @Published var lines: [String] = []
     @Published var status = "Connecting to the local Talos service…"
     @Published var microphone = false
@@ -130,7 +131,16 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var busy = false
     @Published private(set) var speaking = false
     @Published var draft = ""
-    @Published var occupancy = "Unknown"
+    @Published var occupancy = "Camera off"
+    @Published var previewSession: AVCaptureSession?
+    @Published var voiceLabel = "Voice: connecting"
+    @Published var liveTranscript = ""
+    @Published var lastTiming = ""
+    private let startupLine = "Talos online. I was beginning to think you had forgotten me."
+    private var kokoroVoice: String?
+    private var player: AVAudioPlayer?
+    private var speechRequest: Task<Void, Never>?
+    private var playbackEpoch = UUID()
     private let client: RoomClient?
     private let recognizer = SFSpeechRecognizer()
     private let engine = AVAudioEngine()
@@ -152,6 +162,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var cameraEpoch = UUID()
     private var presenceSend: Task<Void, Never>?
     private var polling: Task<Void, Never>?
+    private var announcedStartup = false
 
     override init() {
         let args = ProcessInfo.processInfo.arguments
@@ -174,11 +185,20 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             return
         }
         polling = Task {
-            do {
-                _ = try await client?.request("status")
-                status = "Connected. Enable the microphone or camera to start room mode."
-            } catch { status = error.localizedDescription }
             while !Task.isCancelled {
+                if !announcedStartup {
+                    do {
+                        let result = try await client?.request("status")
+                        kokoroVoice = result?["voice"] as? String
+                        voiceLabel = kokoroVoice.map { "Voice: Kokoro · \($0)" } ?? "Voice: macOS fallback"
+                        status = "Connected. Enable the microphone or camera to start room mode."
+                        if !busy && !speaking {
+                            announcedStartup = true
+                            addLine("Talos", startupLine)
+                            say(startupLine)
+                        }
+                    } catch { status = error.localizedDescription }
+                }
                 await pollSpeech()
                 try? await Task.sleep(for: .seconds(2))
             }
@@ -232,6 +252,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         let buffer = SFSpeechAudioBufferRecognitionRequest()
         buffer.requiresOnDeviceRecognition = true
         buffer.shouldReportPartialResults = true
+        buffer.contextualStrings = ["Talos", "Hey Talos", "Hello Talos"]
         request = buffer
         let epoch = UUID()
         speechEpoch = epoch
@@ -255,9 +276,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 if let text, !text.isEmpty, text != self.currentText {
                     self.recognitionFailures = 0
                     self.currentText = text
+                    self.liveTranscript = Self.normalizeAddress(text)
                     self.utteranceTimer?.cancel()
                     self.utteranceTimer = Task {
-                        guard (try? await Task.sleep(for: .milliseconds(950))) != nil,
+                        guard (try? await Task.sleep(for: .milliseconds(650))) != nil,
                               self.speechEpoch == epoch else { return }
                         self.commitVoice()
                     }
@@ -304,10 +326,19 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         request = nil
         recognition = nil
         currentText = ""
+        liveTranscript = ""
+    }
+
+    static func normalizeAddress(_ text: String) -> String {
+        // Correct an apparent name only where the text looks like a direct address.
+        text.replacingOccurrences(
+            of: #"(?i)^((?:hey|hello)[,\s]+)tell us\b|^tell us(?=\s*[,!.?]|\s*$)"#,
+            with: "$1Talos", options: .regularExpression
+        )
     }
 
     private func commitVoice() {
-        let text = currentText
+        let text = Self.normalizeAddress(currentText)
         if !text.isEmpty { send(text, source: "voice") }
     }
 
@@ -319,12 +350,17 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         stopRecognition()
         addLine("You", text)
         status = "Thinking…"
+        let submitted = Date()
         Task {
             do {
                 let result = try await client.request("turn", body: [
                     "text": text, "source": source, "remember": rememberVoice,
                 ])
                 let reply = result["reply"] as? String ?? ""
+                let replyMs = Int(Date().timeIntervalSince(submitted) * 1000)
+                let planningMs = result["planning_ms"] as? Int ?? 0
+                let queueMs = result["queue_ms"] as? Int ?? 0
+                lastTiming = "Reply \(replyMs) ms · model \(planningMs) ms · queue \(queueMs) ms"
                 if !reply.isEmpty {
                     addLine("Talos", reply)
                     if source == "voice" || microphone { say(reply) }
@@ -343,8 +379,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             cameraEpoch = UUID()
             camera?.stop()
             camera = nil
+            previewSession = nil
             cameraRunning = false
-            occupancy = "Unknown"
+            occupancy = "Camera off"
             sendPresence(nil)
             return
         }
@@ -360,11 +397,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             let epoch = UUID()
             cameraEpoch = epoch
             cameraRunning = true
+            occupancy = "Waiting for the first camera result"
             camera = CameraDetector(
                 onObservation: { [weak self] occupied in
                     Task { @MainActor in
                         guard let self, self.cameraEpoch == epoch else { return }
-                        self.occupancy = occupied.map { $0 ? "Person detected" : "Empty" } ?? "Unknown"
+                        self.occupancy = occupied.map { $0 ? "Person detected" : "No person detected" } ?? "Detection unavailable"
                         self.sendPresence(occupied)
                     }
                 },
@@ -376,6 +414,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     }
                 }
             )
+            previewSession = camera?.session
             camera?.start()
         }
     }
@@ -418,36 +457,108 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     func stopSpeaking() {
-        speaker.stopSpeaking(at: .immediate)
+        if let speechID { pendingAcknowledgment = speechID }
+        playbackEpoch = UUID()
+        speechRequest?.cancel()
+        speechRequest = nil
+        if speaker.isSpeaking {
+            speaker.stopSpeaking(at: .immediate)
+        } else {
+            player?.stop()
+            finishSpeech(delivered: false)
+        }
     }
 
     private func say(_ text: String, id: Int? = nil) {
         speaking = true
         speechID = id
         stopRecognition()
-        speaker.speak(AVSpeechUtterance(string: text))
+        guard let kokoroVoice, let client else {
+            speaker.speak(AVSpeechUtterance(string: text))
+            return
+        }
+        let epoch = UUID()
+        playbackEpoch = epoch
+        let requested = Date()
+        speechRequest = Task {
+            do {
+                let result = try await client.request("voice", body: ["text": text])
+                guard !Task.isCancelled, playbackEpoch == epoch else { return }
+                guard let encoded = result["wav"] as? String, let data = Data(base64Encoded: encoded) else {
+                    throw RoomError("Kokoro returned invalid audio.")
+                }
+                let audio = try AVAudioPlayer(data: data)
+                audio.delegate = self
+                player = audio
+                guard audio.play() else { throw RoomError("Kokoro audio could not play.") }
+                voiceLabel = "Voice: Kokoro · \(kokoroVoice)"
+                let milliseconds = Int(Date().timeIntervalSince(requested) * 1000)
+                if !lastTiming.isEmpty {
+                    lastTiming += " · voice \(milliseconds) ms"
+                }
+            } catch {
+                guard !Task.isCancelled, playbackEpoch == epoch else { return }
+                voiceLabel = "Voice: macOS fallback · Kokoro unavailable"
+                player = nil
+                speaker.speak(AVSpeechUtterance(string: text))
+            }
+        }
+    }
+
+    private func finishSpeech(delivered: Bool) {
+        if delivered, let speechID { pendingAcknowledgment = speechID }
+        speechID = nil
+        speaking = false
+        player = nil
+        speechRequest = nil
+        beginRecognition()
+    }
+
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            guard self.player === player else { return }
+            finishSpeech(delivered: flag)
+        }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in
-            pendingAcknowledgment = speechID
-            speechID = nil
-            speaking = false
-            beginRecognition()
-        }
+        Task { @MainActor in finishSpeech(delivered: true) }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor in
-            speechID = nil
-            speaking = false
-            beginRecognition()
-        }
+        Task { @MainActor in finishSpeech(delivered: false) }
     }
 
     private func addLine(_ role: String, _ text: String) {
         lines.append("\(role): \(text)")
         if lines.count > 100 { lines.removeFirst() }
+    }
+}
+
+final class CameraSurface: NSView {
+    let videoLayer = AVCaptureVideoPreviewLayer()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer = videoLayer
+        videoLayer.videoGravity = .resizeAspect
+    }
+
+    required init?(coder: NSCoder) { nil }
+}
+
+struct CameraPreview: NSViewRepresentable {
+    let session: AVCaptureSession
+
+    func makeNSView(context: Context) -> CameraSurface {
+        let surface = CameraSurface(frame: .zero)
+        surface.videoLayer.session = session
+        return surface
+    }
+
+    func updateNSView(_ surface: CameraSurface, context: Context) {
+        if surface.videoLayer.session !== session { surface.videoLayer.session = session }
     }
 }
 
@@ -459,11 +570,29 @@ struct RoomView: View {
             Text("Talos").font(.largeTitle.bold())
             Text(room.status).foregroundStyle(.secondary)
             HStack {
+                Text(room.voiceLabel)
+                if !room.lastTiming.isEmpty { Text(room.lastTiming) }
+            }.font(.caption).foregroundStyle(.secondary)
+            HStack {
                 Button("Start room mode", action: room.startRoom).buttonStyle(.borderedProminent)
                 Button(room.microphone ? "Microphone on" : "Microphone off", action: room.toggleMicrophone)
                 Button(room.cameraRunning ? "Camera on" : "Camera off", action: room.toggleCamera)
-                Text(room.occupancy).foregroundStyle(.secondary)
                 if room.speaking { Button("Stop speaking", action: room.stopSpeaking) }
+            }
+            if let session = room.previewSession {
+                HStack(alignment: .center, spacing: 16) {
+                    CameraPreview(session: session)
+                        .frame(width: 224, height: 126)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Live camera").font(.headline)
+                        Text(room.occupancy).foregroundStyle(.secondary)
+                        Text("Presence only").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            if !room.liveTranscript.isEmpty {
+                Text("Hearing: \(room.liveTranscript)").foregroundStyle(.secondary)
             }
             Toggle("Remember voice transcripts", isOn: $room.rememberVoice)
             ScrollViewReader { proxy in

@@ -5,7 +5,8 @@ conversation memory, and a background planner.
 
 ## Run the room assistant
 
-On a Mac with Python 3.12 or later, Xcode command-line tools, and Ollama installed, run:
+On a Mac with Python 3.12 or later, Xcode command-line tools, and Ollama installed, run.
+Install uv for the launcher's isolated Kokoro setup.
 
 ```sh
 cd /Users/james/Developer/Talos
@@ -18,13 +19,22 @@ under `models/ollama`, so this startup path works independently of a missing ext
 Ollama disk or an existing Ollama instance on port 11434. Keep the launcher running.
 The first model download needs internet access. Use `--offline` for subsequent runs if
 you prefer to require an already downloaded model. Use `--model NAME` to select a
-different locally runnable Ollama model.
+different locally runnable Ollama model. The launcher preloads the text model before opening
+the app and keeps it warm between turns. Voice turns use a smaller planning budget.
+
+Listen for **“Talos online”** after the app connects. The default voice is Kokoro
+`bm_george`. Its models and Python environment are prepared on the first online run.
+Use `--voice am_michael` to select another English Kokoro voice or `--system-voice` for
+macOS speech. The app labels the active voice and any fallback.
 
 Click **Start room mode** and grant the Mac microphone, speech recognition, and camera
-permissions. Then speak naturally. The microphone is active while its indicator says on,
-and pauses during inference and playback. The speech client requires on-device recognition.
-The camera detects changes in occupancy and sends only a presence signal to the endpoint.
-It cannot recognize an individual or describe the room. Enable **Remember voice transcripts**
+permissions. The microphone pauses during inference and playback. The speech client uses
+on-device recognition and shows words as it hears them. It biases recognition toward
+Talos's name and corrects “tell us” in clear forms of direct address. The app shows reply,
+planning, queue, and Kokoro playback-start timing after you speak.
+
+The camera card shows a live local preview and a **Person detected** or **No person detected**
+result. The endpoint receives occupancy only. Enable **Remember voice transcripts**
 if you want Talos to archive those turns locally. With archiving off, it can follow a short
 conversation using a rolling memory that expires after five minutes of no voice turns.
 A voice request that creates a task,
@@ -50,6 +60,7 @@ The remaining routes take an Authorization Bearer header with the token in `stat
 | --- | --- |
 | `GET /v1/status` | Room presence, model, and queue state |
 | `POST /v1/turn` | Conversation or a local task, with `text`, `source`, and optional `remember` |
+| `POST /v1/voice` | Synthesize up to 600 characters with the configured local Kokoro voice |
 | `POST /v1/presence` | Presence signal with `occupied` set to true, false, or null |
 | `POST /v1/events` | Queue an observation with `kind` and `summary` |
 | `GET /v1/events/{id}` | Look up the processing state and decision receipt |
@@ -57,6 +68,7 @@ The remaining routes take an Authorization Bearer header with the token in `stat
 | `GET /v1/speech` | Fetch the next ready room announcement |
 | `POST /v1/speech/ack` | Acknowledge a delivered announcement by `id` |
 
+After upgrading, close the previous Talos window and stop its launcher before relaunching.
 Run `python3 -m unittest discover -s tests -v` to validate the local service. To verify a
 live setup, speak a phrase only you know, request a local timer, then leave and re-enter
 the camera's view. Check the text reply, listening and room indicators, and the event

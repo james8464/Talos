@@ -32,11 +32,12 @@ ROOM_INSTRUCTIONS = (
 
 
 class Room:
-    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True):
+    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True, voice=None):
         self.db_path = db_path
         self.model = model
         self.apply = apply
         self.speak = speak and apply
+        self.voice = voice
         self.inference_lock = threading.Lock()
         self.voice_window: list[dict[str, str]] = []
         self.voice_window_updated = 0.0
@@ -60,7 +61,9 @@ class Room:
         event = parse_event(json.dumps({"kind": f"{source}_turn", "summary": text}))
         archive = source == "text" or remember_voice
         session = TEXT_SESSION if source == "text" else "native_voice"
+        received = monotonic()
         with self.inference_lock:
+            started = monotonic()
             if source == "voice":
                 if monotonic() - self.voice_window_updated >= 300:
                     self.voice_window.clear()
@@ -69,12 +72,14 @@ class Room:
                 dialogue = recent_messages(db, session)
             proposal = plan(
                 db, event, model=self.model, trusted_owner=source == "text",
-                private_context=archive, room_context=self.context(
+                private_context=archive, max_lookups=1 if source == "voice" else 3,
+                max_tokens=256 if source == "voice" else 512, room_context=self.context(
                     db, conversational_turn=True, input_channel=source,
                     recent_dialogue=dialogue,
                     voice_archiving=archive if source == "voice" else None,
                 ),
             )
+            planned = monotonic()
             # Leave any speech requested during a dialogue to the caller's playback path.
             with db:
                 receipt_event = event if archive else {
@@ -108,7 +113,11 @@ class Room:
             if source == "voice":
                 self.voice_window = [*self.voice_window, *exchange][-6:]
                 self.voice_window_updated = monotonic()
-        return {"id": decision_id, "reply": reply, "action": action, "tool": proposal["tool"]}
+        return {
+            "id": decision_id, "reply": reply, "action": action, "tool": proposal["tool"],
+            "queue_ms": round((started - received) * 1000),
+            "planning_ms": round((planned - started) * 1000),
+        }
 
     def step(self) -> bool:
         with self.inference_lock, closing(open_memory(self.db_path)) as db:
@@ -122,6 +131,7 @@ class Room:
             try:
                 proposal = plan(
                     db, event, model=self.model, room_context=self.context(db), private_context=False,
+                    max_lookups=0, max_tokens=256,
                 )
                 with db:
                     db.execute("BEGIN IMMEDIATE")
@@ -184,11 +194,22 @@ class Room:
     def route(self, method: str, path: str, body: dict) -> tuple[int, dict]:
         if method == "GET" and path == "/health":
             return 200, {"service": "talos"}
+        if method == "POST" and path == "/v1/voice":
+            if self.voice is None:
+                return 503, {"error": "Kokoro voice is unavailable."}
+            text = body.get("text")
+            if not isinstance(text, str) or not 1 <= len(text.strip()) <= 600:
+                raise ValueError("Voice text must contain 1 to 600 characters.")
+            started = monotonic()
+            audio = self.voice.speak(text.strip())
+            return 200, {"wav": audio, "voice": self.voice.name,
+                         "synthesis_ms": round((monotonic() - started) * 1000)}
         with closing(open_memory(self.db_path)) as db:
             match method, path:
                 case "GET", "/v1/status":
                     return 200, self.context(db, model=self.model, local_actions=self.apply,
                                              proactive_speech=self.speak,
+                                             voice=self.voice.name if self.voice else None,
                                              queued=db.execute(
                                                  "SELECT COUNT(*) FROM room_events WHERE status = 'pending'"
                                              ).fetchone()[0])

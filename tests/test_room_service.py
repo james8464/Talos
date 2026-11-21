@@ -141,3 +141,12 @@ class RoomServiceTests(unittest.TestCase):
         self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
         self.room.route("POST", "/v1/presence", {"occupied": True})
         self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
+
+    def test_voice_turn_uses_smaller_planning_budget_and_reports_duration(self):
+        reply = {**GREETING, "disposition": "reply", "tool": "none", "detail": "A reply."}
+        with patch("room_service.plan", return_value=reply) as planner:
+            _, result = self.room.route("POST", "/v1/turn", {"text": "Hello", "source": "voice"})
+        self.assertEqual(planner.call_args.kwargs["max_lookups"], 1)
+        self.assertEqual(planner.call_args.kwargs["max_tokens"], 256)
+        self.assertGreaterEqual(result["queue_ms"], 0)
+        self.assertGreaterEqual(result["planning_ms"], 0)

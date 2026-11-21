@@ -47,6 +47,17 @@ DECISION_SCHEMA = {
     "additionalProperties": False,
 }
 
+FINAL_DECISION_SCHEMA = {
+    **DECISION_SCHEMA,
+    "properties": {
+        **DECISION_SCHEMA["properties"],
+        "disposition": {"type": "string", "enum": [
+            disposition for disposition in PERMITTED_TOOLS if disposition != "look_up"
+        ]},
+        "tool": {"type": "string", "enum": [tool for tool in TOOLS if tool not in LOOKUP_TOOLS]},
+    },
+}
+
 CHARTER = """You are Talos, a local room assistant with initiative. Given a new event,
 identify a useful goal yourself when action is worthwhile. Help the owner avoid missed
 tasks and meaningful disruptions. Respect privacy, prefer the least disruptive useful
@@ -126,11 +137,13 @@ def parse_decision(content: str) -> dict:
 
 
 def model_text(
-    messages: list[dict], *, model: str = OLLAMA_MODEL, schema: dict | None = None
+    messages: list[dict], *, model: str = OLLAMA_MODEL, schema: dict | None = None,
+    max_tokens: int = 512,
 ) -> str:
     payload = {
         "model": model, "stream": False, "messages": messages, "think": False,
-        "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": 512},
+        "keep_alive": "30m",
+        "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": max_tokens},
     }
     if schema is not None:
         payload["format"] = schema
@@ -160,7 +173,7 @@ def read_tool(database: sqlite3.Connection, tool: str, detail: str):
 def plan(
     database: sqlite3.Connection, event: dict[str, str], *,
     trusted_owner: bool = False, model: str = OLLAMA_MODEL, room_context: dict | None = None,
-    private_context: bool = True,
+    private_context: bool = True, max_lookups: int = MAX_LOOKUPS, max_tokens: int = 512,
 ) -> dict:
     check_ollama_model(model)
     context = {
@@ -172,18 +185,19 @@ def plan(
     if room_context is not None:
         context.update(room_context)
     tool_results = []
-    for _ in range(MAX_LOOKUPS + 1):
+    for _ in range(max_lookups + 1):
         context["lookup_results"] = tool_results
-        context["lookups_remaining"] = MAX_LOOKUPS - len(tool_results)
+        context["lookups_remaining"] = max_lookups - len(tool_results)
+        schema = DECISION_SCHEMA if len(tool_results) < max_lookups else FINAL_DECISION_SCHEMA
         proposal = parse_decision(model_text([
             {"role": "system", "content": PERSONALITY + "\n" + CHARTER},
             {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
-        ], model=model, schema=DECISION_SCHEMA))
+        ], model=model, schema=schema, max_tokens=max_tokens))
         if proposal["disposition"] != "look_up":
             if tool_results:
                 proposal["tools_used"] = [entry["tool"] for entry in tool_results]
             return proposal
-        if len(tool_results) == MAX_LOOKUPS:
+        if len(tool_results) == max_lookups:
             break
         tool, detail = proposal["tool"], proposal["detail"]
         if private_context or tool == "current_time":
