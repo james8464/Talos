@@ -32,6 +32,12 @@ struct NativeRoomReplay {
         _ = try await room.client?.request("context/select", body: ["path":file.path,"kind":"imessage",
             "owner":"James","topic":"Atlas","person":"Maya"])
         try await room.privateSources.load()
+        precondition(room.privateSources.availableApps.contains("Messages") && room.privateSources.enabledApps.isEmpty)
+        try await room.privateSources.setApps(["Messages"])
+        try await room.privateSources.load()
+        precondition(room.privateSources.enabledApps == ["Messages"])
+        try await room.privateSources.setApps([])
+        try await send("Search my messages for cobalt", expect: "enabled")
         precondition(room.privateSources.sources.count == 1)
         guard let evidence = room.privateSources.links.first?.url,
               evidence.resolvingSymlinksInPath().path == file.resolvingSymlinksInPath().path else {

@@ -104,6 +104,16 @@ def conversational_correction(text):
     return match[1].strip() if match and len(match[1]) <= 120 else None
 
 
+def immediate_recall(text, history):
+    question = r"(?:what did i just (?:say|ask|tell you)|repeat (?:what i just said|my last question))"
+    if not re.fullmatch(question, text.strip(" .!?"), re.I):
+        return None
+    for item in reversed(history):
+        if item["role"] == "user" and not re.fullmatch(question, item["content"].strip(" .!?"), re.I):
+            return f'You said, “{item["content"][:400]}”'
+    return "I don’t have an earlier turn in this conversation."
+
+
 def corrected_recollection(text, history):
     """Answer retrospective questions from the speaker's words, without trusting earlier model replies."""
     if not re.match(r"^(?:what|which|where|when|who|how)\b", text.strip(), re.I) or not re.search(

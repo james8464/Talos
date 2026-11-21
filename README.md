@@ -33,7 +33,7 @@ Use `--voice am_michael` to select another English Kokoro voice or `--system-voi
 macOS speech. The app labels the active voice and any fallback.
 
 Room mode starts when the service connects. On first launch, grant macOS microphone,
-speech recognition, and camera permissions. Each sensor has its own off switch. During a voice reply, a new recognized phrase can interrupt playback. “Hey Talos, stop” also stops announcements. During response planning it pauses. The speech client uses
+speech recognition, and camera permissions. Each sensor has its own off switch. During a voice reply, a new recognized phrase can interrupt playback. “Hey Talos, stop” also stops announcements. A partial “wait” can silence a conversational reply while the recognizer continues listening for the rest of a correction. During response planning it pauses. The speech client uses
 on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,
 decision time, queue time, and time from transcript submission to first audio.
 
@@ -103,9 +103,17 @@ The reader recognizes explicit English promises, weekday or ISO deadlines, and c
 
 For explicit memory, try “Remember that my bike key is in the green drawer”, “Actually, my bike key is in the blue tin”, and “Where is my bike key?” Saved facts survive restarts within their text, room voice or confirmed visitor scope. “Forget my bike key” removes that fact. Room-wide voice facts require **Remember voice transcripts**. This setting persists between launches.
 
+### Private Mac app lookup
+
+Choose your apps in **Memory → Private sources and commitments**. You can also enable local lookup with `python3 mac_context.py --enable Contacts Messages Mail WhatsApp`. Running the same command with no app names disables lookup. In the private message field, try “Search my apps for cobalt”, “Search my messages for Smith”, or “Show my family relationships”. Family labels come from related-name entries on your Contacts Me card. Matching contact addresses can connect a name with messages in an enabled app. The reply includes the source and record ID. Lookup reads the current databases, including up to 2,000 recent plain-text items per messaging or mail source and 5,000 contacts per address book. Mail lookup covers indexed subjects and summaries. Access depends on the permissions of the process running the room service.
+
+Ask “What did I just say?” to repeat a recent turn even during model startup. Visually directed follow-ups require a current conversation token.
+
 ### Idle coding experiments
 
 After five minutes without room requests and keyboard/mouse input, while on AC power, the room can investigate repeated slow decisions or synthesis with the local model. It copies source and tests to a temporary directory, asks for an edit, checks its scope, applies it to the copy and parses the Python. Sandbox-supported runs execute the same stage-specific regression suite against the baseline and candidate. Trial status lives in the local `coding_trials` table. Checked patches appear in `state/proposals` for review. A foreground turn cancels the experiment. Applying a proposal to the running assistant requires a separate deployment.
+
+An overnight run can monitor local Codex usage with `python3 overnight_goal.py --watch --until UNIX_TIMESTAMP`. A recent Codex usage record below 3% in either active window enables at most one source-only review per hour through the configured OpenClaude Respan GLM-4.5-Flash route. The worker keeps checked patches and trial results in the state directory. An absent measurement cannot start a handoff. The worker exits at the specified deadline.
 
 For comparison on the target Mac, `PYTHONPATH=. state/kokoro-env/bin/python tests/measure_idle_voice.py` times synthetic reminders from service submission through complete synthesized WAV with and without an indexing batch. The app's first-playback metric covers a different interval.
 

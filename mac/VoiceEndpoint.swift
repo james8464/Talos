@@ -86,7 +86,7 @@ struct ConversationFocus {
         if let addressed = roomRequest(words) { return addressed }
         guard time <= until else { return nil }
         if explicitlyCalled { return words }
-        let linked = #"(?i)^(?:and (?:what|how|when|where|on|if|for)|what about|how about|actually[, ]+(?:make that|i meant)|i meant|make that|why are you doing that|what (?:still )?needs my attention)\b"#
+        let linked = #"(?i)^(?:and (?:what|how|when|where|on|if|for)|what about|how about|what did i just (?:say|ask|tell you)|repeat (?:what i just said|my last question)|actually[, ]+(?:make that|i meant)|i meant|make that|why are you doing that|what (?:still )?needs my attention)\b"#
         if words.range(of: linked, options: .regularExpression) != nil { return words }
         if awaitingAnswer && words.range(of: #"(?i)^(?:in )?[a-z0-9 -]+ (?:minutes?|hours?|days?)[.!? ]*$|^(?:never mind|cancel it)[.!? ]*$"#,
                                          options: .regularExpression) != nil { return words }
@@ -109,16 +109,22 @@ struct ConversationFocus {
         return String(words[parts[matched].startIndex...])
     }
 
+    static func pauseOnly(_ words: String) -> Bool {
+        let command = words.lowercased().trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        return ["stop", "wait", "pause", "hold on", "hang on", "stop speaking"].contains(command)
+    }
+
     static func conversationalInterruption(_ words: String, playback: String, allowSpeech: Bool = false) -> Bool {
         func normalize(_ text: String) -> String {
             text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).joined(separator: " ")
         }
         let heard = normalize(words)
-        guard !heard.isEmpty, !normalize(playback).contains(heard) else { return false }
+        let spoken = normalize(playback)
+        guard !heard.isEmpty, !(" " + spoken + " ").contains(" " + heard + " ") else { return false }
         if allowSpeech {
             let tokens = heard.split(separator: " ")
-            let output = Set(normalize(playback).split(separator: " "))
-            if ["stop", "wait", "pause"].contains(heard) { return true }
+            let output = Set(spoken.split(separator: " "))
+            if pauseOnly(heard) { return true }
             if tokens.count >= 2 && tokens.contains(where: { !output.contains($0) }) { return true }
         }
         return heard.range(of: #"^(?:hold on|hang on|wait a second|one second|stop there|wait (?:i|that|actually)|no (?:i meant|sorry)|actually (?:i|it|what|make|the)|sorry i meant)\b"#,

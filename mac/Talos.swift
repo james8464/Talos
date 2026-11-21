@@ -567,7 +567,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     let engaged = self.openFocusAfterPlayback || self.conversationActive(now) || (self.facingContext != nil &&
                         self.facing.available(from: now, until: now)) || self.profileForTurn(at: now) != nil
                     if let text, engaged, error == nil, !ConversationFocus.isInterruption(text, playback: self.playbackText), ConversationFocus.conversationalInterruption(text, playback: self.playbackText, allowSpeech: true) {
-                        if ["stop", "wait", "pause", "stop speaking"].contains(text.lowercased().trimmingCharacters(in: .punctuationCharacters)) {
+                        if final && ConversationFocus.pauseOnly(text) {
                             self.stopSpeaking()
                             return
                         }
@@ -720,6 +720,13 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func commitVoice(_ finalText: String) {
+        // A partial “wait” silences playback immediately. Keep listening in case
+        // the final caption is a correction such as “wait, I meant Thursday”.
+        if !interruptedPlayback.isEmpty && ConversationFocus.pauseOnly(finalText) {
+            stopRecognition()
+            beginRecognition()
+            return
+        }
         if captureMode.appendFinalToDraft(finalText, draft: &draft) {
             draftContainsVoice = true
             stopRecognition()
