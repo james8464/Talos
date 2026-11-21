@@ -62,6 +62,29 @@ class RoomAcceptanceTests(unittest.TestCase):
         self.assertAlmostEqual(seconds, 60, delta=1)
         self.assertIsNone(self.request("/v1/speech")["item"])
 
+    def test_direct_task_and_reminder_clarification_without_model(self):
+        self.room.model_state = lambda: "warming up"
+        def speak(text):
+            return self.request("/v1/turn", {"text": text, "source": "voice"})
+        task = speak("Could you add buy paper to my to-do list?")
+        self.assertEqual((task["tool"], task["action"]), ("create_task", "applied"))
+        self.assertIn("message field", speak("What is on my to-do list?")["reply"])
+        listing = self.request("/v1/turn", {"text": "List my tasks."})
+        self.assertIn("buy paper", listing["reply"])
+        clarification = speak("Please remind me to take out the recycling.")
+        self.assertIn("How long", clarification["reply"])
+        self.assertEqual(len(self.request("/v1/inbox")["items"]), 1)
+        self.request("/v1/turn", {"text": "in five minutes"}, expected_error=503)
+        self.assertIn("whole number", speak("In zero minutes.")["reply"])
+        self.assertEqual(speak("In fifteen minutes.")["tool"], "set_reminder")
+        speak("Remind me to remove the label.")
+        self.assertIn("haven't set", speak("Never mind.")["reply"])
+        items = self.request("/v1/inbox")["items"]
+        self.assertEqual([(i["kind"], i["text"]) for i in items],
+                         [("task", "buy paper"), ("reminder", "take out the recycling")])
+        self.assertAlmostEqual((datetime.fromisoformat(items[1]["due_at"]) -
+                                datetime.now(UTC)).total_seconds(), 900, delta=2)
+
     def test_service_works_during_model_recovery(self):
         self.room.model_state = lambda: "warming up"
         meta = self.request("/v1/status")
@@ -96,7 +119,8 @@ class RoomAcceptanceTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         binary = self.path.parent / "check-endpoint"
         subprocess.run(["swiftc", "-module-cache-path", str(self.path.parent / "swift-cache"),
-                        str(root / "mac/VoiceEndpoint.swift"), str(root / "tests/VoiceEndpointChecks.swift"),
+                        str(root / "mac/VoiceEndpoint.swift"), str(root / "mac/MeetingBrief.swift"),
+                        str(root / "tests/VoiceEndpointChecks.swift"),
                         "-o", str(binary)], check=True, timeout=120)
         subprocess.run([str(binary), *files], check=True, timeout=30)
 

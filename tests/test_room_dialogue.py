@@ -33,6 +33,19 @@ class RoomDialogueTests(unittest.TestCase):
                 self.assertEqual(self.turn("Talos, can you see me?", occupied=value)["reply"], expected)
             self.assertEqual(self.turn("Can you see me?")["reply"], EMPTY)
 
+    def test_current_sensor_questions_use_the_input_channel_and_latest_observation(self):
+        with patch("room_service.plan", side_effect=AssertionError("unexpected planner call")):
+            for occupied, reply in ((True, VISIBLE), (False, EMPTY), (None, UNKNOWN)):
+                self.room.route("POST", "/v1/presence", {"occupied": occupied})
+                self.assertEqual(self.turn("Talos, can you see me right now?")["reply"], reply)
+                self.assertEqual(self.turn("Is there anyone in the room now?")["reply"], reply)
+            self.assertEqual(self.turn("Can you hear me now, Talos?")["reply"], HEARD)
+            self.assertEqual(self.turn("Can you hear me now?", source="text")["reply"], TYPED)
+        with patch("room_service.plan", return_value=decision("reply", "Which photo?")) as planner:
+            self.assertEqual(self.turn("Talos, can you see anyone in the photo right now?")["reply"],
+                             "Which photo?")
+            planner.assert_called_once()
+
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
         for proposal in (decision("ignore", ""), decision("reply", "Hello.")):
             with patch("room_service.plan", return_value=proposal):
@@ -47,10 +60,29 @@ class RoomDialogueTests(unittest.TestCase):
         with closing(open_memory(self.room.db_path)) as db:
             self.assertEqual(db.execute("SELECT kind FROM inbox").fetchone()[0], "reminder")
 
+    def test_follow_up_preserves_roles_and_ends_with_current_request(self):
+        with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
+                '{"action":"reply","text":"Three."}') as model:
+            self.turn("How many wheels are on a tricycle?")
+            self.turn("And on two of those combined?")
+        messages = model.call_args.args[0]
+        self.assertEqual([message["role"] for message in messages], ["system", "user", "assistant", "user"])
+        self.assertEqual(messages[1]["content"], "How many wheels are on a tricycle?")
+        self.assertEqual(messages[2]["content"], "Three.")
+        self.assertTrue(messages[-1]["content"].endswith("And on two of those combined?"))
+
+    def test_spoken_calculation_uses_local_arithmetic(self):
+        for expr, expected in (("3 * 2", "3 times 2 is 6."), ("4", "4."),
+                               ("1 / 0", "I couldn't calculate that expression."),
+                               ("3 and some code", "I couldn't calculate that expression.")):
+            with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
+                    json.dumps({"action": "calculate", "text": expr})):
+                self.assertEqual(self.turn("What does that come to?")["reply"], expected)
+
     def test_invalid_short_tool_output_cannot_apply(self):
         with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
                 '{"action":"set_reminder","text":"bad","minutes":false}'), self.assertRaises(RuntimeError):
-            self.turn("Remind me to call.")
+            self.turn("Set a reminder for the call.")
 
     def test_explicit_lookup_only_sends_query_and_surfaces_sources(self):
         sources = [{"title": "Example", "url": "https://example.org", "excerpt": "A statement."}]
@@ -133,7 +165,7 @@ class RoomDialogueTests(unittest.TestCase):
             db.execute("PRAGMA user_version = 2")
             db.execute("INSERT INTO room_presence VALUES (1, 1, '2000-01-01')")
         with closing(open_memory(self.room.db_path)) as db:
-            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 4)
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 5)
             self.assertEqual(db.execute("SELECT occupied FROM room_presence").fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT count(*) FROM room_slow_stages").fetchone()[0], 0)
 

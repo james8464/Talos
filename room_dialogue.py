@@ -2,6 +2,8 @@
 
 import json
 import re
+from decimal import Decimal, DecimalException
+from operator import add, mul, sub, truediv
 
 from local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES
 
@@ -19,9 +21,11 @@ def sensor_answer(message, source, occupied):
     words = " ".join(words.split())
     words = re.sub(r"^(?:(?:hey|ok|okay) )?(?:talos|tell us) ", "", words)
     words = re.sub(r" (?:talos|tell us)$", "", words)
+    words = re.sub(r" (?:right )?now$", "", words)
     if words in ("can you hear me", "did you hear me", "do you hear me"):
         return HEARD if source == "voice" else TYPED
-    if words in ("can you see me", "do you see me", "is anyone in the room", "am i in the room"):
+    if words in ("can you see me", "do you see me", "can you see anyone", "do you see anyone",
+                 "is anyone in the room", "is there anyone in the room", "am i in the room"):
         return UNKNOWN if occupied is None else VISIBLE if occupied else EMPTY
     if words in ("who am i", "do you recognize me", "do you recognise me"):
         return IDENTITY
@@ -38,16 +42,42 @@ for tens, word in enumerate("twenty thirty forty fifty sixty seventy eighty nine
 _NUMBERS.update(a=1, an=1)
 
 
+_REQUEST_PREFIX = r"(?:(?:hey[, ]+)?talos[, ]+)?(?:(?:could|can|would) you +)?(?:please +)?"
+_DURATION = r"([a-z]+(?:[ -][a-z]+)?|[0-9]{1,5}) (minutes?|hours?|days?)"
+
+
+def explicit_task(message):
+    for pattern in (r"add (.+?) to my (?:to[ -]?do|task) list", r"put (.+?) on my (?:to[ -]?do|task) list",
+                    r"(?:create|add) (?:a )?task (?:to |for )?(.+?)"):
+        match = re.fullmatch(_REQUEST_PREFIX + pattern + r"[.!?]?", message.strip(), re.I)
+        if match and 0 < len(match[1].strip()) <= 400:
+            return decision("create_task", match[1].strip())
+    return None
+
+
+def reminder_subject(message):
+    match = re.fullmatch(_REQUEST_PREFIX + r"remind me to (.+?)[.!?]?", message.strip(), re.I)
+    if not match or len(match[1]) > 400:
+        return None
+    # A supplied calendar time needs the normal planner and its time lookup.
+    if re.search(r"\b(?:at|by|on|tomorrow|today|tonight|next|after|before|every|this (?:evening|afternoon)|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+                 match[1], re.I):
+        return None
+    return match[1]
+
+
 def explicit_reminder(message):
     """Resolve an unambiguous duration locally. Leave other wording to the planner."""
-    match = re.fullmatch(
-        r"(?:(?:hey[, ]+)?talos[, ]+)?(?:please +)?remind me in "
-        r"([a-z]+(?:[ -][a-z]+)?|[0-9]{1,5}) (minutes?|hours?|days?) to (.+?)[.!]?",
-        message.strip(), re.I,
-    )
+    match = re.fullmatch(_REQUEST_PREFIX + r"remind me in " + _DURATION + r" to (.+?)[.!?]?",
+                         message.strip(), re.I)
     if match is None:
-        return None
-    number, unit, task = match.groups()
+        trailing = re.fullmatch(_REQUEST_PREFIX + r"remind me to (.+?) in " + _DURATION + r"[.!?]?",
+                                message.strip(), re.I)
+        if trailing is None:
+            return None
+        task, number, unit = trailing.groups()
+    else:
+        number, unit, task = match.groups()
     number = number.lower().replace("-", " ")
     amount = int(number) if number.isdecimal() else _NUMBERS.get(number, 0)
     minutes = amount * {"minute": 1, "hour": 60, "day": 1440}[unit.lower().rstrip("s")]
@@ -64,7 +94,7 @@ def decision(action, detail, minutes=0):
 
 
 def compact_decision(generate, messages, model, lookups, *, can_search=False):
-    choices = ["reply", "ignore", *LOCAL_WRITES, *lookups]
+    choices = ["reply", "ignore", "calculate", *LOCAL_WRITES, *lookups]
     if can_search:
         choices.append("search_web")
     schema = {"type": "object", "properties": {
@@ -83,6 +113,22 @@ def compact_decision(generate, messages, model, lookups, *, can_search=False):
             raise ValueError
     except (KeyError, ValueError, TypeError) as error:
         raise RuntimeError("Talos returned an invalid room response.") from error
+    if action == "calculate":
+        operand = r"(-?[0-9]{1,12}(?:\.[0-9]{1,8})?)"
+        if re.fullmatch(operand, detail.strip()):
+            return decision("reply", detail.strip() + ".")
+        formula = re.fullmatch(operand + r"\s*([+*/×÷-])\s*" + operand, detail.strip())
+        if formula:
+            left, symbol, right = formula.groups()
+            operation = {"+": add, "-": sub, "*": mul, "×": mul, "/": truediv, "÷": truediv}[symbol]
+            try:
+                value = operation(Decimal(left), Decimal(right))
+                spoken = {"+": "plus", "-": "minus", "*": "times", "×": "times",
+                          "/": "divided by", "÷": "divided by"}[symbol]
+                return decision("reply", f"{left} {spoken} {right} is {value:f}.")
+            except DecimalException:
+                pass
+        return decision("reply", "I couldn't calculate that expression.")
     if action == "search_web":
         return decision("research", "")
     if action in lookups:

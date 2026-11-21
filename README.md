@@ -23,7 +23,7 @@ different locally runnable Ollama model. The launcher loads the model in the bac
 The app shows model readiness. Sensor checks and explicit timed reminders work during
 model startup. The launcher restarts its own model process if it exits. Voice turns use a smaller planning budget.
 
-Say “Remind me in one minute to stretch” to set a local reminder even while the model
+Say “Hey Talos, remind me in one minute to stretch” to set a local reminder even while the model
 loads. Whole minutes, hours and days are supported on this path. Other phrasing goes to
 the normal planner.
 
@@ -34,9 +34,17 @@ macOS speech. The app labels the active voice and any fallback.
 
 Room mode starts when the service connects. On first launch, grant macOS microphone,
 speech recognition, and camera permissions. Each sensor has its own off switch. The microphone pauses during inference and playback. The speech client uses
-on-device recognition and shows words as it hears them. It biases recognition toward
-Talos's name and corrects “tell us” in clear forms of direct address. The app shows reply,
+on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,
 decision time, queue time, and time from transcript submission to first audio.
+
+Start each hands-free turn with **“Hey Talos”**, including follow-ups. The Mac checks the
+final transcript for that opening before sending a turn to the service. For a longer
+request, choose **Dictate a message**, pause as needed, then finish dictation, review the
+text, and press **Send**. Dictated messages keep the voice transcript retention setting.
+
+Try “Hey Talos, add buy paper to my to-do list.” For “Hey Talos, remind me to take out
+the recycling,” Talos asks for the delay. Reply “Hey Talos, in fifteen minutes” within
+two minutes to create the reminder. These requests work while the language model is loading.
 
 The camera card shows a live local preview and a **Person detected** or **No person detected**
 result. The endpoint receives occupancy only. Enable **Remember voice transcripts**
@@ -62,13 +70,13 @@ builds and signs `state/Talos.app` without starting a model.
 
 ### Public questions and web search
 
-Say “Search the web for the next lunar eclipse” to send that query to DuckDuckGo
+Say “Hey Talos, search the web for the next lunar eclipse” to send that query to DuckDuckGo
 through DDGS. The first search uses uv to install the pinned search client. Talos reads
 up to four result snippets, answers with the local model, and shows the titles and URLs.
 Typed questions that need current public facts also let the planner choose search. The
 spoken path requires a search request. Search receives the current query only.
 
-Say “Ask Respan why the Moon has phases” to try the explicitly named free model route.
+Say “Hey Talos, ask Respan why the Moon has phases” to try the explicitly named free model route.
 Set `RESPAN_API_KEY` or put the key in `state/respan.key` with owner-only permissions.
 Only the question after “Ask Respan” goes to that provider. The room loop continues
 using Ollama. Provider errors and rate limits surface in the reply. `--offline` disables
@@ -292,3 +300,31 @@ The installed model is a deliberately small latency baseline. A larger local mod
 [Pipecat examples](https://github.com/pipecat-ai/pipecat/tree/main/examples) · [Whisper MLX](https://huggingface.co/mlx-community/whisper-base-mlx) · [Ollama local-only mode](https://docs.ollama.com/faq) · [Qwen2.5 1.5B](https://ollama.com/library/qwen2.5:1.5b) · [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx)
 
 See [the technical research memo](Talos-technical-research.md) for architecture alternatives and proposed latency targets.
+
+### Multi-step requests and meeting preparation
+
+Say “Hey Talos, save a note that the Atlas spending cap is 12000, create a task to
+send the Atlas forecast and remind me in fifteen minutes.” Talos shows a receipt
+for every saved item. The task and its reminder are committed together. A client
+retrying a compound request can reuse its UUID in the optional `request_id` field.
+
+For a less structured job, type it into the message field and choose **Preview plan**.
+The local Ollama model proposes inbox changes. Review the titles, reminder delays
+and any work marked **Still open**. **Apply listed steps** commits the displayed
+plan. Reapplying the same plan returns the same receipts, including after a service
+restart. Shadow mode keeps the inbox unchanged.
+
+Type “Brief me on Atlas” to retrieve matching saved notes, open tasks, reminders
+and archived first-person commitment excerpts. The brief includes record IDs.
+**Next meeting brief** uses Apple Calendar to find the next timed event starting
+within seven days. Type “Prepare me for tomorrow’s meeting” for the first timed
+event tomorrow. Calendar access is requested on first use. Once connected,
+“Hey Talos, prepare me for my next meeting” can display the brief without reading
+its contents to the room. Titles such as “Weekly Atlas review” match against the
+local records for Atlas. A generic event name may need a more specific typed topic.
+
+You can add “and remind me before I leave” to a meeting request. Talos displays
+the brief and asks for a delay. Reply on the same input channel within two minutes;
+in hands-free mode, start the reply with “Hey Talos”. It sets the local timer once
+you give it a time. Calendar events and camera presence do not establish when you
+intend to leave.
