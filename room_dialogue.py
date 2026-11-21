@@ -22,11 +22,17 @@ def sensor_answer(message, source, occupied):
     words = re.sub(r"^(?:(?:hey|ok|okay) )?(?:talos|tell us) ", "", words)
     words = re.sub(r" (?:talos|tell us)$", "", words)
     words = re.sub(r" (?:right )?now$", "", words)
+    hearing = HEARD if source == "voice" else TYPED
+    visibility = UNKNOWN if occupied is None else VISIBLE if occupied else EMPTY
+    combined = re.fullmatch(r"(?:can|do) you (hear|see)(?: me)? and (?:can you |do you )?(hear|see) me", words)
+    if combined and combined[1] != combined[2]:
+        answers = {"hear": hearing, "see": visibility}
+        return f"{answers[combined[1]]} {answers[combined[2]]}"
     if words in ("can you hear me", "did you hear me", "do you hear me"):
-        return HEARD if source == "voice" else TYPED
+        return hearing
     if words in ("can you see me", "do you see me", "can you see anyone", "do you see anyone",
                  "is anyone in the room", "is there anyone in the room", "am i in the room"):
-        return UNKNOWN if occupied is None else VISIBLE if occupied else EMPTY
+        return visibility
     if words in ("who am i", "do you recognize me", "do you recognise me"):
         return IDENTITY
     return None
