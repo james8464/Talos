@@ -1,9 +1,36 @@
 import AVFoundation
+import EventKit
 import Foundation
 
 @main
 struct VoiceEndpointChecks {
+    @MainActor
     static func main() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Paris")!
+        let now = ISO8601DateFormatter().date(from: "2026-10-24T12:00:00Z")!
+        let tomorrow = MeetingWindow.tomorrow.dates(now: now, calendar: calendar)
+        precondition(tomorrow.duration == 25 * 3600)
+        precondition(MeetingWindow(request: "Prepare me for tomorrow’s meeting.") == .tomorrow)
+        let prep = MeetingRequest("Prepare me for tomorrow’s meeting. Find what I promised last time, check what’s still open, and remind me before I leave.")
+        precondition(prep?.window == .tomorrow && prep?.departureReminder == true)
+        precondition(MeetingRequest("Help me get ready for my next call and include my open tasks and remind me before heading out.")?.departureReminder == true)
+        precondition(MeetingRequest("Prepare me for my next meeting and email everyone.") == nil)
+        let store = EKEventStore()
+        func fixture(_ title: String, _ start: Date, allDay: Bool = false) -> EKEvent {
+            let event = EKEvent(eventStore: store)
+            event.title = title
+            event.startDate = start
+            event.endDate = start.addingTimeInterval(1800)
+            event.isAllDay = allDay
+            return event
+        }
+        let events = [fixture("All day", tomorrow.start, allDay: true),
+                      fixture("Already started", now), fixture("Following day", tomorrow.end),
+                      fixture("Later", tomorrow.start.addingTimeInterval(60_000)),
+                      fixture("Atlas review", tomorrow.start.addingTimeInterval(36_000))]
+        precondition(MeetingCalendar.firstMeeting(events, within: tomorrow)?.title == "Atlas review")
+        precondition(MeetingCalendar.firstMeeting([], within: tomorrow) == nil)
         let partial = VoiceRecognitionUpdate(text: "Can you here", final: false, failed: false)
         precondition(partial == .caption("Can you here"))
         let final = VoiceRecognitionUpdate(text: "Can you hear me?", final: true, failed: false)

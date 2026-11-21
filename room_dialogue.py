@@ -21,9 +21,11 @@ def sensor_answer(message, source, occupied):
     words = " ".join(words.split())
     words = re.sub(r"^(?:(?:hey|ok|okay) )?(?:talos|tell us) ", "", words)
     words = re.sub(r" (?:talos|tell us)$", "", words)
+    words = re.sub(r" (?:right )?now$", "", words)
     if words in ("can you hear me", "did you hear me", "do you hear me"):
         return HEARD if source == "voice" else TYPED
-    if words in ("can you see me", "do you see me", "is anyone in the room", "am i in the room"):
+    if words in ("can you see me", "do you see me", "can you see anyone", "do you see anyone",
+                 "is anyone in the room", "is there anyone in the room", "am i in the room"):
         return UNKNOWN if occupied is None else VISIBLE if occupied else EMPTY
     if words in ("who am i", "do you recognize me", "do you recognise me"):
         return IDENTITY
@@ -45,7 +47,7 @@ _DURATION = r"([a-z]+(?:[ -][a-z]+)?|[0-9]{1,5}) (minutes?|hours?|days?)"
 
 
 def explicit_task(message):
-    for pattern in (r"add (.+?) to my (?:to[ -]?do|task) list",
+    for pattern in (r"add (.+?) to my (?:to[ -]?do|task) list", r"put (.+?) on my (?:to[ -]?do|task) list",
                     r"(?:create|add) (?:a )?task (?:to |for )?(.+?)"):
         match = re.fullmatch(_REQUEST_PREFIX + pattern + r"[.!?]?", message.strip(), re.I)
         if match and 0 < len(match[1].strip()) <= 400:

@@ -119,7 +119,8 @@ class RoomAcceptanceTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         binary = self.path.parent / "check-endpoint"
         subprocess.run(["swiftc", "-module-cache-path", str(self.path.parent / "swift-cache"),
-                        str(root / "mac/VoiceEndpoint.swift"), str(root / "tests/VoiceEndpointChecks.swift"),
+                        str(root / "mac/VoiceEndpoint.swift"), str(root / "mac/MeetingBrief.swift"),
+                        str(root / "tests/VoiceEndpointChecks.swift"),
                         "-o", str(binary)], check=True, timeout=120)
         subprocess.run([str(binary), *files], check=True, timeout=30)
 

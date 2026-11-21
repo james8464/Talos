@@ -9,6 +9,7 @@
     <key>CFBundleVersion</key><string>1</string>
     <key>NSMicrophoneUsageDescription</key><string>Talos hears you while its microphone is enabled.</string>
     <key>NSSpeechRecognitionUsageDescription</key><string>Talos uses on-device speech recognition.</string>
+    <key>NSCalendarsFullAccessUsageDescription</key><string>Talos reads an upcoming event title and time when you request a meeting brief.</string>
     <key>NSCameraUsageDescription</key><string>Talos detects room occupancy on this Mac. It sends occupancy signals to the local Talos endpoint.</string>
 </dict>
 </plist>

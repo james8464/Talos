@@ -20,7 +20,7 @@ def open_memory(path: Path) -> sqlite3.Connection:
     database.row_factory = sqlite3.Row
     try:
         database.execute("PRAGMA foreign_keys = ON")
-        if database.execute("PRAGMA user_version").fetchone()[0] < 4:
+        if database.execute("PRAGMA user_version").fetchone()[0] < 5:
             with database:
                 database.execute("BEGIN IMMEDIATE")
                 version = database.execute("PRAGMA user_version").fetchone()[0]
@@ -36,7 +36,22 @@ def open_memory(path: Path) -> sqlite3.Connection:
                     database.execute("""CREATE TABLE IF NOT EXISTS room_voice_latency (
                         decision_id INTEGER PRIMARY KEY REFERENCES decisions(id), elapsed_ms INTEGER NOT NULL
                     )""")
-                    database.execute("PRAGMA user_version = 4")
+                if version < 5:
+                    database.execute("""CREATE TABLE IF NOT EXISTS room_batches (
+                        request_id TEXT PRIMARY KEY, signature TEXT NOT NULL, receipts TEXT NOT NULL
+                    )""")
+                    database.execute("CREATE VIRTUAL TABLE IF NOT EXISTS inbox_search USING fts5(text)")
+                    database.execute("INSERT OR REPLACE INTO inbox_search(rowid, text) SELECT id, text FROM inbox")
+                    database.execute("""CREATE TRIGGER IF NOT EXISTS inbox_search_insert AFTER INSERT ON inbox BEGIN
+                        INSERT INTO inbox_search(rowid,text) VALUES (new.id,new.text); END""")
+                    database.execute("""CREATE TRIGGER IF NOT EXISTS inbox_search_update AFTER UPDATE OF text ON inbox BEGIN
+                        UPDATE inbox_search SET text=new.text WHERE rowid=old.id; END""")
+                    database.execute("""CREATE TRIGGER IF NOT EXISTS inbox_search_delete AFTER DELETE ON inbox BEGIN
+                        DELETE FROM inbox_search WHERE rowid=old.id; END""")
+                    database.execute("""CREATE TABLE IF NOT EXISTS room_plans (
+                        id TEXT PRIMARY KEY, request TEXT NOT NULL, steps TEXT NOT NULL, remaining TEXT NOT NULL
+                    )""")
+                    database.execute("PRAGMA user_version = 5")
     except sqlite3.Error:
         database.close()
         raise

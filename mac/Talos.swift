@@ -11,7 +11,7 @@ struct RoomClient {
 
     func request(_ path: String, body: [String: Any]? = nil) async throws -> [String: Any] {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/v1/\(path)")!)
-        request.timeoutInterval = path == "turn" ? 150 : path == "voice" ? 20 : 5
+        request.timeoutInterval = (path == "turn" || path == "work/preview") ? 150 : path == "voice" ? 20 : 5
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let body {
             request.httpMethod = "POST"
@@ -129,9 +129,15 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var cameraRunning = false
     @Published var rememberVoice = false
     @Published var busy = false
+    @Published private(set) var workPlanID: String?
+    @Published private(set) var workPlanLines: [String] = []
+    @Published private(set) var remainingWork = ""
     @Published private(set) var speaking = false
     @Published var draft = "" {
-        didSet { if draft.isEmpty { draftContainsVoice = false } }
+        didSet {
+            if draft.isEmpty { draftContainsVoice = false }
+            if oldValue != draft, workPlanID != nil { dismissPlan() }
+        }
     }
     private(set) var draftContainsVoice = false
     @Published private var captureMode = VoiceCaptureMode.room
@@ -153,6 +159,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var reconnecting = false
     private var speechRequest: Task<Void, Never>?
     private var playbackEpoch = UUID()
+    private lazy var calendar = MeetingCalendar()
     private let client: RoomClient?
     private let recognizer = SFSpeechRecognizer()
     private let engine = AVAudioEngine()
@@ -430,6 +437,17 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !busy, !speaking, let client else { return }
         guard text.count <= 800 else { status = "Send up to 800 characters per turn."; return }
+        if let meeting = MeetingRequest(text) {
+            if source == "voice" && !calendar.connected {
+                stopRecognition()
+                let message = "Choose Next meeting brief in the app, or type the request to use your calendar."
+                addLine("Talos", message)
+                say(message)
+            } else {
+                showMeetingBrief(meeting.window, announce: source == "voice", departureReminder: meeting.departureReminder)
+            }
+            return
+        }
         busy = true
         stopRecognition()
         addLine("You", text)
@@ -438,7 +456,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         Task {
             do {
                 let result = try await client.request("turn", body: [
-                    "text": text, "source": source, "remember": rememberVoice,
+                    "text": text, "source": source, "remember": rememberVoice, "request_id": UUID().uuidString,
                     "occupied": (cameraRunning && Date().timeIntervalSince(presenceAt) < 75
                                  ? latestPresence : nil).map { $0 as Any } ?? NSNull(),
                 ])
@@ -449,6 +467,13 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 lastTiming = "Reply \(replyMs) ms · decision \(planningMs) ms · queue \(queueMs) ms"
                 if !reply.isEmpty {
                     addLine("Talos", reply)
+                    for step in result["steps"] as? [[String: Any]] ?? [] {
+                        if let id = step["id"] as? Int, let detail = step["detail"] as? String,
+                           let tool = step["tool"] as? String {
+                            let label = ["create_task": "Task", "save_note": "Note", "set_reminder": "Reminder"][tool] ?? "Step"
+                            addLine("\(label) #\(id)", detail)
+                        }
+                    }
                     if let sources = result["sources"] as? [[String: String]] {
                         for source in sources {
                             if let title = source["title"], let url = source["url"] {
@@ -470,6 +495,91 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             }
             busy = false
             beginRecognition()
+        }
+    }
+
+    func previewDraft() {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let client, !busy, !speaking, !dictating, !draftContainsVoice, (1...800).contains(text.count) else { return }
+        busy = true
+        stopRecognition()
+        Task {
+            defer { busy = false; beginRecognition() }
+            do {
+                let plan = try await client.request("work/preview", body: ["text": text])
+                guard let id = plan["id"] as? String, let steps = plan["steps"] as? [[String: Any]] else {
+                    throw RoomError("Talos returned an incomplete plan.")
+                }
+                guard draft.trimmingCharacters(in: .whitespacesAndNewlines) == text else { return }
+                workPlanLines = steps.compactMap { step in
+                    guard let tool = step["tool"] as? String, let detail = step["detail"] as? String else { return nil }
+                    switch tool {
+                    case "set_reminder": return "Remind in \(step["remind_in_minutes"] as? Int ?? 0) min · \(detail)"
+                    case "create_task": return "Task · \(detail)"
+                    case "save_note": return "Note · \(detail)"
+                    default: return nil
+                    }
+                }
+                guard steps.count == workPlanLines.count else { throw RoomError("Unknown step in work plan.") }
+                remainingWork = plan["remaining"] as? String ?? ""
+                workPlanID = id
+            } catch { addLine("Service", error.localizedDescription) }
+        }
+    }
+
+    func dismissPlan() {
+        workPlanID = nil
+        workPlanLines = []
+        remainingWork = ""
+    }
+
+    func applyPlan() {
+        guard let client, let id = workPlanID, !workPlanLines.isEmpty, !busy, !speaking, !dictating else { return }
+        busy = true
+        stopRecognition()
+        Task {
+            defer { busy = false; beginRecognition() }
+            do {
+                let result = try await client.request("work/apply", body: ["id": id])
+                if let reply = result["reply"] as? String { addLine("Talos", reply) }
+                if !remainingWork.isEmpty { addLine("Still open", remainingWork) }
+                if workPlanID == id { draft = ""; dismissPlan() }
+            } catch { addLine("Service", error.localizedDescription) }
+        }
+    }
+
+    func showMeetingBrief(_ window: MeetingWindow, announce: Bool = false, departureReminder: Bool = false) {
+        guard !busy, !speaking, !dictating, let client else { return }
+        busy = true
+        stopRecognition()
+        Task {
+            defer {
+                busy = false
+                beginRecognition()
+            }
+            do {
+                guard let meeting = try await calendar.next(in: window) else {
+                    addLine("Calendar", window == .tomorrow ? "No upcoming timed event tomorrow." :
+                            "No upcoming timed event in the next seven days.")
+                    return
+                }
+                addLine("Calendar", "\(meeting.title) · \(meeting.start.formatted(date: .abbreviated, time: .shortened))")
+                let brief = try await client.request("meeting/brief", body: [
+                    "topic": String(meeting.title.prefix(160)), "departure_reminder": departureReminder,
+                    "source": announce ? "voice" : "text",
+                ])
+                if let reply = brief["reply"] as? String {
+                    addLine("Talos", reply)
+                    if let question = brief["question"] as? String {
+                        addLine("Talos", question)
+                        if announce { say("Your meeting brief is on screen. " + question) }
+                    } else if announce {
+                        say("Your meeting brief is on screen.")
+                    }
+                }
+            } catch {
+                addLine("Service", error.localizedDescription)
+            }
         }
     }
 
@@ -724,6 +834,8 @@ struct RoomView: View {
                         .disabled(room.busy || room.speaking)
                 }
                 Button(room.cameraRunning ? "Camera on" : "Camera off", action: room.toggleCamera)
+                Button("Next meeting brief") { room.showMeetingBrief(.upcoming) }
+                    .disabled(room.busy || room.speaking || room.dictating)
                 if room.speaking { Button("Stop speaking", action: room.stopSpeaking) }
             }
             if room.microphone {
@@ -760,8 +872,21 @@ struct RoomView: View {
                 }
                 .onChange(of: room.lines) { _, _ in proxy.scrollTo("end", anchor: .bottom) }
             }
+            if room.workPlanID != nil {
+                VStack(alignment: .leading) {
+                    Text("Proposed local changes").font(.headline)
+                    ForEach(Array(room.workPlanLines.enumerated()), id: \.offset) { _, line in Text(line) }
+                    if !room.remainingWork.isEmpty { Text("Still open: \(room.remainingWork)") }
+                    HStack {
+                        Button("Apply listed steps", action: room.applyPlan).disabled(room.workPlanLines.isEmpty || room.busy || room.speaking || room.dictating)
+                        Button("Dismiss", action: room.dismissPlan).disabled(room.busy)
+                    }
+                }
+            }
             HStack {
                 TextField("Message Talos", text: $room.draft).onSubmit(submit)
+                Button("Preview plan", action: room.previewDraft)
+                    .disabled(room.busy || room.speaking || room.dictating || room.draftContainsVoice || room.draft.isEmpty || room.draft.count > 800)
                 Button("Send", action: submit).disabled(room.busy || room.speaking || room.dictating || room.draft.isEmpty || room.draft.count > 800)
             }
         }

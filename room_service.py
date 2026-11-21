@@ -16,9 +16,11 @@ from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
+from uuid import uuid4
 
 from agent import model_text, parse_event, plan
 from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer
+from room_work import apply_order, note_request, project_brief, propose_work, saved_brief, work_order
 from room_research import external_request, public_answer, search_web
 from agent_memory import STATE_PATH, insert_decision, open_memory
 from local_actions import inbox_items
@@ -124,6 +126,9 @@ class Room:
                     continuation = decision("ask", "Please give a whole number of minutes, hours, or days, up to 30 days.")
         if continuation:
             return continuation
+        order = work_order(text) or note_request(text) or project_brief(db, text, archive)
+        if order:
+            return order
         if reminder := explicit_reminder(text):
             return reminder
         elif task := explicit_task(text):
@@ -201,44 +206,30 @@ class Room:
             planned = monotonic()
             # Leave any speech requested during a dialogue to the caller's playback path.
             with db:
+                db.execute("BEGIN IMMEDIATE")
                 decision_ms = round((planned - started) * 1000)
                 if source == "voice" and not lookup and decision_ms >= 2000:
                     record_slow_stage(db, "voice decision", decision_ms)
                 receipt_event = event if archive else {
                     "kind": "voice_turn", "summary": "Voice turn with transcript retention disabled.",
                 }
-                receipt_proposal = None if archive else {
-                    "disposition": proposal["disposition"], "tool": proposal["tool"],
-                }
-                decision_id = insert_decision(
-                    db, receipt_event, proposal, apply=self.apply, receipt_proposal=receipt_proposal,
-                )
-                outcome = db.execute("SELECT status FROM action_outcomes WHERE decision_id = ?",
-                                     (decision_id,)).fetchone()
-                action = outcome["status"] if outcome else "shadow"
-                detail = proposal["detail"]
-                disposition = proposal["disposition"]
-                if proposal["tool"] == "set_reminder" and action == "applied":
-                    minutes = proposal["remind_in_minutes"]
-                    unit = "minute" if minutes == 1 else "minutes"
-                    reply = f"Reminder set for {minutes} {unit} from now. {detail}"
-                elif proposal["tool"] == "create_task" and action == "applied":
-                    reply = f"Added to your task list: {detail}"
-                elif disposition == "act" and action == "applied":
-                    reply = f"Done. {detail}"
-                elif disposition == "act" and proposal["tool"] != "speak":
-                    reply = f"No change made. Proposed action: {detail}"
-                elif disposition == "ignore":
-                    reply = ""
-                elif disposition in ("act", "ask", "reply", "wait"):
-                    reply = detail
+                steps = proposal.get("steps")
+                receipts = []
+                fresh = True
+                if steps:
+                    receipts, reply, fresh = apply_order(db, steps, receipt_event, apply=self.apply,
+                                                         archive=archive, request_id=body.get("request_id"))
+                    decision_id = receipts[0]["id"]
+                    action = receipts[0]["action"]
+                    tool = "work_order"
                 else:
-                    reply = "I don't have enough information to help with that yet."
+                    decision_id, action, reply = self.record_turn(db, receipt_event, proposal, archive)
+                    tool = proposal["tool"]
                 exchange = [
                     {"role": "user", "content": event["summary"]},
                     {"role": "assistant", "content": reply},
                 ]
-                if not reply:
+                if not reply or not fresh:
                     exchange = []
                 if archive:
                     insert_transcripts(db, session, exchange)
@@ -247,10 +238,42 @@ class Room:
                 if exchange:
                     self.voice_window_updated = monotonic()
         return {
-            "id": decision_id, "reply": reply, "sources": sources, "action": action, "tool": proposal["tool"],
+            "id": decision_id, "reply": reply, "sources": sources, "action": action, "tool": tool,
+            **({"steps": [{**receipt, "detail": step["detail"], "minutes": step["remind_in_minutes"]}
+                          for receipt, step in zip(receipts, steps)]} if steps else {}),
             "queue_ms": round((started - received) * 1000),
             "planning_ms": round((planned - started) * 1000),
         }
+
+    def record_turn(self, db, receipt_event, proposal, archive):
+        receipt_proposal = None if archive else {
+            "disposition": proposal["disposition"], "tool": proposal["tool"],
+        }
+        decision_id = insert_decision(
+            db, receipt_event, proposal, apply=self.apply, receipt_proposal=receipt_proposal,
+        )
+        outcome = db.execute("SELECT status FROM action_outcomes WHERE decision_id = ?",
+                             (decision_id,)).fetchone()
+        action = outcome["status"] if outcome else "shadow"
+        detail = proposal["detail"]
+        disposition = proposal["disposition"]
+        if proposal["tool"] == "set_reminder" and action == "applied":
+            minutes = proposal["remind_in_minutes"]
+            unit = "minute" if minutes == 1 else "minutes"
+            reply = f"Reminder set for {minutes} {unit} from now. {detail}"
+        elif proposal["tool"] == "create_task" and action == "applied":
+            reply = f"Added to your task list: {detail}"
+        elif disposition == "act" and action == "applied":
+            reply = f"Done. {detail}"
+        elif disposition == "act" and proposal["tool"] != "speak":
+            reply = f"No change made. Proposed action: {detail}"
+        elif disposition == "ignore":
+            reply = ""
+        elif disposition in ("act", "ask", "reply", "wait"):
+            reply = detail
+        else:
+            reply = "I don't have enough information to help with that yet."
+        return decision_id, action, reply
 
     def step(self) -> bool:
         with self.worker_lock, closing(open_memory(self.db_path)) as db:
@@ -356,6 +379,47 @@ class Room:
                         SELECT id, status, attempts, decision_id FROM room_events WHERE id = ?
                     """, (int(number),)).fetchone()
                     return (200, dict(row)) if row else (404, {"error": "Unknown event."})
+                case "POST", "/v1/work/preview":
+                    if self.model_state() != "ready":
+                        raise ModelUnavailable("The local model must be ready to draft a work plan.")
+                    steps, remaining = propose_work(model_text, self.model, body.get("text"))
+                    plan_id = str(uuid4())
+                    with db:
+                        db.execute("INSERT INTO room_plans VALUES (?, ?, ?, ?)",
+                                   (plan_id, body["text"], json.dumps(steps), remaining))
+                    return 200, {"id": plan_id, "steps": steps, "remaining": remaining}
+                case "POST", "/v1/work/apply":
+                    plan_id = body.get("id")
+                    if not isinstance(plan_id, str):
+                        raise ValueError("Supply the ID of the reviewed plan.")
+                    with db:
+                        db.execute("BEGIN IMMEDIATE")
+                        row = db.execute("SELECT * FROM room_plans WHERE id = ?", (plan_id,)).fetchone()
+                        if row is None:
+                            return 404, {"error": "Unknown work plan."}
+                        steps = json.loads(row["steps"])
+                        if not steps:
+                            raise ValueError("This plan has no local steps to apply.")
+                        event = {"kind": "text_turn", "summary": row["request"]}
+                        receipts, reply, fresh = apply_order(db, steps, event, apply=self.apply,
+                                                             archive=True, request_id=plan_id)
+                        if fresh:
+                            insert_transcripts(db, TEXT_SESSION, [{"role": "user", "content": row["request"]},
+                                                                  {"role": "assistant", "content": reply}])
+                    return 200, {"steps": receipts, "reply": reply, "remaining": row["remaining"]}
+                case "POST", "/v1/meeting/brief":
+                    topic = body.get("topic")
+                    brief = saved_brief(db, topic)
+                    if body.get("departure_reminder") is True:
+                        source = body.get("source", "text")
+                        if source not in ("text", "voice"):
+                            raise ValueError("Use voice or text for the reminder follow-up.")
+                        session = TEXT_SESSION if source == "text" else "native_voice"
+                        with self.turn_lock:
+                            self.pending_reminders[session] = (monotonic(), f"Prepare for {topic}")
+                        brief["question"] = ("I don't know when you're leaving. How many minutes from now "
+                                             "should I remind you to prepare?")
+                    return 200, brief
                 case "GET", "/v1/inbox":
                     return 200, {"items": inbox_items(db, limit=50)}
                 case "POST", "/v1/turn":

@@ -300,3 +300,31 @@ The installed model is a deliberately small latency baseline. A larger local mod
 [Pipecat examples](https://github.com/pipecat-ai/pipecat/tree/main/examples) · [Whisper MLX](https://huggingface.co/mlx-community/whisper-base-mlx) · [Ollama local-only mode](https://docs.ollama.com/faq) · [Qwen2.5 1.5B](https://ollama.com/library/qwen2.5:1.5b) · [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx)
 
 See [the technical research memo](Talos-technical-research.md) for architecture alternatives and proposed latency targets.
+
+### Multi-step requests and meeting preparation
+
+Say “Hey Talos, save a note that the Atlas spending cap is 12000, create a task to
+send the Atlas forecast and remind me in fifteen minutes.” Talos shows a receipt
+for every saved item. The task and its reminder are committed together. A client
+retrying a compound request can reuse its UUID in the optional `request_id` field.
+
+For a less structured job, type it into the message field and choose **Preview plan**.
+The local Ollama model proposes inbox changes. Review the titles, reminder delays
+and any work marked **Still open**. **Apply listed steps** commits the displayed
+plan. Reapplying the same plan returns the same receipts, including after a service
+restart. Shadow mode keeps the inbox unchanged.
+
+Type “Brief me on Atlas” to retrieve matching saved notes, open tasks, reminders
+and archived first-person commitment excerpts. The brief includes record IDs.
+**Next meeting brief** uses Apple Calendar to find the next timed event starting
+within seven days. Type “Prepare me for tomorrow’s meeting” for the first timed
+event tomorrow. Calendar access is requested on first use. Once connected,
+“Hey Talos, prepare me for my next meeting” can display the brief without reading
+its contents to the room. Titles such as “Weekly Atlas review” match against the
+local records for Atlas. A generic event name may need a more specific typed topic.
+
+You can add “and remind me before I leave” to a meeting request. Talos displays
+the brief and asks for a delay. Reply on the same input channel within two minutes;
+in hands-free mode, start the reply with “Hey Talos”. It sets the local timer once
+you give it a time. Calendar events and camera presence do not establish when you
+intend to leave.
