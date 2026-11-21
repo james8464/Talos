@@ -31,3 +31,19 @@ final class VoiceEndpoint {
         return max(0, deadline - now)
     }
 }
+
+// Only a successful final recognition result may become a room turn.
+enum VoiceRecognitionUpdate: Equatable {
+    case caption(String), submit(String), retry, pending
+
+    init(text: String?, final: Bool, failed: Bool) {
+        let words = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if failed || (final && words.isEmpty) {
+            self = .retry
+        } else if final {
+            self = .submit(words)
+        } else {
+            self = words.isEmpty ? .pending : .caption(words)
+        }
+    }
+}

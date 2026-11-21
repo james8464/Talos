@@ -156,6 +156,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var tapInstalled = false
     private var utteranceTimer: Task<Void, Never>?
+    private var finalResultTimer: Task<Void, Never>?
     private var recognitionLimit: Task<Void, Never>?
     private var speechEpoch = UUID()
     private var activity: VoiceEndpoint?
@@ -294,28 +295,33 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             let final = result?.isFinal ?? false
             Task { @MainActor in
                 guard let self, self.speechEpoch == epoch else { return }
-                if let text, !text.isEmpty, text != self.currentText {
+                switch VoiceRecognitionUpdate(text: text, final: final, failed: error != nil) {
+                case .pending:
+                    break
+                case .submit(let words):
+                    self.commitVoice(words)
+                case .caption(let words):
+                    guard words != self.currentText else { return }
                     self.recognitionFailures = 0
-                    self.currentText = text
-                    self.liveTranscript = Self.normalizeAddress(text)
+                    self.currentText = words
+                    self.liveTranscript = Self.normalizeAddress(words)
+                    guard self.finalResultTimer == nil else { return }
                     self.utteranceTimer?.cancel()
                     let partialAt = ProcessInfo.processInfo.systemUptime
                     self.utteranceTimer = Task {
                         while self.speechEpoch == epoch && !Task.isCancelled {
                             let delay = endpoint.remaining(afterPartial: partialAt, now: ProcessInfo.processInfo.systemUptime)
                             if delay <= 0 {
-                                self.commitVoice()
+                                self.finishCapture()
                                 return
                             }
                             try? await Task.sleep(for: .seconds(delay))
                         }
                     }
-                }
-                if final && !self.currentText.isEmpty {
-                    self.commitVoice()
-                } else if error != nil || final {
-                    let pending = !self.currentText.isEmpty
-                    if pending { self.commitVoice(); return }
+                case .retry:
+                    if !self.currentText.isEmpty {
+                        self.addLine("Service", "I couldn't confirm those words. Please try again.")
+                    }
                     self.stopRecognition()
                     self.recognitionFailures += 1
                     if !recognizer.isAvailable {
@@ -332,23 +338,43 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 stopRecognition()
                 beginRecognition()
             } else {
-                commitVoice()
+                finishCapture()
             }
         }
     }
 
-    private func stopRecognition() {
-        speechEpoch = UUID()
-        utteranceTimer?.cancel()
-        recognitionLimit?.cancel()
+    private func finishCapture() {
+        guard finalResultTimer == nil else { return }
+        let epoch = speechEpoch
+        endAudioInput()
+        // Let Apple's recognizer finish processing the audio it has already accepted.
+        recognition?.finish()
+        finalResultTimer = Task {
+            guard (try? await Task.sleep(for: .seconds(2))) != nil, speechEpoch == epoch else { return }
+            addLine("Service", "I couldn't confirm those words. Please try again.")
+            stopRecognition()
+            beginRecognition()
+        }
+    }
+
+    private func endAudioInput() {
         engine.stop()
         if tapInstalled {
             engine.inputNode.removeTap(onBus: 0)
             tapInstalled = false
         }
         request?.endAudio()
-        recognition?.cancel()
         request = nil
+    }
+
+    private func stopRecognition() {
+        speechEpoch = UUID()
+        utteranceTimer?.cancel()
+        recognitionLimit?.cancel()
+        finalResultTimer?.cancel()
+        finalResultTimer = nil
+        endAudioInput()
+        recognition?.cancel()
         recognition = nil
         currentText = ""
         activity = nil
@@ -366,8 +392,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         )
     }
 
-    private func commitVoice() {
-        let text = Self.normalizeAddress(currentText)
+    private func commitVoice(_ finalText: String) {
+        let text = Self.normalizeAddress(finalText)
         if text.count > 800 {
             stopRecognition()
             addLine("Talos", "That turn was too long. Could you split it into two?")

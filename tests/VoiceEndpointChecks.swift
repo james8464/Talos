@@ -4,6 +4,12 @@ import Foundation
 @main
 struct VoiceEndpointChecks {
     static func main() throws {
+        let partial = VoiceRecognitionUpdate(text: "Can you here", final: false, failed: false)
+        precondition(partial == .caption("Can you here"))
+        let final = VoiceRecognitionUpdate(text: "Can you hear me?", final: true, failed: false)
+        precondition(final == .submit("Can you hear me?"))
+        precondition(VoiceRecognitionUpdate(text: "", final: true, failed: false) == .retry)
+        precondition(VoiceRecognitionUpdate(text: "Can you", final: false, failed: true) == .retry)
         let format = AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1)!
         let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 480)!
         buffer.frameLength = 480
