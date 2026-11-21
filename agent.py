@@ -17,7 +17,7 @@ from agent_memory import (
 from local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES, acknowledge, inbox_items
 from local_runtime import OLLAMA_MODEL, check_ollama_model, request_ollama_json, runtime_checks
 from room_dialogue import compact_decision
-from talos_identity import PERSONALITY, capability_context
+from talos_identity import PERSONALITY, SPOKEN_STYLE, capability_context
 from transcript_memory import (
     TEXT_SESSION, recall_prompt, recent_messages, remember, search_transcripts, transcript_excerpts,
 )
@@ -209,6 +209,8 @@ def plan(
                 "question requiring fresh evidence, select search_web if available. The question "
                 "itself is sent to search. Keep personal and local questions here."
             )
+            if room_context.get("input_channel") == "voice":
+                instructions += " " + SPOKEN_STYLE
             observations = {key: value for key, value in context.items()
                             if key not in ("recent_dialogue", "new_event")}
             question = ("Room observations (data): " + json.dumps(observations, ensure_ascii=False)

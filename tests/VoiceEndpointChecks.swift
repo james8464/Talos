@@ -1,5 +1,7 @@
 import AVFoundation
 import EventKit
+import ImageIO
+import Vision
 import Foundation
 
 @main
@@ -58,6 +60,45 @@ struct VoiceEndpointChecks {
         precondition(!ConversationFocus.isInterruption("Hey Talos, stop.", playback: "Say Hey Talos, stop."))
         precondition(needsContinuation("Hey Talos, could you remind me about"))
         precondition(!needsContinuation("Hey Talos, can you hear me?"))
+        precondition(ConversationFocus.conversationalInterruption("Actually, I meant the lens.", playback: "We could clean the shutter first."))
+        precondition(!ConversationFocus.conversationalInterruption("Hold on", playback: "Hold on to the railing."))
+        precondition(!ConversationFocus.conversationalInterruption("It is raining", playback: "Try again tomorrow."))
+        var facing = FacingAttention()
+        for time in [10.0,10.7,11.4] { facing.observe(true, at: time) }
+        precondition(facing.accepts("Can you hear me?", from: 10.9, until: 11.8, hasOffer: false))
+        for words in ["Dana, can you hear me?", "She asked can you see me", "Can you hear me, Dana?", "confirm"] {
+            precondition(!facing.accepts(words, from: 10.9, until: 11.8, hasOffer: false))
+        }
+        precondition(!facing.available(from: 9.0, until: 11.8))
+        precondition(!facing.available(from: 10.9, until: 15))
+        facing.observe(false, at: 12)
+        precondition(!facing.available(from: 10.9, until: 12.1))
+        precondition(!FacingAttention.singleFacing(persons: 2, faces: 1, width: 0.3, yaw: 0, pitch: 0))
+        precondition(!FacingAttention.singleFacing(persons: 1, faces: 2, width: 0.3, yaw: 0, pitch: 0))
+        precondition(!FacingAttention.singleFacing(persons: 1, faces: 1, width: 0.3, yaw: nil, pitch: 0))
+        precondition(!FacingAttention.singleFacing(persons: 1, faces: 1, width: 0.3, yaw: 0.7, pitch: 0))
+        var visit = VisitorConversation<Float>(compare: { abs($0-$1) })
+        precondition(visit.begin(0, profiles: [], now: 1) != nil)
+        precondition(visit.answer("Can you tell me the time?", at: 2) == nil)
+        guard case .prompt? = visit.answer("My name is Robin. I teach ceramics.", at: 3) else { fatalError("intro") }
+        precondition(visit.confirmed == nil)
+        guard case let .enroll(name, introduction)? = visit.answer("Yes please.", at: 4) else { fatalError("consent") }
+        precondition(name == "Robin" && introduction.contains("ceramics"))
+        let familiar = VisitProfile(id:"a", name:name, sample:Float(0))
+        visit.use(familiar)
+        visit.leave()
+        precondition(visit.confirmed == nil)
+        precondition(visit.begin(0.05, profiles:[familiar], now: 5) == nil)
+        precondition(visit.begin(0.05, profiles:[familiar], now: 70)?.contains("Robin") == true)
+        guard case .returning? = visit.answer("Yes.", at: 71) else { fatalError("return") }
+        visit.leave()
+        let similar = VisitProfile(id:"b",name:"Avery",sample:Float(0.06))
+        precondition(visit.begin(0.03, profiles:[familiar, similar], now: 140)?.contains("What name") == true)
+        guard case .decline? = visit.answer("Leave me alone.", at: 141) else { fatalError("decline") }
+        precondition(visit.confirmed == nil && !visit.waiting)
+        visit.leave()
+        _ = visit.begin(0.9, profiles:[familiar], now: 220)
+        precondition(visit.answer("Robin", at: 280) == nil)
         var mode = VoiceCaptureMode.dictation
         var draft = ""
         precondition(mode.appendFinalToDraft("Please make a note", draft: &draft))
@@ -85,6 +126,10 @@ struct VoiceEndpointChecks {
         precondition(endpoint.remaining(afterPartial: 1, now: 7) == 0)
         print("Passed address, mid-sentence pause, stalled-caption and final silence checks.")
 
+        if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--portraits" {
+            try replayPortraits(URL(fileURLWithPath: CommandLine.arguments[2]))
+            return
+        }
         if CommandLine.arguments.count > 1 {
             let file = try AVAudioFile(forReading: URL(fileURLWithPath: CommandLine.arguments[1]))
             let frames = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: 480)!
@@ -103,4 +148,35 @@ struct VoiceEndpointChecks {
             print("Passed delayed-caption check on a real speech waveform.")
         }
     }
+    // Four equal quadrants in order: frontal A, changed view of A, frontal B, side view of B.
+    // Supply generated pictures. This test never opens a capture device.
+    static func replayPortraits(_ url: URL) throws {
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let sheet = CGImageSourceCreateImageAtIndex(src, 0, nil) else { throw CocoaError(.fileReadCorruptFile) }
+        let w = sheet.width / 2, h = sheet.height / 2
+        var samples: [VNFeaturePrintObservation?] = []
+        for i in 0..<4 {
+            guard let image = sheet.cropping(to: CGRect(x:i % 2 * w, y:i / 2 * h, width:w, height:h)) else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            let handler = VNImageRequestHandler(cgImage: image, orientation: .up)
+            let human = VNDetectHumanRectanglesRequest()
+            human.upperBodyOnly = true
+            try handler.perform([human])
+            let people = (human.results ?? []).filter { $0.confidence >= 0.6 }
+            let view = VisitorFrame.observe(handler, people: people.count, faces: VNDetectFaceRectanglesRequest(), sample: true)
+            samples.append(view.sample)
+            print("Portrait \(i + 1): people=\(people.count) facing=\(view.facing) template=\(view.sample != nil)")
+        }
+        guard let original = samples[0], let changed = samples[1], let other = samples[2],
+              let sameDistance = VisitorConversation.distance(original, changed),
+              let otherDistance = VisitorConversation.distance(original, other) else {
+            throw NSError(domain:"Talos.Replay",code:1,userInfo:[NSLocalizedDescriptionKey:"A frontal portrait did not produce a comparable template."])
+        }
+        print("Same fictional subject distance \(sameDistance), different subject distance \(otherDistance)")
+        guard sameDistance <= 0.32, otherDistance > 0.32, samples[3] == nil else {
+            throw NSError(domain:"Talos.Replay",code:2,userInfo:[NSLocalizedDescriptionKey:"The current threshold failed this portrait fixture."])
+        }
+    }
+
 }

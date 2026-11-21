@@ -11,7 +11,7 @@ HEARD = "Yes, I can hear you."
 VISIBLE = "I can see someone in the camera view."
 EMPTY = "The camera isn't detecting anyone right now."
 UNKNOWN = "I don't have a current camera reading."
-IDENTITY = "I can't identify people by face or voice."
+IDENTITY = "I haven't confirmed who I'm speaking with."
 TYPED = "That message arrived as text."
 SENSOR_LINES = (HEARD, VISIBLE, EMPTY, UNKNOWN, IDENTITY, TYPED)
 
@@ -93,8 +93,71 @@ def decision(action, detail, minutes=0):
             "remind_in_minutes": minutes}
 
 
-def compact_decision(generate, messages, model, lookups, *, can_search=False):
-    choices = ["reply", "ignore", "calculate", *LOCAL_WRITES, *lookups]
+def conversational_correction(text):
+    match = re.match(r"^(?:(?:actually|no|sorry|wait)[, ]+)?i meant\s+(.+?)(?:[.!?,]|$)", text.strip(), re.I)
+    return match[1].strip() if match and len(match[1]) <= 120 else None
+
+
+def corrected_recollection(text, history):
+    """Answer retrospective questions from the speaker's words, without trusting earlier model replies."""
+    if not re.match(r"^(?:what|which|where|when|who|how)\b", text.strip(), re.I) or not re.search(
+        r"\b(?:did i|was i|had i|i (?:said|told you))\b", text, re.I
+    ):
+        return None
+    statements = [m["content"] for m in history if m["role"] == "user"]
+    for i in range(len(statements)-1, 0, -1):
+        corrected = conversational_correction(statements[i])
+        if not corrected:
+            continue
+        prev = statements[i-1]
+        if len(prev) > 210 or "?" in prev:
+            continue
+        topics = set(re.findall(r"[^\W_]+", corrected.casefold())) - {"the","a","an","my","your","it","that","this"}
+        question = set(re.findall(r"[^\W_]+", text.casefold()))
+        if not topics & question:
+            continue
+        # Only substitute an unambiguous modifier of the same named thing. Other
+        # corrections remain two attributed quotations with their original context.
+        phrase = re.fullmatch(r"(?:the|a|an|my) ([^\W_]+) ([^\W_]+)", corrected, re.I)
+        if phrase and re.match(r"^I ", prev):
+            modifier, noun = phrase.groups()
+            target = re.compile(r"\b(the|my|a|an) ([^\W_]+) (" + re.escape(noun) + r")\b", re.I)
+            if len(list(target.finditer(prev))) == 1:
+                amended = target.sub(lambda m: f"{m[1]} {modifier} {m[3]}", prev)
+                reported = re.sub(r"\bmy\b", "your", amended[2:].rstrip(".!?"), flags=re.I)
+                if not re.search(r"\b(?:I|me|mine|myself|am|was)\b", reported, re.I):
+                    return f"You said you {reported}."
+        return f'You first said, “{prev.rstrip(".!?")},” then clarified that you meant {corrected}.'
+    return None
+
+
+def spoken_reply(generate, messages, text, model):
+    """Keep the model's scratch work and transcriber-style echoes out of playback."""
+    schema = {"type": "object", "properties": {"talos_says": {"type": "string", "maxLength": 500}},
+              "required": ["talos_says"], "additionalProperties": False}
+    normalized = re.findall(r"\w+", text.casefold())
+    prior = next((m["content"] for m in reversed(messages) if m["role"] == "assistant"), "")
+    last_reply = re.findall(r"\w+", prior.casefold())
+    for attempt in range(2):
+        raw = generate(messages, model=model, schema=schema, max_tokens=192)
+        try:
+            reply = json.loads(raw)["talos_says"].strip()
+            if not 1 <= len(reply) <= 550:
+                raise ValueError
+        except (ValueError, TypeError, KeyError, AttributeError) as error:
+            raise RuntimeError("Invalid spoken reply from the local model.") from error
+        spoken = re.findall(r"\w+", reply.casefold())
+        if not ((len(normalized) >= 4 and spoken == normalized) or (len(last_reply) >= 4 and spoken == last_reply)):
+            return reply
+        if attempt == 0:
+            messages = [*messages, {"role": "system", "content":
+                "Answer as the other participant. You just repeated the speaker. Give them an original response "
+                "to the specific thing they said, from your own side of the conversation."}]
+    return "Tell me a little more about that."
+
+
+def compact_decision(generate, messages, model, lookups, *, can_search=False, read_only=False):
+    choices = ["reply", "calculate"] if read_only else ["reply", "ignore", "calculate", *LOCAL_WRITES, *lookups]
     if can_search:
         choices.append("search_web")
     schema = {"type": "object", "properties": {
@@ -102,6 +165,8 @@ def compact_decision(generate, messages, model, lookups, *, can_search=False):
         "text": {"type": "string", "maxLength": 400},
         "minutes": {"type": "integer", "minimum": 1, "maximum": MAX_REMINDER_MINUTES},
     }, "required": ["action", "text"], "additionalProperties": False}
+    if read_only:
+        del schema["properties"]["minutes"]
     try:
         obj = json.loads(generate(messages, model=model, schema=schema, max_tokens=180))
         action, detail = obj["action"], obj["text"]

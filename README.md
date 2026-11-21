@@ -37,11 +37,20 @@ speech recognition, and camera permissions. Each sensor has its own off switch. 
 on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,
 decision time, queue time, and time from transcript submission to first audio.
 
-Start a new hands-free request with **“Hey Talos”**. You can also say the name first and then speak.
-For eight seconds after a voice reply, Talos accepts a linked follow-up such as “And what about Friday?”
-or a delay in response to a reminder question. “Actually, make that five minutes” corrects the
-last single voice reminder. A follow-up can amend that reminder or answer a pending question.
-Starting another action requires addressing Talos again. For a longer
+Choose **Talk for 90 seconds**, or say **“Hey Talos, can we talk?”**, to have a
+conversation without repeating a wake word. **End conversation** closes the window early.
+With the camera on, a sustained view of one person facing the Mac can also start a
+direct question. Looking away, another detected person, or stale visual readings stop
+new visually directed turns. The camera gives a cue about intended address. It cannot
+tell which person spoke off camera.
+
+Talos keeps the last six exchanges for a connected conversational thread. You can
+correct yourself mid-reply with phrases like “Wait, I meant…” in an engaged
+conversation. Playback echo and unrelated room speech are filtered locally.
+Local tasks, notes and timed reminders started this way are read back first. Say
+**confirm** or **cancel**. Saying **“Hey Talos”** still starts an explicit request.
+Its short follow-up window accepts a reminder delay or “Actually, make that five minutes.”
+For a longer
 request, choose **Dictate a message**, pause as needed, then finish dictation, review the
 text, and press **Send**. Dictated messages keep the voice transcript retention setting.
 
@@ -49,14 +58,12 @@ Try “Hey Talos, add buy paper to my to-do list.” For “Hey Talos, remind me
 the recycling,” Talos asks for the delay. Reply “Hey Talos, in fifteen minutes” within
 two minutes to create the reminder. These requests work while the language model is loading.
 
-The camera card shows a live local preview and a **Person detected** or **No person detected**
-result. The endpoint receives occupancy only. Enable **Remember voice transcripts**
-if you want Talos to archive those turns locally. With archiving off, it can follow a short
-conversation using a rolling memory that expires after five minutes of no voice turns.
-A voice request that creates a task,
-reminder, note, or alert keeps the resulting local item.
+The camera card shows the local preview and occupancy. Facing direction and optional
+visual templates are computed on the Mac. The room planner receives occupancy.
+Enable **Remember voice transcripts** to archive ordinary addressed exchanges.
+Confirmed visitors can separately agree to retain their own conversations. Saved
+actions keep their local receipts. Room presence by itself creates no work order.
 
-Arrivals and departures update occupancy silently. Ordinary room chatter can be ignored.
 Talos answers hearing, visibility and identity checks directly from the input channel and
 current camera state. Their Kokoro audio is prepared at startup. Other replies use short
 structured decisions and start playback when the first sentence is ready. Additional
@@ -70,6 +77,29 @@ endpoint becomes unreachable.
 
 For development, `--headless` starts the service without opening the app, and `--build-only`
 builds and signs `state/Talos.app` without starting a model.
+
+### Introductions and conversation memory
+
+With **Offer introductions and remember consenting visitors** enabled, a sustained
+single-person camera view can trigger a brief introduction. Talos asks for a name,
+then asks whether to remember it, a visual reference, and future words addressed to
+Talos during that visit. “Skip” ends the introduction. On a later visit, a sufficiently
+close and unambiguous image match prompts for confirmation. A confirmed profile lets
+Talos use that visitor’s earlier statements. An ambiguous match starts a new
+introduction. People with the same name keep separate profiles.
+
+Apple Vision supplies the face region, orientation and image feature print. The
+image comparison is experimental. Talos uses the saved descriptor to suggest a name
+and asks the person to confirm. Raw audio, video frames and face photos are not saved.
+**Memory → Forget visual reference** removes the descriptor and preserves written notes.
+
+After ten seconds without a submitted turn, a background reviewer processes retained
+exchanges. It links direct quotations to people and topics, using the local model for
+less obvious statements. Unmatched introductions are labeled as self-reports. The
+reviewer exports Markdown files without overwriting existing notes. Choose **Memory →
+Open memory folder** and open that folder as a vault in Obsidian. The production path
+is `state/Talos Memory`. A practice room has its own temporary vault. The SQLite
+database stores the searchable records and visual templates locally.
 
 ### Track a meeting goal
 

@@ -11,7 +11,7 @@ struct RoomClient {
 
     func request(_ path: String, body: [String: Any]? = nil) async throws -> [String: Any] {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/v1/\(path)")!)
-        request.timeoutInterval = (path == "turn" || path == "work/preview") ? 150 : path == "voice" ? 20 : 5
+        request.timeoutInterval = (path == "turn" || path == "voice/facing" || path == "work/preview") ? 150 : path == "voice" ? 20 : 5
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let body {
             request.httpMethod = "POST"
@@ -41,6 +41,14 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     let session = AVCaptureSession()
     let onObservation: (Bool?) -> Void
     let onFailure: (String) -> Void
+    let onFacing: (Bool, TimeInterval) -> Void
+    private let faceRequest = VNDetectFaceRectanglesRequest()
+    let onSample: (VNFeaturePrintObservation, TimeInterval) -> Void
+    private var checkVisitors = false
+    private var lastSample = -Double.infinity
+    func setVisitors(_ enabled: Bool) { queue.async { self.checkVisitors = enabled } }
+    private var checkFacing: Bool
+    func setFacing(_ enabled: Bool) { queue.async { self.checkFacing = enabled } }
     private let detection = VNDetectHumanRectanglesRequest()
     private var lastFrame = Date.distantPast
     private var lastReport = Date.distantPast
@@ -48,7 +56,11 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     private var confirmations = 0
     private var occupied: Bool?
 
-    init(onObservation: @escaping (Bool?) -> Void, onFailure: @escaping (String) -> Void) {
+    init(checkFacing: Bool, onSample: @escaping (VNFeaturePrintObservation, TimeInterval) -> Void, onFacing: @escaping (Bool, TimeInterval) -> Void,
+         onObservation: @escaping (Bool?) -> Void, onFailure: @escaping (String) -> Void) {
+        self.checkFacing = checkFacing
+        self.onFacing = onFacing
+        self.onSample = onSample
         self.onObservation = onObservation
         self.onFailure = onFailure
         super.init()
@@ -97,8 +109,20 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         guard now.timeIntervalSince(lastFrame) >= 0.7 else { return }
         lastFrame = now
         do {
-            try VNImageRequestHandler(cmSampleBuffer: sample, orientation: .up).perform([detection])
-            let detected = detection.results?.contains { $0.confidence >= 0.6 } ?? false
+            let timestamp = ProcessInfo.processInfo.systemUptime
+            let handler = VNImageRequestHandler(cmSampleBuffer: sample, orientation: .up)
+            try handler.perform([detection])
+            let people = (detection.results ?? []).filter { $0.confidence >= 0.6 }
+            let detected = !people.isEmpty
+            if checkFacing {
+                let sampleNeeded = checkVisitors && timestamp - lastSample >= 1.4
+                let view = VisitorFrame.observe(handler, people: people.count, faces: faceRequest, sample: sampleNeeded)
+                onFacing(view.facing, timestamp)
+                if let sample = view.sample {
+                    lastSample = timestamp
+                    onSample(sample, timestamp)
+                }
+            }
             if candidate != detected {
                 candidate = detected
                 confirmations = 0
@@ -111,7 +135,9 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
                 onObservation(detected)
             }
         } catch {
-            if occupied != nil {
+            onFacing(false, ProcessInfo.processInfo.systemUptime)
+            if occupied != nil || now.timeIntervalSince(lastReport) >= 20 {
+                lastReport = now
                 onObservation(nil)
                 occupied = nil
             }
@@ -164,9 +190,23 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var presentGoals = false
     private lazy var calendar = MeetingCalendar()
     private let client: RoomClient?
+    private var vaultURL: URL? {
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "--token-file"), args.indices.contains(i+1) else { return nil }
+        return URL(fileURLWithPath: args[i+1]).deletingLastPathComponent().appendingPathComponent("Talos Memory")
+    }
+    func openVault() {
+        guard let url = vaultURL else { return }
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true,
+                                                     attributes: [.posixPermissions: 0o700])
+            NSWorkspace.shared.open(url)
+        } catch { status = error.localizedDescription }
+    }
     private let recognizer = SFSpeechRecognizer()
     private let engine = AVAudioEngine()
     private let speaker = AVSpeechSynthesizer()
+    private var systemUtterance: AVSpeechUtterance?
     private var recognition: SFSpeechRecognitionTask?
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var tapInstalled = false
@@ -177,9 +217,149 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var recognitionLimit: Task<Void, Never>?
     private var speechEpoch = UUID()
     private var activity: VoiceEndpoint?
-    private var playbackMeasurement: (id: Int, speechEnd: TimeInterval)?
+    private var playbackMeasurement: (id: Int?, speechEnd: TimeInterval)?
     private var currentText = ""
     private var focus = ConversationFocus()
+    private var facing = FacingAttention()
+    private var visitor = VisitorConversation<VNFeaturePrintObservation>(compare: VisitorConversation.distance)
+    @Published private(set) var profiles: [VisitorProfile] = []
+    @Published var forgetCandidate: VisitorProfile?
+    func forgetReference(_ profile: VisitorProfile) {
+        guard let client else { return }
+        Task {
+            do {
+                _ = try await client.request("visitors/forget-reference", body: ["id":profile.id])
+                leaveVisitor()
+                loadProfiles()
+                addLine("Talos", "Removed the visual reference for " + profile.name + ". The conversation notes remain in Memory.")
+            } catch { status = error.localizedDescription }
+        }
+    }
+    private var profilesLoaded = false
+    private var profilesEpoch = UUID()
+    private var sampleTime = -Double.infinity
+    @Published var rememberVisitors = false {
+        didSet {
+            leaveVisitor()
+            camera?.setVisitors(rememberVisitors)
+            if !isTrial { UserDefaults.standard.set(rememberVisitors, forKey: "rememberVisitors") }
+            loadProfiles()
+        }
+    }
+    @Published private(set) var visitorName: String?
+    private func leaveVisitor() {
+        visitor.leave()
+        if visitorName != nil { visitorName = nil }
+    }
+    private func useVisitor(_ profile: VisitorProfile) {
+        visitor.use(profile)
+        visitorName = profile.name
+    }
+    private func loadProfiles() {
+        profiles = []
+        profilesLoaded = false
+        profilesEpoch = UUID()
+        let epoch = profilesEpoch
+        guard rememberVisitors, let client else { return }
+        Task {
+            do {
+                let result = try await client.request("visitors")
+                guard rememberVisitors, epoch == profilesEpoch else { return }
+                let stored = result["profiles"] as? [[String: String]] ?? []
+                profiles = stored.compactMap { row in
+                    guard let id = row["id"], let name = row["name"], let value = row["template"],
+                          let bytes = Data(base64Encoded: value),
+                          let sample = try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: bytes) else { return nil }
+                    return VisitorProfile(id: id, name: name, sample: sample)
+                }
+                profilesLoaded = true
+            } catch { status = error.localizedDescription }
+        }
+    }
+    private func inspectVisitor(_ face: VNFeaturePrintObservation, at stamp: TimeInterval) {
+        guard rememberVisitors, acceptFacing, cameraRunning, microphone, profilesLoaded else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        guard now - stamp < 1.8 else { return }
+        if stamp - sampleTime > 3 { leaveVisitor() }
+        sampleTime = stamp
+        if let original = visitor.sample, (VisitorConversation.distance(face, original) ?? 2) > 0.48 {
+            leaveVisitor()
+            facingOffer = nil
+            facingContext = nil
+        }
+        visitor.expire(at: now)
+        guard !busy, !speaking, !dictating, currentText.isEmpty, facing.available(from: stamp, until: now),
+              let prompt = visitor.begin(face, profiles: profiles, now: now) else { return }
+        addLine("Talos", prompt)
+        say(prompt)
+    }
+    private func profileForTurn(at now: TimeInterval) -> VisitorProfile? {
+        guard rememberVisitors, now - sampleTime < 2.5, facing.available(from: firstCaptionAt ?? now, until: now) else { return nil }
+        return visitor.confirmed
+    }
+
+    private func introduction(_ text: String, at now: TimeInterval) -> Bool {
+        guard rememberVisitors, now - sampleTime < 2.5, facing.available(from: firstCaptionAt ?? now, until: now),
+              let answer = visitor.answer(text, at: now) else { return false }
+        func speak(_ line: String) { addLine("Talos", line); say(line) }
+        switch answer {
+        case .prompt(let line): speak(line)
+        case .decline: speak("Okay.")
+        case .returning(let person):
+            useVisitor(person)
+            speak("Welcome back, " + person.name + ".")
+        case let .enroll(name, words):
+            guard let face = visitor.sample, let client else { return false }
+            let id = UUID().uuidString.lowercased()
+            let interval = facing.since
+            busy = true
+            stopRecognition()
+            Task {
+                defer { busy = false; beginRecognition() }
+                do {
+                    let bytes = try NSKeyedArchiver.archivedData(withRootObject: face, requiringSecureCoding: true)
+                    _ = try await client.request("visitors/enroll", body: ["id":id, "name":name, "introduction":words,
+                        "template":bytes.base64EncodedString(), "agreed":true])
+                    let person = VisitorProfile(id: id, name: name, sample: face)
+                    guard rememberVisitors else { return }
+                    profiles.append(person)
+                    if interval == facing.since, visitor.sample === face {
+                        useVisitor(person)
+                        speak("I'll remember you, " + name + ".")
+                    }
+                } catch { status = error.localizedDescription }
+            }
+        }
+        return true
+    }
+    private var firstCaptionAt: TimeInterval?
+    private var facingOffer: String?
+    private var facingContext: String?
+    private var facingSince: TimeInterval?
+    @Published var conversationStarted: TimeInterval?
+    private func conversationActive(_ now: TimeInterval) -> Bool {
+        conversationStarted.map { now - $0 < 90 } ?? false
+    }
+    func toggleConversation() {
+        focus.clear()
+        facingOffer = nil
+        facingContext = nil
+        if conversationStarted != nil { conversationStarted = nil; return }
+        conversationStarted = ProcessInfo.processInfo.systemUptime
+        if !microphone { toggleMicrophone() }
+    }
+    private var attentionInterval: TimeInterval? {
+        conversationActive(ProcessInfo.processInfo.systemUptime) ? conversationStarted : facing.since
+    }
+    @Published var acceptFacing = true {
+        didSet {
+            facing = FacingAttention()
+            leaveVisitor()
+            facingOffer = nil
+            camera?.setFacing(acceptFacing)
+            if !isTrial { UserDefaults.standard.set(acceptFacing, forKey: "acceptFacingRequests") }
+        }
+    }
     private var playbackText = ""
     private var openFocusAfterPlayback = false
     @Published var useLocalTurnModel = false
@@ -206,6 +386,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             client = nil
         }
         super.init()
+        if !isTrial, let saved = UserDefaults.standard.object(forKey: "acceptFacingRequests") as? Bool {
+            acceptFacing = saved
+        }
+        if !isTrial { rememberVisitors = UserDefaults.standard.object(forKey: "rememberVisitors") as? Bool ?? true }
         goals.client = client
         speaker.delegate = self
     }
@@ -232,6 +416,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         }
                         if !announcedStartup && !busy && !speaking {
                             announcedStartup = true
+                            if rememberVisitors { loadProfiles() }
                             if isTrial {
                                 status = "Practice room · temporary inbox"
                                 addLine("Trial", "Switch the microphone on when ready. Try a pause, a correction, a side conversation, and an interruption. Timing appears after a spoken reply.")
@@ -242,6 +427,11 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                             }
                         }
                     } catch { status = error.localizedDescription }
+                }
+                if conversationStarted != nil && !conversationActive(ProcessInfo.processInfo.systemUptime) {
+                    conversationStarted = nil
+                    facingOffer = nil
+                    facingContext = nil
                 }
                 await pollSpeech()
                 await goals.reconcile(calendar)
@@ -258,8 +448,11 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     func toggleMicrophone() {
         if microphone {
             focus.clear()
+            facingOffer = nil
             openFocusAfterPlayback = false
             microphone = false
+            conversationStarted = nil
+            leaveVisitor()
             captureMode = .room
             stopRecognition()
             status = "Microphone off."
@@ -322,22 +515,37 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             status = error.localizedDescription
             return
         }
-        status = speaking ? "Speaking · say Hey Talos, stop to interrupt" : dictating ? "Dictating into the message field" : "Listening for Hey Talos"
+        status = speaking ? "Speaking" : dictating ? "Dictating into the message field" :
+            conversationActive(ProcessInfo.processInfo.systemUptime) ? "Listening for this conversation" :
+            acceptFacing && cameraRunning ? "Listening for a direct request" : "Listening for Hey Talos"
+        let recognitionStart = ProcessInfo.processInfo.systemUptime
         recognition = recognizer.recognitionTask(with: buffer) { [weak self] result, error in
             let text = result?.bestTranscription.formattedString
+            let startOffset = result?.bestTranscription.segments.first?.timestamp
             let final = result?.isFinal ?? false
             Task { @MainActor in
                 guard let self, self.speechEpoch == epoch else { return }
                 if self.speaking {
-                    if let text, ConversationFocus.isInterruption(text, playback: self.playbackText) {
-                        self.openFocusAfterPlayback = true
-                        self.stopSpeaking()
-                    } else if final || error != nil {
-                        self.stopRecognition()
-                        try? await Task.sleep(for: .milliseconds(250))
-                        self.beginRecognition()
+                    let now = ProcessInfo.processInfo.systemUptime
+                    let engaged = self.conversationActive(now) || (self.facingContext != nil &&
+                        self.facing.available(from: now, until: now)) || self.profileForTurn(at: now) != nil
+                    if let text, engaged, error == nil, ConversationFocus.conversationalInterruption(text, playback: self.playbackText) {
+                        self.interruptForConversation()
+                        // Process this very callback below. It may already be the user's final result.
+                    } else {
+                        if let text, ConversationFocus.isInterruption(text, playback: self.playbackText) {
+                            self.openFocusAfterPlayback = true
+                            self.stopSpeaking()
+                        } else if final || error != nil {
+                            self.stopRecognition()
+                            try? await Task.sleep(for: .milliseconds(250))
+                            self.beginRecognition()
+                        }
+                        return
                     }
-                    return
+                }
+                if self.firstCaptionAt == nil, let startOffset {
+                    self.firstCaptionAt = min(ProcessInfo.processInfo.systemUptime, recognitionStart + startOffset)
                 }
                 switch VoiceRecognitionUpdate(text: text, final: final, failed: error != nil) {
                 case .pending:
@@ -347,12 +555,13 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 case .caption(let words):
                     guard words != self.currentText else { return }
                     self.recognitionFailures = 0
+                    if self.firstCaptionAt == nil { self.firstCaptionAt = ProcessInfo.processInfo.systemUptime }
                     self.currentText = words
                     self.liveTranscript = words
                     guard !self.dictating, self.finalResultTimer == nil else { return }
                     self.utteranceTimer?.cancel()
                     let partialAt = ProcessInfo.processInfo.systemUptime
-                    let addressed = self.focus.request(words, at: partialAt) != nil
+                    let addressed = self.focus.request(words, at: partialAt) != nil || self.facingRequest(words, at: partialAt)
                     let unfinished = addressed && needsContinuation(words)
                     self.turnProbe?.cancel()
                     self.modelHold = false
@@ -442,6 +651,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         recognition?.cancel()
         recognition = nil
         currentText = ""
+        firstCaptionAt = nil
         activity = nil
         liveTranscript = ""
     }
@@ -458,6 +668,11 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         beginRecognition()
     }
 
+    private func facingRequest(_ words: String, at now: TimeInterval) -> Bool {
+        if conversationActive(now) { return !words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return acceptFacing && cameraRunning && facing.accepts(words, from: firstCaptionAt ?? now, until: now, hasOffer: facingOffer != nil && facingSince == facing.since, hasContext: facingContext != nil && facingSince == facing.since)
+    }
+
     private func commitVoice(_ finalText: String) {
         if captureMode.appendFinalToDraft(finalText, draft: &draft) {
             draftContainsVoice = true
@@ -466,7 +681,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             return
         }
         let now = ProcessInfo.processInfo.systemUptime
-        let request = focus.request(finalText, at: now)
+        if roomRequest(finalText) == nil && introduction(finalText, at: now) { return }
+        let identified = profileForTurn(at: now)
+        let personal = identified != nil && finalText.range(of: #"(?i)\b(?:i|my|we|our)\b|^what (?:did i|do you)"#, options: .regularExpression) != nil
+        let focused = focus.request(finalText, at: now)
+        let useFacing = focused == nil && (personal || facingRequest(finalText, at: now))
+        let request = focused ?? (useFacing ? finalText : nil)
         if request == "" {
             focus.open(at: now, question: false, called: true)
         }
@@ -475,9 +695,20 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             beginRecognition()
             return
         }
+        if !useFacing, roomRequest(finalText) != nil,
+           text.range(of: #"(?i)^(?:can we talk|let['’]s (?:talk|chat)|start a conversation)[?.! ]*$"#, options: .regularExpression) != nil {
+            conversationStarted = ProcessInfo.processInfo.systemUptime
+            focus.clear()
+            facingOffer = nil
+            facingContext = nil
+            addLine("Talos", "Sure. What's on your mind?")
+            say("Sure. What's on your mind?")
+            return
+        }
+        if !useFacing { facingOffer = nil; facingContext = nil }
         let followUp = focus.isFollowUp(finalText, at: now)
         focus.clear()
-        if needsContinuation(text) && text.range(of: #"(?i)^(?:(?:please|could you|can you) )?(?:remind|add|create|save|make a note|record)\b"#, options: .regularExpression) != nil {
+        if !useFacing && needsContinuation(text) && text.range(of: #"(?i)^(?:(?:please|could you|can you) )?(?:remind|add|create|save|make a note|record)\b"#, options: .regularExpression) != nil {
             if draft.isEmpty {
                 draft = text
                 draftContainsVoice = true
@@ -492,15 +723,15 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             addLine("Talos", "That turn was too long. Could you split it into two?")
             beginRecognition()
         } else {
-            send(text, source: "voice", speechEnd: activity?.lastActivity, followUp: followUp)
+            send(text, source: "voice", speechEnd: activity?.lastActivity, followUp: followUp, viaFacing: useFacing || identified != nil, visitorID: identified?.id)
         }
     }
 
-    func send(_ text: String, source: String = "text", speechEnd: TimeInterval? = nil, followUp: Bool = false) {
+    func send(_ text: String, source: String = "text", speechEnd: TimeInterval? = nil, followUp: Bool = false, viaFacing: Bool = false, visitorID: String? = nil) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !busy, !speaking, let client else { return }
         guard text.count <= 800 else { status = "Send up to 800 characters per turn."; return }
-        if !isTrial, let prefix = text.range(of: #"(?i)^(?:get me ready for|track (?:a |the )?goal for|keep me ready for)\s+"#, options: .regularExpression) {
+        if !viaFacing, !isTrial, let prefix = text.range(of: #"(?i)^(?:get me ready for|track (?:a |the )?goal for|keep me ready for)\s+"#, options: .regularExpression) {
             let topic = String(text[prefix.upperBound...]).trimmingCharacters(in: .punctuationCharacters)
             guard !topic.isEmpty else { return }
             busy = true; stopRecognition()
@@ -517,7 +748,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             }
             return
         }
-        if !isTrial, let meeting = MeetingRequest(text) {
+        if !viaFacing, !isTrial, let meeting = MeetingRequest(text) {
             if source == "voice" && !calendar.connected {
                 stopRecognition()
                 let message = "Choose Next meeting brief in the app, or type the request to use your calendar."
@@ -535,11 +766,22 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         let submitted = Date()
         Task {
             do {
-                let result = try await client.request("turn", body: [
-                    "text": text, "source": source, "remember": rememberVoice, "follow_up": followUp, "request_id": UUID().uuidString,
+                let interval = attentionInterval
+                let offer = interval == facingSince ? facingOffer : nil
+                let context = interval == facingSince ? facingContext : nil
+                facingOffer = nil
+                facingContext = nil
+                let result = try await client.request(viaFacing ? "voice/facing" : "turn", body: [
+                    "offer": offer ?? "", "context": context ?? "",
+                    "text": text, "source": source, "remember": rememberVoice || visitorID != nil, "visitor": visitorID ?? "", "follow_up": followUp, "request_id": UUID().uuidString,
                     "occupied": (cameraRunning && Date().timeIntervalSince(presenceAt) < 75
                                  ? latestPresence : nil).map { $0 as Any } ?? NSNull(),
                 ])
+                if viaFacing && interval != nil && interval == attentionInterval {
+                    facingOffer = result["offer"] as? String
+                    facingContext = result["context"] as? String
+                    facingSince = interval
+                }
                 let reply = result["reply"] as? String ?? ""
                 let replyMs = Int(Date().timeIntervalSince(submitted) * 1000)
                 let planningMs = result["planning_ms"] as? Int ?? 0
@@ -562,10 +804,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         }
                     }
                     if source == "voice" || microphone {
-                        if let speechEnd, let id = result["id"] as? Int {
-                            playbackMeasurement = (id, speechEnd)
+                        if let speechEnd {
+                            playbackMeasurement = (result["id"] as? Int, speechEnd)
                         }
-                        openFocusAfterPlayback = source == "voice"
+                        openFocusAfterPlayback = source == "voice" && !viaFacing
                         say(reply, turnStart: submitted)
                     }
                 }
@@ -671,6 +913,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             camera = nil
             previewSession = nil
             cameraRunning = false
+            facing = FacingAttention()
+            leaveVisitor()
+            facingOffer = nil
             occupancy = "Camera off"
             sendPresence(nil)
             return
@@ -688,11 +933,27 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             cameraEpoch = epoch
             cameraRunning = true
             occupancy = "Waiting for the first camera result"
-            camera = CameraDetector(
+            camera = CameraDetector(checkFacing: acceptFacing,
+                onSample: { [weak self] face, stamp in
+                    Task { @MainActor in
+                        guard let self, self.cameraEpoch == epoch else { return }
+                        self.inspectVisitor(face, at: stamp)
+                    }
+                },
+                onFacing: { [weak self] available, stamp in
+                    Task { @MainActor in
+                        guard let self, self.cameraEpoch == epoch, self.acceptFacing else { return }
+                        self.facing.observe(available, at: stamp)
+                        if !available {
+                            if !self.conversationActive(stamp) { self.facingOffer = nil; self.facingContext = nil }
+                            self.leaveVisitor()
+                        }
+                    }
+                },
                 onObservation: { [weak self] occupied in
                     Task { @MainActor in
                         guard let self, self.cameraEpoch == epoch else { return }
-                        self.occupancy = occupied.map { $0 ? "Person detected" : "No person detected" } ?? "Detection unavailable"
+                        self.occupancy = occupied.map { $0 ? "Person detected" : "No person detected" } ?? "Camera analysis unavailable · use Talk for 90 seconds"
                         self.sendPresence(occupied)
                     }
                 },
@@ -704,6 +965,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     }
                 }
             )
+            camera?.setVisitors(rememberVisitors)
             previewSession = camera?.session
             camera?.start()
         }
@@ -752,6 +1014,22 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
     }
 
+    private func interruptForConversation() {
+        playbackEpoch = UUID()
+        speechRequest?.cancel()
+        player?.stop()
+        systemUtterance = nil
+        if speaker.isSpeaking { speaker.stopSpeaking(at: .immediate) }
+        if let speechID { pendingAcknowledgment = speechID }
+        finishSpeech(delivered: false, keepListening: true)
+    }
+
+    private func systemSpeech(_ text: String) {
+        let utterance = AVSpeechUtterance(string: text)
+        systemUtterance = utterance
+        speaker.speak(utterance)
+    }
+
     func stopSpeaking() {
         if let speechID { pendingAcknowledgment = speechID }
         playbackEpoch = UUID()
@@ -772,7 +1050,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         stopRecognition()
         beginRecognition()
         guard let kokoroVoice, let client else {
-            speaker.speak(AVSpeechUtterance(string: text))
+            systemSpeech(text)
             return
         }
         let epoch = UUID()
@@ -813,7 +1091,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 }
                 guard !Task.isCancelled, playbackEpoch == epoch else { return }
                 player = nil
-                speaker.speak(AVSpeechUtterance(string: clips.dropFirst(played).joined(separator: " ")))
+                systemSpeech(clips.dropFirst(played).joined(separator: " "))
             }
         }
     }
@@ -831,20 +1109,22 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         playbackMeasurement = nil
         let elapsed = Int((ProcessInfo.processInfo.systemUptime - measurement.speechEnd) * 1000)
         lastTiming += " · speech end to playback \(elapsed) ms"
+        guard let id = measurement.id else { return }
         Task {
-            _ = try? await client?.request("voice/latency", body: ["id": measurement.id, "elapsed_ms": elapsed])
+            _ = try? await client?.request("voice/latency", body: ["id": id, "elapsed_ms": elapsed])
         }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-        Task { @MainActor in recordPlaybackStart() }
+        Task { @MainActor in if systemUtterance === utterance { recordPlaybackStart() } }
     }
 
-    private func finishSpeech(delivered: Bool) {
+    private func finishSpeech(delivered: Bool, keepListening: Bool = false) {
         if delivered, let speechID { pendingAcknowledgment = speechID }
         playbackMeasurement = nil
         speechID = nil
-        stopRecognition()
+        systemUtterance = nil
+        if !keepListening { stopRecognition() }
         if openFocusAfterPlayback {
             focus.open(at: ProcessInfo.processInfo.systemUptime, question: playbackText.contains("?"))
         }
@@ -864,11 +1144,11 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in finishSpeech(delivered: true) }
+        Task { @MainActor in if systemUtterance === utterance { finishSpeech(delivered: true) } }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor in finishSpeech(delivered: false) }
+        Task { @MainActor in if systemUtterance === utterance { finishSpeech(delivered: false) } }
     }
 
     private func addLine(_ role: String, _ text: String) {
@@ -917,6 +1197,8 @@ struct RoomView: View {
                 if !room.lastTiming.isEmpty { Text(room.lastTiming) }
             }.font(.caption).foregroundStyle(.secondary)
             HStack {
+                Button(room.conversationStarted == nil ? "Talk for 90 seconds" : "End conversation", action: room.toggleConversation)
+                    .disabled(room.busy || room.speaking)
                 Button(room.microphone ? "Microphone on" : "Microphone off", action: room.toggleMicrophone)
                 if room.microphone {
                     Button(room.dictating ? "Finish dictation" : "Dictate a message", action: room.toggleDictation)
@@ -924,13 +1206,19 @@ struct RoomView: View {
                 }
                 Button(room.cameraRunning ? "Camera on" : "Camera off", action: room.toggleCamera)
                 Button("Goals") { room.goals.open(); room.presentGoals = true }
+                Menu("Memory") {
+                    Button("Open memory folder", action: room.openVault)
+                    ForEach(room.profiles, id: \.id) { profile in
+                        Button("Forget visual reference for " + profile.name) { room.forgetCandidate = profile }
+                    }
+                }
                 Button("Next meeting brief") { room.showMeetingBrief(.upcoming) }
                     .disabled(room.isTrial || room.busy || room.speaking || room.dictating)
                 if room.speaking { Button("Stop speaking", action: room.stopSpeaking) }
             }
             if room.microphone {
                 Text(room.dictating ? "Pause as needed. Finish dictation, review the message, then send." :
-                     "Start each hands-free request with “Hey Talos”.").font(.caption)
+                     (room.acceptFacing && room.cameraRunning ? "Face the Mac to ask a question, or say “Hey Talos”." : "Start a hands-free request with “Hey Talos”.")).font(.caption)
             }
             if let session = room.previewSession {
                 HStack(alignment: .center, spacing: 16) {
@@ -940,7 +1228,7 @@ struct RoomView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Live camera").font(.headline)
                         Text(room.occupancy).foregroundStyle(.secondary)
-                        Text("Presence only").font(.caption).foregroundStyle(.secondary)
+                        Text(room.acceptFacing ? "Presence and facing direction" : "Presence only").font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -950,8 +1238,12 @@ struct RoomView: View {
             if room.draft.count > 800 {
                 Text("Shorten the message to 800 characters before sending.").font(.caption)
             }
+            Toggle("Accept direct requests while one person faces the Mac", isOn: $room.acceptFacing)
+            Toggle("Offer introductions and remember consenting visitors", isOn: $room.rememberVisitors)
+                .disabled(!room.acceptFacing)
             Toggle("Use local model for mid-sentence pauses", isOn: $room.useLocalTurnModel)
             Toggle("Remember voice transcripts", isOn: $room.rememberVoice)
+            if let name = room.visitorName { Text("Remembering this conversation with " + name).font(.caption) }
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
@@ -983,6 +1275,11 @@ struct RoomView: View {
         }
         .padding(24)
         .frame(minWidth: 660, minHeight: 440)
+        .alert("Forget this visual reference?", isPresented: Binding(get: { room.forgetCandidate != nil },
+                set: { if !$0 { room.forgetCandidate = nil } }), presenting: room.forgetCandidate) { profile in
+            Button("Forget reference", role: .destructive) { room.forgetReference(profile) }
+            Button("Cancel", role: .cancel) { }
+        } message: { profile in Text("Talos will stop suggesting " + profile.name + " from the camera. Saved conversation notes will remain.") }
         .sheet(isPresented: $room.presentGoals, onDismiss: { room.goals.showing = false }) { GoalPanel(goals: room.goals) }
         .task { room.connect() }
     }

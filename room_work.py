@@ -144,7 +144,7 @@ def saved_brief(db, topic, *, exclude_topics=()):
               "due_at": r["due_at"] if r["kind"] == "reminder" else None} for r in rows]
     quotes = db.execute("""
         SELECT t.id, t.text, t.recorded_at FROM transcript_search s JOIN transcripts t ON t.id = s.rowid
-        WHERE transcript_search MATCH ? AND t.role = 'user' AND
+        WHERE transcript_search MATCH ? AND t.role = 'user' AND t.session NOT LIKE 'visit/%' AND
               (lower(t.text) LIKE '%i will %' OR lower(t.text) LIKE '%i promised %' OR
                lower(t.text) LIKE '%i agreed %' OR lower(t.text) LIKE '%i''ll %' OR
                lower(t.text) LIKE '%i’ll %')

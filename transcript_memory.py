@@ -78,7 +78,7 @@ def search_transcripts(
         SELECT transcripts.recorded_at, transcripts.session, transcripts.role, transcripts.text,
                snippet(transcript_search, 0, '', '', ' … ', 32) AS excerpt
         FROM transcript_search JOIN transcripts ON transcripts.id = transcript_search.rowid
-        WHERE transcript_search MATCH ? AND transcripts.session != ?
+        WHERE transcript_search MATCH ? AND transcripts.session != ? AND transcripts.session NOT LIKE 'visit/%'
         ORDER BY rank, transcripts.id DESC LIMIT 5
     """, (match, exclude_session))
     return [dict(row) for row in rows]
