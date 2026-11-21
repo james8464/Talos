@@ -85,6 +85,27 @@ class RoomAcceptanceTests(unittest.TestCase):
         self.assertAlmostEqual((datetime.fromisoformat(items[1]["due_at"]) -
                                 datetime.now(UTC)).total_seconds(), 900, delta=2)
 
+    def test_corrected_delay_answers_pending_voice_reminder(self):
+        self.room.model_state = lambda: "warming up"
+        def speak(text, follow_up=False):
+            return self.request("/v1/turn", {"source": "voice", "text": text, "follow_up": follow_up})
+
+        earlier = speak("Remind me in thirty minutes to water the fern.")
+        original, = self.request("/v1/inbox")["items"]
+        self.assertIn("How long", speak("Remind me to check the blue folder.")["reply"])
+        self.assertIn("whole number", speak("Actually, make that zero minutes.", True)["reply"])
+        receipt = speak("Actually, make that five minutes.", True)
+        self.assertEqual((receipt["tool"], receipt["action"]), ("set_reminder", "applied"))
+        items = {item["id"]: item for item in self.request("/v1/inbox")["items"]}
+        self.assertEqual(set(items), {earlier["id"], receipt["id"]})
+        self.assertEqual(items[earlier["id"]], original)
+        latest = items[receipt["id"]]
+        self.assertEqual(latest["text"], "check the blue folder")
+        delta = datetime.fromisoformat(latest["due_at"]) - datetime.now(UTC)
+        self.assertAlmostEqual(delta.total_seconds(), 300, delta=2)
+        self.assertEqual(speak("I meant six minutes.", True)["tool"], "amend_reminder")
+        self.assertEqual(len(self.request("/v1/inbox")["items"]), 2)
+
     def test_service_works_during_model_recovery(self):
         self.room.model_state = lambda: "warming up"
         meta = self.request("/v1/status")
