@@ -153,12 +153,15 @@ def spoken_reply(generate, messages, text, model):
         except (ValueError, TypeError, KeyError, AttributeError) as error:
             raise RuntimeError("Invalid spoken reply from the local model.") from error
         spoken = re.findall(r"\w+", reply.casefold())
-        if not ((len(normalized) >= 4 and spoken == normalized) or (len(last_reply) >= 4 and spoken == last_reply)):
+        echo = (len(normalized) >= 4 and spoken == normalized) or (len(last_reply) >= 4 and spoken == last_reply)
+        physical_claim = re.search(r"\b(?:I(?:['’]ve| have) been (?:looking|searching) for|I (?:went looking for|picked up|tried on|was wearing))\b",
+                                   reply, re.I)
+        if not echo and not physical_claim:
             return reply
         if attempt == 0:
-            messages = [*messages, {"role": "system", "content":
-                "Answer as the other participant. You just repeated the speaker. Give them an original response "
-                "to the specific thing they said, from your own side of the conversation."}]
+            guidance = ("You described doing a physical activity yourself. Answer using only what the user reported."
+                        if physical_claim else "You repeated the speaker. Respond briefly to their specific detail.")
+            messages = [*messages, {"role": "system", "content": guidance}]
     return "Tell me a little more about that."
 
 
