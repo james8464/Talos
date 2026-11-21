@@ -19,10 +19,13 @@ from typing import Callable
 from uuid import uuid4
 
 from agent import model_text, parse_event, plan
-from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer
+from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer, spoken_reply, conversational_correction, corrected_recollection, compact_decision
 import goal_store
+import visitor_memory
 from turn_timing import classify
-from room_work import apply_order, note_request, project_brief, propose_work, saved_brief, work_order
+from local_runtime import check_ollama_model
+from talos_identity import SPOKEN_STYLE
+from room_work import clauses, apply_order, note_request, project_brief, propose_work, saved_brief, work_order
 from room_research import external_request, public_answer, search_web
 from agent_memory import STATE_PATH, insert_decision, open_memory
 from local_actions import inbox_items
@@ -71,8 +74,11 @@ class Room:
         self.worker_lock = threading.Lock()
         self.endpoint_probe = threading.Lock()
         self.next_goal_check = 0.0
+        self.review_after = monotonic() + 10
         self.voice_window: list[dict[str, str]] = []
         self.voice_window_updated = 0.0
+        self.facing_offer = None
+        self.facing_exchange = None
         self.last_voice_reminder = None
         self.pending_reminders: dict[str, tuple[float, str]] = {}
 
@@ -181,17 +187,127 @@ class Room:
             return decision("ask", "How long from now should I remind you?")
         return None
 
+    def facing_turn(self, db, body):
+        self.review_after = monotonic() + 10
+        if body.get("occupied") is not None and type(body["occupied"]) is not bool:
+            raise ValueError("occupied must be true, false, or null.")
+        profile = body.get("visitor")
+        session = visitor_memory.visit_session(db, profile) if profile else "native_voice"
+        result = self._facing_reply(db, body, profile)
+        if self.apply and not result.pop("_duplicate", False) and (profile or body.get("remember") is True) and result.get("reply"):
+            with db:
+                insert_transcripts(db, session, [{"role":"user", "content":body["text"]},
+                                                  {"role":"assistant", "content":result["reply"]}])
+        return result
+
+    def _facing_reply(self, db, body, profile):
+        """Handle a visually directed turn using only public questions and reviewed local writes."""
+        text = parse_event(json.dumps({"kind": "voice_turn", "summary": body.get("text")}))["summary"]
+        words = text.casefold().strip(" .!?")
+        started = monotonic()
+        with self.turn_lock:
+            offer = self.facing_offer
+            if offer and started > offer[1]:
+                offer = self.facing_offer = None
+            if words in ("confirm", "cancel", "never mind"):
+                if not offer or body.get("offer") != offer[0] or profile != offer[3]:
+                    return {"reply": "There is no current request to confirm."}
+                if words != "confirm":
+                    if db.execute("SELECT 1 FROM room_batches WHERE request_id=?", (offer[0],)).fetchone():
+                        return {"reply": "That request was already confirmed."}
+                    self.facing_offer = None
+                    return {"reply": "Cancelled."}
+                with db:
+                    db.execute("BEGIN IMMEDIATE")
+                    receipts, reply, fresh = apply_order(db, [offer[2]], {"kind": "voice_turn",
+                        "summary": "Confirmed a reviewed local action."}, apply=self.apply,
+                        archive=False, request_id=offer[0])
+                receipt = receipts[0]
+                if receipt["tool"] == "set_reminder" and receipt["action"] == "applied":
+                    self.last_voice_reminder = (receipt["id"], monotonic())
+                return {**receipt, "reply": reply, "_duplicate": not fresh}
+
+            self.facing_offer = None
+            previous, self.facing_exchange = self.facing_exchange, None
+            history = previous[2] if (previous and body.get("context") == previous[0]
+                                      and started < previous[1] and profile == previous[3]) else []
+            parts = clauses(text)
+            if len(parts) > 1 and (explicit_reminder(parts[0]) or explicit_task(parts[0]) or note_request(parts[0])):
+                return {"reply": "Please ask for one thing at a time."}
+            step = explicit_reminder(text) or explicit_task(text) or note_request(text)
+            if step:
+                if len(step["detail"]) > 320 or re.search(r"\b(?:to|the|my|for|about|with|until)$", words):
+                    return {"reply": "I missed the end of that request. Could you say it again?"}
+                token = str(uuid4())
+                self.facing_offer = (token, monotonic() + 45, step, profile)
+                label = {"create_task": "Add a task", "save_note": "Save a note",
+                         "set_reminder": f"Set a reminder in {step['remind_in_minutes']} minutes"}[step["tool"]]
+                return {"offer": token, "reply": f"{label}: {step['detail']}. Say confirm or cancel."}
+            if profile and words in ("who am i", "do you recognize me", "do you remember me"):
+                name = db.execute("SELECT name FROM visitors WHERE id=?", (profile,)).fetchone()[0]
+                reply = f"You confirmed your saved profile as {name}."
+            elif profile and re.fullmatch(r"what (?:do you (?:remember|know) about me|did i tell you(?: last time)?)", words):
+                recalled = visitor_memory.recall(db, profile)
+                reply = "Last time you said, " + recalled[0]["quote"][:400] if recalled else "I haven't reviewed a statement from you yet."
+            elif history and (correction := conversational_correction(text)):
+                reply = f"Got it. You meant {correction}."
+            elif history and (recollection := corrected_recollection(text, history)):
+                reply = recollection
+            elif name := visitor_memory.introduced_name(text):
+                reply = f"Nice to meet you, {name}."
+            elif quick := sensor_answer(text, "voice", body.get("occupied")):
+                reply = quick
+            elif words in ("what needs my attention", "what still needs my attention"):
+                goals = db.execute("SELECT observation FROM goals WHERE status='active'").fetchall()
+                blocked = sum(bool(json.loads(row[0]).get("risks")) for row in goals)
+                reply = ("One tracked goal needs attention." if blocked == 1 else
+                         f"{blocked} tracked goals need attention." if blocked else "No tracked goals have a reported blocker.")
+            else:
+                if self.model_state() != "ready":
+                    retained = profile or body.get("remember") is True
+                    reply = "I've noted that." if retained and list(visitor_memory.facts(text)) else "Give me a moment. The local model is warming up."
+                else:
+                    messages = [{"role":"system", "content": SPOKEN_STYLE + " You can converse, but this response cannot "
+                                 "take actions or check live information. Never claim an action unless its receipt is supplied."}]
+                    if profile:
+                        quotes = visitor_memory.recall(db, profile, text)
+                        if quotes:
+                            messages.append({"role":"user", "content":"Earlier words from this visitor, quoted as background: " + json.dumps(quotes)})
+                    if re.match(r"^(?:actually|no[, ]+i meant|i meant|sorry[, ]+i meant)\b", words) and "?" not in text:
+                        messages[0]["content"] += " They are correcting a detail. Accept the correction in one sentence. Add no new fact or question."
+                    elif history and history[-1]["content"].rstrip().endswith("?"):
+                        messages[0]["content"] += " You just asked a question. Let their answer land before asking another."
+                    messages.extend(history)
+                    messages.append({"role":"user", "content":text})
+                    check_ollama_model(self.model)
+                    if re.match(r"^(?:and )?how (?:many|much)\b", words):
+                        quantitative = [{"role":"system", "content":"Answer the current quantity question. Use earlier turns "
+                                         "to resolve references. For totals or scaling use calculate, with a numeric binary "
+                                         "expression such as 3 * 4. For a count, give the numeric value or a brief factual reply."},
+                                        *history, {"role":"user", "content":"Current question: " + text}]
+                        reply = compact_decision(model_text, quantitative, self.model, [], read_only=True)["detail"]
+                    else:
+                        reply = spoken_reply(model_text, messages, text, self.model)
+            token = str(uuid4())
+            exchange = [{"role":"user","content":text}, {"role":"assistant","content":reply}]
+            self.facing_exchange = (token, monotonic() + 90, [*history,*exchange][-12:], profile)
+            return {"reply": reply, "context": token, "planning_ms": round((monotonic() - started) * 1000)}
+
     def turn(self, db: sqlite3.Connection, body: dict) -> dict:
         text, source = body.get("text"), body.get("source", "text")
+        self.review_after = monotonic() + 10
         remember_voice = body.get("remember", False)
         if source not in ("voice", "text") or type(remember_voice) is not bool:
             raise ValueError("Use source text or voice and a boolean remember value.")
         event = parse_event(json.dumps({"kind": f"{source}_turn", "summary": text}))
+        if source == "voice" and body.get("visitor"):
+            return self.facing_turn(db, body)
         archive = source == "text" or remember_voice
         session = TEXT_SESSION if source == "text" else "native_voice"
         follow_up = source == "voice" and body.get("follow_up") is True
         received = monotonic()
         with self.turn_lock:
+            self.facing_offer = self.facing_exchange = None
             started = monotonic()
             if source == "voice":
                 if monotonic() - self.voice_window_updated >= 300:
@@ -330,6 +446,16 @@ class Room:
             reply = "I don't have enough information to help with that yet."
         return decision_id, action, reply
 
+    def review_memory(self):
+        if not self.apply or monotonic() < self.review_after or self.turn_lock.locked():
+            return False
+        with closing(open_memory(self.db_path)) as db:
+            def infer(messages, **options):
+                check_ollama_model(self.model)
+                return model_text(messages, model=self.model, **options)
+            return visitor_memory.review_one(db, self.db_path.parent / "Talos Memory",
+                                             infer if self.model_state() == "ready" else None)
+
     def step(self) -> bool:
         with self.worker_lock, closing(open_memory(self.db_path)) as db:
             if self.apply and monotonic() >= self.next_goal_check:
@@ -433,6 +559,20 @@ class Room:
             return 200, {"wav": audio, "voice": self.voice.name, "synthesis_ms": elapsed}
         with closing(open_memory(self.db_path)) as db:
             match method, path:
+                case "GET", "/v1/visitors":
+                    return 200, {"profiles": visitor_memory.profiles(db)}
+                case "POST", "/v1/visitors/forget-reference":
+                    if not self.apply:
+                        return 403, {"error": "Profile changes are off in shadow mode."}
+                    with self.turn_lock, db:
+                        db.execute("UPDATE visitors SET template=X'' WHERE id=?", (body.get("id"),))
+                    return 200, {"forgotten": True}
+                case "POST", "/v1/visitors/enroll":
+                    if not self.apply:
+                        return 403, {"error": "Visitor enrollment is off in shadow mode."}
+                    return 200, visitor_memory.enroll(db, body)
+                case "POST", "/v1/voice/facing":
+                    return 200, self.facing_turn(db, body)
                 case "GET", "/v1/status":
                     return 200, self.context(db, model=self.model, model_state=self.model_state(), local_actions=self.apply,
                                              proactive_speech=self.speak, voice_latency=voice_latency(db),
@@ -585,8 +725,9 @@ class Handler(BaseHTTPRequestHandler):
             body = {}
             if method == "POST":
                 length = int(self.headers.get("Content-Length", "0"))
-                if not 1 <= length <= 8192 or self.headers.get("Transfer-Encoding"):
-                    raise ValueError("A JSON body of 1 to 8192 bytes is required.")
+                limit = 136000 if self.path == "/v1/visitors/enroll" else 8192
+                if not 1 <= length <= limit or self.headers.get("Transfer-Encoding"):
+                    raise ValueError(f"A JSON body of 1 to {limit} bytes is required.")
                 body = json.loads(self.rfile.read(length))
                 if not isinstance(body, dict):
                     raise ValueError("Expected a JSON object.")
@@ -641,6 +782,15 @@ def run(
                     print(f"Talos room worker: {error}", flush=True)
                 stopping.wait(1)
 
+        def review() -> None:
+            while not stopping.wait(2):
+                try:
+                    room.review_memory()
+                except (OSError, sqlite3.Error) as error:
+                    print(f"Talos memory reviewer: {error}", flush=True)
+                    stopping.wait(10)
+
+        threading.Thread(target=review, daemon=True).start()
         thread = threading.Thread(target=work, daemon=True)
         thread.start()
         print(f"Talos room endpoint: http://127.0.0.1:{port}", flush=True)

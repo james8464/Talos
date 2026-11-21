@@ -93,6 +93,16 @@ struct ConversationFocus {
         return nil
     }
 
+    static func conversationalInterruption(_ words: String, playback: String) -> Bool {
+        func normalize(_ text: String) -> String {
+            text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).joined(separator: " ")
+        }
+        let heard = normalize(words)
+        guard !heard.isEmpty, !normalize(playback).contains(heard) else { return false }
+        return heard.range(of: #"^(?:hold on|hang on|wait a second|one second|stop there|wait (?:i|that|actually)|no (?:i meant|sorry)|actually (?:i|it|what|make|the)|sorry i meant)\b"#,
+                           options: .regularExpression) != nil
+    }
+
     static func isInterruption(_ words: String, playback: String) -> Bool {
         guard let command = roomRequest(words) else { return false }
         let clean = command.lowercased().trimmingCharacters(in: .punctuationCharacters)
@@ -105,4 +115,41 @@ struct ConversationFocus {
 func needsContinuation(_ caption: String) -> Bool {
     caption.range(of: #"(?i)\b(?:to|for|from|with|because|until|about|and then|called|named|the|my|that I)\s*[,–—-]?$"#,
                   options: .regularExpression) != nil
+}
+
+// A facing cue carries no identity. A missing angle or an extra person cancels it.
+struct FacingAttention {
+    private(set) var since: TimeInterval?
+    private var last = -Double.infinity
+
+    mutating func observe(_ facing: Bool, at now: TimeInterval) {
+        if !facing { since = nil }
+        else if since == nil || now - last > 1.8 { since = now }
+        last = now
+    }
+
+    func available(from start: TimeInterval, until now: TimeInterval) -> Bool {
+        guard let since else { return false }
+        return since + 0.6 <= start && now >= last && now - last <= 1.8
+    }
+
+    static func singleFacing(persons: Int, faces: Int, width: Double, yaw: Double?, pitch: Double?) -> Bool {
+        guard persons == 1, faces == 1, width >= 0.09, let yaw, let pitch else { return false }
+        return abs(yaw) <= 0.30 && abs(pitch) <= 0.35
+    }
+
+    func accepts(_ words: String, from start: TimeInterval, until now: TimeInterval, hasOffer: Bool, hasContext: Bool = false) -> Bool {
+        guard available(from: start, until: now) else { return false }
+        return Self.direct(words, hasOffer: hasOffer, hasContext: hasContext)
+    }
+
+    static func direct(_ words: String, hasOffer: Bool, hasContext: Bool) -> Bool {
+        let phrase = words.lowercased().trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        if ["confirm", "cancel", "never mind"].contains(phrase) { return hasOffer }
+        if hasContext && phrase.range(of: #"^(?:and (?:what|how|on)|what about|how about|tell me more|go on|actually|wait|no i meant|i think|i meant|that sounds|not really)\b"#, options: .regularExpression) != nil { return true }
+        let direct = #"^(?:(?:can|could|would) you (?:please )?(?:hear|see|tell|explain|remind|add|create|save|make a note)|(?:please )?(?:remind me|create a task|add .+ to my (?:task|to.do) list|save a note)|(?:what|who|when|where|how) (?:is|are|does|do|many|much|long)|what (?:still )?needs my attention)\b"#
+        // A new clause or vocative after punctuation can turn a question toward another listener.
+        guard !phrase.contains(","), !phrase.contains("“"), !phrase.contains("\"") else { return false }
+        return phrase.range(of: direct, options: .regularExpression) != nil
+    }
 }

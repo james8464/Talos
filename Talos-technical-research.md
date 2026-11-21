@@ -76,3 +76,37 @@ Median probe time was 394.5 ms, with a maximum of 1,219 ms. Only Qwen3 4B was in
 These are classifier results before combining them with the native incomplete-phrase
 rule. The model remains opt-in. The practice-room procedure in the README measures
 behavior at the microphone and lets a listener score misdirected replies.
+
+## Wake-free conversation and visitor memory on the Mac
+
+Google's [Look and Talk implementation](https://research.google/blog/look-and-talk-natural-conversations-with-google-assistant/)
+combines complementary cues to decide whether someone is addressing a device. Talos
+now uses a narrower combination of sustained frontal orientation, one detected person,
+the wording of a request and an active conversation. The local camera client uses
+[Apple Vision face observations](https://developer.apple.com/documentation/vision/vnfaceobservation).
+A cropped Vision image descriptor can suggest a returning profile. The person confirms
+the suggestion before their previous conversation is used. This is an image-similarity
+heuristic. A purpose-trained comparison candidate is [OpenCV SFace](https://github.com/opencv/opencv_zoo/blob/main/models/face_recognition_sface/sface.py).
+
+A four-panel entirely synthetic portrait fixture exercised the detector entry points
+on the target Mac without accessing its camera. The default Vision path failed to
+initialize its Neural Engine model in the command runner. A CPU replay also failed
+during pixel-buffer allocation. This run yielded no face-match accuracy estimate.
+The native checks separately exercise sustained orientation, missing angles, multiple
+people, ambiguous synthetic distances, declining an introduction and confirming a
+return. The portrait replay can be repeated on a configured Mac by compiling
+`mac/VoiceEndpoint.swift`, `mac/VisitorMemory.swift`, `mac/MeetingBrief.swift` and
+`tests/VoiceEndpointChecks.swift` together, then passing `--portraits sheet.png`.
+
+The isolated service trial recorded a synthetic visitor statement, ran the idle local
+reviewer, exported linked person, topic and conversation notes, and recalled the
+original quote after restart. During another replay the local model echoed a speaker
+and reversed a correction. Talos now requests structured spoken output, detects exact
+echoes, keeps a bounded thread and uses the speaker's own corrections for retrospective
+questions. A three-turn notebook conversation retained both the corrected object and
+its location. The complete Kokoro WAVs took 2.37, 0.89 and 1.03 seconds respectively
+from transcript submission in one run. These timings exclude recognition and playback.
+
+The vault follows [Obsidian’s Markdown storage](https://obsidian.md/help/data-storage)
+and [internal link format](https://obsidian.md/help/links). Source notes and user edits
+survive repeated exports. Visual templates remain in the local database.

@@ -140,9 +140,11 @@ def _observe(db, row, now, evidence):
     if evidence["state"] not in ("found", "not required"):
         risks.append(f"{row['required_doc']}: {evidence['state']}")
     tasks = [item for item in brief["items"] if item["kind"] == "task"]
-    if tasks and _date(row["deadline"]) - now <= timedelta(days=1):
+    remaining = _date(row["deadline"]) - now
+    stage = "overdue" if remaining <= timedelta() else "within a day" if remaining <= timedelta(days=1) else "scheduled"
+    if tasks and stage != "scheduled":
         risks.append("Open tasks due for review within a day")
-    return {"evidence": evidence, "items": brief["items"], "excerpts": brief["excerpts"], "risks": risks}
+    return {"evidence": evidence, "items": brief["items"], "excerpts": brief["excerpts"], "risks": risks, "stage": stage}
 
 
 def _update_reminder(db, row, now):
@@ -189,9 +191,13 @@ def refresh(db, goal_id, now=None, *, change="", evidence=None):
     observation = _observe(db, row, now, evidence)
     new_risks = [r for r in observation["risks"] if r not in previous.get("risks", [])]
     reason = "; ".join(filter(None, [change, *new_risks]))
+    approaching = (previous.get("stage") is not None and previous["stage"] != observation["stage"]
+                   and observation["stage"] != "scheduled" and observation["risks"])
+    if approaching:
+        reason = f"The deadline is {observation['stage']}. Check " + "; ".join(observation["risks"]) + "."
     if not reason and previous and observation["risks"] != previous.get("risks"):
         reason = "A previously reported blocker cleared."
-    if row["preference"] == "quiet" or (previous and observation["risks"] != previous.get("risks")):
+    if row["preference"] == "quiet" or approaching or (previous and observation["risks"] != previous.get("risks")):
         db.execute(
             """UPDATE inbox SET acknowledged_at=? WHERE acknowledged_at IS NULL
                    AND id IN (SELECT notification_id FROM goal_changes WHERE goal_id=?)""",
@@ -210,7 +216,7 @@ def refresh(db, goal_id, now=None, *, change="", evidence=None):
         notify = (
             previous
             and row["preference"] != "quiet"
-            and (new_risks or change == "Calendar deadline moved." or row["preference"] == "changes")
+            and (approaching or new_risks or change == "Calendar deadline moved." or row["preference"] == "changes")
         )
         item = _inbox(db, "alert", f"{row['topic']}: {reason}", now, now) if notify else None
         _checkpoint(db, goal_id, reason, now, item)

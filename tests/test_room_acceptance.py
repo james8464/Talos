@@ -119,7 +119,7 @@ class RoomAcceptanceTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         binary = self.path.parent / "check-endpoint"
         subprocess.run(["swiftc", "-module-cache-path", str(self.path.parent / "swift-cache"),
-                        str(root / "mac/VoiceEndpoint.swift"), str(root / "mac/MeetingBrief.swift"),
+                        str(root / "mac/VoiceEndpoint.swift"), str(root / "mac/MeetingBrief.swift"), str(root / "mac/VisitorMemory.swift"),
                         str(root / "tests/VoiceEndpointChecks.swift"),
                         "-o", str(binary)], check=True, timeout=120)
         subprocess.run([str(binary), *files], check=True, timeout=30)
@@ -150,6 +150,28 @@ class RoomAcceptanceTests(unittest.TestCase):
         self.assertRegex(first["reply"].lower(), r"\b(three|3)\b")
         second = self.request("/v1/turn", {"source": "voice", "text": "And on two of those combined?"})
         self.assertRegex(second["reply"].lower(), r"\b(six|6)\b")
+
+    @unittest.skipUnless(os.environ.get("TALOS_TEST_OLLAMA") == "1", "requires the local conversational model")
+    def test_local_conversation_keeps_a_correction(self):
+        if os.environ.get("TALOS_TEST_KOKORO") == "1":
+            models = Path(__file__).resolve().parents[1] / "models" / "kokoro-room"
+            self.room.voice = KokoroVoice(models, DEFAULT_VOICE)
+        context = None
+        for words in ("I finally found my blue notebook behind the piano.",
+                      "Actually, I meant the green notebook. The blue one is still missing.",
+                      "Which notebook did I find, and where?"):
+            start = time.monotonic()
+            answer = self.request("/v1/voice/facing", {"text":words,"context":context})
+            reply, context = answer["reply"], answer["context"]
+            self.assertNotEqual(reply.lower().strip(".! "), words.lower().strip(".! "))
+            reply_ms = round((time.monotonic() - start) * 1000)
+            if self.room.voice:
+                audio = self.request("/v1/voice", {"text":reply})
+                with wave.open(io.BytesIO(base64.b64decode(audio["wav"]))) as wav:
+                    self.assertGreater(wav.getnframes(), 0)
+                print(f"Conversation: {reply!r} · text {reply_ms} ms · complete WAV {round((time.monotonic()-start)*1000)} ms", flush=True)
+        self.assertIn("green",reply.casefold())
+        self.assertIn("piano",reply.casefold())
 
     def test_latency_samples_are_bounded_and_idempotent(self):
         for elapsed in range(65):
