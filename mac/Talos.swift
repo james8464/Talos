@@ -139,6 +139,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private let startupLine = "Talos online. I was beginning to think you had forgotten me."
     private var kokoroVoice: String?
     private var player: AVAudioPlayer?
+    private var finalClip = false
+    private var latestPresence: Bool?
+    private var presenceAt = Date.distantPast
+    private var resumeMicrophone = false
+    private var resumeCamera = false
+    private var reconnecting = false
     private var speechRequest: Task<Void, Never>?
     private var playbackEpoch = UUID()
     private let client: RoomClient?
@@ -186,16 +192,22 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
         polling = Task {
             while !Task.isCancelled {
-                if !announcedStartup {
+                if !announcedStartup || reconnecting {
                     do {
                         let result = try await client?.request("status")
                         kokoroVoice = result?["voice"] as? String
                         voiceLabel = kokoroVoice.map { "Voice: Kokoro · \($0)" } ?? "Voice: macOS fallback"
-                        status = "Connected. Enable the microphone or camera to start room mode."
-                        if !busy && !speaking {
+                        status = "Connected"
+                        if reconnecting {
+                            reconnecting = false
+                            if resumeMicrophone { toggleMicrophone() }
+                            if resumeCamera { toggleCamera() }
+                        }
+                        if !announcedStartup && !busy && !speaking {
                             announcedStartup = true
                             addLine("Talos", startupLine)
                             say(startupLine)
+                            startRoom()
                         }
                     } catch { status = error.localizedDescription }
                 }
@@ -291,13 +303,11 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     if pending { self.commitVoice(); return }
                     self.stopRecognition()
                     self.recognitionFailures += 1
-                    if self.recognitionFailures >= 3 {
-                        self.microphone = false
-                        self.status = error?.localizedDescription ?? "The speech recognizer stopped."
-                    } else {
-                        try? await Task.sleep(for: .seconds(2))
-                        self.beginRecognition()
+                    if !recognizer.isAvailable {
+                        self.status = "Waiting for on-device speech recognition…"
                     }
+                    try? await Task.sleep(for: .seconds(min(8, self.recognitionFailures)))
+                    self.beginRecognition()
                 }
             }
         }
@@ -334,6 +344,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         text.replacingOccurrences(
             of: #"(?i)^((?:hey|hello)[,\s]+)tell us\b|^tell us(?=\s*[,!.?]|\s*$)"#,
             with: "$1Talos", options: .regularExpression
+        ).replacingOccurrences(
+            of: #"(?i)\b((?:can|do|did) you (?:hear|see) me)[, ]+tell us(?=[.!?]*$)"#,
+            with: "$1 Talos", options: .regularExpression
         )
     }
 
@@ -355,15 +368,24 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             do {
                 let result = try await client.request("turn", body: [
                     "text": text, "source": source, "remember": rememberVoice,
+                    "occupied": (cameraRunning && Date().timeIntervalSince(presenceAt) < 75
+                                 ? latestPresence : nil).map { $0 as Any } ?? NSNull(),
                 ])
                 let reply = result["reply"] as? String ?? ""
                 let replyMs = Int(Date().timeIntervalSince(submitted) * 1000)
                 let planningMs = result["planning_ms"] as? Int ?? 0
                 let queueMs = result["queue_ms"] as? Int ?? 0
-                lastTiming = "Reply \(replyMs) ms · model \(planningMs) ms · queue \(queueMs) ms"
+                lastTiming = "Reply \(replyMs) ms · decision \(planningMs) ms · queue \(queueMs) ms"
                 if !reply.isEmpty {
                     addLine("Talos", reply)
-                    if source == "voice" || microphone { say(reply) }
+                    if let sources = result["sources"] as? [[String: String]] {
+                        for source in sources {
+                            if let title = source["title"], let url = source["url"] {
+                                addLine("Source", "\(title) — \(url)")
+                            }
+                        }
+                    }
+                    if source == "voice" || microphone { say(reply, turnStart: submitted) }
                 }
                 status = "Connected"
             } catch {
@@ -420,6 +442,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func sendPresence(_ occupied: Bool?) {
+        latestPresence = occupied
+        presenceAt = Date()
         let previous = presenceSend
         presenceSend = Task {
             await previous?.value
@@ -448,6 +472,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             endpointFailures += 1
             status = error.localizedDescription
             if endpointFailures >= 3 {
+                resumeMicrophone = microphone
+                resumeCamera = cameraRunning
+                reconnecting = true
                 if microphone { toggleMicrophone() }
                 if cameraRunning { toggleCamera() }
                 status = "Room sensors paused because the local Talos endpoint stopped responding."
@@ -469,7 +496,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
     }
 
-    private func say(_ text: String, id: Int? = nil) {
+    private func say(_ text: String, id: Int? = nil, turnStart: Date? = nil) {
         speaking = true
         speechID = id
         stopRecognition()
@@ -481,28 +508,50 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         playbackEpoch = epoch
         let requested = Date()
         speechRequest = Task {
+            var played = 0
+            // Prepare the following sentence while the preceding one plays.
+            let clips = turnStart != nil ? Self.speechClips(text) : [text]
             do {
-                let result = try await client.request("voice", body: ["text": text])
-                guard !Task.isCancelled, playbackEpoch == epoch else { return }
-                guard let encoded = result["wav"] as? String, let data = Data(base64Encoded: encoded) else {
-                    throw RoomError("Kokoro returned invalid audio.")
-                }
-                let audio = try AVAudioPlayer(data: data)
-                audio.delegate = self
-                player = audio
-                guard audio.play() else { throw RoomError("Kokoro audio could not play.") }
-                voiceLabel = "Voice: Kokoro · \(kokoroVoice)"
-                let milliseconds = Int(Date().timeIntervalSince(requested) * 1000)
-                if !lastTiming.isEmpty {
-                    lastTiming += " · voice \(milliseconds) ms"
+                for (index, clip) in clips.enumerated() {
+                    let result = try await client.request("voice", body: ["text": clip])
+                    guard !Task.isCancelled, playbackEpoch == epoch else { return }
+                    guard let encoded = result["wav"] as? String, let data = Data(base64Encoded: encoded) else {
+                        throw RoomError("Kokoro returned invalid audio.")
+                    }
+                    let audio = try AVAudioPlayer(data: data)
+                    while player?.isPlaying == true { try await Task.sleep(for: .milliseconds(15)) }
+                    guard !Task.isCancelled, playbackEpoch == epoch else { return }
+                    audio.delegate = self
+                    finalClip = index == clips.count - 1
+                    player = audio
+                    guard audio.play() else { throw RoomError("Kokoro audio could not play.") }
+                    played += 1
+                    voiceLabel = "Voice: Kokoro · \(kokoroVoice)"
+                    if let turnStart, index == 0 {
+                        let elapsed = Int(Date().timeIntervalSince(requested) * 1000)
+                        let total = Int(Date().timeIntervalSince(turnStart) * 1000)
+                        lastTiming += " · voice \(elapsed) ms · first audio at \(total) ms"
+                    }
                 }
             } catch {
                 guard !Task.isCancelled, playbackEpoch == epoch else { return }
                 voiceLabel = "Voice: macOS fallback · Kokoro unavailable"
+                while player?.isPlaying == true {
+                    guard (try? await Task.sleep(for: .milliseconds(20))) != nil else { return }
+                }
+                guard !Task.isCancelled, playbackEpoch == epoch else { return }
                 player = nil
-                speaker.speak(AVSpeechUtterance(string: text))
+                speaker.speak(AVSpeechUtterance(string: clips.dropFirst(played).joined(separator: " ")))
             }
         }
+    }
+
+    static func speechClips(_ text: String) -> [String] {
+        var clips: [String] = []
+        text.enumerateSubstrings(in: text.startIndex..., options: .bySentences) { sentence, _, _, _ in
+            if let sentence { clips.append(sentence.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        }
+        return clips.isEmpty ? [text] : clips
     }
 
     private func finishSpeech(delivered: Bool) {
@@ -516,7 +565,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
-            guard self.player === player else { return }
+            guard self.player === player, self.finalClip else { return }
             finishSpeech(delivered: flag)
         }
     }
@@ -563,7 +612,7 @@ struct CameraPreview: NSViewRepresentable {
 }
 
 struct RoomView: View {
-    @StateObject private var room = RoomController()
+    @ObservedObject var room: RoomController
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -574,7 +623,6 @@ struct RoomView: View {
                 if !room.lastTiming.isEmpty { Text(room.lastTiming) }
             }.font(.caption).foregroundStyle(.secondary)
             HStack {
-                Button("Start room mode", action: room.startRoom).buttonStyle(.borderedProminent)
                 Button(room.microphone ? "Microphone on" : "Microphone off", action: room.toggleMicrophone)
                 Button(room.cameraRunning ? "Camera on" : "Camera off", action: room.toggleCamera)
                 if room.speaking { Button("Stop speaking", action: room.stopSpeaking) }
@@ -623,9 +671,16 @@ struct RoomView: View {
     }
 }
 
+final class TalosAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+}
+
 @main
 struct TalosApp: App {
+    @NSApplicationDelegateAdaptor(TalosAppDelegate.self) var delegate
+    @StateObject private var room = RoomController()
+
     var body: some Scene {
-        WindowGroup { RoomView() }
+        Window("Talos", id: "room") { RoomView(room: room) }
     }
 }

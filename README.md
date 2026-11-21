@@ -27,11 +27,11 @@ Listen for **“Talos online”** after the app connects. The default voice is K
 Use `--voice am_michael` to select another English Kokoro voice or `--system-voice` for
 macOS speech. The app labels the active voice and any fallback.
 
-Click **Start room mode** and grant the Mac microphone, speech recognition, and camera
-permissions. The microphone pauses during inference and playback. The speech client uses
+Room mode starts when the service connects. On first launch, grant macOS microphone,
+speech recognition, and camera permissions. Each sensor has its own off switch. The microphone pauses during inference and playback. The speech client uses
 on-device recognition and shows words as it hears them. It biases recognition toward
 Talos's name and corrects “tell us” in clear forms of direct address. The app shows reply,
-planning, queue, and Kokoro playback-start timing after you speak.
+decision time, queue time, and time from transcript submission to first audio.
 
 The camera card shows a live local preview and a **Person detected** or **No person detected**
 result. The endpoint receives occupancy only. Enable **Remember voice transcripts**
@@ -40,8 +40,12 @@ conversation using a rolling memory that expires after five minutes of no voice 
 A voice request that creates a task,
 reminder, note, or alert keeps the resulting local item.
 
-The planner can react to occupancy changes without a prompt. It checks whether an event still
-matches the room before acting and can schedule one follow-up when it decides to wait.
+Arrivals and departures update occupancy silently. Ordinary room chatter can be ignored.
+Talos answers hearing, visibility and identity checks directly from the input channel and
+current camera state. Their Kokoro audio is prepared at startup. Other replies use short
+structured decisions and start playback when the first sentence is ready. Additional
+sentences are synthesized during playback. The local model stays resident while the
+launcher runs. Actionable events can trigger a planner decision and one delayed follow-up.
 Local actions apply by default in room mode. Use `--shadow` to evaluate what it would do
 and see conversational replies with no inbox changes or proactive announcements. Reminders
 and alerts display their details in the app and use a generic spoken notification. Stop
@@ -50,6 +54,40 @@ endpoint becomes unreachable.
 
 For development, `--headless` starts the service without opening the app, and `--build-only`
 builds and signs `state/Talos.app` without starting a model.
+
+### Public questions and web search
+
+Say “Search the web for the next lunar eclipse” to send that query to DuckDuckGo
+through DDGS. The first search uses uv to install the pinned search client. Talos reads
+up to four result snippets, answers with the local model, and shows the titles and URLs.
+Typed questions that need current public facts also let the planner choose search. The
+spoken path requires a search request. Search receives the current query only.
+
+Say “Ask Respan why the Moon has phases” to try the explicitly named free model route.
+Set `RESPAN_API_KEY` or put the key in `state/respan.key` with owner-only permissions.
+Only the question after “Ask Respan” goes to that provider. The room loop continues
+using Ollama. Provider errors and rate limits surface in the reply. `--offline` disables
+both external lookups. The Respan route is defined in `room_research.py`.
+
+### Investigate a recurring problem with Codex
+
+Talos counts slow voice decisions (at least two seconds) and slow synthesis requests
+(at least one second). It keeps a count and the worst duration for each stage. From a
+second terminal while the room launcher is running, use the installed Codex CLI through:
+
+```sh
+python3 improve_talos.py
+python3 improve_talos.py "Long replies start playing too slowly"
+```
+
+With no argument, the command selects the most frequent slow stage seen at least twice.
+It copies Talos source and tests into a temporary directory, asks Codex for a diff,
+checks that the diff applies there with Git, and saves it under `state/proposals/`.
+Inspect and test the patch before merging it. A failed model call or invalid diff
+leaves the running assistant intact. Local generation defaults to the project Ollama
+port and model `qwen3:4b`. Use `--model` for another installed coding model. The optional
+`--cloud` uses your signed-in Codex account and its usage limits. The room microphone
+cannot start a coding session.
 
 ### Local API
 
@@ -72,7 +110,7 @@ After upgrading, close the previous Talos window and stop its launcher before re
 Run `python3 -m unittest discover -s tests -v` to validate the local service. To verify a
 live setup, speak a phrase only you know, request a local timer, then leave and re-enter
 the camera's view. Check the text reply, listening and room indicators, and the event
-receipts. The Mac app requires an active desktop session and approved device permissions.
+receipts. Arriving and leaving should stay silent. The Mac app requires an active desktop session and approved device permissions.
 
 ## Optional legacy browser benchmark
 

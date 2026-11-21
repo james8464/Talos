@@ -12,6 +12,8 @@ import urllib.request
 import wave
 from pathlib import Path
 
+from room_dialogue import SENSOR_LINES
+
 STARTUP_LINE = "Talos online. I was beginning to think you had forgotten me."
 DEFAULT_VOICE = "bm_george"
 KOKORO_VERSION = "0.6.0"
@@ -86,7 +88,7 @@ class KokoroVoice:
         self.name = name
         self.language = "en-gb" if name.startswith("b") else "en-us"
         self.lock = threading.Lock()
-        self.startup_audio = self.render(STARTUP_LINE)
+        self.fixed_lines = {line: self.render(line) for line in (STARTUP_LINE, *SENSOR_LINES)}
 
     def render(self, text: str) -> str:
         with self.lock:
@@ -94,6 +96,6 @@ class KokoroVoice:
         return wav_base64(samples, rate)
 
     def speak(self, text: str) -> str:
-        if text == STARTUP_LINE:
-            return self.startup_audio
+        if text in self.fixed_lines:
+            return self.fixed_lines[text]
         return self.render(text)

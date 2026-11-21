@@ -20,7 +20,7 @@ def open_memory(path: Path) -> sqlite3.Connection:
     database.row_factory = sqlite3.Row
     try:
         database.execute("PRAGMA foreign_keys = ON")
-        if database.execute("PRAGMA user_version").fetchone()[0] < 2:
+        if database.execute("PRAGMA user_version").fetchone()[0] < 3:
             with database:
                 database.execute("BEGIN IMMEDIATE")
                 version = database.execute("PRAGMA user_version").fetchone()[0]
@@ -28,7 +28,11 @@ def open_memory(path: Path) -> sqlite3.Connection:
                     initialize_state(database)
                 if version < 2:
                     initialize_room_queue(database)
-                    database.execute("PRAGMA user_version = 2")
+                if version < 3:
+                    database.execute("""CREATE TABLE IF NOT EXISTS room_slow_stages (
+                        stage TEXT PRIMARY KEY, occurrences INTEGER NOT NULL, worst_ms INTEGER NOT NULL
+                    )""")
+                    database.execute("PRAGMA user_version = 3")
     except sqlite3.Error:
         database.close()
         raise

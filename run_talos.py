@@ -104,7 +104,7 @@ def warm_model(model: str) -> None:
     print(f"Warming local model {model}.", flush=True)
     try:
         request_ollama_json("POST", "/api/generate", timeout=90, payload={
-            "model": model, "prompt": "", "stream": False, "keep_alive": "30m",
+            "model": model, "prompt": "", "stream": False, "keep_alive": -1,
             "options": {"num_ctx": 8192},
         })
     except RuntimeError as error:
@@ -152,7 +152,7 @@ def main() -> int:
                 subprocess.run(["/usr/bin/open", "-n", str(app), "--args",
                                 "--token-file", str(TOKEN_PATH), "--port", str(args.port)], check=True)
 
-        run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice),
+        run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice, online=not args.offline),
             TOKEN_PATH, ready=launch_app)
     except KeyboardInterrupt:
         return 0

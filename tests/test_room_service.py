@@ -22,39 +22,25 @@ class RoomServiceTests(unittest.TestCase):
         self.path = Path(directory) / "room.sqlite3"
         self.room = Room(self.path, "mock-local")
 
-    def test_presence_triggers_background_decision_and_speech_receipt(self):
-        status, arrival = self.room.route("POST", "/v1/presence", {"occupied": True})
-        self.assertEqual(status, 202)
-        self.assertIsNotNone(arrival["event_id"])
-        self.assertIsNone(self.room.route("POST", "/v1/presence", {"occupied": True})[1]["event_id"])
-        with patch("room_service.plan", return_value=GREETING) as planner:
-            self.assertTrue(self.room.step())
-            self.assertFalse(self.room.step())
-        planner.assert_called_once()
-        self.assertIs(planner.call_args.kwargs["private_context"], False)
-        item = self.room.route("GET", "/v1/speech", {})[1]["item"]
-        self.assertEqual(item["text"], GREETING["detail"])
-        self.assertEqual(self.room.route("POST", "/v1/speech/ack", {"id": item["id"]})[0], 200)
-        self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
-        status, receipt = self.room.route("GET", f"/v1/events/{arrival['event_id']}", {})
-        self.assertEqual(status, 200)
-        self.assertEqual((receipt["status"], receipt["decision_id"]), ("done", item["id"]))
+    def test_presence_alone_never_generates_speech_or_uses_model(self):
+        with patch("room_service.plan") as planner:
+            for occupied in (True, False, True):
+                status, arrival = self.room.route("POST", "/v1/presence", {"occupied": occupied})
+                self.assertEqual(status, 202)
+                self.assertTrue(self.room.step())
+                self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
+                receipt = self.room.route("GET", f"/v1/events/{arrival['event_id']}", {})[1]
+                self.assertEqual(receipt["status"], "done")
+            planner.assert_not_called()
 
-    def test_presence_change_while_planning_suppresses_stale_greeting(self):
+    def test_stale_presence_event_does_not_run_after_departure(self):
         event_id = self.room.route("POST", "/v1/presence", {"occupied": True})[1]["event_id"]
-
-        def occupant_left(*args, **kwargs):
-            self.room.route("POST", "/v1/presence", {"occupied": False})
-            return GREETING
-
-        with patch("room_service.plan", side_effect=occupant_left):
-            self.assertTrue(self.room.step())
-        receipt = self.room.route("GET", f"/v1/events/{event_id}", {})[1]
-        self.assertEqual(receipt["status"], "stale")
-        self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
+        self.room.route("POST", "/v1/presence", {"occupied": False})
+        self.assertTrue(self.room.step())
+        self.assertEqual(self.room.route("GET", f"/v1/events/{event_id}", {})[1]["status"], "stale")
 
     def test_wait_schedules_one_durable_follow_up(self):
-        self.room.route("POST", "/v1/presence", {"occupied": True})
+        self.room.route("POST", "/v1/events", {"kind": "task_update", "summary": "A task is delayed."})
         wait = {**GREETING, "disposition": "wait", "tool": "none", "detail": "Check whether they stayed."}
         with patch("room_service.plan", return_value=wait):
             self.assertTrue(self.room.step())
@@ -98,11 +84,11 @@ class RoomServiceTests(unittest.TestCase):
     def test_voice_opt_in_archives_both_sides_of_the_turn(self):
         reply = {**GREETING, "disposition": "reply", "tool": "none", "detail": "A reply."}
         with patch("room_service.plan", return_value=reply):
-            self.room.route("POST", "/v1/turn", {"text": "Hello", "source": "voice", "remember": True})
+            self.room.route("POST", "/v1/turn", {"text": "Hello Talos", "source": "voice", "remember": True})
         with closing(open_memory(self.path)) as db:
             self.assertEqual(
                 [tuple(row) for row in db.execute("SELECT role, text FROM transcripts ORDER BY id")],
-                [("user", "Hello"), ("assistant", "A reply.")],
+                [("user", "Hello Talos"), ("assistant", "A reply.")],
             )
 
     def test_http_handler_requires_token_and_rejects_oversize_payloads(self):
@@ -133,19 +119,20 @@ class RoomServiceTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT COUNT(*) FROM transcripts").fetchone()[0], 0)
             self.assertNotIn("The key is blue.", json.dumps(decisions(db)))
 
-    def test_queued_greeting_is_suppressed_after_departure(self):
-        self.room.route("POST", "/v1/presence", {"occupied": True})
-        with patch("room_service.plan", return_value=GREETING):
+    def test_actionable_event_can_still_speak_and_be_acknowledged(self):
+        self.room.route("POST", "/v1/events", {"kind": "deadline", "summary": "A timer is due."})
+        with patch("room_service.plan", return_value={**GREETING, "detail": "Your timer is due."}):
             self.assertTrue(self.room.step())
-        self.room.route("POST", "/v1/presence", {"occupied": False})
-        self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
-        self.room.route("POST", "/v1/presence", {"occupied": True})
+        item = self.room.route("GET", "/v1/speech", {})[1]["item"]
+        self.assertEqual(item["text"], "Your timer is due.")
+        for _ in range(2):
+            self.assertEqual(self.room.route("POST", "/v1/speech/ack", {"id": item["id"]})[0], 200)
         self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
 
     def test_voice_turn_uses_smaller_planning_budget_and_reports_duration(self):
         reply = {**GREETING, "disposition": "reply", "tool": "none", "detail": "A reply."}
         with patch("room_service.plan", return_value=reply) as planner:
-            _, result = self.room.route("POST", "/v1/turn", {"text": "Hello", "source": "voice"})
+            _, result = self.room.route("POST", "/v1/turn", {"text": "Hello Talos", "source": "voice"})
         self.assertEqual(planner.call_args.kwargs["max_lookups"], 1)
         self.assertEqual(planner.call_args.kwargs["max_tokens"], 256)
         self.assertGreaterEqual(result["queue_ms"], 0)
