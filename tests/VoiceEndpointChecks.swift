@@ -43,6 +43,21 @@ struct VoiceEndpointChecks {
                         "Jamie, remind me in ten minutes.", "Hey Talosaurus, are you there?", "Hey, tell us what happened."] {
             precondition(roomRequest(chatter) == nil)
         }
+        var focus = ConversationFocus()
+        focus.open(at: 1, question: true)
+        precondition(focus.request("In twenty minutes.", at: 4) != nil)
+        precondition(focus.request("Actually, make that five minutes.", at: 5) != nil)
+        precondition(focus.request("Jamie, remind me to stretch.", at: 5) == nil)
+        precondition(focus.request("Actually, she was there.", at: 5) == nil)
+        precondition(focus.request("And what about Friday?", at: 10) == nil)
+        focus.open(at: 12, question: false, called: true)
+        precondition(focus.request("Can you hear me?", at: 13) != nil)
+        focus.clear()
+        precondition(focus.request("Can you hear me?", at: 13) == nil)
+        precondition(ConversationFocus.isInterruption("Hey Talos, stop.", playback: "I found the following."))
+        precondition(!ConversationFocus.isInterruption("Hey Talos, stop.", playback: "Say Hey Talos, stop."))
+        precondition(needsContinuation("Hey Talos, could you remind me about"))
+        precondition(!needsContinuation("Hey Talos, can you hear me?"))
         var mode = VoiceCaptureMode.dictation
         var draft = ""
         precondition(mode.appendFinalToDraft("Please make a note", draft: &draft))

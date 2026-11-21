@@ -64,3 +64,45 @@ enum VoiceCaptureMode {
         return true
     }
 }
+
+struct ConversationFocus {
+    private var until = -Double.infinity
+    private var awaitingAnswer = false
+    private var explicitlyCalled = false
+
+    mutating func open(at now: TimeInterval, question: Bool, called: Bool = false) {
+        until = now + 8
+        awaitingAnswer = question
+        explicitlyCalled = called
+    }
+
+    mutating func clear() { until = -Double.infinity; awaitingAnswer = false; explicitlyCalled = false }
+
+    func isFollowUp(_ words: String, at time: TimeInterval) -> Bool {
+        roomRequest(words) == nil && !explicitlyCalled && time <= until
+    }
+
+    func request(_ words: String, at time: TimeInterval) -> String? {
+        if let addressed = roomRequest(words) { return addressed }
+        guard time <= until else { return nil }
+        if explicitlyCalled { return words }
+        let linked = #"(?i)^(?:and (?:what|how|when|where|on|if|for)|what about|how about|actually[, ]+(?:make that|i meant)|i meant|make that|why are you doing that|what (?:still )?needs my attention)\b"#
+        if words.range(of: linked, options: .regularExpression) != nil { return words }
+        if awaitingAnswer && words.range(of: #"(?i)^(?:in )?[a-z0-9 -]+ (?:minutes?|hours?|days?)[.!? ]*$|^(?:never mind|cancel it)[.!? ]*$"#,
+                                         options: .regularExpression) != nil { return words }
+        return nil
+    }
+
+    static func isInterruption(_ words: String, playback: String) -> Bool {
+        guard let command = roomRequest(words) else { return false }
+        let clean = command.lowercased().trimmingCharacters(in: .punctuationCharacters)
+        guard ["stop", "pause", "wait", "hold on", "stop speaking"].contains(clean) else { return false }
+        return !playback.lowercased().contains(words.lowercased().trimmingCharacters(in: .punctuationCharacters))
+    }
+}
+
+// A caption ending in a function word often precedes the object of a request.
+func needsContinuation(_ caption: String) -> Bool {
+    caption.range(of: #"(?i)\b(?:to|for|from|with|because|until|about|and then|called|named|the|my|that I)\s*[,–—-]?$"#,
+                  options: .regularExpression) != nil
+}

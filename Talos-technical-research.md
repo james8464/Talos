@@ -52,3 +52,27 @@ Use local processing and no raw recording or transcript retention by default. Th
 5. **Decide from results.** Swap only the component that dominates the measured delay. If timing passes and interaction still feels rigid, compare Moshi on the same host, with the same interruption and false-reply cases. Test the Pi as a room endpoint once the single-machine audio baseline is understood.
 
 The numbers are proposed targets, and the component choices are sourced candidates. No stack was installed, no hardware was profiled, and no performance on the intended room setup was measured in this research pass.
+
+## Open-source assistant implementations and Mac checks, 21 November 2026
+
+| Project | What the implementation does | How it bears on Talos |
+| --- | --- | --- |
+| [atuldhull/jarvis voice entry point](https://github.com/atuldhull/jarvis/blob/main/voice_main.py) | Waits for a wake word, records and transcribes a turn, then passes the transcript to the same orchestrator used for text and speaks its reply. | Talos keeps one service for spoken and typed task execution. The native Mac client owns the microphone, recognition boundaries and playback interruption. The sequential JARVIS loop alone would not solve interruptions during playback. |
+| [OpenVoiceOS Converse](https://openvoiceos.github.io/beta-technical-manual/converse-pipeline/) | Gives active skills a limited opportunity to handle a subsequent utterance, with priority and expiry. | A pending reminder can accept a duration. A recent voice receipt can accept a correction. The follow-up window lasts eight seconds after playback and ordinary linked questions cannot start new actions. |
+| [Leon architecture](https://github.com/leon-ai/leon/blob/develop/core/context/ARCHITECTURE.md) and [tool executor](https://github.com/leon-ai/leon/blob/develop/server/src/core/tool-manager/tool-executor.ts) | Routes skill actions through registered tools and records execution details. | A durable reminder ID lets Talos prove which item a correction or Calendar move changed. It can also show the evidence and history behind an active goal. |
+| [Pipecat Smart Turn](https://huggingface.co/pipecat-ai/smart-turn-v3) and [pinned local analyzer](https://github.com/pipecat-ai/pipecat/blob/v1.16.0/src/pipecat/audio/turn/smart_turn/local_smart_turn_v3.py) | Runs a packaged ONNX model over speech audio. It can use acoustic evidence unavailable in captions. | This is a candidate for mid-sentence pauses with a grammatically complete prefix. The project package and weights were unavailable in the room environment and the package registry timed out. The replay script uses the upstream analyzer directly when installed. Acoustic accuracy remains unmeasured. |
+
+On the target Apple Silicon Mac, a fresh headless practice room received the synthetic
+voice-channel transcript “Can you hear me?” and returned “Yes, I can hear you.”
+Planning took 2 ms. The entire WAV was available 462 ms after submission and contained
+1.60 seconds of speech. This measures local service and Kokoro latency. The microphone,
+Apple recognizer, speaker and listener were outside that measurement.
+
+The repeatable caption benchmark includes five unfinished and five finished synthetic
+utterances. At a simulated pause long enough to expire the silence timer, the timer
+ended all ten. Qwen3 4B held two of the five unfinished turns and zero of the five
+complete turns. Three classifier requests hit the timeout and used the timer fallback.
+Median probe time was 394.5 ms, with a maximum of 1,219 ms. Only Qwen3 4B was installed.
+These are classifier results before combining them with the native incomplete-phrase
+rule. The model remains opt-in. The practice-room procedure in the README measures
+behavior at the microphone and lets a listener score misdirected replies.
