@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import subprocess
@@ -44,6 +45,27 @@ class RoomDialogueTests(unittest.TestCase):
         with patch("room_service.plan", return_value=decision("reply", "Which photo?")) as planner:
             self.assertEqual(self.turn("Talos, can you see anyone in the photo right now?")["reply"],
                              "Which photo?")
+            planner.assert_called_once()
+
+    def test_voice_identity_questions_require_speaker_evidence(self):
+        profile = "00000000-0000-4000-8000-000000000001"
+        self.room.route("POST", "/v1/visitors/enroll", {
+            "id": profile, "agreed": True, "name": "Example",
+            "template": base64.b64encode(bytes(128)).decode(),
+            "introduction": "My name is Example.",
+        })
+        with patch("room_service.plan", side_effect=AssertionError("unexpected planner")), patch(
+            "room_service.check_ollama_model", side_effect=AssertionError("unexpected inference")
+        ):
+            self.assertEqual(self.turn("Talos, whose voice is this?")["reply"], IDENTITY)
+            self.assertEqual(self.turn("Can you identify my voice?", source="text")["reply"], TYPED)
+            for extra in ({}, {"visitor": profile}):
+                _, result = self.room.route("POST", "/v1/voice/facing", {
+                    "text": "Do you recognize my voice?", "occupied": True, **extra,
+                })
+                self.assertEqual(result["reply"], IDENTITY)
+        with patch("room_service.plan", return_value=decision("reply", "At the conference?")) as planner:
+            self.turn("Who is speaking at the conference?")
             planner.assert_called_once()
 
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
