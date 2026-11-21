@@ -7,6 +7,7 @@ import os
 import secrets
 import sqlite3
 import threading
+from time import monotonic
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -37,6 +38,8 @@ class Room:
         self.apply = apply
         self.speak = speak and apply
         self.inference_lock = threading.Lock()
+        self.voice_window: list[dict[str, str]] = []
+        self.voice_window_updated = 0.0
 
     def context(self, db: sqlite3.Connection, **extra) -> dict:
         occupied = presence(db)
@@ -58,11 +61,17 @@ class Room:
         archive = source == "text" or remember_voice
         session = TEXT_SESSION if source == "text" else "native_voice"
         with self.inference_lock:
+            if source == "voice":
+                if monotonic() - self.voice_window_updated >= 300:
+                    self.voice_window.clear()
+                dialogue = self.voice_window or (recent_messages(db, session) if archive else [])
+            else:
+                dialogue = recent_messages(db, session)
             proposal = plan(
                 db, event, model=self.model, trusted_owner=source == "text",
                 private_context=archive, room_context=self.context(
                     db, conversational_turn=True, input_channel=source,
-                    recent_dialogue=recent_messages(db, session) if archive else [],
+                    recent_dialogue=dialogue,
                     voice_archiving=archive if source == "voice" else None,
                 ),
             )
@@ -90,11 +99,15 @@ class Room:
                     reply = detail
                 else:
                     reply = "I don't have enough information to help with that yet."
+                exchange = [
+                    {"role": "user", "content": event["summary"]},
+                    {"role": "assistant", "content": reply},
+                ]
                 if archive:
-                    insert_transcripts(db, session, [
-                        {"role": "user", "content": event["summary"]},
-                        {"role": "assistant", "content": reply},
-                    ])
+                    insert_transcripts(db, session, exchange)
+            if source == "voice":
+                self.voice_window = [*self.voice_window, *exchange][-6:]
+                self.voice_window_updated = monotonic()
         return {"id": decision_id, "reply": reply, "action": action, "tool": proposal["tool"]}
 
     def step(self) -> bool:
@@ -132,8 +145,14 @@ class Room:
     @staticmethod
     def stale(db: sqlite3.Connection, row: sqlite3.Row) -> bool:
         expected = row["expected_presence"]
-        return (datetime.fromisoformat(row["expires_at"]) <= datetime.now(UTC)
-                or (expected is not None and presence(db) is not bool(expected)))
+        if datetime.fromisoformat(row["expires_at"]) <= datetime.now(UTC):
+            return True
+        if expected is None:
+            return False
+        return presence(db) is not bool(expected) or db.execute("""
+            SELECT 1 FROM room_events
+            WHERE id > ? AND depth = 0 AND expected_presence IS NOT NULL LIMIT 1
+        """, (row["id"],)).fetchone() is not None
 
     @staticmethod
     def finish_stale(db: sqlite3.Connection, event_id: int) -> None:
@@ -145,11 +164,21 @@ class Room:
             return None
         now = datetime.now(UTC)
         row = db.execute("""
-            SELECT id, kind, text, due_at FROM inbox
-            WHERE acknowledged_at IS NULL AND due_at <= ? AND (
-                kind IN ('alert', 'reminder') OR (kind = 'speech' AND due_at > ?)
-            ) ORDER BY due_at, id LIMIT 1
-        """, (now.isoformat(), (now - timedelta(minutes=2)).isoformat())).fetchone()
+            SELECT inbox.id, inbox.kind, inbox.text, inbox.due_at FROM inbox
+            LEFT JOIN room_events ON room_events.decision_id = inbox.id
+            WHERE inbox.acknowledged_at IS NULL AND inbox.due_at <= ? AND (
+                inbox.kind IN ('alert', 'reminder') OR (
+                    inbox.kind = 'speech' AND inbox.due_at > ? AND
+                    (room_events.expected_presence IS NULL OR (
+                        room_events.expected_presence = ? AND NOT EXISTS (
+                            SELECT 1 FROM room_events AS newer
+                            WHERE newer.id > room_events.id AND newer.depth = 0
+                                AND newer.expected_presence IS NOT NULL
+                        )
+                    ))
+                )
+            ) ORDER BY inbox.due_at, inbox.id LIMIT 1
+        """, (now.isoformat(), (now - timedelta(minutes=2)).isoformat(), presence(db))).fetchone()
         return dict(row) if row else None
 
     def route(self, method: str, path: str, body: dict) -> tuple[int, dict]:
@@ -193,6 +222,8 @@ class Room:
                 case "GET", "/v1/speech":
                     return 200, {"item": self.speech(db)}
                 case "POST", "/v1/speech/ack":
+                    if not self.speak:
+                        return 403, {"error": "Room announcements are disabled."}
                     item_id = body.get("id")
                     if type(item_id) is not int or not 1 <= item_id <= 2**63 - 1:
                         raise ValueError("A positive item ID is required.")

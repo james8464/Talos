@@ -25,7 +25,9 @@ permissions. Then speak naturally. The microphone is active while its indicator 
 and pauses during inference and playback. The speech client requires on-device recognition.
 The camera detects changes in occupancy and sends only a presence signal to the endpoint.
 It cannot recognize an individual or describe the room. Enable **Remember voice transcripts**
-if you want Talos to archive those turns locally. A voice request that creates a task,
+if you want Talos to archive those turns locally. With archiving off, it can follow a short
+conversation using a rolling memory that expires after five minutes of no voice turns.
+A voice request that creates a task,
 reminder, note, or alert keeps the resulting local item.
 
 The planner can react to occupancy changes without a prompt. It checks whether an event still

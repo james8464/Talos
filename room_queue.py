@@ -71,12 +71,15 @@ def observe_presence(db: sqlite3.Connection, occupied: bool | None) -> int | Non
 
 def next_event(db: sqlite3.Connection) -> sqlite3.Row | None:
     now = datetime.now(UTC).isoformat()
-    with db:
-        db.execute("UPDATE room_events SET status = 'expired' WHERE status = 'pending' AND expires_at <= ?",
-                   (now,))
-    return db.execute("""
-        SELECT * FROM room_events WHERE status = 'pending' AND run_at <= ? ORDER BY run_at, id LIMIT 1
-    """, (now,)).fetchone()
+    while True:
+        row = db.execute("""
+            SELECT * FROM room_events WHERE status = 'pending' AND run_at <= ?
+            ORDER BY run_at, id LIMIT 1
+        """, (now,)).fetchone()
+        if row is None or row["expires_at"] > now:
+            return row
+        with db:
+            db.execute("UPDATE room_events SET status = 'expired' WHERE id = ?", (row["id"],))
 
 
 def retry_event(db: sqlite3.Connection, event: sqlite3.Row) -> None:

@@ -121,3 +121,23 @@ class RoomServiceTests(unittest.TestCase):
             handler.rfile = io.BytesIO(body)
             handler.handle_request("POST")
             self.assertEqual(response.call_args.args[0], 202)
+
+    def test_spoken_follow_up_uses_ephemeral_context_only(self):
+        reply = {**GREETING, "disposition": "reply", "tool": "none", "detail": "A reply."}
+        with patch("room_service.plan", return_value=reply) as planner:
+            self.room.route("POST", "/v1/turn", {"text": "The key is blue.", "source": "voice"})
+            self.room.route("POST", "/v1/turn", {"text": "What color is it?", "source": "voice"})
+        dialogue = planner.call_args.kwargs["room_context"]["recent_dialogue"]
+        self.assertEqual(dialogue[0]["content"], "The key is blue.")
+        with closing(open_memory(self.path)) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM transcripts").fetchone()[0], 0)
+            self.assertNotIn("The key is blue.", json.dumps(decisions(db)))
+
+    def test_queued_greeting_is_suppressed_after_departure(self):
+        self.room.route("POST", "/v1/presence", {"occupied": True})
+        with patch("room_service.plan", return_value=GREETING):
+            self.assertTrue(self.room.step())
+        self.room.route("POST", "/v1/presence", {"occupied": False})
+        self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
+        self.room.route("POST", "/v1/presence", {"occupied": True})
+        self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
