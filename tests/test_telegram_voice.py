@@ -59,6 +59,38 @@ class VoiceGatewayTests(unittest.TestCase):
         self.assertEqual(len(self.sent), 2)
         self.download.assert_called_once()
 
+    def test_audio_attachment_returns_only_a_transcript_after_restart(self):
+        clip = {"file_id": "audio", "file_name": "untrusted.mp3", "duration": 7}
+        self.add(1, text="Previous conversation")
+        self.add(2, audio=clip, group=True)
+        self.add(3, audio=clip, user=8)
+        self.add(4, audio=clip, caption="/reset")
+        self.transcribe.return_value = "/new"
+        self.assertEqual(self.poll(), [("Previous conversation",)])
+        self.assertEqual(self.sent[-1], "Transcript:\n/new")
+        self.poll()
+        self.assertEqual(len(self.sent), 2)
+        self.reply.assert_called_once()
+        self.transcribe.assert_called_once_with(b"audio", attachment=True)
+        self.download.assert_called_once_with("voice/file.oga")
+
+    def test_audio_size_duration_silence_and_invalid_bytes(self):
+        def clip(n, duration=2, size=40):
+            self.add(n, audio={"file_id": "recording", "duration": duration, "file_size": size})
+        clip(1, duration=91)
+        clip(2, size=voice.MAX_VOICE_BYTES + 1)
+        self.assertEqual(self.poll(), [])
+        self.download.assert_not_called()
+        clip(3)
+        self.transcribe.return_value = ""
+        self.assertEqual(self.poll(), [])
+        self.assertIn("make out speech", self.sent[-1])
+        clip(4)
+        self.transcribe.side_effect = ValueError("invalid format")
+        self.assertEqual(self.poll(), [])
+        self.assertIn("single-stream MP3", self.sent[-1])
+        self.reply.assert_not_called()
+
     def test_speech_never_executes_a_slash_command(self):
         self.add(1, text="My previous turn.")
         self.transcribe.return_value = "/reset"
@@ -159,6 +191,36 @@ class VoiceGatewayTests(unittest.TestCase):
                 voice.setup_voice()
             load.assert_not_called()
             self.assertFalse(voice.DEFAULT_MODEL.exists())
+
+
+@unittest.skipUnless(os.getenv("TALOS_TEST_AUDIO_CODECS") == "1", "requires PyAV and NumPy")
+class AudioCodecTests(unittest.TestCase):
+    def test_mp3_and_opus_attachment_decoding(self):
+        import av
+        import numpy as np
+
+        for container, codec in (("mp3", "libmp3lame"), ("ogg", "libopus")):
+            with self.subTest(container=container):
+                buf = io.BytesIO()
+                samples = (12000 * np.sin(2 * np.pi * 440 * np.arange(48000) / 48000)).astype(np.int16)
+                with av.open(buf, mode="w", format=container) as out:
+                    stream = out.add_stream(codec, rate=48000)
+                    stream.layout = "mono"
+                    frame = av.AudioFrame.from_ndarray(samples[None, :], format="s16", layout="mono")
+                    frame.sample_rate = 48000
+                    for packet in (*stream.encode(frame), *stream.encode()):
+                        out.mux(packet)
+                data = buf.getvalue()
+                decoded = voice.decode_note(data, attachment=True)
+                self.assertAlmostEqual(len(decoded) / voice.SAMPLE_RATE, 1, delta=0.05)
+                self.assertGreater(np.max(np.abs(decoded)), 0.1)
+                with patch.object(voice, "MAX_VOICE_SECONDS", 0), self.assertRaisesRegex(ValueError, "duration"):
+                    voice.decode_note(data, attachment=True)
+                if container == "mp3":
+                    with self.assertRaises(ValueError):
+                        voice.decode_note(data)
+        with self.assertRaises(ValueError):
+            voice.decode_note(b"not an audio container", attachment=True)
 
 
 @unittest.skipUnless(os.getenv("TALOS_TEST_TELEGRAM_WHISPER"), "requires local Whisper and PyAV")
