@@ -6,8 +6,30 @@ import Foundation
 
 @main
 struct VoiceEndpointChecks {
+    static func checkSpeechInputFormats() {
+        for count: AVAudioChannelCount in [1, 2, 4] {
+            let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000,
+                                       channels: count, interleaved: false)!
+            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 8)!
+            buffer.frameLength = 2
+            for channel in 0..<Int(count) {
+                buffer.floatChannelData![channel][0] = Float(channel) / 4
+                buffer.floatChannelData![channel][1] = -Float(channel) / 4
+            }
+            let output = SpeechAudioBufferNormalizer.speechCompatibleBuffer(from: buffer)
+            if count <= 2 {
+                precondition(output === buffer)
+            } else {
+                precondition(output.format.channelCount == 1 && output.format.sampleRate == 16_000)
+                precondition(output.frameLength == 2)
+                precondition(output.floatChannelData![0][0] == 0.375 && output.floatChannelData![0][1] == -0.375)
+            }
+        }
+    }
+
     @MainActor
     static func main() throws {
+        checkSpeechInputFormats()
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Paris")!
         let now = ISO8601DateFormatter().date(from: "2026-10-24T12:00:00Z")!
