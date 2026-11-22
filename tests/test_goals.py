@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
+from unittest.mock import patch
 
 from room_service import Room
 
@@ -98,7 +99,12 @@ class GoalFlow(unittest.TestCase):
         for state in ["missing", "confirmed"]:
             goal = self.post("goals/calendar", **event, state=state, revision=goal["revision"])
             self.assertEqual(any(i["kind"] == "reminder" for i in self.inbox()), state == "confirmed")
-        self.post("speech/ack", id=goal["reminder_id"])
+        with self.assertRaisesRegex(ValueError, "not due"):
+            self.post("speech/ack", id=goal["reminder_id"])
+        due = datetime.fromisoformat(goal["deadline"]) - timedelta(minutes=self.body["lead"])
+        with patch("room_service.datetime", wraps=datetime) as clock:
+            clock.now.return_value = due
+            self.post("speech/ack", id=goal["reminder_id"])
         for state in ["missing", "confirmed"]:
             goal = self.post("goals/calendar", **event, state=state, revision=goal["revision"])
         self.assertFalse(any(i["kind"] == "reminder" for i in self.inbox()))

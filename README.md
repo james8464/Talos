@@ -3,6 +3,18 @@
 Talos is a local room assistant with a native Mac app, a local HTTP endpoint, searchable
 conversation memory, and a background planner.
 
+## Terminal sessions and Telegram
+
+In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Named sessions use their own recent turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.
+
+For Telegram direct messages, configure a dedicated bot token in the local environment as `TALOS_TELEGRAM_TOKEN`, then run the gateway with your numeric Telegram user ID. When using the room launcher's local Ollama server:
+
+```sh
+TALOS_OLLAMA_PORT=11435 python3 telegram_gateway.py --owner YOUR_NUMERIC_ID
+```
+
+Alternatively, run with `--pair` in place of `--owner YOUR_NUMERIC_ID`. Send the one-time code shown in the terminal to the bot in a private message. Future launches use the saved pairing. Add `--check` to verify the bot identity, webhook configuration and local model without polling or sending a message. The gateway polls while the process runs. A reply to an earlier text carries its selected quotation into that turn, even after a gateway restart. The owner can send direct text messages or JPEG photos, including JPEG file attachments, with a question in the caption. Reply directly to your earlier photo to ask a follow-up about that image. Photos use the installed local vision model (default `qwen2.5vl:3b`, configurable with `TALOS_VISION_MODEL`). Talos selects the largest available size within 180,000 bytes and four megapixels, reads it in memory, and keeps the image and caption out of conversation history. Telegram transports the chat. A text reply uses the current request, an explicit reply quotation when present, and up to four prior exchanges from the same bot and owner. A photo question uses one supplied image and its question. Its channel database lives under `state/telegram`. Send `/new` to clear that local context. The gateway has no access path to Mac actions or family recall. If a send times out, delivery is uncertain and Talos skips automatic retransmission.
+
 ## Run the room assistant
 
 On a Mac with Python 3.12 or later, Xcode command-line tools, and Ollama installed, run.
