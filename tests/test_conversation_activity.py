@@ -8,7 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
 
-from conversation_activity import conversation_busy, foreground, run_while_quiet
+from contextlib import closing
+from conversation_activity import conversation_busy, foreground, QuietWorker
 from room_service import Room
 
 
@@ -49,15 +50,20 @@ class ConversationActivityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, ThreadPoolExecutor(max_workers=1) as executor:
             state = Path(folder)
             marker = state / "started"
-            code = "import sys,time,pathlib; pathlib.Path(sys.argv[1]).touch(); time.sleep(3); print('finished')"
-            result = executor.submit(run_while_quiet, state, [sys.executable, "-c", code, str(marker)])
-            limit = time.monotonic() + 2
-            while not marker.exists() and time.monotonic() < limit:
-                time.sleep(.01)
-            self.assertTrue(marker.exists())
-            with foreground(state), foreground(state):
-                self.assertIsNone(result.result(timeout=2))
-                self.assertIsNone(run_while_quiet(state, ["unreachable"]))
-            self.assertTrue(conversation_busy(state))
-            os.utime(state / "conversation.activity", (0, 0))
-            self.assertEqual(run_while_quiet(state, [sys.executable, "-c", "print(17)"]), "17\n")
+            code = ("import sys,time,pathlib,json,os\nfor line in sys.stdin:\n"
+                    " if json.loads(line)['kind'] == 'long':\n"
+                    "  pathlib.Path(sys.argv[1]).touch()\n  time.sleep(3)\n"
+                    " print(json.dumps({'result':os.getpid()}),flush=True)")
+            with closing(QuietWorker(state, [sys.executable, "-c", code, str(marker)])) as worker:
+                result = executor.submit(worker.request, "long")
+                limit = time.monotonic() + 2
+                while not marker.exists() and time.monotonic() < limit:
+                    time.sleep(.01)
+                self.assertTrue(marker.exists())
+                with foreground(state), foreground(state):
+                    self.assertIsNone(result.result(timeout=2))
+                    self.assertIsNone(worker.request("short"))
+                self.assertTrue(conversation_busy(state))
+                os.utime(state / "conversation.activity", (0, 0))
+                first = worker.request("short")
+                self.assertEqual(worker.request("short"), first)

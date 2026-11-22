@@ -59,7 +59,7 @@ class MaintenanceSchedule:
                     self.next_files = now + 900
             lines.append(f"{sum(self.counts.values()):,} indexed records · " +
                          ", ".join(f"{key} {value:,}" for key, value in self.counts.items()))
-        except (OSError, ValueError, sqlite3.Error, subprocess.SubprocessError) as error:
+        except (OSError, ValueError, RuntimeError, sqlite3.Error, subprocess.SubprocessError) as error:
             lines.append(f"Memory refresh failed ({type(error).__name__})")
         if conversation_busy(state):
             return None

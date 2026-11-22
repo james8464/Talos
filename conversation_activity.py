@@ -1,7 +1,9 @@
 """A process-shared, content-free signal for foreground conversation."""
 
 import fcntl
+import json
 import os
+import select
 import signal
 import subprocess
 import time
@@ -38,28 +40,61 @@ def conversation_busy(state, grace=10):
         return time.time() - os.fstat(file.fileno()).st_mtime < grace
 
 
-def run_while_quiet(state, args):
-    """Run a replayable maintenance job. A foreground turn cancels its process group."""
-    if conversation_busy(state):
-        return None
-    with subprocess.Popen(args, stdout=subprocess.PIPE, text=True, start_new_session=True) as job:
+class QuietWorker:
+    """Reuse one sleeping child; terminate its process group if a foreground turn begins."""
+
+    def __init__(self, state, args):
+        self.state, self.args = state, args
+        self.child = None
+
+    def close(self):
+        child, self.child = self.child, None
+        if child is None:
+            return
         try:
-            while not conversation_busy(state):
+            if child.poll() is None:
+                os.killpg(child.pid, signal.SIGTERM)
                 try:
-                    output, _ = job.communicate(timeout=0.25)
-                    if job.returncode:
-                        raise subprocess.CalledProcessError(job.returncode, args)
-                    return output
+                    child.wait(timeout=2)
                 except subprocess.TimeoutExpired:
-                    continue
+                    os.killpg(child.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         finally:
-            if job.poll() is None:
-                try:
-                    os.killpg(job.pid, signal.SIGTERM)
-                    job.wait(timeout=2)
-                except subprocess.TimeoutExpired:
-                    os.killpg(job.pid, signal.SIGKILL)
-                    job.wait()
-                except ProcessLookupError:
-                    pass
-    return None
+            child.wait()
+            child.stdin.close()
+            child.stdout.close()
+
+    def request(self, kind, **options):
+        if conversation_busy(self.state):
+            return None
+        if self.child is None:
+            self.child = subprocess.Popen(self.args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                          bufsize=0, start_new_session=True)
+        child = self.child
+        response = bytearray()
+        try:
+            child.stdin.write(json.dumps({"kind": kind, **options}).encode() + b"\n")
+            while not conversation_busy(self.state):
+                if not select.select([child.stdout], [], [], .25)[0]:
+                    continue
+                chunk = os.read(child.stdout.fileno(), 8192)
+                if not chunk:
+                    raise RuntimeError("Maintenance child exited before replying.")
+                response.extend(chunk)
+                if len(response) > 65536:
+                    raise ValueError("Maintenance response too large.")
+                if response.endswith(b"\n"):
+                    message = json.loads(response)
+                    if not isinstance(message, dict):
+                        raise ValueError("Invalid maintenance response.")
+                    if set(message) == {"result"}:
+                        return message["result"]
+                    if set(message) == {"error"} and isinstance(message["error"], str):
+                        raise RuntimeError(f"Maintenance child failed ({message['error']}).")
+                    raise ValueError("Invalid maintenance response.")
+        except BaseException:
+            self.close()
+            raise
+        self.close()
+        return None
