@@ -3,6 +3,10 @@
 Talos is a local room assistant with a native Mac app, a local HTTP endpoint, searchable
 conversation memory, and a background planner.
 
+## Background work orders
+
+Type `Queue this work: Save a note that Atlas launches Tuesday and add a task to review the launch.` in the private room field. Explicit local work can run while the model warms up. The room worker resumes queued work and expired claims after restart. Incomplete plans ask for clarification before writing any items. Use `Show my background jobs` for status and receipts or `Cancel background job #1` to cancel before commit.
+
 ## Recurring reminders and briefings
 
 In the private room message field, try `Brief me on Atlas every weekday at 09:00 in Europe/Paris` or `Remind me every Monday at 7:15 am to check the calendar`. Use `List my routines` and `Cancel routine #1` to manage them. The room worker resumes the SQLite schedules after restart. Briefing contents stay in the local inbox and the shared room announces a generic notification. Calendar calculations use the scheduling and timezone utilities from OpenClaw v2026.11.6 (06afb10d) and Croner under their bundled licenses and require Node.js 22.18 or later.
