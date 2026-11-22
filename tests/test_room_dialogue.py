@@ -185,10 +185,12 @@ class RoomDialogueTests(unittest.TestCase):
     def test_upgrade_existing_v2_memory_preserves_presence(self):
         with closing(open_memory(self.room.db_path)) as db, db:
             db.execute("DROP TABLE room_slow_stages")
+            db.execute("DROP TABLE message_draft")
             db.execute("PRAGMA user_version = 2")
             db.execute("INSERT INTO room_presence VALUES (1, 1, '2000-01-01')")
         with closing(open_memory(self.room.db_path)) as db:
-            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 8)
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 9)
+            self.assertEqual(db.execute("SELECT count(*) FROM message_draft").fetchone()[0], 0)
             self.assertEqual(db.execute("SELECT occupied FROM room_presence").fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT count(*) FROM room_slow_stages").fetchone()[0], 0)
 
@@ -260,6 +262,43 @@ class RoomDialogueTests(unittest.TestCase):
         for text in ("Don't open Mail.", "She said open Safari.", "Open Safari and send a message.",
                      "Open https://example.test", "Open the file Calendar.", "Open Terminal."):
             self.assertIsNone(requested_app(text))
+
+    def test_private_message_draft_survives_restart_and_edits_in_place(self):
+        command = "Draft a message to my sister saying I'll bring the book at 4."
+        with patch("room_service.plan", side_effect=AssertionError("unexpected planner")):
+            created = self.turn(command)
+            self.assertEqual(created["action"], "drafted")
+            self.assertNotIn("the book", created["reply"])
+            self.room = Room(self.room.db_path, "offline", online=False)
+            review = self.turn("Show my message draft.", source="text")
+            self.assertIn("my sister", review["reply"])
+            self.assertIn("I'll bring the book at 4.", review["reply"])
+            self.assertEqual(self.turn("Draft a message to Chris saying Hello.", source="text")["action"], "occupied")
+            self.assertEqual(self.turn("Change my message draft to I'll bring it at 5.", source="text")["action"], "updated")
+            self.assertEqual(self.turn("Send my message draft.", source="text")["action"], "blocked")
+            updated = self.turn("Show my message draft.", source="text")
+            self.assertIn("at 5.", updated["reply"])
+            self.assertNotIn("at 4.", updated["reply"])
+            self.assertEqual(self.turn("Discard my message draft.", source="text")["action"], "discarded")
+            self.assertEqual(self.turn("Show my message draft.", source="text")["action"], "empty")
+        with closing(open_memory(self.room.db_path)) as db:
+            self.assertNotIn("bring the book", "\n".join(db.iterdump()))
+            self.assertEqual(db.execute("SELECT count(*) FROM inbox").fetchone()[0], 0)
+
+    def test_message_draft_private_channels_and_shadow(self):
+        command = "Draft a text to Alex saying Fixture text."
+        for extra in ({"follow_up": True}, {"visitor": "unverified"}):
+            self.assertEqual(self.turn(command, **extra)["action"], "blocked")
+        self.assertEqual(self.room.route("POST", "/v1/voice/facing", {"text": command})[1]["action"], "blocked")
+        self.room.apply = False
+        self.assertEqual(self.turn(command)["action"], "blocked")
+        self.room.apply = True
+        self.assertEqual(self.turn(command)["action"], "drafted")
+        for text in ("Show my message draft.", "Change my message draft to New.", "Discard my message draft."):
+            reply = self.turn(text)
+            self.assertEqual(reply["action"], "blocked")
+            self.assertNotIn("Fixture text", reply["reply"])
+        self.assertIn("Fixture text.", self.turn("Show my message draft.", source="text")["reply"])
 
     def test_exact_reminder_in_shadow_mode_leaves_inbox_untouched(self):
         self.room = Room(self.room.db_path, "local", apply=False)
