@@ -235,6 +235,28 @@ class RefinementTests(unittest.TestCase):
             )
             self.assertIn("couldn't inspect", result["reply"])
 
+    def test_current_people_count_uses_only_the_requested_frame(self):
+        with patch("room_vision.check_ollama_model", side_effect=AssertionError("unexpected inference")):
+            for route in ("/v1/turn", "/v1/voice/facing"):
+                body = {"text": "Hey Talos, how many people can you see?", "camera_available": True}
+                self.assertEqual(self.request(route, body), {"request_frame": True})
+                for count, phrase in ((0, "detected no people"), (1, "detected one person"), (3, "detected 3 people")):
+                    reply = self.request(route, {**body, "camera_jpeg": "/9j//9k=", "frame_people": count})
+                    self.assertIn(phrase, reply["reply"])
+                reply = self.request(route, {**body, "camera_jpeg": "/9j//9k=", "occupied": True})
+                self.assertIn("no person count", reply["reply"])
+        for text in ("How many people can you see in my holiday photo?",
+                     "How many people are in the room tomorrow?"):
+            self.assertFalse(visual_question(text))
+
+    def test_person_specific_visual_questions_reject_ambiguous_frames(self):
+        with patch("room_vision.check_ollama_model", side_effect=AssertionError("unexpected inference")):
+            for question in ("What's in my hand?", "What am I showing?", "What color is my jacket?"):
+                for count, phrase in ((0, "clearly enough"), (2, "more than one person")):
+                    reply = self.request("/v1/turn", {"text": question, "camera_jpeg": "/9j//9k=",
+                                                      "frame_people": count})
+                    self.assertIn(phrase, reply["reply"])
+
     @unittest.skipUnless(
         os.environ.get("TALOS_TEST_VISION") == "1",
         "requires installed vision model and generated portrait fixture",
