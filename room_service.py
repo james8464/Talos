@@ -2,6 +2,7 @@
 
 import commitment_memory
 import mac_context
+import background_work
 import recurring_reminders
 import message_drafts
 import personal_facts
@@ -80,6 +81,7 @@ class Room:
         self.voice = voice
         self.turn_lock = threading.Lock()
         self.worker_lock = threading.Lock()
+        self.orders_ready = threading.Event()
         self.endpoint_probe = threading.Lock()
         self.next_goal_check = 0.0
         self.lab = IdleLab(db_path, model)
@@ -567,6 +569,11 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= 800:
             raise ValueError("Use between 1 and 800 characters for the turn.")
         voice = facing or channel == "voice"
+        work = background_work.handle(db, text, voice=voice, apply=self.apply, request_id=body.get("request_id"))
+        if work is not None:
+            if not voice and self.apply and background_work.COMMAND.fullmatch(text.strip()):
+                self.orders_ready.set()
+            return work
         recurring = recurring_reminders.handle(db, text, voice=voice, apply=self.apply, request_id=body.get("request_id"))
         if recurring is not None:
             return recurring
@@ -906,6 +913,20 @@ def run(
                     print(f"Talos memory reviewer: {error}", flush=True)
                     stopping.wait(10)
 
+        def process_orders() -> None:
+            while not stopping.is_set():
+                room.orders_ready.clear()
+                try:
+                    with closing(open_memory(room.db_path)) as db:
+                        ran = background_work.run_one(db, model_text, room.model, ready=lambda: room.model_state() == "ready")
+                except (OSError, sqlite3.Error) as error:
+                    print(f"Talos background work: {type(error).__name__}", flush=True)
+                    ran = False
+                if not ran and not stopping.is_set():
+                    room.orders_ready.wait(30)
+
+        if room.apply:
+            threading.Thread(target=process_orders, daemon=True).start()
         threading.Thread(target=review, daemon=True).start()
         thread = threading.Thread(target=work, daemon=True)
         thread.start()
@@ -916,6 +937,7 @@ def run(
             server.serve_forever()
         finally:
             stopping.set()
+            room.orders_ready.set()
             room.lab.pause()
 
 
