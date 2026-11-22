@@ -12,6 +12,10 @@ from agent import interactive_chat, model_text
 from agent_memory import open_memory
 
 
+def draft(text):
+    return json.dumps({"draft": text})
+
+
 def verdict(result="done", reason="The draft includes the requested items.", evidence="blue"):
     return json.dumps({"verdict": result, "reason": reason, "evidence": evidence})
 
@@ -27,8 +31,8 @@ class StandingGoalTests(unittest.TestCase):
         return out.getvalue(), err.getvalue()
 
     def test_real_console_drafts_reviews_revises_and_reopens_completed_result(self):
-        writer = Mock(side_effect=["red", verdict("continue", "Include the color blue.", ""),
-                                   "red and blue", verdict()])
+        writer = Mock(side_effect=[draft("red"), verdict("continue", "Include the color blue.", ""),
+                                   draft("red and blue"), verdict()])
         out, err = self.console("/new project\n/goal draft List both colors\n/subgoal Include blue\n/goal run\n", writer)
         self.assertEqual(err, "")
         self.assertIn("Done goal after 2 steps", out)
@@ -44,20 +48,20 @@ class StandingGoalTests(unittest.TestCase):
     def test_missing_and_invented_evidence_pause_and_keep_draft(self):
         for response in ("invalid", verdict(evidence="invented"), verdict("blocked", "Needs a file.", "")):
             with self.subTest(response=response):
-                out, _ = self.console("/goal clear\n/goal write a paragraph\n", Mock(side_effect=["blue", response]))
+                out, _ = self.console("/goal clear\n/goal write a paragraph\n", Mock(side_effect=[draft("blue"), response]))
                 self.assertIn("Paused goal after 1 step", out)
                 self.assertIn("\nblue", out)
-                out, err = self.console("/goal resume\n", Mock(side_effect=["blue", verdict()]))
+                out, err = self.console("/goal resume\n", Mock(side_effect=[draft("blue"), verdict()]))
                 self.assertEqual(err, "")
                 self.assertIn("Done goal after 2 steps", out)
 
     def test_concurrent_run_and_pause_prevent_a_late_completion(self):
         attempts = []
         def generate(messages, **kwargs):
-            if "schema" not in kwargs:
+            if kwargs["schema"] == session_goals.DRAFT_SCHEMA:
                 out, _ = self.console("/goal run\n", Mock(side_effect=AssertionError))
                 attempts.append(out)
-                return "blue"
+                return draft("blue")
             self.console("/goal pause\n", Mock(side_effect=AssertionError))
             return verdict()
         out, _ = self.console("/goal Write colors\n", generate)
@@ -69,14 +73,14 @@ class StandingGoalTests(unittest.TestCase):
         self.console("/goal draft Write colors\n", Mock())
         with closing(open_memory(self.path)) as db, db:
             db.execute("UPDATE console_goals SET status='active',lease_until=1 WHERE session='text'")
-        llm = Mock(side_effect=["blue", verdict("continue", "Needs more detail.", "")] * session_goals.MAX_STEPS)
+        llm = Mock(side_effect=[draft("blue"), verdict("continue", "Needs more detail.", "")] * session_goals.MAX_STEPS)
         out, _ = self.console("/goal resume\n", llm)
         self.assertIn(f"Paused goal after {session_goals.MAX_STEPS} steps", out)
         self.assertEqual(llm.call_count, 2 * session_goals.MAX_STEPS)
 
     def test_background_queue_defers_without_model_and_recovers_after_activity(self):
         self.console("/goal queue Write a color card\n", Mock(side_effect=AssertionError))
-        writer = Mock(side_effect=["blue first draft", "blue final", verdict()])
+        writer = Mock(side_effect=[draft("blue first draft"), draft("blue final"), verdict()])
         ready = Mock()
         with closing(open_memory(self.path)) as db:
             self.assertFalse(session_goals.work_once(db, "fixture", writer, ready, lambda: False))
@@ -116,7 +120,7 @@ class StandingGoalTests(unittest.TestCase):
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                 calls.append(self.path)
-                answer = verdict() if body.get("format") else "The card is blue."
+                answer = verdict() if body["format"] == session_goals.REVIEW_SCHEMA else draft("The card is blue.")
                 self.reply({"done": True, "done_reason": "stop", "message": {"content": answer}})
 
         root = Path(__file__).resolve().parents[1]
@@ -159,14 +163,14 @@ class StandingGoalTests(unittest.TestCase):
         room = Room(self.path, "fixture", model_state=lambda: "ready")
         room.lab.quiet_until = 0
         with patch("room_service.power_and_idle", return_value=True), \
-                patch.object(room.lab, "infer", side_effect=["blue first", IdleReviewDeferred()]) as infer:
+                patch.object(room.lab, "infer", side_effect=[draft("blue first"), IdleReviewDeferred()]) as infer:
             self.assertTrue(room.review_session_goals())
             self.assertNotIn("model", infer.call_args.kwargs)
         with closing(open_memory(self.path)) as db:
             row = session_goals.current(db, "text")
             self.assertEqual((row["draft"], row["status"], row["lease_until"]), ("blue first", "queued", 0))
         with patch("room_service.power_and_idle", return_value=True), \
-                patch.object(room.lab, "infer", side_effect=["blue final", verdict()]):
+                patch.object(room.lab, "infer", side_effect=[draft("blue final"), verdict()]):
             self.assertTrue(room.review_session_goals())
         with closing(open_memory(self.path)) as db:
             self.assertEqual(session_goals.current(db, "text")["status"], "done")

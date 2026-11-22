@@ -15,6 +15,7 @@ from typing import TextIO
 from uuid import uuid4
 
 import session_goals
+from conversation import visible_model_text
 
 from agent_memory import (
     STATE_PATH, decisions, open_memory, recent_context, record_decision, review_decision,
@@ -141,28 +142,6 @@ def parse_decision(content: str) -> dict:
     elif not (decision["goal"] and decision["detail"]):
         raise RuntimeError("The local model did not describe the goal and next step.")
     return decision
-
-
-# OpenClaw src/shared/text/reasoning-tags.ts, leading scope for local model replies.
-_REASON_TAG = re.compile(r"<\s*(/?)\s*(think|thinking|thought|antthinking|(?:antml|mm):(?:think|thinking|thought))\s*>", re.I)
-
-
-def visible_model_text(content):
-    if not isinstance(content, str):
-        raise RuntimeError("The local model returned no text.")
-    text = content.lstrip()
-    while (opening := _REASON_TAG.match(text)) and not opening[1]:
-        depth = 1
-        for tag in _REASON_TAG.finditer(text, opening.end()):
-            depth += -1 if tag[1] else 1
-            if depth == 0:
-                text = text[tag.end():].lstrip()
-                break
-        else:
-            raise RuntimeError("The local model did not finish its visible answer.")
-    if not text.strip():
-        raise RuntimeError("The local model returned no text.")
-    return text
 
 
 def model_text(

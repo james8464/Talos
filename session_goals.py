@@ -4,10 +4,13 @@ import json
 import time
 from uuid import uuid4
 
+from conversation import visible_model_text
 from transcript_memory import recent_messages
 
 MAX_STEPS = 5
 LEASE_SECONDS = 180
+DRAFT_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["draft"],
+                "properties": {"draft": {"type": "string"}}}
 REVIEW_SCHEMA = {
     "type": "object", "additionalProperties": False,
     "required": ["verdict", "reason", "evidence"],
@@ -66,15 +69,15 @@ def run(db, session, model, generate, ready, *, idle=None):
         status = expected
         try:
             requirements = {"objective": row["objective"], "criteria": json.loads(row["criteria"])}
-            draft = generate([{"role": "system", "content": (
+            raw_draft = generate([{"role": "system", "content": (
                 "Produce the requested written deliverable in full. You can use the supplied local "
                 "conversation as reference. You have no external actions here. State missing evidence. "
-                "Improve the previous draft using the review feedback. Output only the deliverable. /no_think")}, {"role": "user", "content":
+                "Improve the previous draft using the review feedback. Return JSON with just the final deliverable in the draft field. /no_think")}, {"role": "user", "content":
                 json.dumps({**requirements, "conversation": recent_messages(db, session),
                             "previous_draft": draft, "feedback": row["feedback"]}, ensure_ascii=False)}],
-                model=model, max_tokens=1800).strip()
-            if not draft:
-                raise ValueError("The writer returned an empty draft.")
+                model=model, schema=DRAFT_SCHEMA, max_tokens=1800)
+            payload = json.loads(raw_draft)
+            draft = visible_model_text(payload.get("draft") if isinstance(payload, dict) else None).strip()
             latest = current(db, session)
             if latest is None or latest["revision"] != token:
                 return show(latest)
