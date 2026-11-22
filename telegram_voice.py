@@ -82,18 +82,24 @@ def load_model(path):
         raise VoiceUnavailable("Local speech recognition is unavailable.") from error
 
 
-def decode_note(data):
+def decode_note(data, *, attachment=False):
     import av
     import numpy as np
 
-    if len(data) > MAX_VOICE_BYTES or not data.startswith(b"OggS"):
-        raise ValueError("Expected a bounded Ogg voice note.")
-    with av.open(io.BytesIO(data), format="ogg") as media:
+    if not data or len(data) > MAX_VOICE_BYTES:
+        raise ValueError("Expected a bounded audio clip.")
+    if data.startswith(b"OggS"):
+        container, codecs = "ogg", {"opus"}
+    elif attachment and (data.startswith(b"ID3") or (len(data) >= 2 and data[0] == 255 and data[1] & 224 == 224)):
+        container, codecs = "mp3", {"mp3", "mp3float"}
+    else:
+        raise ValueError("Unsupported audio format.")
+    with av.open(io.BytesIO(data), format=container) as media:
         if len(media.streams) != 1 or media.streams[0].type != "audio":
             raise ValueError("Expected a single audio stream.")
         stream = media.streams.audio[0]
-        if stream.codec_context.name != "opus":
-            raise ValueError("Expected Opus audio.")
+        if stream.codec_context.name not in codecs:
+            raise ValueError("Unsupported audio codec.")
         converter = av.AudioResampler(format="s16", layout="mono", rate=SAMPLE_RATE)
         samples = bytearray()
 
@@ -112,10 +118,10 @@ def decode_note(data):
     return np.frombuffer(samples, dtype=np.int16).astype(np.float32) / 32768.0
 
 
-def transcribe_note(data):
+def transcribe_note(data, *, attachment=False):
     path = model_directory()
     try:
-        samples = decode_note(data)
+        samples = decode_note(data, attachment=attachment)
     except ImportError as error:
         raise VoiceUnavailable("Install the local speech dependencies.") from error
     # Adapted from Hermes tools/transcription_local.py at 0f602c5 (MIT).
