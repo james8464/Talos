@@ -9,6 +9,9 @@ import personal_facts
 import room_vision
 import session_goals
 from conversation_activity import foreground
+from spoken_stream import SpokenStream
+from http.client import HTTPException
+from room_dialogue import spoken_problem
 from idle_lab import IdleLab, IdleReviewDeferred, power_and_idle
 import argparse
 import hmac
@@ -83,6 +86,8 @@ class Room:
         self.voice_generate = voice_generate
         self.voice = voice
         self.turn_lock = threading.Lock()
+        self.speech_streams = {}
+        self.stream_lock = threading.Lock()
         self.worker_lock = threading.Lock()
         self.orders_ready = threading.Event()
         self.endpoint_probe = threading.Lock()
@@ -205,20 +210,20 @@ class Room:
             return decision("ask", "How long from now should I remind you?")
         return None
 
-    def facing_turn(self, db, body):
+    def facing_turn(self, db, body, stream=None):
         self.review_after = monotonic() + 10
         if body.get("occupied") is not None and type(body["occupied"]) is not bool:
             raise ValueError("occupied must be true, false, or null.")
         profile = body.get("visitor")
         session = visitor_memory.visit_session(db, profile) if profile else "native_voice"
-        result = self._facing_reply(db, body, profile)
+        result = self._facing_reply(db, body, profile, stream)
         if self.apply and not result.pop("_duplicate", False) and (profile or body.get("remember") is True) and result.get("reply"):
             with db:
                 insert_transcripts(db, session, [{"role":"user", "content":body["text"]},
                                                   {"role":"assistant", "content":result["reply"]}])
         return result
 
-    def _facing_reply(self, db, body, profile):
+    def _facing_reply(self, db, body, profile, stream=None):
         """Handle a visually directed turn using only public questions and reviewed local writes."""
         text = parse_event(json.dumps({"kind": "voice_turn", "summary": body.get("text")}))["summary"]
         words = text.casefold().strip(" .!?")
@@ -311,6 +316,21 @@ class Room:
                                          "expression such as 3 * 4. For a count, give the numeric value or a brief factual reply."},
                                         *history, {"role":"user", "content":"Current question: " + text}]
                         reply = compact_decision(generate, quantitative, self.model, [], read_only=True)["detail"]
+                    elif stream is not None:
+                        prior = next((m["content"] for m in reversed(history) if m["role"] == "assistant"), "")
+                        def read_sentences(messages, *, model):
+                            return stream.reply(messages, text, model, lambda line: not spoken_problem(line, text, prior))
+
+                        try:
+                            if self.voice_generate:
+                                reply = generate(messages, model=self.model, operation=read_sentences)
+                            else:
+                                reply = read_sentences(messages, model=self.model)
+                        except ValueError:
+                            stream.check()
+                            if stream.emitted:
+                                raise
+                            reply = spoken_reply(generate, messages, text, self.model)
                     else:
                         reply = spoken_reply(generate, messages, text, self.model)
             token = str(uuid4())
@@ -584,7 +604,7 @@ class Room:
         """, (now.isoformat(), (now - timedelta(minutes=2)).isoformat())).fetchone()
         return dict(row) if row else None
 
-    def handle_room_turn(self, db, body, *, facing):
+    def handle_room_turn(self, db, body, *, facing, stream=None):
         text = body.get("text")
         channel = body.get("source", "voice" if facing else "text")
         if channel not in ("voice", "text") or type(body.get("remember", False)) is not bool:
@@ -630,7 +650,7 @@ class Room:
                                          apply=self.apply, follow_up=body.get("follow_up") is True)
             if reply is not None:
                 return {"reply": reply, "tool": "memory"}
-        return self.facing_turn(db, body) if facing else self.turn(db, body)
+        return self.facing_turn(db, body, stream) if facing else self.turn(db, body)
 
     def route(self, method: str, path: str, body: dict) -> tuple[int, dict]:
         if method == "POST" and path in ("/v1/turn","/v1/voice","/v1/voice/facing","/v1/room/activity"):
@@ -875,12 +895,25 @@ class Handler(BaseHTTPRequestHandler):
             body = {}
             if method == "POST":
                 length = int(self.headers.get("Content-Length", "0"))
-                limit = 136000 if self.path == "/v1/visitors/enroll" else 248192 if self.path in ("/v1/turn", "/v1/voice/facing") else 8192
+                limit = 136000 if self.path == "/v1/visitors/enroll" else 248192 if self.path in ("/v1/turn", "/v1/voice/facing", "/v1/voice/facing/stream") else 8192
                 if not 1 <= length <= limit or self.headers.get("Transfer-Encoding"):
                     raise ValueError(f"A JSON body of 1 to {limit} bytes is required.")
                 body = json.loads(self.rfile.read(length))
                 if not isinstance(body, dict):
                     raise ValueError("Expected a JSON object.")
+            if method == "POST" and self.path in ("/v1/voice/facing/stream", "/v1/voice/stream/cancel"):
+                from uuid import UUID
+                ident = str(UUID(str(body.get("request_id", ""))))
+                room = self.server.room
+                if self.path.endswith("/cancel"):
+                    with room.stream_lock:
+                        stream = room.speech_streams.get(ident)
+                        if stream:
+                            stream.cancel()
+                    self.reply(200, {"cancelled": bool(stream)})
+                    return
+                self.stream_voice(room, ident, body)
+                return
             status, data = self.server.room.route(method, self.path, body)
         except ModelUnavailable as error:
             status, data = 503, {"error": str(error)}
@@ -890,6 +923,40 @@ class Handler(BaseHTTPRequestHandler):
             print(f"Talos endpoint: {error}", flush=True)
             status, data = 503, {"error": "Talos could not complete the request. Check the local service."}
         self.reply(status, data)
+
+    def stream_voice(self, room, ident, body):
+        def emit(event):
+            self.wfile.write(json.dumps(event, ensure_ascii=False).encode("utf-8") + b"\n")
+            self.wfile.flush()
+
+        stream = SpokenStream(emit)
+        with room.stream_lock:
+            if ident in room.speech_streams:
+                self.reply(409, {"error": "Voice turn already running."})
+                return
+            room.speech_streams[ident] = stream
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ndjson")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.close_connection = True
+            room.lab.pause()
+            with foreground(room.db_path.parent), closing(open_memory(room.db_path)) as db:
+                result = room.handle_room_turn(db, body, facing=True, stream=stream)
+            stream.check()
+            emit({"result": result})
+        except (ValueError, RuntimeError, HTTPException, OSError, sqlite3.Error):
+            if not stream.cancelled:
+                try:
+                    emit({"error": "The spoken response could not be completed."})
+                except OSError:
+                    pass
+        finally:
+            with room.stream_lock:
+                room.speech_streams.pop(ident, None)
+            stream.cancel()
 
     def reply(self, status: int, data: dict) -> None:
         payload = json.dumps(data).encode("utf-8")

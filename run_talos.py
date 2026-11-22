@@ -2,6 +2,7 @@
 
 import argparse
 import os
+from http.client import HTTPException
 import shutil
 import socket
 import subprocess
@@ -95,7 +96,7 @@ class ProjectModel:
             with self.lock:
                 self.children.discard(process)
 
-    def generate_voice(self, messages, **options):
+    def generate_voice(self, messages, *, operation=None, **options):
         with self.lock:
             server = self.ready_server
             verified = self.voice_verified
@@ -108,8 +109,8 @@ class ProjectModel:
                     if self.ready_server is not server:
                         raise RuntimeError("The supervised model restarted.")
                     self.voice_verified = True
-            return model_text(messages, **options)
-        except (OSError, RuntimeError, ValueError):
+            return (operation or model_text)(messages, **options)
+        except (OSError, RuntimeError, ValueError, HTTPException):
             with self.lock:
                 if self.ready_server is server:
                     self.voice_verified = False
