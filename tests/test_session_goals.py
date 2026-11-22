@@ -1,4 +1,5 @@
 import io
+import os
 import json
 import tempfile
 import unittest
@@ -92,7 +93,6 @@ class StandingGoalTests(unittest.TestCase):
 
     def test_worker_command_processes_console_queue_through_loopback_api(self):
         from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-        import os
         import subprocess
         import sys
         import threading
@@ -170,3 +170,18 @@ class StandingGoalTests(unittest.TestCase):
             self.assertTrue(room.review_session_goals())
         with closing(open_memory(self.path)) as db:
             self.assertEqual(session_goals.current(db, "text")["status"], "done")
+
+
+@unittest.skipUnless(os.getenv("TALOS_TEST_OLLAMA") == "1", "requires an isolated local model")
+class LocalGoalReplay(unittest.TestCase):
+    def test_queued_writer_and_reviewer_return_a_clean_deliverable(self):
+        from local_runtime import check_ollama_model
+        with tempfile.TemporaryDirectory() as tmp, closing(open_memory(Path(tmp) / "goals.db")) as db:
+            session_goals.command(db, "text", "queue Write one sentence containing both the words cobalt and notebook.",
+                                  model="qwen3:4b", generate=model_text, ready=check_ollama_model)
+            session_goals.work_once(db, "qwen3:4b", model_text, check_ollama_model, lambda: True)
+            result = session_goals.current(db, "text")
+            self.assertEqual(result["status"], "done")
+            self.assertIn("cobalt", result["draft"].lower())
+            self.assertIn("notebook", result["draft"].lower())
+            self.assertNotRegex(result["draft"].lower(), r"</?(think|thought)")
