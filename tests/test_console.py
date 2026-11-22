@@ -132,7 +132,7 @@ class TalosConsoleTests(unittest.TestCase):
             with closing(open_memory(db_path)) as db:
                 remember(db, "console/first", [{"role": "user", "content": "later branch"}])
                 self.assertEqual(db.execute("SELECT count(*) FROM transcripts").fetchone()[0], 15)
-                self.assertEqual(db.execute("SELECT count(*) FROM console_lineage").fetchone()[0], 3)
+                self.assertEqual(db.execute("SELECT count(*) FROM console_forks").fetchone()[0], 2)
             path = root / "export.jsonl"
             run(f"/resume nested\n/save {path}\n")
             self.assertEqual([json.loads(line)["text"] for line in path.read_text().splitlines()],

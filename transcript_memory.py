@@ -56,25 +56,27 @@ def insert_transcripts(database: sqlite3.Connection, session: str, messages: lis
 
 def fork_session(database: sqlite3.Connection, source: str, child: str) -> None:
     """Capture immutable session ranges in the caller's session-creation transaction."""
-    database.execute("""CREATE TABLE IF NOT EXISTS console_lineage (
-        child TEXT NOT NULL, parent TEXT NOT NULL, through_id INTEGER NOT NULL,
-        PRIMARY KEY (child, parent))""")
-    database.execute("""INSERT INTO console_lineage SELECT ?, parent, through_id
-                        FROM console_lineage WHERE child=?""", (child, source))
-    database.execute("""INSERT INTO console_lineage SELECT ?, ?, max(id) FROM transcripts
-                        WHERE session=? HAVING max(id) IS NOT NULL""", (child, source, source))
+    database.execute("""CREATE TABLE IF NOT EXISTS console_forks (
+        child TEXT PRIMARY KEY, parent TEXT NOT NULL, through_id INTEGER NOT NULL)""")
+    database.execute("""INSERT INTO console_forks SELECT ?, ?, coalesce(max(id), 0)
+                        FROM transcripts WHERE session=?""", (child, source, source))
 
 
 def session_rows(database: sqlite3.Connection, session: str, *, recent=False):
     # Nonempty segments are disjoint and ordered by the last transcript ID at each fork.
     segments = [(session, 2**63 - 1)]
     if session.startswith("console/") and database.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='console_lineage'"
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='console_forks'"
     ).fetchone():
-        segments.extend(database.execute("""SELECT parent, through_id FROM console_lineage
-                                           WHERE child=? ORDER BY through_id DESC""", (session,)))
+        segments.extend(database.execute("""WITH RECURSIVE lineage(parent, through_id, depth) AS (
+                SELECT parent, through_id, 1 FROM console_forks WHERE child=?
+                UNION ALL SELECT f.parent, f.through_id, l.depth + 1 FROM lineage l
+                JOIN console_forks f ON f.child=l.parent
+            ) SELECT parent, through_id FROM lineage WHERE through_id>0 ORDER BY depth""", (session,)))
     remaining = 6
-    for name, cutoff in segments if recent else reversed(segments):
+    if not recent:
+        segments.reverse()
+    for name, cutoff in segments:
         if recent:
             rows = database.execute("""SELECT role, text FROM transcripts
                 WHERE session=? AND id<=? ORDER BY id DESC LIMIT ?""", (name, cutoff, remaining))
