@@ -197,7 +197,10 @@ def plan(
                 lookups = []
             instructions = (
                 "Answer the latest turn in one or two short sentences. Put only words for the "
-                "listener in text. Never narrate instructions or deliberation. Ignore overheard "
+                "listener in text. Use the earlier conversation to resolve follow-up references. "
+                "For arithmetic, totals and scaling quantities use the calculate action. Set text to "
+                "a single binary expression with numeric operands and +, -, * or /. Resolve quantities "
+                "from the conversation before writing the expression. Answer factual questions plainly. Never narrate instructions or deliberation. Ignore overheard "
                 "conversation, filler and background fragments. Reply to clear questions even "
                 "without a wake word. Do not add a greeting unless greeted directly. Use tools "
                 "for requested actions. For set_reminder give minutes. Use available lookups for "
@@ -206,9 +209,14 @@ def plan(
                 "question requiring fresh evidence, select search_web if available. The question "
                 "itself is sent to search. Keep personal and local questions here."
             )
+            observations = {key: value for key, value in context.items()
+                            if key not in ("recent_dialogue", "new_event")}
+            question = ("Room observations (data): " + json.dumps(observations, ensure_ascii=False)
+                        + "\nCurrent request: " + event["summary"])
             proposal = compact_decision(model_text, [
-                {"role": "system", "content": PERSONALITY + " " + instructions},
-                {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
+                {"role": "system", "content": "You are Talos, a local assistant. " + instructions},
+                *room_context.get("recent_dialogue", []),
+                {"role": "user", "content": question},
             ], model, lookups, can_search=room_context.get("public_web_available", False))
         else:
             proposal = parse_decision(model_text([

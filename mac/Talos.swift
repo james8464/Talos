@@ -130,7 +130,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var rememberVoice = false
     @Published var busy = false
     @Published private(set) var speaking = false
-    @Published var draft = ""
+    @Published var draft = "" {
+        didSet { if draft.isEmpty { draftContainsVoice = false } }
+    }
+    private(set) var draftContainsVoice = false
+    @Published private var captureMode = VoiceCaptureMode.room
+    var dictating: Bool { captureMode != .room }
     @Published var occupancy = "Camera off"
     @Published var previewSession: AVCaptureSession?
     @Published var modelState = ""
@@ -230,6 +235,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     func toggleMicrophone() {
         if microphone {
             microphone = false
+            captureMode = .room
             stopRecognition()
             status = "Microphone off."
             return
@@ -262,6 +268,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
+            captureMode = .room
             microphone = false
             status = "No usable microphone is available."
             return
@@ -285,11 +292,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             try engine.start()
         } catch {
             stopRecognition()
+            captureMode = .room
             microphone = false
             status = error.localizedDescription
             return
         }
-        status = "Listening"
+        status = dictating ? "Dictating into the message field" : "Listening for Hey Talos"
         recognition = recognizer.recognitionTask(with: buffer) { [weak self] result, error in
             let text = result?.bestTranscription.formattedString
             let final = result?.isFinal ?? false
@@ -304,8 +312,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     guard words != self.currentText else { return }
                     self.recognitionFailures = 0
                     self.currentText = words
-                    self.liveTranscript = Self.normalizeAddress(words)
-                    guard self.finalResultTimer == nil else { return }
+                    self.liveTranscript = words
+                    guard !self.dictating, self.finalResultTimer == nil else { return }
                     self.utteranceTimer?.cancel()
                     let partialAt = ProcessInfo.processInfo.systemUptime
                     self.utteranceTimer = Task {
@@ -319,9 +327,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         }
                     }
                 case .retry:
-                    if !self.currentText.isEmpty {
+                    if !self.currentText.isEmpty && (self.dictating || roomRequest(self.currentText) != nil) {
                         self.addLine("Service", "I couldn't confirm those words. Please try again.")
                     }
+                    if self.captureMode == .finishingDraft { self.captureMode = .room }
                     self.stopRecognition()
                     self.recognitionFailures += 1
                     if !recognizer.isAvailable {
@@ -351,7 +360,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         recognition?.finish()
         finalResultTimer = Task {
             guard (try? await Task.sleep(for: .seconds(2))) != nil, speechEpoch == epoch else { return }
-            addLine("Service", "I couldn't confirm those words. Please try again.")
+            if !currentText.isEmpty && (dictating || roomRequest(currentText) != nil) {
+                addLine("Service", "I couldn't confirm those words. Please try again.")
+            }
+            if captureMode == .finishingDraft { captureMode = .room }
             stopRecognition()
             beginRecognition()
         }
@@ -381,33 +393,43 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         liveTranscript = ""
     }
 
-    static func normalizeAddress(_ text: String) -> String {
-        // Correct an apparent name only where the text looks like a direct address.
-        text.replacingOccurrences(
-            of: #"(?i)^((?:hey|hello)[,\s]+)tell us\b|^tell us(?=\s*[,!.?]|\s*$)"#,
-            with: "$1Talos", options: .regularExpression
-        ).replacingOccurrences(
-            of: #"(?i)\b((?:can|do|did) you (?:hear|see) me)[, ]+tell us(?=[.!?]*$)"#,
-            with: "$1 Talos", options: .regularExpression
-        )
+    func toggleDictation() {
+        guard microphone, !busy, !speaking, captureMode != .finishingDraft else { return }
+        if dictating && recognition != nil {
+            captureMode = .finishingDraft
+            finishCapture()
+            return
+        }
+        captureMode = dictating ? .room : .dictation
+        stopRecognition()
+        beginRecognition()
     }
 
     private func commitVoice(_ finalText: String) {
-        let text = Self.normalizeAddress(finalText)
+        if captureMode.appendFinalToDraft(finalText, draft: &draft) {
+            draftContainsVoice = true
+            stopRecognition()
+            beginRecognition()
+            return
+        }
+        guard let text = roomRequest(finalText), !text.isEmpty else {
+            stopRecognition()
+            beginRecognition()
+            return
+        }
         if text.count > 800 {
             stopRecognition()
             addLine("Talos", "That turn was too long. Could you split it into two?")
             beginRecognition()
-        } else if !text.isEmpty {
-            send(text, source: "voice")
+        } else {
+            send(text, source: "voice", speechEnd: activity?.lastActivity)
         }
     }
 
-    func send(_ text: String, source: String = "text") {
+    func send(_ text: String, source: String = "text", speechEnd: TimeInterval? = nil) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !busy, !speaking, let client else { return }
         guard text.count <= 800 else { status = "Send up to 800 characters per turn."; return }
-        let speechEnd = source == "voice" ? activity?.lastActivity : nil
         busy = true
         stopRecognition()
         addLine("You", text)
@@ -509,7 +531,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func pollSpeech() async {
-        guard microphone || cameraRunning, !busy, !speaking, currentText.isEmpty else { return }
+        guard microphone || cameraRunning, !busy, !speaking, !dictating, currentText.isEmpty else { return }
         do {
             if let pendingAcknowledgment {
                 _ = try await client?.request("speech/ack", body: ["id": pendingAcknowledgment])
@@ -518,7 +540,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             let result = try await client?.request("speech")
             modelState = result?["model_state"] as? String ?? ""
             endpointFailures = 0
-            guard microphone || cameraRunning, !busy, !speaking, currentText.isEmpty,
+            guard microphone || cameraRunning, !busy, !speaking, !dictating, currentText.isEmpty,
                   let item = result?["item"] as? [String: Any],
                   let id = item["id"] as? Int, let text = item["text"] as? String else { return }
             addLine("Talos", text)
@@ -697,8 +719,16 @@ struct RoomView: View {
             }.font(.caption).foregroundStyle(.secondary)
             HStack {
                 Button(room.microphone ? "Microphone on" : "Microphone off", action: room.toggleMicrophone)
+                if room.microphone {
+                    Button(room.dictating ? "Finish dictation" : "Dictate a message", action: room.toggleDictation)
+                        .disabled(room.busy || room.speaking)
+                }
                 Button(room.cameraRunning ? "Camera on" : "Camera off", action: room.toggleCamera)
                 if room.speaking { Button("Stop speaking", action: room.stopSpeaking) }
+            }
+            if room.microphone {
+                Text(room.dictating ? "Pause as needed. Finish dictation, review the message, then send." :
+                     "Start each hands-free request with “Hey Talos”.").font(.caption)
             }
             if let session = room.previewSession {
                 HStack(alignment: .center, spacing: 16) {
@@ -715,6 +745,9 @@ struct RoomView: View {
             if !room.liveTranscript.isEmpty {
                 Text("Hearing: \(room.liveTranscript)").foregroundStyle(.secondary)
             }
+            if room.draft.count > 800 {
+                Text("Shorten the message to 800 characters before sending.").font(.caption)
+            }
             Toggle("Remember voice transcripts", isOn: $room.rememberVoice)
             ScrollViewReader { proxy in
                 ScrollView {
@@ -729,7 +762,7 @@ struct RoomView: View {
             }
             HStack {
                 TextField("Message Talos", text: $room.draft).onSubmit(submit)
-                Button("Send", action: submit).disabled(room.busy || room.speaking || room.draft.isEmpty)
+                Button("Send", action: submit).disabled(room.busy || room.speaking || room.dictating || room.draft.isEmpty || room.draft.count > 800)
             }
         }
         .padding(24)
@@ -738,8 +771,8 @@ struct RoomView: View {
     }
 
     private func submit() {
-        guard !room.busy, !room.speaking else { return }
-        room.send(room.draft)
+        guard !room.busy, !room.speaking, !room.dictating, room.draft.count <= 800 else { return }
+        room.send(room.draft, source: room.draftContainsVoice ? "voice" : "text")
         room.draft = ""
     }
 }

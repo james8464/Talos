@@ -47,10 +47,29 @@ class RoomDialogueTests(unittest.TestCase):
         with closing(open_memory(self.room.db_path)) as db:
             self.assertEqual(db.execute("SELECT kind FROM inbox").fetchone()[0], "reminder")
 
+    def test_follow_up_preserves_roles_and_ends_with_current_request(self):
+        with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
+                '{"action":"reply","text":"Three."}') as model:
+            self.turn("How many wheels are on a tricycle?")
+            self.turn("And on two of those combined?")
+        messages = model.call_args.args[0]
+        self.assertEqual([message["role"] for message in messages], ["system", "user", "assistant", "user"])
+        self.assertEqual(messages[1]["content"], "How many wheels are on a tricycle?")
+        self.assertEqual(messages[2]["content"], "Three.")
+        self.assertTrue(messages[-1]["content"].endswith("And on two of those combined?"))
+
+    def test_spoken_calculation_uses_local_arithmetic(self):
+        for expr, expected in (("3 * 2", "3 times 2 is 6."), ("4", "4."),
+                               ("1 / 0", "I couldn't calculate that expression."),
+                               ("3 and some code", "I couldn't calculate that expression.")):
+            with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
+                    json.dumps({"action": "calculate", "text": expr})):
+                self.assertEqual(self.turn("What does that come to?")["reply"], expected)
+
     def test_invalid_short_tool_output_cannot_apply(self):
         with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
                 '{"action":"set_reminder","text":"bad","minutes":false}'), self.assertRaises(RuntimeError):
-            self.turn("Remind me to call.")
+            self.turn("Set a reminder for the call.")
 
     def test_explicit_lookup_only_sends_query_and_surfaces_sources(self):
         sources = [{"title": "Example", "url": "https://example.org", "excerpt": "A statement."}]
