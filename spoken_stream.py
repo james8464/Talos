@@ -21,19 +21,28 @@ class SpokenStream:
         self.cancelled = False
         self.socket = None
         self.emitted = False
+        self.complete = False
 
     def check(self):
         if self.cancelled:
             raise SpeechCancelled("Voice turn interrupted.")
 
+    def finish_generation(self):
+        with self.lock:
+            self.check()
+            self.complete = True
+
     def cancel(self):
         with self.lock:
+            if self.complete or self.cancelled:
+                return False
             self.cancelled = True
             if self.socket:
                 try:
                     self.socket.shutdown(socket.SHUT_RDWR)
                 except OSError:
                     pass
+            return True
 
     def tokens(self, messages, model):
         schema = {"type": "array", "items": {"type": "string", "maxLength": 500},
@@ -78,6 +87,20 @@ class SpokenStream:
 
     def reply(self, messages, text, model, allowed):
         self.emit({"started": True})
+        for attempt in range(2):
+            try:
+                return self._answer(messages, model, allowed)
+            except ValueError:
+                self.check()
+                if self.emitted:
+                    raise
+                if attempt == 0:
+                    messages = [*messages, {"role": "system", "content":
+                        "Answer the speaker using only the facts they reported. Avoid repeating their words "
+                        "or claiming any action. Write a short conversational answer."}]
+        return "Tell me a little more about that."
+
+    def _answer(self, messages, model, allowed):
         raw = ""
         output = []
         pending = []

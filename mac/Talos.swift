@@ -1218,9 +1218,6 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func cancelStream() {
-        #if TALOS_CONTROLLER_REPLAY
-        replayStop?()
-        #endif
         guard let id = streamID else { return }
         streamID = nil
         streamTask?.cancel()
@@ -1229,11 +1226,18 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         Task { _ = try? await client?.request("voice/stream/cancel", body: ["request_id": id]) }
     }
 
+    private func stopPlayer() {
+        #if TALOS_CONTROLLER_REPLAY
+        replayStop?()
+        #endif
+        player?.stop()
+    }
+
     private func interruptForConversation() {
         cancelStream()
         playbackEpoch = UUID()
         speechRequest?.cancel()
-        player?.stop()
+        stopPlayer()
         systemUtterance = nil
         if speaker.isSpeaking { speaker.stopSpeaking(at: .immediate) }
         if let speechID { pendingAcknowledgment = speechID }
@@ -1255,7 +1259,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         if speaker.isSpeaking {
             speaker.stopSpeaking(at: .immediate)
         } else {
-            player?.stop()
+            stopPlayer()
             finishSpeech(delivered: false)
         }
     }

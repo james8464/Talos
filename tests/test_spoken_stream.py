@@ -39,7 +39,8 @@ class LocalModel(BaseHTTPRequestHandler):
         if not payload["stream"]:
             self.wfile.write(json.dumps({"done": True, "message": {"content": '{"talos_says":"Spring follows winter."}'}}).encode())
             return
-        for chunk in self.server.first:
+        first = self.server.first if len(self.server.requests) == 1 else self.server.retry_first
+        for chunk in first:
             self.wfile.write(packet(chunk))
         self.wfile.flush()
         # Wait for a new prompt to be spoken, or for cancellation to close the upstream socket.
@@ -78,6 +79,7 @@ class SpokenStreamFlow(unittest.TestCase):
         self.root = Path(self.stack.enter_context(tempfile.TemporaryDirectory()))
         self.model = self.server(LocalModel)
         self.model.first = ['[', '"Spring fol', 'lows winter."']
+        self.model.retry_first = ['["Spring follows winter."']
         self.model.release = threading.Event()
         self.model.disconnected = threading.Event()
         self.model.ended = threading.Event()
@@ -136,6 +138,16 @@ class SpokenStreamFlow(unittest.TestCase):
         with closing(open_memory(self.room.room.db_path)) as db:
             self.assertEqual(db.execute("SELECT count(*) FROM transcripts").fetchone()[0], 0)
 
+    def test_cancel_during_retried_generation_does_not_publish_a_late_answer(self):
+        self.model.first = ['["I sent your message."']
+        response = self.start()
+        self.assertTrue(json.loads(response.readline())["started"])
+        self.assertEqual(json.loads(response.readline())["sentence"], "Spring follows winter.")
+        self.assertEqual(len(self.model.requests), 2)
+        self.assertTrue(json.load(self.post("voice/stream/cancel", {"request_id": self.request_id}))["cancelled"])
+        self.assertEqual(response.read(), b"")
+        self.assertIsNone(self.room.room.facing_exchange)
+
     def test_action_offer_stays_atomic_and_requires_confirmation(self):
         response = self.start("Remind me in five minutes to water the plants")
         result = json.loads(response.readline())["result"]
@@ -143,12 +155,14 @@ class SpokenStreamFlow(unittest.TestCase):
         self.assertEqual(response.read(), b"")
         self.assertEqual(self.model.requests, [])
 
-    def test_invalid_first_sentence_uses_full_validated_fallback(self):
+    def test_invalid_first_sentence_retries_before_emitting_audio(self):
         self.model.first = ['["I picked up the umbrella."']
         self.model.release.set()
         response = self.start()
         self.assertTrue(json.loads(response.readline())["started"])
-        self.assertEqual(json.loads(response.readline())["result"]["reply"], "Spring follows winter.")
+        self.assertEqual(json.loads(response.readline()), {"sentence": "Spring follows winter."})
+        self.assertIn("sentence", json.loads(response.readline()))
+        self.assertIn("result", json.loads(response.readline()))
         self.assertEqual(len(self.model.requests), 2)
 
     def test_unverified_message_receipt_is_never_spoken(self):
@@ -156,7 +170,9 @@ class SpokenStreamFlow(unittest.TestCase):
         self.model.release.set()
         response = self.start()
         self.assertTrue(json.loads(response.readline())["started"])
-        self.assertEqual(json.loads(response.readline())["result"]["reply"], "Spring follows winter.")
+        self.assertEqual(json.loads(response.readline()), {"sentence": "Spring follows winter."})
+        self.assertIn("sentence", json.loads(response.readline()))
+        self.assertIn("result", json.loads(response.readline()))
 
     def test_complete_sentences_and_escapes(self):
         events = []

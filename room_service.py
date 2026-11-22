@@ -321,16 +321,11 @@ class Room:
                         def read_sentences(messages, *, model):
                             return stream.reply(messages, text, model, lambda line: not spoken_problem(line, text, prior))
 
-                        try:
-                            if self.voice_generate:
-                                reply = generate(messages, model=self.model, operation=read_sentences)
-                            else:
-                                reply = read_sentences(messages, model=self.model)
-                        except ValueError:
-                            stream.check()
-                            if stream.emitted:
-                                raise
-                            reply = spoken_reply(generate, messages, text, self.model)
+                        if self.voice_generate:
+                            reply = generate(messages, model=self.model, operation=read_sentences)
+                        else:
+                            reply = read_sentences(messages, model=self.model)
+                        stream.finish_generation()
                     else:
                         reply = spoken_reply(generate, messages, text, self.model)
             token = str(uuid4())
@@ -908,9 +903,8 @@ class Handler(BaseHTTPRequestHandler):
                 if self.path.endswith("/cancel"):
                     with room.stream_lock:
                         stream = room.speech_streams.get(ident)
-                        if stream:
-                            stream.cancel()
-                    self.reply(200, {"cancelled": bool(stream)})
+                        cancelled = stream.cancel() if stream else False
+                    self.reply(200, {"cancelled": cancelled})
                     return
                 self.stream_voice(room, ident, body)
                 return
