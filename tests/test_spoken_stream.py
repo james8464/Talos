@@ -109,6 +109,27 @@ class SpokenStreamFlow(unittest.TestCase):
     def start(self, text="Tell me about spring."):
         return self.post("voice/facing/stream", {"source":"voice", "text":text, "remember":True, "request_id":self.request_id})
 
+    def test_supervised_stream_defers_maintenance_without_an_inventory_call(self):
+        from unittest.mock import Mock
+        from conversation_activity import conversation_busy
+        from run_talos import ProjectModel
+
+        supervised = ProjectModel("fixture", self.model.server_port, True)
+        supervised.ready_server = Mock()
+        supervised.ready_server.poll.return_value = None
+        supervised.voice_verified = True
+        self.room.room.voice_generate = supervised.generate_voice
+        with patch("run_talos.check_ollama_model", side_effect=AssertionError), \
+                patch("room_service.check_ollama_model", side_effect=AssertionError):
+            response = self.start()
+            self.assertIn("started", json.loads(response.readline()))
+            self.assertIn("sentence", json.loads(response.readline()))
+            self.assertTrue(conversation_busy(self.root, grace=0))
+            self.model.release.set()
+            events = [json.loads(line) for line in response]
+            self.assertIn("result", events[-1])
+            self.assertFalse(conversation_busy(self.root, grace=0))
+
     def test_first_synthesized_clip_before_model_eos_and_final_context(self):
         response = self.start()
         self.assertEqual(json.loads(response.readline()), {"started": True})
