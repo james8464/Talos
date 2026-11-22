@@ -41,11 +41,11 @@ class VaultPublisher:
         now = time.monotonic()
         if stamps == self.live_stamps and now < self.next_live_pulse:
             return
-        lines = [MARKER, "# Talos live", "", f"Status sampled {checked_time(time.time())}", "", "## Services", ""]
-        lines.extend(f"    {line}" for line in service_snapshot(self.state, locks))
-        lines.extend(("", "## Latest results", ""))
+        lines = [MARKER, "# Talos live", "", f"Status sampled {checked_time(time.time())}", "", "## Latest results", ""]
         receipts = runtime_evidence(self.state)
         lines.extend(f"    {line}" for line in (receipts or ["Waiting for the first runtime receipt."]))
+        lines.extend(("", "## Services", ""))
+        lines.extend(f"    {line}" for line in service_snapshot(self.state, locks))
         lines.extend(("", "## Knowledge graph", ""))
         for name in ("Talos memory map", "Project connections", "Code index", "Development history", "Recent source edits"):
             if (self.folder / (name + ".md")).is_file():

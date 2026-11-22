@@ -15,7 +15,7 @@ from contextlib import closing
 from conversation_activity import QuietWorker
 from maintenance_schedule import MaintenanceSchedule, source_versions, stamp
 import mac_context
-from feature_targets import FILE, TARGETS, change_events
+from feature_targets import FILE, TARGETS, proposal_ledger
 from talos_activity import active_phase, lock_state, record
 
 STATE = Path(__file__).resolve().parent / "state"
@@ -38,20 +38,16 @@ def publish(state, lines):
 
 
 def queue_summary(path):
-    pending = set()
-    completed = 0
-    latest = None
     with path.open() as events:
-        for event in change_events(events):
-            if event["status"] == "proposed":
-                pending.add(event["id"])
-            elif event["status"] == "done" and event["id"] in pending:
-                pending.remove(event["id"])
-                completed += 1
-                latest = event["verification"]
-    lines = [f"{len(pending)} requests pending · {completed} completed"]
-    if latest:
-        lines.append("Last verified change · " + latest)
+        proposed, outcomes = proposal_ledger(events)
+    completed = [item for key, item in outcomes.items() if key in proposed and item["status"] == "done"]
+    declined = sum(key in proposed and item["status"] == "declined" for key, item in outcomes.items())
+    summary = f"{len(proposed.keys() - outcomes.keys())} requests pending · {len(completed)} completed"
+    if declined:
+        summary += f" · {declined} declined"
+    lines = [summary]
+    if completed:
+        lines.append("Last verified change · " + completed[-1]["verification"])
     return lines
 
 

@@ -64,6 +64,22 @@ class LiveReceiptTests(unittest.TestCase):
         self.publisher.publish_live()
         self.assertIn("segments 6 to 3",self.note.read_text())
 
+    def test_local_model_inference_and_verdict_are_separate_from_cloud_success(self):
+        talos_activity.record(self.state, "Model", "local Qwen completed inference in 1s · 20 output tokens")
+        talos_activity.record(self.state, "Model", "Verified Hermes/test.py at byte 0 · no supported improvement")
+        from feature_queue import review
+        with (self.state / "feature-requests.jsonl").open("w") as queue:
+            queue.write(json.dumps({"status":"proposed", "id":"abc", "origin":"local-qwen-source-review",
+                                    "feature":"Check-in cancellation"}) + "\n")
+        review(self.state, "fixture", complete=("abc", "Spoken replay passed"))
+        self.publisher.publish_live()
+        body = self.note.read_text()
+        self.assertIn("Local model inference",body)
+        self.assertIn("Local source review",body)
+        self.assertIn("Model-proposed change verified", body)
+        self.assertIn("Spoken replay passed", body)
+        self.assertIn("none in the retained activity log",body)
+
     def test_quiet_terminal_observes_lock_change_before_probe_backoff(self):
         lock = self.enterContext((self.state / "vault-watch.lock").open("a"))
         class Stop:

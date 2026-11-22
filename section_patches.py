@@ -15,7 +15,7 @@ import time
 from contextlib import closing
 from pathlib import Path
 
-from feature_targets import FILE, change_events
+from feature_targets import FILE, proposal_ledger
 from talos_activity import record
 from upstream_comparison import AREAS, CHUNK, read_snapshot
 
@@ -39,22 +39,12 @@ def proposals(state, engine, project):
     path = state / FILE
     if not path.is_file():
         return {}
-    pending = {}
     with path.open() as stream:
         fcntl.flock(stream, fcntl.LOCK_SH)
-        for item in change_events(stream):
-            key = item.get("id", "")
-            if not isinstance(key, str) or not re.fullmatch(r"[0-9a-f]{16}", key):
-                continue
-            if item.get("status") == "done":
-                pending.pop(key, None)
-            elif (
-                item.get("status") == "proposed"
-                and item.get("origin") == engine + "-section-review"
-                and item.get("upstream") == project
-            ):
-                pending[key] = item
-    return pending
+        proposed, outcomes = proposal_ledger(stream)
+    return {key: item for key, item in proposed.items()
+            if key not in outcomes and isinstance(key, str) and re.fullmatch(r"[0-9a-f]{16}", key)
+            and item.get("origin") == engine + "-section-review" and item.get("upstream") == project}
 
 
 def context(root, state, item):
@@ -277,7 +267,7 @@ def draft_next(root, state, engine, project, model, request, *, clock=time.time)
                 )
                 candidate = checked_patch(root, item, original, prompt["talos"], values)
                 if key not in proposals(state, engine, project):
-                    raise Superseded("Finding has already been completed")
+                    raise Superseded("Finding is already closed")
                 context(root, state, item)
                 if candidate is None:
                     status = "abstained"

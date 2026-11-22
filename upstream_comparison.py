@@ -176,14 +176,14 @@ def compare(root, state, model, *, infer=infer_local, project=None, observe=None
                            (target, len(content), hashlib.sha256(content).hexdigest()))
             db.commit()
             delegated = origin in ("OpenCode-section-review", "OpenClaude-section-review")
-            buffering = delegated or origin == "respan-upstream-review"
+            buffering = delegated or origin in ("respan-upstream-review", "local-qwen-source-review")
             if buffering:
                 with open(os.open(state / FILE, os.O_CREAT | os.O_RDWR, 0o600), "r+", encoding="utf-8") as queue:
                     fcntl.flock(queue, fcntl.LOCK_EX)
                     proposed, finished = queue_entries(queue)
                     promote_backlog(db, queue, proposed, finished)
                 db.commit()
-            item = next_excerpt(db, project, mapped_only=delegated)
+            item = next_excerpt(db, project, mapped_only=delegated or origin == "local-qwen-source-review")
             if not item:
                 return "No pending excerpts in eligible indexed sources"
             _, tree, target, rel, size, sha, target_sha, start = item

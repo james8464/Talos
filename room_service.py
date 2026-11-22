@@ -616,7 +616,7 @@ class Room:
             return None
         item = dict(row)
         if item.pop("event_kind") == "room_checkin":
-            room_checkins.offered(db, item["id"])
+            item["check_in_token"] = room_checkins.offered(db, item["id"])
             item["check_in"] = True
         return item
 
@@ -628,7 +628,13 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= 800:
             raise ValueError("Use between 1 and 800 characters for the turn.")
         voice = facing or channel == "voice"
-        checkin = room_checkins.handle(db, text, apply=self.apply, request_id=body.get("request_id"))
+        reply_token = body.get("reply_to_checkin") if voice and not (
+            body.get("offer") or body.get("reviewed_dictation")) else None
+        offer = self.facing_offer
+        if offer and monotonic() <= offer[1]:
+            reply_token = None
+        checkin = room_checkins.handle(db, text, apply=self.apply, request_id=body.get("request_id"),
+                                      reply_token=reply_token)
         if checkin is not None:
             return checkin
         work = background_work.handle(db, text, voice=voice, apply=self.apply, request_id=body.get("request_id"))

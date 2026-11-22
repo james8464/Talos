@@ -268,6 +268,14 @@ def runtime_evidence(state):
                                  (component,)).fetchone()
                 if row:
                     receipts.append(f"{label} · {checked_time(row[0])} · {clean(row[1])}")
+            # Completed inference and its accepted/quiet source verdict are distinct events.
+            for pattern, label in (("local % completed inference in %", "Local model inference"),
+                                   ("Verified % at byte %", "Local source review"),
+                                   ("Verified implementation of local proposal %", "Model-proposed change verified")):
+                row = db.execute("""SELECT stamp,message FROM events WHERE component='Model'
+                                  AND message LIKE ? ORDER BY id DESC LIMIT 1""", (pattern,)).fetchone()
+                if row:
+                    receipts.insert(0, f"{label} · {checked_time(row[0])} · {clean(row[1])}")
             response = db.execute("""SELECT stamp,message FROM events WHERE component='Respan'
                                    AND message LIKE 'Response from %' ORDER BY id DESC LIMIT 1""").fetchone()
             if response:
@@ -313,8 +321,8 @@ def snapshot(state, port, *, database=None):
                     entry = json.loads(raw)
                 except (ValueError, UnicodeError):
                     continue
-                if isinstance(entry, dict) and entry.get("status") in ("proposed", "done"):
-                    detail = entry.get("feature") or entry.get("verification")
+                if isinstance(entry, dict) and entry.get("status") in ("proposed", "done", "declined"):
+                    detail = entry.get("feature") or entry.get("verification") or entry.get("reason")
                     lines.append(f"Last queue event · {entry['status']} · {clean(detail)}")
                     break
     except OSError:

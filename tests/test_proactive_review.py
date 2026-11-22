@@ -68,6 +68,65 @@ class CheckInTests(unittest.TestCase):
         self.assertIsNone(self.room.route("GET","/v1/speech",{})[1]["item"])
         self.assertEqual(self.db.execute("SELECT status FROM room_checkins").fetchone()[0], "answered")
 
+    def test_bare_cancel_uses_heard_delivery_not_request_id_and_survives_restart(self):
+        request_id = str(uuid4())
+        started = self.say("Check in with me in one minute", request_id=request_id)
+        first = self.due(started["id"])
+        nonce = first["check_in_token"]
+        self.assertNotEqual(request_id,nonce)
+        self.assertEqual(first, self.room.route("GET","/v1/speech",{})[1]["item"])
+        self.say("cancel",reply_to_checkin=nonce)  # offered, no playback receipt yet
+        self.assertEqual(self.db.execute("SELECT status FROM room_checkins").fetchone()[0], "offered")
+        self.ack(first["id"])
+        self.ack(first["id"])
+        self.say("cancel",reply_to_checkin=request_id)
+        self.assertEqual(self.db.execute("SELECT status FROM room_checkins").fetchone()[0],"awaiting reply")
+        self.room = Room(self.path, "fixture", online=False)
+        self.assertEqual(self.say("Cancel it.",reply_to_checkin=nonce)["reply"], "Check-in cancelled.")
+        self.assertIn("already cancelled", self.say("Never mind.",reply_to_checkin=nonce)["reply"])
+        self.assertEqual(self.db.execute("SELECT count(*) FROM inbox WHERE acknowledged_at IS NULL").fetchone()[0],0)
+        self.assertEqual(self.db.execute("SELECT count(*) FROM inbox").fetchone()[0],2)
+
+    def test_new_delivery_or_expiry_invalidates_previous_spoken_scope(self):
+        first = self.due(self.say("Check on me in one minute")["id"])
+        self.ack(first["id"])
+        retry_id = self.db.execute("SELECT delivery FROM room_checkins").fetchone()[0]
+        final = self.due(retry_id)
+        self.assertNotEqual(final["check_in_token"],first["check_in_token"])
+        self.ack(final["id"])
+        self.say("cancel",reply_to_checkin=first["check_in_token"])
+        self.assertEqual(self.db.execute("SELECT status FROM room_checkins").fetchone()[0],"unanswered")
+        with self.db:
+            self.db.execute("UPDATE room_checkin_prompts SET expires=?",
+                            ((datetime.now(UTC)-timedelta(seconds=1)).isoformat(),))
+        self.say("cancel",reply_to_checkin=final["check_in_token"])
+        self.assertEqual(self.db.execute("SELECT status FROM room_checkins").fetchone()[0],"unanswered")
+
+    def test_failed_playback_and_late_ack_cannot_authorize_cancel_or_schedule_retry(self):
+        for outcome in ("interrupted","unknown","suppressed"):
+            item = self.due(self.say("Check on me in one minute")["id"])
+            self.ack(item["id"],outcome)
+            self.ack(item["id"],"played")
+            self.say("cancel it",reply_to_checkin=item["check_in_token"])
+            row = self.db.execute("SELECT status FROM room_checkins WHERE delivery=?", (item["id"],)).fetchone()
+            self.assertEqual(row[0],outcome)
+        item = self.due(self.say("Check on me in one minute")["id"])
+        with self.db:
+            self.db.execute("UPDATE inbox SET due_at=? WHERE id=?",
+                ((datetime.now(UTC)-timedelta(minutes=3)).isoformat(),item["id"]))
+        self.ack(item["id"])
+        self.assertEqual(self.db.execute("SELECT status FROM room_checkins WHERE delivery=?", (item["id"],)).fetchone()[0],"expired")
+        self.assertEqual(self.db.execute("SELECT count(*) FROM inbox WHERE acknowledged_at IS NULL").fetchone()[0],0)
+
+    def test_action_confirmation_has_priority_over_a_delivered_checkin(self):
+        item = self.due(self.say("Check on me in one minute")["id"])
+        self.ack(item["id"])
+        offer = self.say("Remind me in ten minutes to check the oven.")
+        self.assertIn("offer",offer)
+        result = self.say("cancel", offer=offer["offer"], reply_to_checkin=item["check_in_token"])
+        self.assertEqual(result["reply"], "Cancelled.")
+        self.assertEqual(self.db.execute("SELECT status FROM room_checkins").fetchone()[0],"awaiting reply")
+
     def test_self_report_offers_a_checkin_without_scheduling_or_storing_condition(self):
         self.assertIn("Would you like", self.say("Talos, I’m feeling unwell.")["reply"])
         self.assertEqual(self.db.execute("SELECT count(*) FROM inbox").fetchone()[0], 0)
@@ -114,12 +173,13 @@ class CheckInTests(unittest.TestCase):
         recognizer = (
             "import json; from telegram_voice import render_note, transcribe_note; "
             "print(json.dumps([transcribe_note(render_note(phrase)) for phrase in "
-            "('Check in with me in one minute.', 'I am okay.')]))"
+            "('Check in with me in one minute.', 'I am okay.', 'Never mind.')]))"
         )
         result = subprocess.run([str(root/"state/telegram-voice-env/bin/python"),"-c",recognizer],
                                 capture_output=True,text=True,cwd=root,check=False,timeout=120)
         self.assertEqual(result.returncode, 0, result.stderr[-2500:])
-        request, answer = json.loads(result.stdout)
+        request, answer, cancellation = json.loads(result.stdout)
+        self.assertIn(cancellation.lower().strip(" .!?"), ("cancel it","cancel","never mind"), cancellation)
         started = self.say(request)
         self.assertIn("id", started, request)
         question = self.due(started["id"])
@@ -127,7 +187,11 @@ class CheckInTests(unittest.TestCase):
         self.ack(started["id"])
         closed = self.say(answer)["reply"]
         self.assertIn("closed",closed,answer)
-        for reply in (started["reply"],question["text"],closed):
+        next_question = self.due(self.say(request)["id"])
+        self.ack(next_question["id"])
+        cancelled = self.say(cancellation, reply_to_checkin=next_question["check_in_token"])["reply"]
+        self.assertIn("cancelled",cancelled,cancellation)
+        for reply in (started["reply"],question["text"],closed,cancelled):
             encoded = self.room.route("POST","/v1/voice",{"text":reply})[1]["wav"]
             with wave.open(io.BytesIO(base64.b64decode(encoded))) as wav:
                 self.assertTrue(any(wav.readframes(wav.getnframes())))

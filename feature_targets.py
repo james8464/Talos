@@ -22,3 +22,14 @@ def change_events(stream, *, repair=False):
                 stream.truncate()
             return
         yield json.loads(line)
+
+def proposal_ledger(stream, *, repair=False):
+    """Fold the append-only queue. The first terminal disposition permanently closes an ID."""
+    proposed, outcomes = {}, {}
+    for event in change_events(stream, repair=repair):
+        key, status = event["id"], event["status"]
+        if status == "proposed" and key not in outcomes:
+            proposed[key] = event
+        elif status in ("done", "declined"):
+            outcomes.setdefault(key, event)
+    return proposed, outcomes

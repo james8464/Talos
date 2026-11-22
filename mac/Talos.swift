@@ -245,7 +245,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     func submitDraft() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !busy, !speaking, !dictating, !text.isEmpty, draft.unicodeScalars.count <= draftLimit else { return }
-        send(text, source: draftContainsVoice ? "voice" : "text")
+        send(text, source: draftContainsVoice ? "voice" : "text", reviewedDictation: draftContainsVoice)
         draft = ""
     }
     
@@ -460,6 +460,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var facingOffer: String?
     private var facingContext: String?
     private var facingSince: TimeInterval?
+    private var playingCheckIn: String?
+    private var checkInReply: (token: String, until: TimeInterval)?
     private var continuation: SpokenContinuation?
     private var conversationLastTurn: TimeInterval?
     @Published var conversationStarted: TimeInterval?
@@ -589,6 +591,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             openFocusAfterPlayback = false
             microphone = false
             dictationStart = nil
+            checkInReply = nil
             continuation = nil
             conversationStarted = nil
             leaveVisitor()
@@ -824,6 +827,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         guard !busy, !speaking, captureMode != .finishingDraft else { return }
         if !dictating {
             guard client != nil else { status = "Connect to the Talos service first."; return }
+            checkInReply = nil
             dictationStart = (draft, draftContainsVoice)
             if !microphone {
                 captureMode = .dictation
@@ -868,6 +872,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         let focused = focus.request(finalText, at: now)
         var useFacing = focused == nil && (personal || facingRequest(finalText, at: now))
         var request = focused ?? (useFacing ? finalText : nil)
+        if request == nil, let checkInReply, now <= checkInReply.until,
+           Self.isShortCancel(finalText) { request = finalText }
         if let saved = continuation {
             if identified != nil || now > saved.expires || saved.conversation != conversationStarted {
                 continuation = nil
@@ -933,9 +939,18 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
     }
 
-    func send(_ text: String, source: String = "text", speechEnd: TimeInterval? = nil, followUp: Bool = false, viaFacing: Bool = false, visitorID: String? = nil) {
+    private static func isShortCancel(_ text: String) -> Bool {
+        let words = text.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters)).lowercased()
+        return ["cancel", "cancel it", "never mind"].contains(words)
+    }
+
+    func send(_ text: String, source: String = "text", reviewedDictation: Bool = false, speechEnd: TimeInterval? = nil, followUp: Bool = false, viaFacing: Bool = false, visitorID: String? = nil) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !busy, !speaking, let client else { return }
+        let prompt = checkInReply
+        checkInReply = nil
+        let replyToken = source == "voice" && !reviewedDictation && Self.isShortCancel(text)
+            && ProcessInfo.processInfo.systemUptime <= (prompt?.until ?? 0) ? prompt?.token : nil
         guard text.count <= 800 else { status = "Send up to 800 characters per turn."; return }
         if !viaFacing, !isTrial, let prefix = text.range(of: #"(?i)^(?:get me ready for|track (?:a |the )?goal for|keep me ready for)\s+"#, options: .regularExpression) {
             let topic = String(text[prefix.upperBound...]).trimmingCharacters(in: .punctuationCharacters)
@@ -992,6 +1007,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 var streamStarted = false
                 var audioFailed = false
                 var result: [String: Any]
+                if let replyToken {
+                    try await acknowledgePlayback(using: client)
+                    body["reply_to_checkin"] = replyToken
+                }
                 if stream {
                     result = try await client.spokenTurn(body: body) { event in
                         guard self.streamID == requestID else { throw CancellationError() }
@@ -1249,13 +1268,16 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
     }
 
+    private func acknowledgePlayback(using client: RoomClient) async throws {
+        guard let ack = pendingAcknowledgment else { return }
+        _ = try await client.request("speech/ack", body: ["id": ack.id, "playback": ack.playback])
+        if pendingAcknowledgment?.id == ack.id { pendingAcknowledgment = nil }
+    }
+
     private func pollSpeech() async {
         guard microphone || cameraRunning, !busy, !speaking, !dictating, currentText.isEmpty else { return }
         do {
-            if let pendingAcknowledgment {
-                _ = try await client?.request("speech/ack", body: ["id": pendingAcknowledgment.id, "playback": pendingAcknowledgment.playback])
-                self.pendingAcknowledgment = nil
-            }
+            if let client { try await acknowledgePlayback(using: client) }
             let result = try await client?.request("speech")
             modelState = result?["model_state"] as? String ?? ""
             endpointFailures = 0
@@ -1268,6 +1290,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 return
             }
             let checkIn = item["check_in"] as? Bool == true
+            playingCheckIn = checkIn ? item["check_in_token"] as? String : nil
             openFocusAfterPlayback = checkIn
             let spoken = checkIn || item["kind"] as? String == "speech" ? text : "You have a local Talos notification."
             say(spoken, id: id)
@@ -1356,6 +1379,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func say(_ text: String, id: Int? = nil, turnStart: Date? = nil) {
+        checkInReply = nil
+        if id == nil { playingCheckIn = nil }
         #if TALOS_CONTROLLER_REPLAY
         if let replayUtterance { replayUtterance(text); return }
         #endif
@@ -1436,6 +1461,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
 
     private func finishSpeech(delivered: Bool, keepListening: Bool = false) {
         if let speechID { pendingAcknowledgment = (speechID, delivered ? "played" : "interrupted") }
+        if delivered, let token = playingCheckIn {
+            checkInReply = (token, ProcessInfo.processInfo.systemUptime + 8)
+        }
+        playingCheckIn = nil
         playbackMeasurement = nil
         speechID = nil
         systemUtterance = nil

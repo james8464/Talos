@@ -1,6 +1,6 @@
 """Publish navigable views of the local index without copying raw Mac records."""
 
-from feature_targets import change_events
+from feature_targets import proposal_ledger
 import re
 import sqlite3
 import fcntl
@@ -16,20 +16,21 @@ def publish_work(state, folder):
     queue = state / "feature-requests.jsonl"
     work = folder / "Changes"
     work.mkdir(mode=0o700, exist_ok=True)
-    records = {}
+    records, outcomes = {}, {}
     if queue.is_file():
         with queue.open() as stream:
-            for event in change_events(stream):
-                key = event.get("id", "")
-                if not re.fullmatch(r"[a-f0-9]{16}", key):
-                    continue
-                if event["status"] == "proposed":
-                    records[key] = event
-                elif key in records and event["status"] == "done":
-                    records[key]["verification"] = event.get("verification")
+            records, outcomes = proposal_ledger(stream)
     groups = {}
     migrated = []
     for key, event in records.items():
+        if not isinstance(key, str) or not re.fullmatch(r"[a-f0-9]{16}", key):
+            continue
+        outcome = outcomes.get(key, {})
+        declined = outcome.get("status") == "declined"
+        if outcome.get("status") == "done":
+            event["verification"] = outcome.get("verification")
+        elif declined:
+            event["reason"] = outcome.get("reason")
         source = Path(event.get("source", "")).name
         area = (
             source if re.fullmatch(r"[A-Za-z0-9_-]+[.](py|swift|ts|mjs)", source) else "Other"
@@ -39,9 +40,9 @@ def publish_work(state, folder):
         groups.setdefault(area, []).append(title)
         lines = [
             "# "
-            + ("Verified change" if event.get("verification") else "Proposed change")
+            + ("Declined proposal" if declined else "Verified change" if event.get("verification") else "Proposed change")
         ]
-        for field in ("feature", "acceptance", "verification"):
+        for field in ("feature", "acceptance", "verification", "reason"):
             if event.get(field):
                 lines.extend(
                     [
@@ -51,7 +52,7 @@ def publish_work(state, folder):
                         "    " + " ".join(event[field].split()),
                     ]
                 )
-        if (event.get("origin") == "verified-upstream-port" and event.get("verification")
+        if (outcome.get("status") == "done" and event.get("origin") == "verified-upstream-port" and event.get("verification")
                 and event.get("upstream") in ("Hermes", "OpenClaw") and isinstance(event.get("reference"), str)):
             migrated.append(f"- [[Talos Memory/Talos maps/Changes/{title}|{event['upstream']} · {' '.join(words)}]]")
             lines.extend(("", "Upstream source", "", "    " + event["upstream"] + "/" + event["reference"]))
