@@ -51,7 +51,9 @@ class SpokenStream:
                    "keep_alive": -1 if "TALOS_OLLAMA_PORT" in os.environ else "30m",
                    "messages": [*messages, {"role": "system", "content":
                        "Respond with a JSON array. Put each complete spoken sentence in its own string. "
-                       "Use at most four sentences and 500 characters total. /no_think"}],
+                       "Lead with a short sentence that directly answers the question. Use stable facts for general "
+                       "questions. Claims about current conditions, dates or year-to-year changes need supporting "
+                       "evidence in this conversation. Use at most four sentences and 500 characters total. /no_think"}],
                    "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": 192}}
         conn = http.client.HTTPConnection(OLLAMA_HOST, int(os.environ.get("TALOS_OLLAMA_PORT", OLLAMA_PORT)), timeout=60)
         try:

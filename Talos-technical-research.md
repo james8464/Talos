@@ -115,6 +115,8 @@ survive repeated exports. Visual templates remain in the local database.
 
 The native Kokoro conversation replay used five interleaved turns per path, a controlled local generator and a silent Swift PCM sink. Median time from simulated end of speech to first voiced PCM was 1,449 ms with buffered replies and 901 ms with sentence streaming. Two interruption replays reached the player stop call in 4.57–4.73 ms. Physical speaker latency and battery discharge were outside these fixtures.
 
+A separate synthetic seasons question used real Qwen3 4B, local Kokoro and the same silent native sink. An initial warm reply introduced a year-to-year comparison without evidence. After asking for a short opening sentence and evidence for current comparisons, a fresh cold replay reached first voiced PCM at 8.94 s and the next warm replay at 1.23 s. Both responses contained two sentences and omitted the unsupported comparison. These are individual trials.
+
 Across 16 interleaved turns per path, reusing the supervisor’s verified model removed all 16 inventory requests. Median caption-to-text time was 1.58 ms before and 1.01 ms after with a scripted loopback model. Caption-to-full-WAV p95 varied from 476 to 518 ms. The model check alone showed no consistent full-WAV latency gain.
 
 The isolated CPU Ollama benchmark replayed an unfinished caption, a complete caption and a short spoken question four times under each policy. All 36 model outputs met those fixture checks. The warm columns exclude the first iteration. Resident memory is the sum of the test server and its direct runner processes.
