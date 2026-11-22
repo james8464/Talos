@@ -2,6 +2,7 @@
 
 import commitment_memory
 import mac_context
+import message_drafts
 import personal_facts
 import room_vision
 from idle_lab import IdleLab, IdleReviewDeferred
@@ -558,11 +559,15 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= 800:
             raise ValueError("Use between 1 and 800 characters for the turn.")
         voice = facing or channel == "voice"
-        if app := requested_app(text):
+        app = requested_app(text)
+        draft = message_drafts.draft_request(text)
+        if app or draft:
             with self.turn_lock:
                 self.facing_offer = self.facing_exchange = None
                 self.pending_reminders.pop("native_voice" if voice else TEXT_SESSION, None)
                 direct = not (voice and (facing or body.get("visitor") or body.get("follow_up")))
+                if draft:
+                    return message_drafts.handle(db, draft, voice=voice, direct=direct, apply=self.apply)
                 return open_mac_app(app, enabled=self.app_launch_enabled and self.apply, direct=direct)
         private_result = mac_context.room_answer(text, self.db_path.parent, voice)
         if private_result is not None:
