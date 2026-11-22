@@ -1,3 +1,5 @@
+import json
+import os
 import sqlite3
 import tempfile
 import unittest
@@ -163,6 +165,53 @@ class HandoffTests(unittest.TestCase):
         self.assertIsNone(overnight_goal.quota_from_event(event, now + 901))
         event["payload"]["rate_limits"]["limit_id"] = "other"
         self.assertIsNone(overnight_goal.quota_from_event(event, now))
+
+    def test_log_reader_keeps_latest_fresh_observation_per_window(self):
+        now = 1800000000
+        home = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.enterContext(patch("overnight_goal.Path.home", return_value=home))
+        day = home / ".codex/sessions/2027/01/15"
+        day.mkdir(parents=True)
+        def record(delta, **windows):
+            return json.dumps({
+                "type": "event_msg", "timestamp": datetime.fromtimestamp(now + delta, UTC).isoformat(),
+                "payload": {"type": "token_count", "rate_limits": {"limit_id": "codex", **windows}},
+            })
+        low = {"used_percent": 98, "resets_at": now + 600}
+        healthy = {"used_percent": 40, "resets_at": now + 5000}
+        (day / "first.jsonl").write_text(record(-5, primary=low) + "\n")
+        other = day / "second.jsonl"
+        other.write_text(record(-1, secondary=healthy) + "\n" +
+                         record(0, primary=["invalid"]).replace(": ", ":") + "\n")
+        # Use synthetic log modification times as well as synthetic event times.
+        for path in day.glob("*.jsonl"):
+            os.utime(path, (now, now))
+        self.assertEqual(overnight_goal.latest_quota(now), [(2, now + 600), (60, now + 5000)])
+        with other.open("a") as stream:
+            stream.write(record(0, primary={**low, "used_percent": 80}) + "\n")
+        os.utime(other, (now, now))
+        self.assertEqual(overnight_goal.latest_quota(now), [(20, now + 600), (60, now + 5000)])
+        self.assertEqual(overnight_goal.latest_quota(now + 901), [])
+
+    def test_partial_read_keeps_previously_low_window_until_reset(self):
+        now = 1800000000
+        state = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        def check(delta, windows):
+            return overnight_goal.check(state, now + 9000, now + delta, quota=lambda _: windows)
+        with patch("overnight_goal.power_and_idle", return_value=False):
+            self.assertIn("idle Mac", check(0, {"primary": (1, now + 600), "secondary": (2, now + 5000)}))
+            self.assertIn("idle Mac", check(1, {"secondary": (50, now + 5000)}))
+            self.assertEqual(check(601, []), "quota unavailable")
+
+    def test_old_handoff_survives_partial_read_and_clears_on_complete_read(self):
+        now = 1800000000
+        state = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        status = state / "overnight-status.json"
+        status.write_text(json.dumps({"handoff_until": now + 400, "last_review": now}))
+        healthy = (70, now + 1000)
+        for windows, outcome in (({"primary": healthy}, "free reviewer on standby"),
+                                 ({"primary": healthy, "secondary": healthy}, "Codex budget available")):
+            self.assertEqual(overnight_goal.check(state, now + 9000, now, quota=lambda _: windows), outcome)
 
     def test_handoff_threshold_reset_deduplication_and_patch(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()

@@ -21,62 +21,75 @@ FREE_ROUTE = "https://gateway.respan.ai/v1"
 FREE_MODEL = "zai/glm-4.5-flash"
 
 
-def quota_from_event(event, now):
-    if event.get("type") != "event_msg":
-        return None
-    payload = event.get("payload") or {}
-    rates = payload.get("rate_limits") or {}
-    if payload.get("type") != "token_count" or rates.get("limit_id") != "codex":
-        return None
-    stamp = datetime.fromisoformat(event["timestamp"]).timestamp()
+def _window_observations(event, now):
+    if not isinstance(event, dict) or event.get("type") != "event_msg":
+        return {}
+    payload = event.get("payload")
+    if not isinstance(payload, dict) or payload.get("type") != "token_count":
+        return {}
+    rates = payload.get("rate_limits")
+    if not isinstance(rates, dict) or rates.get("limit_id") != "codex":
+        return {}
+    try:
+        stamp = datetime.fromisoformat(event["timestamp"]).timestamp()
+    except (KeyError, ValueError, TypeError, OverflowError, OSError):
+        return {}
     if not 0 <= now - stamp <= 900:
-        return None
-    windows = []
+        return {}
+    windows = {}
     for key in ("primary", "secondary"):
-        item = rates.get(key) or {}
+        item = rates.get(key)
+        if not isinstance(item, dict):
+            continue
         used = item.get("used_percent")
-        reset = item.get("resets_at", 0)
-        if (
-            type(used) in (int, float)
-            and 0 <= used <= 100
-            and isinstance(reset, (float, int))
-            and reset > now
-        ):
-            windows.append((100 - used, reset))
-    if not windows:
-        return None
-    return stamp, windows
+        reset = item.get("resets_at")
+        if (type(used) in (int, float) and 0 <= used <= 100
+                and type(reset) in (int, float) and now < reset < float("inf")):
+            windows[key] = (stamp, (100 - used, reset))
+    return windows
+
+
+def quota_from_event(event, now):
+    windows = _window_observations(event, now)
+    if windows:
+        return next(iter(windows.values()))[0], [window for _, window in windows.values()]
+
+
+def _latest_windows(now):
+    root = Path.home() / ".codex/sessions"
+    days = sorted(root.glob("20[0-9][0-9]/[0-1][0-9]/[0-3][0-9]"), reverse=True)[:2]
+    files = []
+    for day in days:
+        for path in day.glob("*.jsonl"):
+            try:
+                modified = path.stat().st_mtime
+            except OSError:
+                continue
+            if modified >= now - 900:
+                files.append((modified, path))
+    latest = {}
+    for _, path in sorted(files, reverse=True)[:6]:
+        try:
+            with path.open("rb") as stream:
+                size = os.fstat(stream.fileno()).st_size
+                stream.seek(max(0, size - 1048576))
+                for line in reversed(stream.read(1048576).splitlines()):
+                    if b'"rate_limits"' not in line:
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except (ValueError, RecursionError):
+                        continue
+                    for key, observation in _window_observations(event, now).items():
+                        if key not in latest or observation[0] > latest[key][0]:
+                            latest[key] = observation
+        except OSError:
+            continue
+    return {key: latest[key][1] for key in ("primary", "secondary") if key in latest}
 
 
 def latest_quota(now):
-    root = Path.home() / ".codex/sessions"
-    # Only inspect a bounded tail of recent session logs, retaining quota metadata alone.
-    days = sorted(root.glob("20[0-9][0-9]/[0-1][0-9]/[0-3][0-9]"), reverse=True)[:2]
-    files = sorted(
-        (f for day in days for f in day.glob("*.jsonl")),
-        key=lambda f: f.stat().st_mtime,
-        reverse=True,
-    )[:6]
-    observations = []
-    for path in files:
-        try:
-            if path.stat().st_mtime < now - 900:
-                continue
-            with path.open("rb") as stream:
-                stream.seek(max(0, path.stat().st_size - 1048576))
-                for line in reversed(stream.readlines()):
-                    if b'"rate_limits":{' not in line:
-                        continue
-                    try:
-                        obs = quota_from_event(json.loads(line), now)
-                    except (ValueError, KeyError, TypeError):
-                        continue
-                    if obs:
-                        observations.append(obs)
-                        break
-        except OSError:
-            continue
-    return max(observations, key=lambda x: x[0])[1] if observations else []
+    return list(_latest_windows(now).values())
 
 
 def free_edit(stage, original):
@@ -153,11 +166,11 @@ def free_edit(stage, original):
     return json.loads(text)
 
 
-def check(state, until, now=None, *, quota=latest_quota):
+def check(state, until, now=None, *, quota=_latest_windows):
     return monitor(state, until, now=now, quota=quota, watch=False)
 
 
-def monitor(state, until, *, now=None, quota=latest_quota, watch=False):
+def monitor(state, until, *, now=None, quota=_latest_windows, watch=False):
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
     with (state / "overnight.lock").open("a") as lock:
         try:
@@ -182,16 +195,34 @@ def check_locked(state, until, now, quota):
         windows = quota(now) if now < until else []
     except OSError:
         windows = []
-    lease = min(until, prior.get("handoff_until", 0))
-    if windows:
-        lease = min(
-            until,
-            max((reset for remaining, reset in windows if remaining < 3), default=0),
-        )
+    # Old callers supply anonymous (remaining, reset) pairs. The log reader
+    # uses stable window names even when primary and secondary reset together.
+    if not isinstance(windows, dict):
+        by_reset = {}
+        for remaining, reset in windows:
+            key = str(reset)
+            if key not in by_reset or remaining < by_reset[key][0]:
+                by_reset[key] = (remaining, reset)
+        windows = by_reset
+    low = {key: reset for key, reset in prior.get("low_windows", {}).items() if reset > now}
+    for key, (remaining, reset) in windows.items():
+        if remaining < 3:
+            low[key] = reset
+        else:
+            low.pop(key, None)
+    # Earlier status files only recorded the furthest reset, without a window name.
+    legacy = prior.get("legacy_handoff_until", 0)
+    if "low_windows" not in prior:
+        legacy = prior.get("handoff_until", 0)
+    if legacy <= now or {"primary", "secondary"} <= windows.keys():
+        legacy = 0
+    lease = min(until, max([legacy, *low.values()]))
     status = {
         "checked_at": now,
         "ends_at": until,
-        "remaining_percent": min((w[0] for w in windows), default=None),
+        "remaining_percent": min((w[0] for w in windows.values()), default=None),
+        "low_windows": low,
+        "legacy_handoff_until": legacy,
         "handoff_until": lease,
         "last_review": prior.get("last_review", 0),
         "reviews": prior.get("reviews", 0),
