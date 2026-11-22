@@ -68,3 +68,5 @@ The pinned Hermes registry declares 105 literal command definitions. Terminal fi
 **Tools & Skills** · `/tools`, `/toolsets`, `/skills`, `/memory`, `/bundles`, `/pet`, `/hatch`, `/learn`, `/init`, `/cron`, `/suggestions`, `/blueprint`, `/curator`, `/kanban`, `/reload`, `/reload-mcp`, `/reload-skills`, `/browser`, `/plugins`.
 
 **Exit** · `/quit`.
+
+The Hermes gateway-only `/commands [page]` entry is available in Talos Telegram private chat. `TelegramGatewayTests.test_commands_pages_use_only_local_gateway_capabilities` drives both pages, invalid arguments, sender restrictions and replay through polling. The catalog covers the commands implemented by this gateway. Dynamic skill discovery is still open.
