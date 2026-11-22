@@ -15,6 +15,8 @@ from feature_targets import FILE
 # These areas have corresponding Talos implementations and local acceptance harnesses.
 AREAS = (
     ("Hermes", "persistence/conversation/*.py", "transcript_memory.py"),
+    ("OpenClaw", "src/auto-reply/heartbeat.ts", "respan_worker.py"),
+    ("Hermes", "cron/missed_runs.py", "room_checkins.py"),
     ("Hermes", "cron/*.py", "maintenance_schedule.py"),
     ("Hermes", "hermes_cli/cli_session*.py", "agent.py"),
     ("Hermes", "tools/transcription_local.py", "telegram_gateway.py"),
@@ -56,21 +58,26 @@ def discovery_candidate(db, tree):
     return last, tree, target, path, size, sha, local_sha, position
 
 
-def next_excerpt(db):
+def next_excerpt(db, project=None):
     candidates = []
     for tree, pattern, target in AREAS:
+        if project and tree != project:
+            continue
         row = db.execute("""SELECT u.path,u.bytes,u.sha256,t.sha256,coalesce(p.position,0)
             FROM files u JOIN files t ON t.tree='Talos' AND t.path=?
             LEFT JOIN comparison_progress p ON p.tree=u.tree AND p.path=u.path
                 AND p.source_hash=u.sha256 AND p.target_hash=t.sha256
-            WHERE u.tree=? AND u.path GLOB ? AND u.path NOT LIKE '%.test.%'
+            WHERE u.tree=? AND u.path GLOB ? AND (u.path != 'cron/missed_runs.py' OR t.path='room_checkins.py') AND u.path NOT LIKE '%.test.%'
                 AND u.bytes BETWEEN 1 AND 2097152 AND coalesce(p.position,0)<u.bytes
             ORDER BY coalesce(p.checked,0), u.path LIMIT 1""", (target, tree, pattern)).fetchone()
         if row:
             last = db.execute("SELECT coalesce(max(checked),0) FROM comparison_progress WHERE tree=? AND target=?",
                               (tree, target)).fetchone()[0]
+            # Begin each targeted provider pass with the pinned behavior implementation.
+            if project and last == 0 and pattern in ("src/auto-reply/heartbeat.ts", "cron/missed_runs.py"):
+                return (last, tree, target, *row)
             candidates.append((last, tree, target, *row))
-    for tree in sorted({tree for tree, _, _ in AREAS}):
+    for tree in ([project] if project else sorted({tree for tree, _, _ in AREAS})):
         item = discovery_candidate(db, tree)
         if item:
             candidates.append(item)
@@ -107,7 +114,23 @@ def infer_local(prompt, model):
         schema={"type": "object", "required": list(fields), "properties": fields, "additionalProperties": False})
 
 
-def compare(root, state, model, *, infer=infer_local):
+def promote_backlog(db, queue, proposed, finished):
+    """Publish validated findings as queue slots open, discarding superseded revisions."""
+    db.execute("CREATE TABLE IF NOT EXISTS review_backlog(id TEXT PRIMARY KEY, event TEXT NOT NULL)")
+    for ident, raw in db.execute("SELECT id,event FROM review_backlog ORDER BY rowid"):
+        if len(proposed.keys() - finished) >= 5:
+            break
+        event = json.loads(raw)
+        fingerprints = db.execute("""SELECT u.sha256,t.sha256 FROM files u JOIN files t
+            ON t.tree='Talos' AND t.path=? WHERE u.tree=? AND u.path=?""",
+            (event["source"],event["upstream"],event["reference"])).fetchone()
+        if ident not in proposed and fingerprints == (event["source_sha256"], event["target_sha256"]):
+            append(queue, event)
+            proposed[ident] = event
+        db.execute("DELETE FROM review_backlog WHERE id=?", (ident,))
+
+
+def compare(root, state, model, *, infer=infer_local, project=None, observe=None, origin="local-upstream-review"):
     root, state = root.resolve(), state.resolve()
     path = state / "upstream-inventory.sqlite3"
     if not path.is_file():
@@ -127,10 +150,18 @@ def compare(root, state, model, *, infer=infer_local):
                     db.execute("DELETE FROM files WHERE tree='Talos' AND path=?", (target,))
                     continue
                 content = local_path.read_bytes()
-                db.execute("INSERT OR REPLACE INTO files VALUES('Talos',?,?,?)",
+                db.execute("""INSERT INTO files VALUES('Talos',?,?,?) ON CONFLICT(tree,path)
+                            DO UPDATE SET bytes=excluded.bytes,sha256=excluded.sha256 WHERE files.sha256!=excluded.sha256""",
                            (target, len(content), hashlib.sha256(content).hexdigest()))
             db.commit()
-            item = next_excerpt(db)
+            buffering = origin == "respan-upstream-review"
+            if buffering:
+                with open(os.open(state / FILE, os.O_CREAT | os.O_RDWR, 0o600), "r+", encoding="utf-8") as queue:
+                    fcntl.flock(queue, fcntl.LOCK_EX)
+                    proposed, finished = queue_entries(queue)
+                    promote_backlog(db, queue, proposed, finished)
+                db.commit()
+            item = next_excerpt(db, project)
             if not item:
                 return "No pending excerpts in eligible indexed sources"
             _, tree, target, rel, size, sha, target_sha, start = item
@@ -142,10 +173,12 @@ def compare(root, state, model, *, infer=infer_local):
             with open(os.open(state / FILE, os.O_CREAT | os.O_RDWR, 0o600), "r+", encoding="utf-8") as queue:
                 fcntl.flock(queue, fcntl.LOCK_EX)
                 proposed, finished = queue_entries(queue)
-                if len(proposed.keys() - finished) >= 5:
+                if not buffering and len(proposed.keys() - finished) >= 5:
                     return "Pending requests available"
                 fcntl.flock(queue, fcntl.LOCK_UN)
                 if ident not in proposed:
+                    if observe:
+                        observe(f"Read {tree}/{rel} bytes {start}–{min(size, start+CHUNK)} and {target}. Compare behavior and identify a replay.")
                     raw = infer(json.dumps({"upstream_path": rel, "upstream": source,
                                             "talos_path": target, "talos": local}), model)
                     read_snapshot(source_root / rel, sha)
@@ -161,13 +194,25 @@ def compare(root, state, model, *, infer=infer_local):
                             raise ValueError("Proposal lacks verifiable source excerpts")
                         fcntl.flock(queue, fcntl.LOCK_EX)
                         proposed, finished = queue_entries(queue)
+                        event = dict(status="proposed", origin=origin, id=ident, source=target, upstream=tree,
+                                     reference=rel, byte_offset=start, source_sha256=sha, target_sha256=target_sha,
+                                     time=time.time(), **result)
                         if len(proposed.keys() - finished) >= 5:
-                            return "Pending requests available"
-                        if ident not in proposed:
-                            append(queue, dict(status="proposed", origin="local-upstream-review", id=ident,
-                                               source=target, upstream=tree, reference=rel, byte_offset=start,
-                                               source_sha256=sha, target_sha256=target_sha,
-                                               time=time.time(), **result))
+                            if not buffering:
+                                return "Pending requests available"
+                            db.execute("INSERT OR IGNORE INTO review_backlog VALUES(?,?)", (ident,json.dumps(event)))
+                            outcome = f"retained proposal {ident} for the next queue slot"
+                        elif ident not in proposed:
+                            append(queue, event)
+                            outcome = f"queued proposal {ident} · {result['feature']}"
+                        else:
+                            outcome = f"proposal {ident} already queued"
+                    else:
+                        outcome = "no supported improvement in this excerpt"
+                else:
+                    outcome = f"proposal {ident} already queued"
             db.execute("INSERT OR REPLACE INTO comparison_progress VALUES(?,?,?,?,?,?,?)",
                        (tree, rel, target, sha, target_sha, min(size,start+CHUNK), time.time()))
+            if observe:
+                observe(f"Verified {tree}/{rel} at byte {start} · {outcome}")
             return f"Compared {tree} {rel} at byte {start}"

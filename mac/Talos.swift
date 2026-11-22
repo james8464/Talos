@@ -455,7 +455,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var cameraStarting = false
     private var endpointFailures = 0
     private var speechID: Int?
-    private var pendingAcknowledgment: Int?
+    private var pendingAcknowledgment: (id: Int, playback: String)?
     private var camera: CameraDetector?
     private var cameraEpoch = UUID()
     private var presenceSend: Task<Void, Never>?
@@ -1162,7 +1162,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         guard microphone || cameraRunning, !busy, !speaking, !dictating, currentText.isEmpty else { return }
         do {
             if let pendingAcknowledgment {
-                _ = try await client?.request("speech/ack", body: ["id": pendingAcknowledgment])
+                _ = try await client?.request("speech/ack", body: ["id": pendingAcknowledgment.id, "playback": pendingAcknowledgment.playback])
                 self.pendingAcknowledgment = nil
             }
             let result = try await client?.request("speech")
@@ -1173,10 +1173,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                   let id = item["id"] as? Int, let text = item["text"] as? String else { return }
             addLine("Talos", text)
             if item["kind"] as? String != "reminder" && !speakUnprompted {
-                pendingAcknowledgment = id
+                pendingAcknowledgment = (id, "suppressed")
                 return
             }
-            let spoken = item["kind"] as? String == "speech" ? text : "You have a local Talos notification."
+            let checkIn = item["check_in"] as? Bool == true
+            openFocusAfterPlayback = checkIn
+            let spoken = checkIn || item["kind"] as? String == "speech" ? text : "You have a local Talos notification."
             say(spoken, id: id)
         } catch {
             endpointFailures += 1
@@ -1240,7 +1242,6 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         stopPlayer()
         systemUtterance = nil
         if speaker.isSpeaking { speaker.stopSpeaking(at: .immediate) }
-        if let speechID { pendingAcknowledgment = speechID }
         finishSpeech(delivered: false, keepListening: true)
     }
 
@@ -1252,7 +1253,6 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
 
     func stopSpeaking() {
         cancelStream()
-        if let speechID { pendingAcknowledgment = speechID }
         playbackEpoch = UUID()
         speechRequest?.cancel()
         speechRequest = nil
@@ -1341,7 +1341,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func finishSpeech(delivered: Bool, keepListening: Bool = false) {
-        if delivered, let speechID { pendingAcknowledgment = speechID }
+        if let speechID { pendingAcknowledgment = (speechID, delivered ? "played" : "interrupted") }
         playbackMeasurement = nil
         speechID = nil
         systemUtterance = nil

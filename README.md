@@ -488,3 +488,11 @@ intend to leave.
 Open the existing vault in `state/Talos Memory` and navigate to **Talos maps → Talos memory map**. The publisher checks every two seconds while the room runs. Shared indexed evidence, current AI hypotheses, development proposals, and Python imports appear as linked Markdown notes. The code index shows actual file revisions, and **Recent source edits** lists the last 50 observed edits. A source save can change a note without adding an edge. Revoking a source removes its generated evidence on the next refresh.
 
 Run `./Start-Talos.command --memory-only --offline` to start the memory workers and their live terminal feed independently of the room, microphone, and model server. Ctrl-C stops workers started by that launcher. The console supports `/model status`, `/models`, `/model NAME`, `/clear`, `/redraw`, `/copy`, and `/version`.
+
+## Running the room and watching its work
+
+On the Mac, open `Start-Talos-Service.command` to register the room at login, open its native app and display the activity feed. The existing local model and the Respan credential must already be configured. The login service keeps ordinary room conversations local and enables the background Respan reviewer. The service runs while the Mac is awake and the user is logged in. To stop it, run `python3 tools/talos_service.py stop`.
+
+Open `Talos-Activity.command` at any time. The monitor probes port 8765 and shows the status of each worker separately. Respan events identify the model, actual source path and byte range, request and response, token usage when returned, accepted finding or abstention, and the next retry. Connection failures leave the source position available for retry. A memory-only launch runs without a listening room. Use `./Start-Talos.command --memory-only --offline --respan-reviews` for that mode with cloud review enabled.
+
+Try saying “Talos, check in with me in three hours.” The room keeps the request across restarts. If the question plays and you do not answer, it asks once more ten minutes later. “I’m okay” closes the check-in and “cancel my check-in” cancels it. A question overdue by more than two minutes expires. Saying “I feel unwell” offers the check-in locally. Silence alone never triggers contact with another person.

@@ -155,7 +155,15 @@ def review(state, model, *, infer=None):
         if not PROJECT.fullmatch(project):
             raise ValueError("Invalid indexed project name.")
         records = evidence(db, project, allowed_apps(state))
-        fingerprint = digest(json.dumps([VERSION, model, [proof for proof, _ in records]]))
+        focus = None
+        if db.execute("SELECT 1 FROM sqlite_master WHERE name='project_review_focus'").fetchone():
+            saved = db.execute("SELECT focus FROM project_review_focus WHERE project=?", (project,)).fetchone()
+            if saved and saved[0] in KINDS:
+                focus = saved[0]
+        identity = [VERSION, model, [proof for proof, _ in records]]
+        if focus:
+            identity.append(focus)
+        fingerprint = digest(json.dumps(identity))
         if previous == fingerprint:
             db.execute("UPDATE ai_memory_reviews SET checked_ns=? WHERE project=?", (time.time_ns(), project))
             return "Checked one project with unchanged evidence"
@@ -164,6 +172,7 @@ def review(state, model, *, infer=None):
     if len(records) >= 2:
         messages = [{"role": "system", "content": INSTRUCTIONS}, {"role": "user", "content": json.dumps({
             "project": project,
+            **({"investigation_focus": focus} if focus else {}),
             "evidence": [{"number": i, "source_type": proof[1], "excerpt": excerpt}
                          for i, (proof, excerpt) in enumerate(records, 1)],
         }, ensure_ascii=False)}]

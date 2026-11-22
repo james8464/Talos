@@ -13,7 +13,7 @@ LABEL = "local.talos.room"
 LAUNCHCTL = "/bin/launchctl"
 
 
-def configuration(root=ROOT):
+def configuration(root=ROOT, *, respan=False):
     # Adapted from OpenClaw's launchd-plist.ts. See talos_core/LICENSE-OpenClaw.
     state = root / "state"
     local_python = state / "kokoro-env" / "bin" / "python"
@@ -21,7 +21,7 @@ def configuration(root=ROOT):
     return {
         "Label": LABEL,
         "ProgramArguments": [str(python), str(root / "run_talos.py"),
-                             "--headless", "--offline", "--system-voice"],
+                             "--headless", "--offline", "--system-voice", *(["--respan-reviews"] if respan else [])],
         "WorkingDirectory": str(root),
         "EnvironmentVariables": {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"},
         "RunAtLoad": True,
@@ -40,9 +40,9 @@ def launchctl(*args, check=False, capture=False):
     return subprocess.run([LAUNCHCTL, *args], check=check, capture_output=capture)
 
 
-def install(plist, domain):
+def install(plist, domain, *, respan=False):
     service = f"{domain}/{LABEL}"
-    data = plistlib.dumps(configuration())
+    data = plistlib.dumps(configuration(respan=respan))
     loaded = launchctl("print", service, capture=True).returncode == 0
     changed = not plist.is_file() or plist.read_bytes() != data
     if loaded and not changed:
@@ -70,16 +70,18 @@ def install(plist, domain):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("print", "install", "status", "stop"))
-    action = parser.parse_args().action
+    parser.add_argument("--respan-reviews", action="store_true", help="Run the Respan reviewer with the room at login.")
+    args = parser.parse_args()
+    action = args.action
     if action == "print":
-        sys.stdout.buffer.write(plistlib.dumps(configuration()))
+        sys.stdout.buffer.write(plistlib.dumps(configuration(respan=args.respan_reviews)))
         return 0
     domain = f"gui/{os.getuid()}"
     service = f"{domain}/{LABEL}"
     plist = Path.home() / "Library" / "LaunchAgents" / (LABEL + ".plist")
     try:
         if action == "install":
-            install(plist, domain)
+            install(plist, domain, respan=args.respan_reviews)
             print(f"Registered {LABEL}.")
         elif action == "status":
             return launchctl("print", service).returncode

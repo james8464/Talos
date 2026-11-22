@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import graph_review
 import mac_context
 import memory_connections
 import memory_review
@@ -51,6 +52,16 @@ class MemoryReviewTests(unittest.TestCase):
         self.assertIn("August", self.recall())
         self.update([("Calendar", [])])
         self.assertNotIn("August", self.recall())
+
+    def test_cloud_focus_triggers_one_new_local_evidence_review(self):
+        infer = Mock(return_value=self.result("Atlas moved its launch to July."))
+        memory_review.review(self.state, "fixture", infer=infer)
+        graph_review.review(self.state, lambda *_: '{"focus":"changed plan"}', lambda _: None)
+        memory_review.review(self.state, "fixture", infer=infer)
+        messages = infer.call_args.args[1]
+        self.assertEqual(json.loads(messages[1]["content"])["investigation_focus"], "changed plan")
+        memory_review.review(self.state, "fixture", infer=infer)
+        self.assertEqual(infer.call_count, 2)
 
     def test_invalid_citations_leave_no_hypotheses(self):
         infer = Mock(return_value=self.result("A fabricated result", (1, 90)))

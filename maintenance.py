@@ -16,7 +16,7 @@ from conversation_activity import QuietWorker
 from maintenance_schedule import MaintenanceSchedule, source_versions, stamp
 import mac_context
 from feature_targets import FILE, TARGETS, change_events
-from talos_activity import active_phase, record
+from talos_activity import active_phase, lock_state, record
 
 STATE = Path(__file__).resolve().parent / "state"
 REPORT = Path("Talos Memory") / "Talos activity.md"
@@ -82,12 +82,11 @@ def job_loop(state, model, home):
                 memory_connections.refresh(state)
             elif kind == "review":
                 import feature_queue
-                from upstream_review import propose
                 from upstream_comparison import compare
                 root = Path(__file__).resolve().parent
-                propose(root, state)
                 try:
-                    comparison = compare(root, state, model)
+                    comparison = ("Respan reviewer active; see reviewer events"
+                                  if lock_state(state / "respan-watch.lock") == "running" else compare(root, state, model))
                 except (OSError, ValueError, RuntimeError) as error:
                     comparison = f"upstream comparison deferred ({type(error).__name__})"
                 result = f"{feature_queue.review(state, model)} · {comparison}"

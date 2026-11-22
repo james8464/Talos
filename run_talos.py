@@ -1,6 +1,8 @@
 """Build and start the local Talos room stack with a project-owned model store."""
 
 import argparse
+import errno
+import time
 import os
 from http.client import HTTPException
 import shutil
@@ -248,12 +250,28 @@ def run_trial(args) -> None:
                 app_process.wait(timeout=5)
 
 
-def start_memory_workers(model, *, local_only, children):
+def start_memory_workers(model, *, local_only, children, respan=False, room_owner=False):
     heartbeat = ["overnight_goal.py", "--heartbeat", "--watch", "--model", model]
     if local_only:
         heartbeat.append("--local-only")
-    for script, *options in (heartbeat, ["vault_watch.py"], ["maintenance.py", "--model", model]):
+    workers = [heartbeat, ["vault_watch.py"], ["maintenance.py", "--model", model]]
+    if respan:
+        workers.append(["respan_worker.py", *(["--room-owner"] if room_owner else [])])
+    for script, *options in workers:
         children.append(subprocess.Popen([sys.executable, str(ROOT / script), *options]))
+
+
+def attach_room(port, *, wait=False):
+    deadline = time.monotonic() + (30 if wait else 0)
+    while True:
+        status = talos_activity.probe(port)
+        if status.startswith("running") and TOKEN_PATH.is_file():
+            subprocess.run(["/usr/bin/open", str(build_app()), "--args", "--token-file", str(TOKEN_PATH),
+                            "--port", str(port)], check=True)
+            return
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f"Cannot attach to the room on {port}: {status}. See state/service-error.log.")
+        time.sleep(.5)
 
 
 def main() -> int:
@@ -263,7 +281,9 @@ def main() -> int:
     parser.add_argument("--system-voice", action="store_true", help="Use the macOS voice without Kokoro.")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--ollama-port", type=int, default=11435)
+    parser.add_argument("--respan-reviews", action="store_true", help="Enable scheduled Respan source and anonymized graph review even with offline room turns.")
     parser.add_argument("--offline", action="store_true", help="Require an already downloaded model.")
+    parser.add_argument("--attach", action="store_true", help="Open the native app against a running Talos service.")
     parser.add_argument("--memory-only", action="store_true", help="Run memory workers and a live terminal feed without the room server.")
     parser.add_argument("--shadow", action="store_true", help="Evaluate actions without writing or speaking them.")
     parser.add_argument("--headless", action="store_true", help="Run the endpoint without opening the app.")
@@ -275,11 +295,14 @@ def main() -> int:
     activity_stop = threading.Event()
     viewer = None
     try:
+        if args.attach:
+            attach_room(args.port, wait=True)
+            return 0
         if args.memory_only:
             if args.shadow or args.build_only or args.room_trial:
                 raise ValueError("Memory-only mode runs the live memory workers. Choose one launch mode.")
             os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
-            start_memory_workers(args.model, local_only=args.offline, children=children)
+            start_memory_workers(args.model, local_only=args.offline, children=children, respan=args.respan_reviews or not args.offline)
             talos_activity.display(STATE, args.port, stop=activity_stop)
             return 0
         if args.room_trial:
@@ -292,7 +315,15 @@ def main() -> int:
             1024 <= port <= 65535 for port in (args.port, args.ollama_port)
         ):
             raise ValueError("Choose two different ports between 1024 and 65535.")
-        check_bind(args.port)
+        try:
+            check_bind(args.port)
+        except RuntimeError as error:
+            if not args.headless and getattr(error.__cause__, "errno", None) == errno.EADDRINUSE:
+                attach_room(args.port)
+                if sys.stdout.isatty():
+                    talos_activity.display(STATE, args.port)
+                return 0
+            raise
         if sys.stdout.isatty():
             print("Starting Talos. Live activity will appear when the room is ready.", flush=True)
         app = None if args.headless else build_app()
@@ -302,7 +333,7 @@ def main() -> int:
         backend = ProjectModel(args.model, args.ollama_port, args.offline)
         backend.worker.start()
         if not args.shadow:
-            start_memory_workers(args.model, local_only=args.offline, children=children)
+            start_memory_workers(args.model, local_only=args.offline, children=children, respan=args.respan_reviews or not args.offline, room_owner=True)
 
         def launch_app() -> None:
             nonlocal viewer

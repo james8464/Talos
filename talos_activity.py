@@ -186,6 +186,18 @@ def snapshot(state, port, *, database=None):
     watcher = lock_state(state / "heartbeat-watch.lock")
     lines = [f"Room on port {port} · {room_status}", f"Maintenance · {maintenance}",
              f"Heartbeat watcher · {watcher}", f"Obsidian publisher · {lock_state(state / 'vault-watch.lock')}"]
+    lines.append(f"Respan reviewer · {lock_state(state / 'respan-watch.lock')}")
+    if room_status.startswith("stopped"):
+        lines.append("Room voice and message requests are unavailable. Open Start-Talos-Service.command for the always-on room and Respan reviewer.")
+    if (state / "respan-review.sqlite3").is_file():
+        uri = (state / "respan-review.sqlite3").resolve().as_uri() + "?mode=ro"
+        try:
+            with closing(sqlite3.connect(uri, uri=True, timeout=.15)) as reviews:
+                for name, due, outcome in reviews.execute("SELECT name,due,outcome FROM jobs ORDER BY rowid"):
+                    next_run = datetime.fromtimestamp(due).strftime("%H:%M:%S") if due else "now"
+                    lines.append(f"Respan {clean(name)} · {clean(outcome)} · next eligible {next_run}")
+        except sqlite3.Error:
+            pass
     if sys.platform == "darwin" and state.resolve() == STATE:
         from tools.talos_service import LABEL as room_label
         from tools.enable_heartbeat import LABEL as heartbeat_label

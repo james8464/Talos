@@ -26,30 +26,44 @@ def external_request(text):
     return None
 
 
-def public_answer(question):
-    key = os.environ.get("RESPAN_API_KEY") or (KEY_FILE.read_text().strip() if KEY_FILE.is_file() else "")
+def respan_completion(messages, *, max_tokens, timeout=45, key_file=None):
+    path = KEY_FILE if key_file is None else key_file
+    key = os.environ.get("RESPAN_API_KEY") or (path.read_text().strip() if path.is_file() else "")
     if not key:
         raise RuntimeError("Respan has no local API key.")
-    connection = http.client.HTTPSConnection("api.respan.ai", timeout=6)
+    connection = http.client.HTTPSConnection("api.respan.ai", timeout=timeout)
     try:
         connection.request("POST", "/api/chat/completions", body=json.dumps({
-            "model": FREE_MODEL, "max_tokens": 160, "stream": False,
-            "messages": [{"role": "system", "content": "Answer briefly in plain spoken English."},
-                         {"role": "user", "content": question}],
+            "model": FREE_MODEL, "max_tokens": max_tokens, "stream": False, "messages": messages,
         }).encode(), headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
         with connection.getresponse() as response:
             if response.status != 200:
                 raise RuntimeError(f"Respan returned HTTP {response.status}.")
-            result = json.loads(response.read(65537))
+            data = response.read(65537)
+            if len(data) > 65536:
+                raise ValueError("Oversized response")
+            result = json.loads(data)
         choice = result["choices"][0]
         reply = choice["message"]["content"]
-        if not isinstance(reply, str) or not reply.strip() or choice.get("finish_reason") == "length":
-            raise ValueError
-        return reply.strip()[:600]
-    except (OSError, http.client.HTTPException, ValueError, TypeError, LookupError) as error:
-        raise RuntimeError("The free Respan model did not return a complete answer.") from error
+        if not isinstance(reply, str) or not reply.strip() or choice.get("finish_reason") not in (None, "stop"):
+            raise ValueError("Incomplete response")
+        usage = result.get("usage") or {}
+        counts = {k: usage[k] for k in ("prompt_tokens", "completion_tokens")
+                  if type(usage.get(k)) is int and usage[k] >= 0}
+        return reply.strip(), counts
+    except (OSError, http.client.HTTPException) as error:
+        raise RuntimeError(f"Respan connection unavailable ({type(error).__name__}).") from error
+    except (ValueError, TypeError, LookupError, AttributeError) as error:
+        raise RuntimeError("Respan returned an incomplete response.") from error
     finally:
         connection.close()
+
+
+def public_answer(question):
+    answer, _ = respan_completion([
+        {"role": "system", "content": "Answer briefly in plain spoken English."},
+        {"role": "user", "content": question}], max_tokens=160, timeout=6)
+    return answer[:600]
 
 
 def search_worker(query):

@@ -3,6 +3,7 @@
 import commitment_memory
 import mac_context
 import talos_activity
+import room_checkins
 import background_work
 import recurring_reminders
 import message_drafts
@@ -587,9 +588,14 @@ class Room:
         if not self.speak or presence(db) is False:
             return None
         now = datetime.now(UTC)
+        if room_checkins.exists(db):
+            with db:
+                room_checkins.expire(db, now)
         row = db.execute("""
-            SELECT inbox.id, inbox.kind,
-                   CASE WHEN json_extract(decisions.event, '$.kind')='private_recurring'
+            SELECT inbox.id, inbox.kind, json_extract(decisions.event, '$.kind') AS event_kind,
+                   CASE WHEN json_extract(decisions.event, '$.kind')='private_promise'
+                        THEN 'You have a private commitment reminder in Talos.'
+                        WHEN json_extract(decisions.event, '$.kind')='private_recurring'
                         THEN 'You have a recurring reminder in Talos.' ELSE inbox.text END AS text,
                    inbox.due_at FROM inbox JOIN decisions ON decisions.id=inbox.id
             LEFT JOIN room_events ON room_events.decision_id = inbox.id
@@ -599,7 +605,13 @@ class Room:
                      OR (inbox.kind = 'speech' AND inbox.due_at > ?))
             ORDER BY inbox.due_at, inbox.id LIMIT 1
         """, (now.isoformat(), (now - timedelta(minutes=2)).isoformat())).fetchone()
-        return dict(row) if row else None
+        if row is None:
+            return None
+        item = dict(row)
+        if item.pop("event_kind") == "room_checkin":
+            room_checkins.offered(db, item["id"])
+            item["check_in"] = True
+        return item
 
     def handle_room_turn(self, db, body, *, facing, stream=None):
         text = body.get("text")
@@ -609,6 +621,9 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= 800:
             raise ValueError("Use between 1 and 800 characters for the turn.")
         voice = facing or channel == "voice"
+        checkin = room_checkins.handle(db, text, apply=self.apply, request_id=body.get("request_id"))
+        if checkin is not None:
+            return checkin
         work = background_work.handle(db, text, voice=voice, apply=self.apply, request_id=body.get("request_id"))
         if work is not None:
             if not voice and self.apply and background_work.COMMAND.fullmatch(text.strip()):
@@ -861,6 +876,10 @@ class Room:
                     item_id = body.get("id")
                     if type(item_id) is not int or not 1 <= item_id <= 2**63 - 1:
                         raise ValueError("A positive item ID is required.")
+                    outcome = body.get("playback", "unknown")
+                    if outcome not in ("played", "interrupted", "suppressed", "unknown"):
+                        raise ValueError("Unknown playback outcome.")
+                    now = datetime.now(UTC).isoformat()
                     with db:
                         db.execute("BEGIN IMMEDIATE")
                         row = db.execute(
@@ -868,11 +887,11 @@ class Room:
                         ).fetchone()
                         if row is None or row["kind"] not in ("speech", "alert", "reminder"):
                             raise ValueError("Unknown speech item.")
-                        if row["acknowledged_at"] is None and datetime.fromisoformat(row["due_at"]) > datetime.now(UTC):
-                            raise ValueError("This item is not due yet.")
-                        db.execute("""UPDATE inbox SET acknowledged_at = ?
-                            WHERE id = ? AND acknowledged_at IS NULL""",
-                            (datetime.now(UTC).isoformat(), item_id))
+                        if row["acknowledged_at"] is None:
+                            if not row["due_at"] or datetime.fromisoformat(row["due_at"]) > datetime.fromisoformat(now):
+                                raise ValueError("This speech item is not due yet.")
+                            db.execute("UPDATE inbox SET acknowledged_at = ? WHERE id = ?", (now, item_id))
+                            room_checkins.settled(db, item_id, datetime.fromisoformat(now), outcome)
                     return 200, {"acknowledged": item_id}
         return 404, {"error": "Unknown Talos endpoint."}
 

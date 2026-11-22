@@ -72,6 +72,12 @@ def publish_connections(db, folder, enabled):
                 "SELECT project,app,source,record FROM memory_connections ORDER BY project,app,source,record"):
             if app in allowed and PROJECT.fullmatch(project):
                 projects.setdefault(project, []).append(evidence_link(app, source, record))
+        if db.execute("SELECT 1 FROM sqlite_master WHERE name='reviewed_project_pairs'").fetchone():
+            evidence_sets = {project: set(edges) for project, edges in projects.items()}
+            for a, b in db.execute("SELECT a,b FROM reviewed_project_pairs ORDER BY a,b"):
+                if a in evidence_sets and b in evidence_sets and len(evidence_sets[a] & evidence_sets[b]) >= 2:
+                    projects[a].append(link("Projects", b))
+                    projects[b].append(link("Projects", a))
         for project, edges in projects.items():
             for ident, finding in current_findings(db, project, allowed):
                 title = f"Finding {project} {ident}"
