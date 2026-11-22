@@ -1,6 +1,8 @@
 import base64
 import io
 import tempfile
+import threading
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import unittest
 import wave
@@ -25,6 +27,36 @@ class RoomVoiceTests(unittest.TestCase):
                 voice.speak("Synthetic private reply.")
             self.assertEqual(model.create.call_count, 3)
             self.assertNotIn("Synthetic private reply.", voice.fixed_lines)
+
+    def test_cached_sensor_reply_is_available_during_other_synthesis(self):
+        from room_voice import KokoroVoice
+        started, release = threading.Event(), threading.Event()
+        def synthesize(text, **options):
+            if text == "Fixture private reply.":
+                started.set()
+                if not release.wait(5):
+                    raise AssertionError("Fixture synthesis was never released")
+            return object(), 24000
+
+        model = Mock()
+        model.create.side_effect = synthesize
+        with patch.dict(sys.modules, {"kokoro_onnx": SimpleNamespace(Kokoro=lambda *args: model)}), patch(
+            "room_voice.wav_base64", return_value="fixture"
+        ), ThreadPoolExecutor(max_workers=2) as workers:
+            voice = KokoroVoice(Path("."), "bm_george")
+            standard = "Yes, I can hear you."
+            cached = voice.speak(standard)
+            private = workers.submit(voice.speak, "Fixture private reply.")
+            try:
+                self.assertTrue(started.wait(2))
+                reply = workers.submit(voice.speak, standard)
+                self.assertEqual(reply.result(timeout=1), cached)
+                self.assertFalse(private.done())
+            finally:
+                release.set()
+            private.result(timeout=2)
+            self.assertEqual(model.create.call_count, 2)
+            self.assertNotIn("Fixture private reply.", voice.fixed_lines)
 
     def test_wav_transport_contains_playable_pcm(self):
         samples = Mock()

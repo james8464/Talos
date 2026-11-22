@@ -1,4 +1,5 @@
 import base64
+import hashlib
 from contextlib import closing
 import json
 import os
@@ -83,6 +84,84 @@ class RefinementTests(unittest.TestCase):
                 pass
         self.assertNotIn("forecast", brief()["reply"])
 
+    def test_reported_words_are_not_commitment_evidence(self):
+        from csv import writer
+        from io import StringIO
+        data = StringIO()
+        rows = writer(data)
+        rows.writerow(["date", "sender", "text"])
+        for day, who, text in (
+            (10, "James", 'Robin said “I will bring the chart Thursday.” I’ll bring the book Monday.'),
+            (11, "Maya", 'Robin said "Friday is fine".'),
+            (12, "James", "Robin said ‘I've sent the chart’."),
+            (13, "James", "> I will purchase a map.\nI will bring the ‘Sunday edition’ Tuesday."),
+            (14, "James", "Robin wrote 'I will bring the camera.'"),
+        ):
+            rows.writerow([f"2026-11-{day}T10:00:00+00:00", who, text])
+        self.source("conversation.csv", "imessage", data.getvalue(), speak=True)
+        for route, body in (("/v1/context/brief", None),
+                            ("/v1/turn", {"text": "What do I owe?", "source": "voice"})):
+            reply = self.request(route, body)["reply"]
+            self.assertIn("bring the book Monday", reply)
+            self.assertIn("bring the ‘Sunday edition’ Tuesday. Current deadline: Tuesday", reply)
+            for wrong in ("chart", "camera", "purchase a map", "Possible delivery", "deadline: Friday"):
+                self.assertNotIn(wrong, reply)
+
+    def test_email_inline_reply_keeps_authored_text_after_quotation(self):
+        self.source("inline.eml", "email",
+                    "From: James\nTo: Maya\nDate: Wed, 18 Nov 2026 10:00:00 +0000\n\n"
+                    "> I'll send the '80s poster.\n"
+                    "The print is 16\" wide and from the '80s. I'll send the frame Monday.")
+        reply = self.request("/v1/context/brief")["reply"]
+        self.assertIn("send the frame Monday", reply)
+        self.assertNotIn("poster", reply)
+
+    def test_unchanged_export_refresh_removes_old_quoted_promise(self):
+        content = "date,sender,text\n2026-11-18T10:00:00+00:00,James,Robin said “I will bring a lamp Friday.”\n"
+        source = self.source("old.csv", "imessage", content)
+        with closing(open_memory(self.path)) as db:
+            with db:
+                db.execute("UPDATE context_sources SET digest=? WHERE id=?",
+                           (hashlib.sha256(content.encode()).hexdigest(), source))
+                db.execute("INSERT INTO context_evidence VALUES(?,1,0,'promise','bring a lamp Friday','Friday','row 2')",
+                           (source,))
+            memory.refresh_one(db, time.time() + 301)
+        self.assertNotIn("lamp", self.request("/v1/context/brief")["reply"])
+
+    def test_multiple_promises_in_one_message_keep_independent_deadlines(self):
+        self.source("promises.csv", "imessage",
+                    "date,sender,text\n"
+                    "2026-11-18T10:00:00+00:00,James,"
+                    "I'll bring the book Monday and I will mail the map Tuesday. "
+                    "I agreed to return the pen Wednesday. I'll bring the book Monday.\n"
+                    "2026-11-19T10:00:00+00:00,Maya,Friday is fine.\n", speak=True)
+        result = self.request("/v1/context/brief")
+        question, = result["questions"]
+        options = {option["text"]: option["id"] for option in question["options"]}
+        self.assertEqual(len(question["options"]), 3)
+        self.assertEqual(set(options), {"bring the book Monday", "mail the map Tuesday",
+                                       "return the pen Wednesday"})
+        self.request("/v1/context/resolve", {"revision": question["revision"],
+                                             "promise": options["mail the map Tuesday"]})
+        self.room = Room(self.path, "offline")
+        result = self.request("/v1/context/brief")
+        self.assertFalse(result["questions"])
+        self.assertIn("bring the book Monday. Current deadline: Monday", result["reply"])
+        self.assertIn("mail the map Tuesday. Current deadline: Friday", result["reply"])
+        self.assertIn("return the pen Wednesday. Current deadline: Wednesday", result["reply"])
+        self.assertEqual(sum(source["title"].endswith("row 2") for source in result["sources"]), 1)
+
+        # A source correction invalidates the chosen promise. Ask again before
+        # transferring the Friday deadline to any of the remaining promises.
+        path = self.path.parent / "promises.csv"
+        path.write_text(path.read_text().replace("mail the map Tuesday", "mail the plans Thursday"))
+        with closing(open_memory(self.path)) as db:
+            memory.refresh_one(db, time.time() + 301)
+        result = self.request("/v1/context/brief")
+        revised, = result["questions"]
+        self.assertTrue(any(o["text"] == "mail the plans Thursday" for o in revised["options"]))
+        self.assertIn("mail the plans Thursday. Current deadline: Thursday", result["reply"])
+
     def test_selected_messages_database_and_mailbox_filter(self):
         path = self.path.parent / "chat.db"
         with closing(sqlite3.connect(path)) as db, db:
@@ -131,6 +210,38 @@ class RefinementTests(unittest.TestCase):
         self.assertIn("Atlas draft", brief())
         self.assertNotIn("unrelated", brief())
 
+    def test_retracted_selected_message_disappears_on_refresh(self):
+        path = self.path.parent / "chat.db"
+        with closing(sqlite3.connect(path)) as db, db:
+            db.executescript("""
+                CREATE TABLE chat(chat_identifier);
+                CREATE TABLE chat_message_join(chat_id,message_id);
+                CREATE TABLE message(date,is_from_me,text,guid,is_system_message,date_retracted);
+                INSERT INTO chat VALUES('fixture-chat');
+                INSERT INTO message VALUES(800000000,1,'I will bring the book Monday','a',0,0),
+                    (800000001,1,'I will bring a lamp Tuesday','b',1,0);
+                INSERT INTO chat_message_join VALUES(1,1),(1,2);
+            """)
+        self.request("/v1/context/select", dict(path=str(path), kind="imessage", owner="Example",
+                     person="Fixture", topic="Errands", selector="fixture-chat", speak=True))
+        def brief():
+            return self.request("/v1/context/brief")["reply"]
+        self.assertIn("book", brief())
+        self.assertNotIn("lamp", brief())
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("UPDATE message SET text='I will bring the map Friday' WHERE guid='a'")
+        with closing(open_memory(self.path)) as db:
+            memory.refresh_one(db, time.time() + 301)
+        self.assertIn("map", brief())
+        self.assertNotIn("book", brief())
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("UPDATE message SET date_retracted=800000010 WHERE guid='a'")
+        with closing(open_memory(self.path)) as db:
+            memory.refresh_one(db, time.time() + 602)
+            self.assertEqual(db.execute("SELECT count(*) FROM context_evidence").fetchone()[0], 0)
+        self.assertNotIn("map", brief())
+        self.assertNotIn("map", self.request("/v1/turn", {"text": "What do I owe?", "source": "voice"})["reply"])
+
     def test_project_folder_delivery_evidence_and_deadline_filter(self):
         project = self.path.parent / "project"
         project.mkdir()
@@ -165,6 +276,65 @@ class RefinementTests(unittest.TestCase):
                 db, project, "document", "James", "Atlas", "Maya", retain=False
             )
         self.assertNotIn("draft.md", self.request("/v1/context/brief")["reply"])
+
+    def test_find_project_file_reads_current_names_and_respects_speech_controls(self):
+        project = self.path.parent.resolve() / "Selected project"
+        project.mkdir()
+        exact = project / "Café notes.md"
+        exact.write_text("private fixture contents")
+        (project / "Old café notes.md").touch()
+        (project / ".café notes.md").touch()
+        outside = self.path.parent / "Outside café notes.md"
+        outside.touch()
+        (project / "Linked café notes.md").symlink_to(outside)
+        query = "Find a file named Cafe\u0301 notes.md."
+        source = dict(kind="document", path=str(project), owner="Example", person="Example",
+                      topic="Fixture")
+        key = self.request("/v1/context/select", source)["id"]
+        with patch("room_service.plan", side_effect=AssertionError("unexpected planner")):
+            result = self.request("/v1/turn", {"text": query})
+            self.assertEqual([r["url"] for r in result["sources"]],
+                             [exact.as_uri(), (project / "Old café notes.md").as_uri()])
+            self.assertNotIn("private fixture contents", str(result))
+            voice = {"text": query, "source": "voice"}
+            for route in ("/v1/turn", "/v1/voice/facing"):
+                private = self.request(route, voice)
+                self.assertFalse(private["sources"])
+                self.assertNotIn("Old café", private["reply"])
+            self.request("/v1/context/select", dict(source, speak=True))
+            spoken = self.request("/v1/turn", voice)
+            self.assertIn(exact.name, spoken["reply"])
+            self.assertFalse(spoken["sources"])
+            exact.unlink()
+            result = self.request("/v1/turn", {"text": query})
+            self.assertEqual(len(result["sources"]), 1)
+            self.request("/v1/context/forget", {"id": key})
+            self.assertFalse(self.request("/v1/turn", {"text": query})["sources"])
+
+    def test_find_file_respects_revocation_and_reports_unavailable_sources(self):
+        root = self.path.parent
+        selected = root / "selected"
+        selected.mkdir()
+        (selected / "agenda.pdf").touch()
+        source = dict(kind="document", path=str(selected), owner="Example", person="Example", topic="Review")
+        self.request("/v1/context/select", source)
+        direct = dict(source, path=str(selected / "agenda.pdf"))
+        self.request("/v1/context/select", direct)
+        def find():
+            return self.request("/v1/turn", {"text": "Find the file agenda.pdf"})
+        self.assertEqual(len(find()["sources"]), 1)
+        self.request("/v1/context/select", dict(source, retain="false"), expected_error=400)
+        self.request("/v1/context/select", dict(source, retain=False))
+        self.assertEqual(len(find()["sources"]), 1)
+        selected.rename(root / "original")
+        selected.symlink_to(root / "original", target_is_directory=True)
+        result = find()
+        self.assertFalse(result["sources"])
+        self.assertIn("unavailable", result["reply"])
+        selected.unlink()
+        (root / "original").rename(selected)
+        self.request("/v1/context/select", dict(direct, retain=False))
+        self.assertFalse(find()["sources"])
 
     def test_interrupting_with_new_reminder_cannot_arm_a_later_action(self):
         self.room.model_state = lambda: "warming"
