@@ -73,6 +73,20 @@ def read(path, sql):
         return db.execute(sql).fetchall()
 
 
+def read_messages(path, sql, parameters=(), *, timeout=0.5):
+    """Apply the visibility flags available in this Messages database to rows aliased m."""
+    with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=timeout)) as db:
+        db.execute("PRAGMA query_only=ON")
+        db.execute("BEGIN")
+        columns = {row[1].casefold() for row in db.execute("PRAGMA table_info(message)")}
+        visible = ["m.text IS NOT NULL"]
+        if "is_system_message" in columns:
+            visible.append("m.is_system_message=0")
+        if "date_retracted" in columns:
+            visible.append("coalesce(m.date_retracted,0)=0")
+        return db.execute(sql.format(visible=" AND ".join(visible)), parameters).fetchall()
+
+
 def contact_rows(path):
     return read(
         path,
@@ -86,12 +100,12 @@ def contact_rows(path):
 
 def app_rows(app, path):
     if app == "Messages":
-        return read(
+        return read_messages(
             path,
             """SELECT m.guid,coalesce(h.id,''),m.is_from_me,
             978307200+case when abs(m.date)>1000000000000 then m.date/1000000000 else m.date end,
             substr(m.text,1,600) FROM message m LEFT JOIN handle h ON h.ROWID=m.handle_id
-            WHERE m.text IS NOT NULL AND m.is_system_message=0 AND coalesce(m.date_retracted,0)=0
+            WHERE {visible}
             ORDER BY m.date DESC LIMIT 2000""",
         )
     if app == "Mail":

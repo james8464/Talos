@@ -15,6 +15,8 @@ import unicodedata
 from contextlib import closing
 from datetime import date, datetime, timedelta, timezone
 
+from mac_context import read_messages
+
 KINDS = ("email", "imessage", "whatsapp", "document", "calendar")
 DAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|\d{4}-\d{2}-\d{2}"
 PROMISE = re.compile(
@@ -190,15 +192,13 @@ def messages(src, raw):
 def selected_chat(src):
     # A single selected chat, including outgoing messages. Attributed-body-only
     # messages require a supported export and are outside this text-only reader.
-    uri = Path(src["path"]).as_uri() + "?mode=ro"
-    with closing(sqlite3.connect(uri, uri=True, timeout=1)) as chat:
-        chat.execute("PRAGMA query_only=ON")
-        rows = chat.execute(
-            """SELECT m.date,m.is_from_me,m.text,m.guid FROM chat c
-            JOIN chat_message_join cm ON cm.chat_id=c.rowid JOIN message m ON m.rowid=cm.message_id
-            WHERE c.chat_identifier=? AND m.text IS NOT NULL ORDER BY m.date DESC LIMIT 500""",
-            (src["selector"] or src["person"],),
-        ).fetchall()
+    rows = read_messages(
+        Path(src["path"]),
+        """SELECT m.date,m.is_from_me,m.text,m.guid FROM chat c
+           JOIN chat_message_join cm ON cm.chat_id=c.rowid JOIN message m ON m.rowid=cm.message_id
+           WHERE c.chat_identifier=? AND {visible} ORDER BY m.date DESC LIMIT 500""",
+        (src["selector"] or src["person"],), timeout=1,
+    )
     for stamp, outgoing, text, guid in reversed(rows):
         seconds = stamp / 1e9 if abs(stamp) > 1e12 else stamp
         yield 978307200 + seconds, bool(outgoing), text, str(guid)

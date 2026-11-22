@@ -131,6 +131,38 @@ class RefinementTests(unittest.TestCase):
         self.assertIn("Atlas draft", brief())
         self.assertNotIn("unrelated", brief())
 
+    def test_retracted_selected_message_disappears_on_refresh(self):
+        path = self.path.parent / "chat.db"
+        with closing(sqlite3.connect(path)) as db, db:
+            db.executescript("""
+                CREATE TABLE chat(chat_identifier);
+                CREATE TABLE chat_message_join(chat_id,message_id);
+                CREATE TABLE message(date,is_from_me,text,guid,is_system_message,date_retracted);
+                INSERT INTO chat VALUES('fixture-chat');
+                INSERT INTO message VALUES(800000000,1,'I will bring the book Monday','a',0,0),
+                    (800000001,1,'I will bring a lamp Tuesday','b',1,0);
+                INSERT INTO chat_message_join VALUES(1,1),(1,2);
+            """)
+        self.request("/v1/context/select", dict(path=str(path), kind="imessage", owner="Example",
+                     person="Fixture", topic="Errands", selector="fixture-chat", speak=True))
+        def brief():
+            return self.request("/v1/context/brief")["reply"]
+        self.assertIn("book", brief())
+        self.assertNotIn("lamp", brief())
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("UPDATE message SET text='I will bring the map Friday' WHERE guid='a'")
+        with closing(open_memory(self.path)) as db:
+            memory.refresh_one(db, time.time() + 301)
+        self.assertIn("map", brief())
+        self.assertNotIn("book", brief())
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("UPDATE message SET date_retracted=800000010 WHERE guid='a'")
+        with closing(open_memory(self.path)) as db:
+            memory.refresh_one(db, time.time() + 602)
+            self.assertEqual(db.execute("SELECT count(*) FROM context_evidence").fetchone()[0], 0)
+        self.assertNotIn("map", brief())
+        self.assertNotIn("map", self.request("/v1/turn", {"text": "What do I owe?", "source": "voice"})["reply"])
+
     def test_project_folder_delivery_evidence_and_deadline_filter(self):
         project = self.path.parent / "project"
         project.mkdir()
