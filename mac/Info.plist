@@ -10,6 +10,6 @@
     <key>NSMicrophoneUsageDescription</key><string>Talos hears you while its microphone is enabled.</string>
     <key>NSSpeechRecognitionUsageDescription</key><string>Talos uses on-device speech recognition.</string>
     <key>NSCalendarsFullAccessUsageDescription</key><string>Talos reads an upcoming event title and time when you request a meeting brief.</string>
-    <key>NSCameraUsageDescription</key><string>Talos checks presence and facing direction locally. With permission during an introduction, it can save a visual reference for future visits.</string>
+    <key>NSCameraUsageDescription</key><string>Talos checks presence locally and uses one camera frame to answer visual questions on this Mac. With permission during an introduction, it can save a visual reference for future visits.</string>
 </dict>
 </plist>

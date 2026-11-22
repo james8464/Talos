@@ -3,6 +3,18 @@
 Talos is a local room assistant with a native Mac app, a local HTTP endpoint, searchable
 conversation memory, and a background planner.
 
+## Terminal sessions and Telegram
+
+In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Named sessions use their own recent turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.
+
+For Telegram direct messages, configure a dedicated bot token in the local environment as `TALOS_TELEGRAM_TOKEN`, then run the gateway with your numeric Telegram user ID. When using the room launcher's local Ollama server:
+
+```sh
+TALOS_OLLAMA_PORT=11435 python3 telegram_gateway.py --owner YOUR_NUMERIC_ID
+```
+
+Alternatively, run with `--pair` in place of `--owner YOUR_NUMERIC_ID`. Send the one-time code shown in the terminal to the bot in a private message. Future launches use the saved pairing. Add `--check` to verify the bot identity, webhook configuration and local model without polling or sending a message. The gateway polls while the process runs. A reply to an earlier text carries its selected quotation into that turn, even after a gateway restart. The owner can send direct text messages or JPEG photos, including JPEG file attachments, with a question in the caption. Reply directly to your earlier photo to ask a follow-up about that image. Photos use the installed local vision model (default `qwen2.5vl:3b`, configurable with `TALOS_VISION_MODEL`). Talos selects the largest available size within 180,000 bytes and four megapixels, reads it in memory, and keeps the image and caption out of conversation history. Telegram transports the chat. A text reply uses the current request, an explicit reply quotation when present, and up to four prior exchanges from the same bot and owner. A photo question uses one supplied image and its question. Its channel database lives under `state/telegram`. Send `/new` to clear that local context. The gateway has no access path to Mac actions or family recall. If a send times out, delivery is uncertain and Talos skips automatic retransmission.
+
 ## Run the room assistant
 
 On a Mac with Python 3.12 or later, Xcode command-line tools, and Ollama installed, run.
@@ -27,26 +39,26 @@ Say “Hey Talos, remind me in one minute to stretch” to set a local reminder 
 loads. Whole minutes, hours and days are supported on this path. Other phrasing goes to
 the normal planner.
 
-Listen for **“Talos online”** after the app connects. The default voice is Kokoro
+The app displays **“Talos online”** when it connects. The default voice is Kokoro
 `bm_george`. Its models and Python environment are prepared on the first online run.
 Use `--voice am_michael` to select another English Kokoro voice or `--system-voice` for
 macOS speech. The app labels the active voice and any fallback.
 
 Room mode starts when the service connects. On first launch, grant macOS microphone,
-speech recognition, and camera permissions. Each sensor has its own off switch. During playback the microphone accepts an explicit “Hey Talos, stop” interruption. During response planning it pauses. The speech client uses
+speech recognition, and camera permissions. Each sensor has its own off switch. During a voice reply, a new recognized phrase can interrupt playback. “Hey Talos, stop” also stops announcements. A partial “wait” can silence a conversational reply while the recognizer continues listening for the rest of a correction. During response planning it pauses. The speech client uses
 on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,
 decision time, queue time, and time from transcript submission to first audio.
 
 Choose **Talk for 90 seconds**, or say **“Hey Talos, can we talk?”**, to have a
 conversation without repeating a wake word. **End conversation** closes the window early.
-With the camera on, a sustained view of one person facing the Mac can also start a
+With facing requests enabled and the camera on, a sustained view of one person facing the Mac can also start a
 direct question. Looking away, another detected person, or stale visual readings stop
 new visually directed turns. The camera gives a cue about intended address. It cannot
 tell which person spoke off camera.
 
 Talos keeps the last six exchanges for a connected conversational thread. You can
 correct yourself mid-reply with phrases like “Wait, I meant…” in an engaged
-conversation. Playback echo and unrelated room speech are filtered locally.
+conversation. The recognizer compares partial captions with playback text to discard matching echo.
 Local tasks, notes and timed reminders started this way are read back first. Say
 **confirm** or **cancel**. Saying **“Hey Talos”** still starts an explicit request.
 Its short follow-up window accepts a reminder delay or “Actually, make that five minutes.”
@@ -65,18 +77,57 @@ Confirmed visitors can separately agree to retain their own conversations. Saved
 actions keep their local receipts. Room presence by itself creates no work order.
 
 Talos answers hearing, visibility and identity checks directly from the input channel and
-current camera state. Their Kokoro audio is prepared at startup. Other replies use short
+current camera state. Kokoro reuses standard sensor answers and clarification phrases after their first synthesis. Other replies use short
 structured decisions and start playback when the first sentence is ready. Additional
 sentences are synthesized during playback. The local model stays resident while the
 launcher runs. Actionable events can trigger a planner decision and one delayed follow-up.
 Local actions apply by default in room mode. Use `--shadow` to evaluate what it would do
 and see conversational replies with no inbox changes or proactive announcements. Reminders
-and alerts display their details in the app and use a generic spoken notification. Stop
+display their details in the app and use a generic spoken notification. Other unsolicited updates appear silently unless **Speak proactive updates and introductions** is on. Stop
 the stack with Ctrl-C in the launcher terminal. The app pauses its room sensors if the
 endpoint becomes unreachable.
 
 For development, `--headless` starts the service without opening the app, and `--build-only`
 builds and signs `state/Talos.app` without starting a model.
+
+### Ask a visual question
+
+With the camera on, ask “Hey Talos, what am I wearing?” Talos requests one current JPEG for the local vision model. Frames expire after two seconds and are never written to the database. Clothing answers can still be wrong in poor light or when the garment is out of view. The separate text planner receives occupancy. Install the visual model once on the project server:
+
+```sh
+OLLAMA_HOST=127.0.0.1:11435 ollama pull qwen2.5vl:3b
+```
+
+Use `TALOS_VISION_MODEL` to select another installed local image-capable model. Vision works offline after setup. Turning the camera off prevents frame capture.
+
+### Private sources and commitments
+
+In **Memory → Private sources and commitments**, choose one file, its topic, the other person, and your own sender name. Ask “What do I owe people?” or “What do I owe people before tomorrow?” Selected evidence is private by default. Enable speech per source to include its facts in spoken briefings. Choose a cited file to reveal it in Finder. Select the corresponding promise if Talos asks about an ambiguous date revision. Forgetting a source removes its extracted evidence and links.
+
+| Source | Supported input |
+| --- | --- |
+| Email | Plain-text EML or an mbox export up to 8 MB. Mailbox entries must match the topic in the subject and the contact in the sender or recipient fields. |
+| iMessage | A dated `date,sender,text` CSV or a selected readable Messages SQLite database. Enter the exact chat identifier for a database. The reader uses up to 500 recent plain-text messages in that chat. |
+| WhatsApp | A selected exported text chat, with day-first or year-first dates. Refresh the export to include later messages. |
+| Project and Calendar | Select a document or a project folder as evidence of preparation, and an ICS file for matching event titles and times. Existing **Goals** can track a project folder and EventKit meeting. |
+
+The reader recognizes explicit English promises, weekday or ISO deadlines, and certain date changes and delivery statements. It links them by the contact and topic you select. A draft file is evidence of preparation. A message about sending something is identified as a possible delivery. The **Refresh briefing** button reloads indexed evidence. While the room is quiet its reviewer checks one eligible source at a time for changes. `python3 commitment_memory.py refresh` forces a refresh.
+
+For explicit memory, try “Remember that my bike key is in the green drawer”, “Actually, my bike key is in the blue tin”, and “Where is my bike key?” Saved facts survive restarts within their text, room voice or confirmed visitor scope. “Forget my bike key” removes that fact. Room-wide voice facts require **Remember voice transcripts**. This setting persists between launches.
+
+### Private Mac app lookup
+
+Choose your apps in **Memory → Private sources and commitments**. You can also enable local lookup with `python3 mac_context.py --enable Contacts Messages Mail WhatsApp`. Running the same command with no app names disables lookup. In the private message field, try “Search my apps for cobalt”, “Search my messages for Smith”, or “Show my family relationships”. Family labels come from related-name entries on your Contacts Me card. Matching contact addresses can connect a name with messages in an enabled app. The reply includes the source and record ID. Lookup reads the current databases, including up to 2,000 recent plain-text items per messaging or mail source and 5,000 contacts per address book. Mail lookup covers indexed subjects and summaries. Access depends on the permissions of the process running the room service.
+
+Ask “What did I just say?” to repeat a recent turn even during model startup. Visually directed follow-ups require a current conversation token.
+
+### Idle coding experiments
+
+After five minutes without room requests and keyboard/mouse input, while on AC power, the room can investigate repeated slow decisions or synthesis with the local model. It copies source and tests to a temporary directory, asks for an edit, checks its scope, applies it to the copy and parses the Python. Sandbox-supported runs execute the same stage-specific regression suite against the baseline and candidate. Trial status lives in the local `coding_trials` table. Checked patches appear in `state/proposals` for review. A foreground turn cancels the experiment. Applying a proposal to the running assistant requires a separate deployment.
+
+An overnight run can monitor local Codex usage with `python3 overnight_goal.py --watch --until UNIX_TIMESTAMP`. A recent Codex usage record below 3% in either active window enables at most one source-only review per hour through the configured OpenClaude Respan GLM-4.5-Flash route. The worker keeps checked patches and trial results in the state directory. An absent measurement cannot start a handoff. The worker exits at the specified deadline.
+
+For comparison on the target Mac, `PYTHONPATH=. state/kokoro-env/bin/python tests/measure_idle_voice.py` times synthetic reminders from service submission through complete synthesized WAV with and without an indexing batch. The app's first-playback metric covers a different interval.
 
 ### Introductions and conversation memory
 

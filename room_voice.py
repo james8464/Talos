@@ -88,14 +88,25 @@ class KokoroVoice:
         self.name = name
         self.language = "en-gb" if name.startswith("b") else "en-us"
         self.lock = threading.Lock()
-        self.fixed_lines = {line: self.render(line) for line in (STARTUP_LINE, *SENSOR_LINES)}
-
-    def render(self, text: str) -> str:
-        with self.lock:
-            samples, rate = self.model.create(text, voice=self.name, speed=1.06, lang=self.language)
-        return wav_base64(samples, rate)
+        self.fixed_lines = {}
 
     def speak(self, text: str) -> str:
-        if text in self.fixed_lines:
-            return self.fixed_lines[text]
-        return self.render(text)
+        reusable = text in SENSOR_LINES or text in (
+            "How long from now should I remind you?",
+            "Sure. What's on your mind?",
+            "You have a local Talos notification.",
+            "Please give a whole number of minutes, hours, or days, up to 30 days.",
+        )
+        if reusable:
+            cached = self.fixed_lines.get(text)
+            if cached is not None:
+                return cached
+        with self.lock:
+            # Another request may have synthesized this line while we waited for the model.
+            if reusable and text in self.fixed_lines:
+                return self.fixed_lines[text]
+            samples, rate = self.model.create(text, voice=self.name, speed=1.06, lang=self.language)
+            wav = wav_base64(samples, rate)
+            if reusable:
+                self.fixed_lines[text] = wav
+            return wav

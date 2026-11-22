@@ -109,6 +109,13 @@ class VisitorMemoryTests(unittest.TestCase):
             self.facing("What happened earlier?", context="expired-or-another-client")
             self.assertNotIn("It took all afternoon.", seen[-1])
 
+    def test_unseen_physical_experience_is_not_spoken_as_talos_memory(self):
+        outputs = iter(["I've been looking for that notebook too.", "Behind the piano was a good hiding place."])
+        def generate(*args, **kwargs):
+            return json.dumps({"talos_says":next(outputs)})
+        reply = spoken_reply(generate, [], "I finally found my notebook behind the piano.", "fixture")
+        self.assertEqual(reply, "Behind the piano was a good hiding place.")
+
     def test_optional_model_review_keeps_only_source_sentences(self):
         statement = "Every Tuesday I help at the observatory."
         raw = {

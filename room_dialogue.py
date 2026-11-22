@@ -22,11 +22,22 @@ def sensor_answer(message, source, occupied):
     words = re.sub(r"^(?:(?:hey|ok|okay) )?(?:talos|tell us) ", "", words)
     words = re.sub(r" (?:talos|tell us)$", "", words)
     words = re.sub(r" (?:right )?now$", "", words)
+    hearing = HEARD if source == "voice" else TYPED
+    visibility = UNKNOWN if occupied is None else VISIBLE if occupied else EMPTY
+    combined = re.fullmatch(r"(?:can|do) you (hear|see)(?: me)? and (?:can you |do you )?(hear|see) me", words)
+    if combined and combined[1] != combined[2]:
+        answers = {"hear": hearing, "see": visibility}
+        return f"{answers[combined[1]]} {answers[combined[2]]}"
     if words in ("can you hear me", "did you hear me", "do you hear me"):
-        return HEARD if source == "voice" else TYPED
+        return hearing
     if words in ("can you see me", "do you see me", "can you see anyone", "do you see anyone",
                  "is anyone in the room", "is there anyone in the room", "am i in the room"):
-        return UNKNOWN if occupied is None else VISIBLE if occupied else EMPTY
+        return visibility
+    if words in ("whose voice is this", "who is speaking", "who s speaking",
+                 "who is talking", "who s talking") or re.fullmatch(
+        r"(?:can|do) you (?:recogni[sz]e|identify) (?:my voice|me by my voice)", words
+    ):
+        return IDENTITY if source == "voice" else TYPED
     if words in ("who am i", "do you recognize me", "do you recognise me"):
         return IDENTITY
     return None
@@ -74,6 +85,13 @@ def explicit_reminder(message):
         trailing = re.fullmatch(_REQUEST_PREFIX + r"remind me to (.+?) in " + _DURATION + r"[.!?]?",
                                 message.strip(), re.I)
         if trailing is None:
+            # Keep the speaker's own relationship and wording in the reminder.
+            trailing = re.fullmatch(
+                _REQUEST_PREFIX + r"(I promised [^.!?;\n]{1,385})[.!;,]\s+"
+                + _REQUEST_PREFIX + r"remind me (?:about (?:it|that) )?in " + _DURATION + r"[.!?]?",
+                message.strip(), re.I,
+            )
+        if trailing is None:
             return None
         task, number, unit = trailing.groups()
     else:
@@ -96,6 +114,16 @@ def decision(action, detail, minutes=0):
 def conversational_correction(text):
     match = re.match(r"^(?:(?:actually|no|sorry|wait)[, ]+)?i meant\s+(.+?)(?:[.!?,]|$)", text.strip(), re.I)
     return match[1].strip() if match and len(match[1]) <= 120 else None
+
+
+def immediate_recall(text, history):
+    question = r"(?:what did i just (?:say|ask|tell you)|repeat (?:what i just said|my last question))"
+    if not re.fullmatch(question, text.strip(" .!?"), re.I):
+        return None
+    for item in reversed(history):
+        if item["role"] == "user" and not re.fullmatch(question, item["content"].strip(" .!?"), re.I):
+            return f'You said, “{item["content"][:400]}”'
+    return "I don’t have an earlier turn in this conversation."
 
 
 def corrected_recollection(text, history):
@@ -147,12 +175,15 @@ def spoken_reply(generate, messages, text, model):
         except (ValueError, TypeError, KeyError, AttributeError) as error:
             raise RuntimeError("Invalid spoken reply from the local model.") from error
         spoken = re.findall(r"\w+", reply.casefold())
-        if not ((len(normalized) >= 4 and spoken == normalized) or (len(last_reply) >= 4 and spoken == last_reply)):
+        echo = (len(normalized) >= 4 and spoken == normalized) or (len(last_reply) >= 4 and spoken == last_reply)
+        physical_claim = re.search(r"\b(?:I(?:['’]ve| have) been (?:looking|searching) for|I (?:went looking for|picked up|tried on|was wearing))\b",
+                                   reply, re.I)
+        if not echo and not physical_claim:
             return reply
         if attempt == 0:
-            messages = [*messages, {"role": "system", "content":
-                "Answer as the other participant. You just repeated the speaker. Give them an original response "
-                "to the specific thing they said, from your own side of the conversation."}]
+            guidance = ("You described doing a physical activity yourself. Answer using only what the user reported."
+                        if physical_claim else "You repeated the speaker. Respond briefly to their specific detail.")
+            messages = [*messages, {"role": "system", "content": guidance}]
     return "Tell me a little more about that."
 
 

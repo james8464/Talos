@@ -52,6 +52,62 @@ class TalosConsoleTests(unittest.TestCase):
         self.assertIn("Model unavailable", errors.getvalue())
         self.assertEqual(json.loads(output.getvalue().splitlines()[1]), receipt)
 
+    def test_history_and_recall_read_local_turns_without_inference(self):
+        from transcript_memory import remember
+
+        commands = io.StringIO("/history\n/recall\n/recall violet\n/recall missing\n/quit\n")
+        output, errors = io.StringIO(), io.StringIO()
+        with tempfile.TemporaryDirectory() as directory, closing(open_memory(Path(directory) / "trial.db")) as db:
+            remember(db, "text", [{"role": "user", "content": "violet folder"}])
+            remember(db, "visit/fixture", [{"role": "user", "content": "violet visitor secret"}])
+            with patch("agent.model_text") as model:
+                interactive_chat(db, commands, output, errors, apply=False, model=OLLAMA_MODEL)
+            model.assert_not_called()
+        self.assertEqual(output.getvalue().count("user> violet folder"), 2)
+        self.assertNotIn("visitor secret", output.getvalue())
+        self.assertIn("No matching archived turns.", output.getvalue())
+        self.assertIn("Usage: /recall QUERY", errors.getvalue())
+
+    def test_named_sessions_survive_restart_and_keep_prompts_separate(self):
+        with tempfile.TemporaryDirectory() as directory, patch("agent.check_ollama_model"), patch(
+            "agent.model_text", return_value="Acknowledged."
+        ) as model:
+            path = Path(directory) / "console.db"
+            def run(commands):
+                output, errors = io.StringIO(), io.StringIO()
+                with closing(open_memory(path)) as db:
+                    interactive_chat(db, io.StringIO(commands), output, errors, apply=False, model=OLLAMA_MODEL)
+                return output.getvalue(), errors.getvalue()
+            run("violet in the default thread\n/new project\nviolet in the project thread\n")
+            project_prompt = model.call_args.args[0]
+            self.assertEqual(len(project_prompt), 2)
+            self.assertNotIn("default thread", project_prompt[0]["content"])
+            output, errors = run("/resume project\n/new project\n/resume visit/fixture\n/sessions\n/history\n"
+                                 "Which violet?\n/new other\nWhich violet?\n/resume text\n/history\n")
+            self.assertIn("* project", output)
+            self.assertIn("violet in the default thread", output)
+            self.assertIn("violet in the project thread", output)
+            self.assertIn("already exists", errors)
+            self.assertIn("session name", errors)
+            self.assertEqual(model.call_args_list[-2].args[0][1]["content"], "violet in the project thread")
+            self.assertEqual(len(model.call_args.args[0]), 2)
+            self.assertNotIn("violet", model.call_args.args[0][0]["content"])
+
+    def test_export_publishes_complete_private_session_and_preserves_existing_file(self):
+        from transcript_memory import remember
+        with tempfile.TemporaryDirectory() as folder, closing(open_memory(Path(folder) / "trial.db")) as db:
+            path = Path(folder) / "my session.jsonl"
+            words = ["δ" + str(i) for i in range(10)]
+            remember(db, "text", [{"role": "user", "content": word} for word in words])
+            remember(db, "visit/example", [{"role": "user", "content": "private visitor"}])
+            commands = io.StringIO(f"/save {path}\n/new empty\n/save {path}\n")
+            out, err = io.StringIO(), io.StringIO()
+            interactive_chat(db, commands, out, err, apply=False, model=OLLAMA_MODEL)
+            self.assertEqual([json.loads(line)["text"] for line in path.read_text().splitlines()], words)
+            self.assertEqual(path.stat().st_mode & 0o077, 0)
+            self.assertIn("Exported 10", out.getvalue())
+            self.assertIn("File exists", err.getvalue())
+
     def test_status_does_not_require_inference(self):
         output = io.StringIO()
         with (
