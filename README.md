@@ -3,6 +3,10 @@
 Talos is a local room assistant with a native Mac app, a local HTTP endpoint, searchable
 conversation memory, and a background planner.
 
+## Recurring reminders and briefings
+
+In the private room message field, try `Brief me on Atlas every weekday at 09:00 in Europe/Paris` or `Remind me every Monday at 7:15 am to check the calendar`. Use `List my routines` and `Cancel routine #1` to manage them. The room worker resumes the SQLite schedules after restart. Briefing contents stay in the local inbox and the shared room announces a generic notification. Calendar calculations use the OpenClaw scheduling source and Croner under their bundled licenses and require Node.js 22.18 or later.
+
 ## Terminal sessions and Telegram
 
 In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Use `/branch project-b` (or `/fork`) to continue from the current conversation. A branch inherits turns up to that point and writes its own subsequent turns. Branches share stored transcript rows. Named sessions use their own recent turns, including their inherited history. Automatic recall in the default console excludes named-session turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.

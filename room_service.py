@@ -2,6 +2,7 @@
 
 import commitment_memory
 import mac_context
+import recurring_reminders
 import message_drafts
 import personal_facts
 import room_vision
@@ -479,6 +480,10 @@ class Room:
         with self.worker_lock, closing(open_memory(self.db_path)) as db:
             if self.apply and monotonic() >= self.next_goal_check:
                 self.next_goal_check = monotonic() + 30
+                try:
+                    recurring_reminders.advance(db, datetime.now(UTC))
+                except ValueError as error:
+                    print(f"Talos recurring reminders: {error}", flush=True)
                 ids = db.execute("SELECT id FROM goals WHERE status='active'").fetchall()
                 for goal in ids:
                     goal_store.refresh_in_background(db, goal["id"])
@@ -541,7 +546,10 @@ class Room:
             return None
         now = datetime.now(UTC)
         row = db.execute("""
-            SELECT inbox.id, inbox.kind, inbox.text, inbox.due_at FROM inbox
+            SELECT inbox.id, inbox.kind,
+                   CASE WHEN json_extract(decisions.event, '$.kind')='private_recurring'
+                        THEN 'You have a recurring reminder in Talos.' ELSE inbox.text END AS text,
+                   inbox.due_at FROM inbox JOIN decisions ON decisions.id=inbox.id
             LEFT JOIN room_events ON room_events.decision_id = inbox.id
             WHERE inbox.acknowledged_at IS NULL AND inbox.due_at <= ?
                 AND room_events.expected_presence IS NULL
@@ -559,6 +567,9 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= 800:
             raise ValueError("Use between 1 and 800 characters for the turn.")
         voice = facing or channel == "voice"
+        recurring = recurring_reminders.handle(db, text, voice=voice, apply=self.apply, request_id=body.get("request_id"))
+        if recurring is not None:
+            return recurring
         app = requested_app(text)
         draft = message_drafts.draft_request(text)
         if app or draft:
