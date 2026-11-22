@@ -144,7 +144,7 @@ class StandingGoalTests(unittest.TestCase):
         self.assertIn("The card is blue.", shown)
 
     def test_writer_reasoning_blocks_do_not_reach_goals_or_conversation_history(self):
-        for raw in ("<think>internal</think> blue", "<mm:thought>internal</mm:thought>blue",
+        for raw in ("private preamble only</think>blue", "<think>internal</think> blue", "<mm:thought>internal</mm:thought>blue",
                     "<think>draft <thought>inner</thought></think><thinking>more</thinking>blue"):
             with patch("agent.request_ollama_json", return_value={"done": True, "message": {"content": raw}}):
                 self.assertEqual(model_text([]), "blue")

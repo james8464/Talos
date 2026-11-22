@@ -1,11 +1,10 @@
 """Size limits for the in-memory conversation sent to the local model."""
 
+import re
+
 RECENT_MESSAGES = 12
 MAX_MESSAGE_CHARS = 2_000
 MAX_HISTORY_CHARS = 6_000
-
-
-import re
 
 
 def limit_history(messages: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -43,6 +42,20 @@ def visible_model_text(content):
                 break
         else:
             raise RuntimeError("The local model did not finish its visible answer.")
+    # Some local templates consume the opening tag and leave just its closing boundary.
+    # Keep literal examples inside Markdown code and structured JSON fields intact.
+    if not text.startswith(("{", "[")):
+        fence = ""
+        for match in re.finditer(r"`+|<\s*/\s*(?:think|thinking|thought|antthinking|(?:antml|mm):(?:think|thinking|thought))\s*>", text, re.I):
+            token = match.group()
+            if token.startswith("`"):
+                if not fence:
+                    fence = token
+                elif fence == token:
+                    fence = ""
+            elif not fence:
+                text = text[match.end():].lstrip()
+                break
     if not text.strip():
         raise RuntimeError("The local model returned no text.")
     return text
