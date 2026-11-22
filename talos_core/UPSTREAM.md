@@ -68,3 +68,7 @@ The pinned Hermes registry declares 105 literal command definitions. Terminal fi
 **Tools & Skills** · `/tools`, `/toolsets`, `/skills`, `/memory`, `/bundles`, `/pet`, `/hatch`, `/learn`, `/init`, `/cron`, `/suggestions`, `/blueprint`, `/curator`, `/kanban`, `/reload`, `/reload-mcp`, `/reload-skills`, `/browser`, `/plugins`.
 
 **Exit** · `/quit`.
+
+The Hermes gateway-only `/commands [page]` entry is available in Talos Telegram private chat. `TelegramGatewayTests.test_commands_pages_use_only_local_gateway_capabilities` drives both pages, invalid arguments, sender restrictions and replay through polling. The catalog covers the commands implemented by this gateway. Dynamic skill discovery is still open.
+
+On November 22 the isolated Mac model suite executed seven optional tests. Five passed, covering room conversation and correction, a reviewed writing goal, Telegram correction after restart, and a spoken Telegram correction. The room and Telegram image tests both failed on the same synthetic portrait sheet. Both described a green jacket. The expected label was “shirt”, but the visible dark collared outer layer is ambiguous and the lower panels show faces. The room test stopped before the sweater case. A replacement single-subject test with an independently verified, unambiguous garment and color is still needed. These runs used synthetic inputs and no live Telegram delivery or camera.

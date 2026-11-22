@@ -37,6 +37,23 @@ class TelegramGatewayTests(unittest.TestCase):
         with closing(open_channel(self.path)) as db:
             poll(db, api or self.api, bot, owner, "fixture")
 
+    def test_commands_pages_use_only_local_gateway_capabilities(self):
+        for number, message in enumerate(("/help", "/commands", "/commands 2", "/commands 0",
+                                          "/commands 3", "/commands 2 extra"), 1):
+            self.add(number, message)
+        self.add(7, "/commands", sender=20)
+        self.run_poll()
+        self.run_poll()
+        replies = [message["text"] for message in self.sent]
+        self.assertEqual(len(replies), 6)
+        self.assertIn("/commands", replies[0])
+        self.assertIn("Next: /commands 2", replies[1])
+        self.assertIn("/voice voice_only", replies[2])
+        self.assertEqual(replies[3:], ["Use /commands PAGE with a page from 1 to 2."] * 3)
+        with closing(open_channel(self.path)) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM turns").fetchone()[0], 0)
+        self.model.assert_not_called()
+
     def test_owner_and_chat_must_match_and_replay_is_ignored_after_restart(self):
         self.add(50, "group", kind="group")
         self.add(51, "other DM", chat=18, sender=18)
