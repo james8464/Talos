@@ -71,7 +71,7 @@ def voice_latency(db):
 
 
 class Room:
-    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True, voice=None, online=True, model_state=None, app_launch_enabled=False):
+    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True, voice=None, online=True, model_state=None, app_launch_enabled=False, voice_generate=None):
         self.db_path = db_path
         self.model = model
         self.apply = apply
@@ -79,6 +79,7 @@ class Room:
         self.app_launch_enabled = app_launch_enabled
         self.online = online
         self.model_state = model_state or (lambda: "ready")
+        self.voice_generate = voice_generate
         self.voice = voice
         self.turn_lock = threading.Lock()
         self.worker_lock = threading.Lock()
@@ -299,15 +300,18 @@ class Room:
                         messages[0]["content"] += " You just asked a question. Let their answer land before asking another."
                     messages.extend(history)
                     messages.append({"role":"user", "content":text})
-                    check_ollama_model(self.model)
+                    generate = self.voice_generate
+                    if generate is None:
+                        check_ollama_model(self.model)
+                        generate = model_text
                     if re.match(r"^(?:and )?how (?:many|much)\b", words):
                         quantitative = [{"role":"system", "content":"Answer the current quantity question. Use earlier turns "
                                          "to resolve references. For totals or scaling use calculate, with a numeric binary "
                                          "expression such as 3 * 4. For a count, give the numeric value or a brief factual reply."},
                                         *history, {"role":"user", "content":"Current question: " + text}]
-                        reply = compact_decision(model_text, quantitative, self.model, [], read_only=True)["detail"]
+                        reply = compact_decision(generate, quantitative, self.model, [], read_only=True)["detail"]
                     else:
-                        reply = spoken_reply(model_text, messages, text, self.model)
+                        reply = spoken_reply(generate, messages, text, self.model)
             token = str(uuid4())
             exchange = [{"role":"user","content":text}, {"role":"assistant","content":reply}]
             self.facing_exchange = (token, monotonic() + 90, [*history,*exchange][-12:], profile)

@@ -48,11 +48,21 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     let onSample: (VNFeaturePrintObservation, TimeInterval) -> Void
     private var checkVisitors = false
     private var lastSample = -Double.infinity
-    func setVisitors(_ enabled: Bool) { queue.async { self.checkVisitors = enabled } }
+    func setVisitors(_ enabled: Bool) {
+        queue.async {
+            if enabled && !self.checkVisitors { self.cadence.requestAnalysis() }
+            self.checkVisitors = enabled
+        }
+    }
     private var checkFacing: Bool
-    func setFacing(_ enabled: Bool) { queue.async { self.checkFacing = enabled } }
+    func setFacing(_ enabled: Bool) {
+        queue.async {
+            if enabled && !self.checkFacing { self.cadence.requestAnalysis() }
+            self.checkFacing = enabled
+        }
+    }
     private let detection = VNDetectHumanRectanglesRequest()
-    private var lastFrame = Date.distantPast
+    private var cadence = CameraCadence()
     private var lastReport = Date.distantPast
     private var candidate: Bool?
     private var confirmations = 0
@@ -102,8 +112,13 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     func snapshot() async -> (jpeg: String, people: Int?)? {
         await withCheckedContinuation { continuation in
             queue.async {
-                guard self.session.isRunning, Date().timeIntervalSince(self.lastFrame) < 2,
+                self.cadence.requestAnalysis()
+                guard self.session.isRunning, self.cadence.hasFreshFrame(at: ProcessInfo.processInfo.systemUptime),
                       let buffer = self.latestBuffer else { continuation.resume(returning: nil); return }
+                if self.framePeople == nil {
+                    let handler = VNImageRequestHandler(cvPixelBuffer: buffer, orientation: .up)
+                    self.framePeople = try? self.countPeople(handler)
+                }
                 let input = CIImage(cvPixelBuffer: buffer)
                 let scale = min(1, 640 / max(input.extent.width, input.extent.height))
                 let image = input.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
@@ -117,30 +132,37 @@ final class CameraDetector: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     func stop() {
         queue.async {
             self.latestBuffer = nil
+            self.framePeople = nil
+            self.cadence = CameraCadence()
             self.session.stopRunning()
             for output in self.session.outputs { self.session.removeOutput(output) }
             for input in self.session.inputs { self.session.removeInput(input) }
         }
     }
 
+    private func countPeople(_ handler: VNImageRequestHandler) throws -> Int {
+        try handler.perform([detection])
+        return (detection.results ?? []).filter { $0.confidence >= 0.6 }.count
+    }
+
     func captureOutput(
         _ output: AVCaptureOutput, didOutput sample: CMSampleBuffer, from connection: AVCaptureConnection
     ) {
-        let now = Date()
-        guard now.timeIntervalSince(lastFrame) >= 0.7 else { return }
+        let timestamp = ProcessInfo.processInfo.systemUptime
+        let work = cadence.next(at: timestamp, settledEmpty: occupied == false && candidate == false)
+        guard work != .skip else { return }
         framePeople = nil
         latestBuffer = CMSampleBufferGetImageBuffer(sample)
-        lastFrame = now
+        guard work == .analyze else { return }
+        let now = Date()
         do {
-            let timestamp = ProcessInfo.processInfo.systemUptime
             let handler = VNImageRequestHandler(cmSampleBuffer: sample, orientation: .up)
-            try handler.perform([detection])
-            let people = (detection.results ?? []).filter { $0.confidence >= 0.6 }
-            framePeople = people.count
-            let detected = !people.isEmpty
+            let people = try countPeople(handler)
+            framePeople = people
+            let detected = people > 0
             if checkFacing {
                 let sampleNeeded = checkVisitors && timestamp - lastSample >= 1.4
-                let view = VisitorFrame.observe(handler, people: people.count, faces: faceRequest, sample: sampleNeeded)
+                let view = VisitorFrame.observe(handler, people: people, faces: faceRequest, sample: sampleNeeded)
                 onFacing(view.facing, timestamp)
                 if let sample = view.sample {
                     lastSample = timestamp

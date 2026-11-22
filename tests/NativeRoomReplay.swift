@@ -11,8 +11,33 @@ struct NativeRoomReplay {
         }
     }
 
+    static func checkCameraCadence() {
+        var cadence = CameraCadence()
+        precondition(!cadence.hasFreshFrame(at: 0))
+        precondition(cadence.next(at: 0, settledEmpty: false) == .analyze)
+        precondition(cadence.next(at: 0.3, settledEmpty: true) == .skip)
+        precondition(cadence.next(at: 0.75, settledEmpty: true) == .retain)
+        precondition(cadence.hasFreshFrame(at: 2.7))
+        precondition(!cadence.hasFreshFrame(at: 2.75))
+        precondition(cadence.next(at: 3, settledEmpty: true) == .analyze)
+        precondition(cadence.next(at: 3.75, settledEmpty: false) == .analyze)
+        cadence.requestAnalysis()
+        precondition(cadence.next(at: 4.5, settledEmpty: true) == .analyze)
+
+        func requests(settledEmpty: Bool) -> Int {
+            var detector = CameraCadence()
+            return (0..<3600).reduce(0) { total, index in
+                total + (detector.next(at: Double(index) / 30, settledEmpty: settledEmpty) == .analyze ? 1 : 0)
+            }
+        }
+        let active = requests(settledEmpty: false)
+        let empty = requests(settledEmpty: true)
+        precondition(active > 160 && (80...87).contains(empty))
+    }
+
     @MainActor
     static func main() async throws {
+        checkCameraCadence()
         let room = RoomController()
         room.connect()
         try await waitUntil { room.status.contains("Practice room") }
