@@ -13,7 +13,7 @@ For Telegram direct messages, configure a dedicated bot token in the local envir
 TALOS_OLLAMA_PORT=11435 python3 telegram_gateway.py --owner YOUR_NUMERIC_ID
 ```
 
-Add `--check` to verify the bot identity, webhook configuration and local model without polling or sending a message. The gateway polls while the process runs. Only direct text messages from the configured account are eligible for replies. Telegram transports the chat. Talos sends the local model only the current message and up to four prior exchanges from the same bot and owner. Its channel database lives under `state/telegram`. Send `/new` to clear that local context. The gateway has no access path to Mac actions or family recall. If a send times out, delivery is uncertain and Talos skips automatic retransmission.
+Alternatively, run with `--pair` in place of `--owner YOUR_NUMERIC_ID`. Send the one-time code shown in the terminal to the bot in a private message. Future launches use the saved pairing. Add `--check` to verify the bot identity, webhook configuration and local model without polling or sending a message. The gateway polls while the process runs. Only direct text messages from the configured account are eligible for replies. Telegram transports the chat. Talos sends the local model only the current message and up to four prior exchanges from the same bot and owner. Its channel database lives under `state/telegram`. Send `/new` to clear that local context. The gateway has no access path to Mac actions or family recall. If a send times out, delivery is uncertain and Talos skips automatic retransmission.
 
 ## Run the room assistant
 

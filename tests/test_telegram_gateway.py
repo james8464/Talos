@@ -9,7 +9,7 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from telegram_gateway import ApiError, api_client, main, open_channel, owner_id, poll
+from telegram_gateway import ApiError, api_client, main, open_channel, owner_id, pair_owner, poll
 
 
 class TelegramGatewayTests(unittest.TestCase):
@@ -163,6 +163,31 @@ class TelegramGatewayTests(unittest.TestCase):
         self.assertTrue(all("unavailable" in m["text"] for m in self.sent))
         with closing(open_channel(self.path)) as db:
             self.assertEqual(db.execute("SELECT count(*) FROM turns").fetchone()[0], 0)
+
+
+    def test_pairing_accepts_only_matching_private_human_and_survives_restart(self):
+        self.add(1, "/pair fixture-code", sender=31, chat=31, kind="group")
+        self.add(2, "/pair fixture-code", sender=32, chat=32, bot=True)
+        self.add(3, "/pair incorrect", sender=33, chat=33)
+        self.add(4, "/pair fixture-code")
+        self.add(5, "after pairing")
+        with closing(open_channel(self.path)) as db, patch("telegram_gateway.secrets.token_urlsafe", return_value="fixture-code"):
+            self.assertEqual(pair_owner(db, self.api, 42), 19)
+        with closing(open_channel(self.path)) as db:
+            self.assertEqual(pair_owner(db, None, 42), 19)
+        self.run_poll()
+        self.assertEqual(self.offsets, [0, 5])
+        self.assertEqual(len(self.sent), 1)
+        self.assertEqual(self.model.call_args.args[0][-1]["content"], "after pairing")
+
+    def test_expired_pairing_code_has_no_effect(self):
+        self.add(1, "/pair fixture-code")
+        with closing(open_channel(self.path)) as db, patch("telegram_gateway.secrets.token_urlsafe", return_value="fixture-code"), patch(
+            "telegram_gateway.time.monotonic", side_effect=[0, 299, 301, 302]
+        ):
+            with self.assertRaisesRegex(RuntimeError, "expired"):
+                pair_owner(db, self.api, 42)
+            self.assertEqual(db.execute("SELECT count(*) FROM pairing").fetchone()[0], 0)
 
 
 @unittest.skipUnless(os.environ.get("TALOS_TEST_OLLAMA") == "1", "requires an isolated local model")

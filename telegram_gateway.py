@@ -6,6 +6,7 @@ import http.client
 import json
 import os
 import re
+import secrets
 import sqlite3
 import sys
 import time
@@ -50,6 +51,7 @@ def open_channel(path):
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     os.close(os.open(path, os.O_WRONLY | os.O_CREAT, 0o600))
     db = sqlite3.connect(path)
+    db.execute("CREATE TABLE IF NOT EXISTS pairing (bot INTEGER PRIMARY KEY, owner INTEGER NOT NULL)")
     db.execute("CREATE TABLE IF NOT EXISTS cursor (bot INTEGER PRIMARY KEY, seen INTEGER, stamp REAL)")
     db.execute("""CREATE TABLE IF NOT EXISTS delivery (
         bot INTEGER PRIMARY KEY, update_id INTEGER, status TEXT, message_id INTEGER)""")
@@ -183,16 +185,47 @@ def poll(db, call, bot, owner, model):
         seen = ident
 
 
+def pair_owner(db, call, bot):
+    existing = db.execute("SELECT owner FROM pairing WHERE bot=?", (bot,)).fetchone()
+    if existing:
+        return existing[0]
+    code = secrets.token_urlsafe(18)
+    print(f"Send /pair {code} in a private message to your bot within five minutes.", flush=True)
+    deadline = time.monotonic() + 300
+    offset = 0
+    while time.monotonic() < deadline:
+        updates = call("getUpdates", offset=offset, timeout=10, allowed_updates=["message"])
+        for update in updates:
+            offset = update["update_id"] + 1
+            msg = update.get("message") or {}
+            sender, chat = msg.get("from", {}), msg.get("chat", {})
+            owner = sender.get("id")
+            if (type(owner) is not int or owner <= 0 or sender.get("is_bot") or
+                    chat.get("type") != "private" or chat.get("id") != owner):
+                continue
+            if not secrets.compare_digest(msg.get("text", "").encode(), f"/pair {code}".encode()):
+                continue
+            if time.monotonic() >= deadline:
+                break
+            with db:
+                db.execute("INSERT INTO pairing VALUES(?,?)", (bot, owner))
+                db.execute("INSERT OR REPLACE INTO cursor VALUES(?,?,?)", (bot, offset - 1, time.time()))
+            return owner
+    raise RuntimeError("Pairing expired. Run --pair to get a new code.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--owner", required=True, type=owner_id, help="Your numeric Telegram user ID")
+    auth = parser.add_mutually_exclusive_group()
+    auth.add_argument("--owner", type=owner_id, help="Your numeric Telegram user ID")
+    auth.add_argument("--pair", action="store_true", help="Pair this bot with your private chat, then exit")
     parser.add_argument("--check", action="store_true", help="Check bot identity, webhook and local model, then exit")
     parser.add_argument("--model", default="qwen3:4b")
     parser.add_argument("--state", type=Path, default=Path(__file__).resolve().parent / "state/telegram")
     args = parser.parse_args()
     token = os.environ.get("TALOS_TELEGRAM_TOKEN", "")
-    if args.owner <= 0 or not re.fullmatch(r"[1-9]\d*:[A-Za-z0-9_-]+", token):
-        parser.error("Supply a positive owner ID and set TALOS_TELEGRAM_TOKEN.")
+    if not re.fullmatch(r"[1-9]\d*:[A-Za-z0-9_-]+", token):
+        parser.error("Set TALOS_TELEGRAM_TOKEN to your bot token.")
     bot = int(token.partition(":")[0])
     call = api_client(token)
     if args.check:
@@ -214,10 +247,23 @@ def main():
         except BlockingIOError:
             parser.exit(1, "This bot already has a running poller.\n")
         with closing(open_channel(args.state / "channel.sqlite3")) as db:
+            if args.pair:
+                try:
+                    pair_owner(db, call, bot)
+                except (RuntimeError, OSError, ValueError, http.client.HTTPException) as error:
+                    parser.exit(1, f"Pairing failed: {error}\n")
+                print("Owner paired. Start the gateway without --pair to chat.")
+                return
+            owner = args.owner
+            if owner is None:
+                paired = db.execute("SELECT owner FROM pairing WHERE bot=?", (bot,)).fetchone()
+                if not paired:
+                    parser.error("Run --pair or specify --owner with your numeric Telegram user ID.")
+                owner = paired[0]
             backoff = 1
             while True:
                 try:
-                    poll(db, call, bot, args.owner, args.model)
+                    poll(db, call, bot, owner, args.model)
                     backoff = 1
                 except ApiError as error:
                     if error.code != 429 and error.code < 500:
