@@ -119,6 +119,89 @@ class PrivateRoomTests(unittest.TestCase):
             mac_context.configure(self.state, [])
             self.assertIn("enabled", self.ask("Search my mail for cobalt")["reply"])
 
+    def test_messages_search_honors_each_available_visibility_flag(self):
+        path = self.fixture("Messages/chat.db", """
+            CREATE TABLE handle(id);
+            INSERT INTO handle VALUES('example@test.invalid');
+            CREATE TABLE message(guid,handle_id,is_from_me,date,text);
+            INSERT INTO message VALUES('a',1,0,700000000,'Fixture first'),('b',1,0,700000001,'Fixture second');
+        """)
+        mac_context.configure(self.state, ["Messages"])
+        def count():
+            result = self.ask("Search my messages for Fixture")
+            self.assertEqual(result["unavailable"], [])
+            return result["matches"]
+        self.assertEqual(count(), 2)
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("ALTER TABLE message ADD COLUMN date_retracted INTEGER")
+            db.execute("UPDATE message SET date_retracted=700000002 WHERE guid='a'")
+        self.assertEqual(count(), 1)
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("ALTER TABLE message ADD COLUMN is_system_message INTEGER DEFAULT 0")
+            db.execute("UPDATE message SET is_system_message=1 WHERE guid='b'")
+        self.assertEqual(count(), 0)
+
+    def test_relationship_message_lookup_requires_unambiguous_contacts_evidence(self):
+        book = self.fixture("Application Support/AddressBook/AddressBook-v22.abcddb", """
+            CREATE TABLE ZABCDRECORD(Z_PK,ZFIRSTNAME,ZLASTNAME,ZORGANIZATION,ZNICKNAME,ZCONTAINERWHERECONTACTISME);
+            INSERT INTO ZABCDRECORD VALUES(1,'Dev','Example',NULL,NULL,NULL),(2,'Me','Example',NULL,NULL,4),
+                                         (3,'Other','Person',NULL,NULL,NULL);
+            CREATE TABLE ZABCDRELATEDNAME(Z_PK,ZOWNER,ZLABEL,ZNAME);
+            INSERT INTO ZABCDRELATEDNAME VALUES(7,2,'_$!<Sister>!$_','Dev Example'),(8,3,'sister','Other Person');
+            CREATE TABLE ZABCDEMAILADDRESS(ZOWNER,ZADDRESS);
+            INSERT INTO ZABCDEMAILADDRESS VALUES(1,'dev@example.test');
+            CREATE TABLE ZABCDPHONENUMBER(ZOWNER,ZFULLNUMBER);
+        """)
+        self.fixture("Messages/chat.db", """
+            CREATE TABLE handle(id);
+            INSERT INTO handle VALUES('dev@example.test'),('other@example.test');
+            CREATE TABLE message(guid,handle_id,is_from_me,date,text,is_system_message,date_retracted);
+            INSERT INTO message VALUES('wanted',1,0,600000000,'Fixture pickup',0,0),
+                                      ('other',2,0,600000001,'Ask my sister',0,0),
+                                      ('sent',1,1,600000002,'Outbound fixture',0,0);
+        """)
+        mac_context.configure(self.state, ["Contacts", "Messages"])
+        query = "Search my messages for my sister"
+        hit = self.ask(query)
+        self.assertEqual(hit["matches"], 2)
+        self.assertIn("Messages [sent]", hit["reply"])
+        incoming = self.ask("Show me messages from my sister.")
+        self.assertEqual(incoming["matches"], 1)
+        self.assertIn("Messages [wanted]", incoming["reply"])
+        self.assertNotIn("Messages [sent]", incoming["reply"])
+        self.assertEqual(self.ask("Show messages with my sister.")["matches"], 2)
+        self.assertIn("Messages [wanted]", hit["reply"])
+        self.assertIn("Dev Example", hit["reply"])
+        self.assertIn("AddressBook-v22.abcddb · relationship 7", hit["reply"])
+        self.assertEqual(hit["checked"], ["Contacts", "Messages"])
+        self.assertNotIn("Messages [other]", hit["reply"])
+        with closing(sqlite3.connect(book)) as db, db:
+            db.execute("INSERT INTO ZABCDEMAILADDRESS VALUES(3,'DEV@example.test')")
+        self.assertEqual(self.ask(query)["matches"], 0)
+        with closing(sqlite3.connect(book)) as db, db:
+            db.execute("DELETE FROM ZABCDEMAILADDRESS WHERE ZOWNER=3")
+            db.execute("INSERT INTO ZABCDRECORD VALUES(4,'Dev','Example',NULL,NULL,NULL)")
+        self.assertEqual(self.ask(query)["matches"], 0)
+        with closing(sqlite3.connect(book)) as db, db:
+            db.execute("DELETE FROM ZABCDRECORD WHERE Z_PK=4")
+            db.execute("INSERT INTO ZABCDEMAILADDRESS VALUES(3,'other@example.test')")
+            db.execute("UPDATE ZABCDRELATEDNAME SET ZNAME='Other Person' WHERE Z_PK=7")
+        corrected = self.ask(query)
+        self.assertEqual(corrected["matches"], 1)
+        self.assertIn("Messages [other]", corrected["reply"])
+        self.assertNotIn("Messages [wanted]", corrected["reply"])
+        with closing(sqlite3.connect(book)) as db, db:
+            db.execute("DELETE FROM ZABCDRELATEDNAME WHERE Z_PK=7")
+        self.assertEqual(self.ask(query)["matches"], 0)
+        mac_context.configure(self.state, ["Messages"])
+        with patch("mac_context.read", side_effect=AssertionError("Contacts disabled")):
+            self.assertEqual(self.ask(query)["matches"], 0)
+
+        with patch("mac_context.family_message_lookup", side_effect=AssertionError("voice read private records")):
+            self.assertIn("private message", self.ask(query, source="voice")["reply"])
+        with closing(open_memory(self.room.db_path)) as db:
+            self.assertNotIn("Fixture pickup", "\n".join(db.iterdump()))
+
     def test_scoped_recall_during_model_warmup(self):
         first = "Can you hear me?"
         self.ask(first, source="voice")
