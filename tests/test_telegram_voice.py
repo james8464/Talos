@@ -184,3 +184,35 @@ class RealSpeechTests(unittest.TestCase):
             self.assertEqual(voice.transcribe_note(buf.getvalue()), "")
             with patch.object(voice, "MAX_VOICE_SECONDS", 1), self.assertRaisesRegex(ValueError, "duration limit"):
                 voice.decode_note(buf.getvalue())
+
+
+@unittest.skipUnless(os.getenv("TALOS_TEST_TELEGRAM_WHISPER") and os.getenv("TALOS_TEST_OLLAMA") == "1"
+                     and os.getenv("TALOS_TEST_KOKORO") == "1", "requires the isolated local speech and chat models")
+class SpokenConversationReplay(unittest.TestCase):
+    def test_spoken_correction_survives_restart_and_outbound_audio_is_intelligible(self):
+        notes = [(Path(__file__).parent / "fixtures/synthetic-notebook.ogg").read_bytes(),
+                 voice.render_note("Actually, I moved the notebook to the hallway."),
+                 voice.render_note("Where is the notebook now?")]
+        sent = []
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
+                "TALOS_TELEGRAM_WHISPER_MODEL": os.environ["TALOS_TEST_TELEGRAM_WHISPER"]}):
+            path = Path(tmp) / "channel.db"
+            for number in range(len(notes) + 1):
+                media = {"voice": {"file_id": "sample", "duration": 5}} if number else {"text": "/voice voice_only"}
+                def call(method, **params):
+                    if method == "getUpdates":
+                        return [{"update_id": number + 1, "message": {"chat": {"id": 7, "type": "private"},
+                                 "from": {"id": 7}, **media}}]
+                    if method == "getFile":
+                        return {"file_path": "voice/sample.oga"}
+                    if method == "sendVoice":
+                        sent.append(params["voice"])
+                    return {"message_id": number + 10}
+                with closing(gateway.open_channel(path)) as db:
+                    gateway.poll(db, call, 42, 7, "qwen3:4b", download_voice=lambda _: notes[number - 1])
+            with closing(gateway.open_channel(path)) as db:
+                last = db.execute("SELECT answer FROM turns ORDER BY seq DESC LIMIT 1").fetchone()[0]
+            self.assertEqual(len(sent), 3)
+            for answer in (last, voice.transcribe_note(sent[-1])):
+                self.assertIn("hallway", answer.casefold())
+                self.assertNotIn("kitchen", answer.casefold())

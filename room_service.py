@@ -7,7 +7,8 @@ import recurring_reminders
 import message_drafts
 import personal_facts
 import room_vision
-from idle_lab import IdleLab, IdleReviewDeferred
+import session_goals
+from idle_lab import IdleLab, IdleReviewDeferred, power_and_idle
 import argparse
 import hmac
 import json
@@ -466,6 +467,23 @@ class Room:
             reply = "I don't have enough information to help with that yet."
         return decision_id, action, reply
 
+    def review_session_goals(self):
+        if not self.apply:
+            return False
+
+        def available():
+            return (monotonic() >= self.lab.quiet_until and self.model_state() == "ready"
+                    and power_and_idle())
+
+        def generate(messages, *, model, **options):
+            try:
+                return self.lab.infer(messages, **options)
+            except IdleReviewDeferred as error:
+                raise session_goals.ReviewDeferred() from error
+
+        with closing(open_memory(self.db_path)) as db:
+            return session_goals.work_once(db, self.model, generate, lambda _: None, available)
+
     def review_memory(self):
         if not self.apply or monotonic() < self.review_after or self.turn_lock.locked():
             return False
@@ -905,9 +923,13 @@ def run(
                 stopping.wait(1)
 
         def review() -> None:
+            next_goal_check = 0.0
             while not stopping.wait(2):
                 try:
                     room.review_memory()
+                    if monotonic() >= next_goal_check:
+                        next_goal_check = monotonic() + 30
+                        room.review_session_goals()
                     if room.apply and room.model_state() == "ready": room.lab.tick()
                 except (OSError, sqlite3.Error) as error:
                     print(f"Talos memory reviewer: {error}", flush=True)
