@@ -228,6 +228,39 @@ class RoomDialogueTests(unittest.TestCase):
                      "I promised my sister I'd bring the book. Remind me in thirty-one days."):
             self.assertIsNone(explicit_reminder(text))
 
+    def test_app_opening_requires_direct_request_and_reports_launch_result(self):
+        self.room.app_launch_enabled = True
+        with patch("local_actions.subprocess.run") as launch, patch("room_service.plan", side_effect=AssertionError):
+            launch.return_value.returncode = 0
+            for source in ("text", "voice"):
+                reply = self.turn("Hey Talos, please open Calendar.", source=source)
+                self.assertEqual((reply["tool"], reply["action"]), ("open_app", "accepted"))
+            self.assertEqual(launch.call_args.args[0], ["/usr/bin/open", "-b", "com.apple.iCal"])
+            self.assertEqual(launch.call_count, 2)
+            launch.return_value.returncode = 1
+            self.assertEqual(self.turn("Launch Notes.")["action"], "failed")
+            launch.side_effect = subprocess.TimeoutExpired("open", 5)
+            self.assertEqual(self.turn("Open Mail.")["action"], "unverified")
+            launch.reset_mock()
+            offer = self.room.route("POST", "/v1/voice/facing", {"text": "Remind me in ten minutes to call."})[1]["offer"]
+            self.assertEqual(self.turn("Open Calendar.", follow_up=True)["action"], "blocked")
+            self.assertEqual(self.room.route("POST", "/v1/voice/facing", {"text": "Open Calendar."})[1]["action"], "blocked")
+            expired = self.room.route("POST", "/v1/voice/facing", {"text": "confirm", "offer": offer})[1]
+            self.assertIn("no current request", expired["reply"])
+            self.room.apply = False
+            self.assertEqual(self.turn("Open Calendar.", source="text")["action"], "blocked")
+            self.room.apply = True
+            self.room.app_launch_enabled = False
+            self.assertEqual(self.turn("Open Calendar.")["action"], "blocked")
+            launch.assert_not_called()
+
+    def test_app_opening_matches_only_supported_standalone_commands(self):
+        from local_actions import requested_app
+        self.assertEqual(requested_app("Could you launch the app Messages?"), "Messages")
+        for text in ("Don't open Mail.", "She said open Safari.", "Open Safari and send a message.",
+                     "Open https://example.test", "Open the file Calendar.", "Open Terminal."):
+            self.assertIsNone(requested_app(text))
+
     def test_exact_reminder_in_shadow_mode_leaves_inbox_untouched(self):
         self.room = Room(self.room.db_path, "local", apply=False)
         receipt = self.turn("Remind me in 2 hours to stretch.")
