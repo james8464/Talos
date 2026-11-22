@@ -7,7 +7,7 @@ import os
 import re
 import sqlite3
 import time
-from contextlib import closing
+from contextlib import ExitStack, closing
 
 from feature_queue import append, queue_entries
 from feature_targets import FILE
@@ -38,12 +38,22 @@ def discovery_candidate(db, tree):
     outside_patterns = " AND ".join("u.path NOT GLOB ?" for _ in patterns)
     unmapped = f"(u.path LIKE '%.test.%' OR ({outside_patterns}))"
     extensions = " OR ".join("u.path GLOB ?" for _ in SOURCE_TYPES)
-    row = db.execute(f"""SELECT u.path,u.bytes,u.sha256,coalesce(p.position,0),p.target
-        FROM files u LEFT JOIN comparison_progress p ON p.tree=u.tree AND p.path=u.path
-        AND p.source_hash=u.sha256 AND p.target_hash=(SELECT sha256 FROM files WHERE tree='Talos' AND path=p.target)
-        WHERE u.tree=? AND {unmapped} AND ({extensions}) AND u.bytes BETWEEN 1 AND 2097152
-        AND coalesce(p.position,0)<u.bytes ORDER BY coalesce(p.checked,0), u.path LIMIT 1""",
-        (tree, *patterns, *("*." + ext for ext in SOURCE_TYPES))).fetchone()
+    eligible = f"{unmapped} AND ({extensions}) AND u.bytes BETWEEN 1 AND 2097152"
+    params = (tree, *patterns, *("*." + ext for ext in SOURCE_TYPES))
+    # An unvisited or invalidated file is due before any previously checked file.
+    # Read in primary-key order so SQLite can stop at the first eligible path.
+    row = db.execute(f"""SELECT u.path,u.bytes,u.sha256,0,NULL FROM files u
+        WHERE u.tree=? AND {eligible} AND NOT EXISTS (
+            SELECT 1 FROM comparison_progress p JOIN files t ON t.tree='Talos' AND t.path=p.target
+            WHERE p.tree=u.tree AND p.path=u.path AND p.source_hash=u.sha256 AND p.target_hash=t.sha256
+        ) ORDER BY u.path LIMIT 1""", params).fetchone()
+    if row is None:
+        # All eligible files have receipts. Rotate only unfinished, current receipts.
+        row = db.execute(f"""SELECT u.path,u.bytes,u.sha256,p.position,p.target
+            FROM comparison_progress p JOIN files u ON u.tree=p.tree AND u.path=p.path AND u.sha256=p.source_hash
+            JOIN files t ON t.tree='Talos' AND t.path=p.target AND t.sha256=p.target_hash
+            WHERE p.tree=? AND {eligible} AND p.position<u.bytes
+            ORDER BY p.checked,p.path LIMIT 1""", params).fetchone()
     if not row:
         return None
     path, size, sha, position, target = row
@@ -58,7 +68,7 @@ def discovery_candidate(db, tree):
     return last, tree, target, path, size, sha, local_sha, position
 
 
-def next_excerpt(db, project=None):
+def next_excerpt(db, project=None, *, mapped_only=False):
     candidates = []
     for tree, pattern, target in AREAS:
         if project and tree != project:
@@ -77,6 +87,8 @@ def next_excerpt(db, project=None):
             if project and last == 0 and pattern in ("src/auto-reply/heartbeat.ts", "cron/missed_runs.py"):
                 return (last, tree, target, *row)
             candidates.append((last, tree, target, *row))
+    if mapped_only:
+        return min(candidates) if candidates else None
     for tree in ([project] if project else sorted({tree for tree, _, _ in AREAS})):
         item = discovery_candidate(db, tree)
         if item:
@@ -135,9 +147,18 @@ def compare(root, state, model, *, infer=infer_local, project=None, observe=None
     path = state / "upstream-inventory.sqlite3"
     if not path.is_file():
         return "Source inventory unavailable"
-    with (state / "upstream-comparison.lock").open("a") as lock:
+    if project is not None and project not in ("OpenClaw", "Hermes"):
+        raise ValueError("Unknown upstream project")
+    with ExitStack() as locks:
+        lock = locks.enter_context((state / "upstream-comparison.lock").open("a"))
         try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # A retirement or an unscoped pass needs both trees. Scoped readers can
+            # run concurrently across projects, with one owner per project cursor.
+            mode = fcntl.LOCK_SH if project else fcntl.LOCK_EX
+            fcntl.flock(lock, mode | fcntl.LOCK_NB)
+            if project:
+                slot = locks.enter_context((state / f"upstream-{project}.lock").open("a"))
+                fcntl.flock(slot, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             return "Source comparison already active"
         with closing(sqlite3.connect(path)) as db, db:
@@ -154,14 +175,15 @@ def compare(root, state, model, *, infer=infer_local, project=None, observe=None
                             DO UPDATE SET bytes=excluded.bytes,sha256=excluded.sha256 WHERE files.sha256!=excluded.sha256""",
                            (target, len(content), hashlib.sha256(content).hexdigest()))
             db.commit()
-            buffering = origin == "respan-upstream-review"
+            delegated = origin in ("OpenCode-section-review", "OpenClaude-section-review")
+            buffering = delegated or origin == "respan-upstream-review"
             if buffering:
                 with open(os.open(state / FILE, os.O_CREAT | os.O_RDWR, 0o600), "r+", encoding="utf-8") as queue:
                     fcntl.flock(queue, fcntl.LOCK_EX)
                     proposed, finished = queue_entries(queue)
                     promote_backlog(db, queue, proposed, finished)
                 db.commit()
-            item = next_excerpt(db, project)
+            item = next_excerpt(db, project, mapped_only=delegated)
             if not item:
                 return "No pending excerpts in eligible indexed sources"
             _, tree, target, rel, size, sha, target_sha, start = item

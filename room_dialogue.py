@@ -5,6 +5,7 @@ import re
 from decimal import Decimal, DecimalException
 from operator import add, mul, sub, truediv
 
+from room_recollection import immediate_recall as immediate_recall
 from local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES
 
 HEARD = "Yes, I can hear you."
@@ -112,18 +113,12 @@ def decision(action, detail, minutes=0):
 
 
 def conversational_correction(text):
-    match = re.match(r"^(?:(?:actually|no|sorry|wait)[, ]+)?i meant\s+(.+?)(?:[.!?,]|$)", text.strip(), re.I)
-    return match[1].strip() if match and len(match[1]) <= 120 else None
-
-
-def immediate_recall(text, history):
-    question = r"(?:what did i just (?:say|ask|tell you)|repeat (?:what i just said|my last question))"
-    if not re.fullmatch(question, text.strip(" .!?"), re.I):
+    # Only a standalone correction can be acknowledged without asking the model.
+    match = re.fullmatch(r"(?:(?:actually|no|sorry|wait)[, ]+)?i meant\s+([^.!?,;]+?)[.!]?", text.strip(), re.I)
+    if not match or len(match[1]) > 120 or re.search(r"\b(?:and|so|but)\s+(?:can|could|would|should|why|how|tell|compare|explain)\b", match[1], re.I):
         return None
-    for item in reversed(history):
-        if item["role"] == "user" and not re.fullmatch(question, item["content"].strip(" .!?"), re.I):
-            return f'You said, “{item["content"][:400]}”'
-    return "I don’t have an earlier turn in this conversation."
+    return match[1].strip()
+
 
 
 def corrected_recollection(text, history):
@@ -182,18 +177,26 @@ def spoken_reply(generate, messages, text, model):
         raw = generate(messages, model=model, schema=schema, max_tokens=192)
         try:
             reply = json.loads(raw)["talos_says"].strip()
-            if not 1 <= len(reply) <= 550:
+            if not 1 <= len(reply) <= 500:
                 raise ValueError
-        except (ValueError, TypeError, KeyError, AttributeError) as error:
-            raise RuntimeError("Invalid spoken reply from the local model.") from error
-        problem = spoken_problem(reply, text, prior)
+            problem = spoken_problem(reply, text, prior)
+        except (ValueError, TypeError, KeyError, AttributeError):
+            problem = "format"
         if not problem:
             return reply
         if attempt == 0:
-            guidance = ("You claimed an action without evidence. Answer using only what the user reported."
-                        if problem == "claim" else "You repeated the speaker. Respond briefly to their specific detail.")
-            messages = [*messages, {"role": "system", "content": guidance}]
-    return "Tell me a little more about that."
+            guidance = {"format": "Return JSON containing only talos_says with one short spoken reply.",
+                        "claim": "Answer using what the speaker reported. Only claim actions with a receipt.",
+                        "echo": "Respond to the speaker's specific detail in your own words."}[problem]
+            messages = with_spoken_instructions(messages, guidance)
+    return "I couldn't put that answer into words. Could you rephrase it?"
+
+
+def with_spoken_instructions(messages, guidance):
+    """Add model guidance while preserving role order and the current request."""
+    if messages and messages[0].get("role") == "system":
+        return [{**messages[0], "content": messages[0]["content"] + " " + guidance}, *messages[1:]]
+    return [{"role": "system", "content": guidance}, *messages]
 
 
 def compact_decision(generate, messages, model, lookups, *, can_search=False, read_only=False):

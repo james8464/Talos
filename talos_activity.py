@@ -176,19 +176,27 @@ def launchd_status(label, interval):
     return "loaded"
 
 
-def snapshot(state, port, *, database=None):
+_WORKER_LOCKS = (("Maintenance", "maintenance"), ("Heartbeat watcher", "heartbeat-watch"),
+                 ("Obsidian publisher", "vault-watch"), ("Respan reviewer", "respan-watch"),
+                 ("OpenCode worker", "section-OpenCode-watch"), ("OpenClaude worker", "section-OpenClaude-watch"))
+
+
+def runtime_locks(state, port=None):
     if port is None:
-        live = sorted(p for p in state.glob("room-*.lock") if lock_state(p) == "running"
-                      and p.stem[5:].isdigit() and 1 <= int(p.stem[5:]) <= 65535)
-        port = int(live[0].stem[5:]) if live else PORT
+        ports = sorted(int(p.stem[5:]) for p in state.glob("room-*.lock") if p.stem[5:].isdigit()
+                       and 1 <= int(p.stem[5:]) <= 65535 and lock_state(p) == "running")
+        port = ports[0] if ports else PORT
+    return (port, lock_state(state / f"room-{port}.lock"),
+            tuple(lock_state(state / f"{key}.lock") for _, key in _WORKER_LOCKS))
+
+
+def service_snapshot(state, locks):
+    port, room_lock, workers = locks
     room_status = probe(port)
-    if not room_status.startswith("running") and lock_state(state / f"room-{port}.lock") == "running":
+    if not room_status.startswith("running") and room_lock == "running":
         room_status = "process running · endpoint " + room_status
-    maintenance = lock_state(state / "maintenance.lock")
-    watcher = lock_state(state / "heartbeat-watch.lock")
-    lines = [f"Room on port {port} · {room_status}", f"Maintenance · {maintenance}",
-             f"Heartbeat watcher · {watcher}", f"Obsidian publisher · {lock_state(state / 'vault-watch.lock')}"]
-    lines.append(f"Respan reviewer · {lock_state(state / 'respan-watch.lock')}")
+    lines = [f"Room on port {port} · {room_status} · process lock {room_lock}"]
+    lines.extend(f"{label} · {status}" for (label, _), status in zip(_WORKER_LOCKS, workers))
     if room_status.startswith("stopped"):
         lines.append("Room voice and message requests are unavailable. Open Start-Talos-Service.command for the always-on room and Respan reviewer.")
     if (state / "respan-review.sqlite3").is_file():
@@ -200,6 +208,79 @@ def snapshot(state, port, *, database=None):
                     lines.append(f"Respan {clean(name)} · {clean(outcome)} · next eligible {next_run}")
         except sqlite3.Error:
             pass
+    section_db = state / "section-reviews.sqlite3"
+    if section_db.is_file():
+        try:
+            with closing(sqlite3.connect(section_db.resolve().as_uri() + "?mode=ro", uri=True, timeout=.15)) as reviews:
+                for engine, due, outcome in reviews.execute("SELECT engine,due,outcome FROM workers ORDER BY engine"):
+                    live = lock_state(state / f"section-{engine}-watch.lock")
+                    lines.append(f"{engine} sections · {live} · {clean(outcome)} · next eligible {datetime.fromtimestamp(due):%H:%M:%S}")
+        except sqlite3.Error:
+            pass
+    return lines
+
+
+def checked_time(seconds):
+    return datetime.fromtimestamp(float(seconds)).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+
+
+def heartbeat_receipts(state):
+    try:
+        with (state / "heartbeat.json").open(encoding="utf-8") as stream:
+            beat = json.loads(stream.read(65536))
+        checked = checked_time(beat["checked_at"])
+        lines = [f"Last heartbeat · {checked} · {clean(beat.get('outcome', 'checked'))}"]
+        if beat.get("source_version") and beat.get("baseline"):
+            at = beat.get("baseline_verified_at")
+            when = checked_time(at) if at else "original run time unavailable"
+            lines.append(f"Local dialogue regression · {clean(beat['baseline'])} · source "
+                         f"{clean(beat['source_version'])[:12]} · {when}")
+        if beat.get("trial") and beat.get("last_result"):
+            lines.append(f"Heartbeat coding trial #{clean(beat['trial'])} · {clean(beat.get('stage', ''))} · "
+                         f"{clean(beat.get('reviewer', ''))} · {clean(beat['last_result'])}")
+        return lines
+    except (OSError, ValueError, OverflowError, KeyError, TypeError):
+        return []
+
+
+def runtime_evidence(state):
+    """Select the latest operational receipt per component even during noisy provider retries."""
+    from mac_context import INDEX_NAME
+    receipts = heartbeat_receipts(state)
+    uri = (state / INDEX_NAME).resolve().as_uri() + "?mode=ro"
+    index_receipt = False
+    try:
+        with closing(sqlite3.connect(uri, uri=True, timeout=.15)) as db:
+            row = db.execute("SELECT checked_at,receipt FROM index_merge_state WHERE singleton=1").fetchone()
+            if row and row[1]:
+                receipts.append(f"Local index maintenance · {checked_time(row[0])} · {clean(row[1])}")
+                index_receipt = True
+    except (OSError, sqlite3.Error, ValueError, OverflowError):
+        pass
+    uri = (state / JOURNAL).resolve().as_uri() + "?mode=ro"
+    try:
+        with closing(sqlite3.connect(uri, uri=True, timeout=.15)) as db:
+            for component, label in (("Index maintenance", "Local index maintenance"),
+                                     ("Migration", "Developer-verified migration")):
+                if component == "Index maintenance" and index_receipt:
+                    continue
+                row = db.execute("SELECT stamp,message FROM events WHERE component=? ORDER BY id DESC LIMIT 1",
+                                 (component,)).fetchone()
+                if row:
+                    receipts.append(f"{label} · {checked_time(row[0])} · {clean(row[1])}")
+            response = db.execute("""SELECT stamp,message FROM events WHERE component='Respan'
+                                   AND message LIKE 'Response from %' ORDER BY id DESC LIMIT 1""").fetchone()
+            if response:
+                receipts.append(f"Last Respan response · {checked_time(response[0])} · {clean(response[1])}")
+            else:
+                receipts.append("Successful Respan responses · none in the retained activity log")
+    except (OSError, sqlite3.Error, ValueError, OverflowError):
+        pass
+    return receipts
+
+
+def snapshot(state, port, *, database=None):
+    lines = service_snapshot(state, runtime_locks(state, port))
     if sys.platform == "darwin" and state.resolve() == STATE:
         from tools.talos_service import LABEL as room_label
         from tools.enable_heartbeat import LABEL as heartbeat_label
@@ -220,13 +301,7 @@ def snapshot(state, port, *, database=None):
                 lines.append(f"Last report · {clean(line)}")
     except (OSError, UnicodeError):
         pass
-    try:
-        with (state / "heartbeat.json").open(encoding="utf-8") as stream:
-            beat = json.loads(stream.read(65536))
-        stamp = datetime.fromtimestamp(float(beat["checked_at"])).astimezone()
-        lines.append(f"Last heartbeat · {stamp:%Y-%m-%d %H:%M:%S %Z} · {clean(beat.get('outcome', 'checked'))}")
-    except (OSError, ValueError, OverflowError, KeyError, TypeError):
-        pass
+    lines.extend(runtime_evidence(state))
     try:
         with (state / "feature-requests.jsonl").open("rb") as queue:
             size = queue.seek(0, os.SEEK_END)
@@ -281,6 +356,7 @@ def display(state, port=None, *, once=False, output=None, database=None, stop=No
     cursor = None
     last_update = 0.
     next_probe = 0.
+    previous_locks = None
     cadence = PollBackoff()
     heading = "Talos activity"
     if not once:
@@ -289,7 +365,9 @@ def display(state, port=None, *, once=False, output=None, database=None, stop=No
     while True:
         now = time.monotonic()
         rows = events(state, cursor)
-        if previous is None or rows or now >= next_probe:
+        locks = runtime_locks(state, port)
+        if previous is None or rows or locks != previous_locks or now >= next_probe:
+            previous_locks = locks
             status = snapshot(state, port, database=database)
             next_probe = now + cadence.record("status", bool(rows) or previous != status, now)
         else:

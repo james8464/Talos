@@ -6,6 +6,7 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
+import routine_controls
 from goal_store import _inbox
 from room_work import saved_brief, topic_terms
 
@@ -47,10 +48,15 @@ def initialize(db):
     db.execute("""CREATE TABLE IF NOT EXISTS recurring_reminders(
         id INTEGER PRIMARY KEY, request_id TEXT UNIQUE, description TEXT NOT NULL, detail TEXT NOT NULL,
         spec TEXT NOT NULL, due TEXT NOT NULL, receipt INTEGER REFERENCES inbox(id), active INTEGER NOT NULL)""")
+    db.execute("""CREATE TABLE IF NOT EXISTS routine_deliveries(
+        routine INTEGER NOT NULL, receipt INTEGER NOT NULL, PRIMARY KEY(routine,receipt)) WITHOUT ROWID""")
 
 
 def handle(db, text, *, voice, apply, request_id=None):
     text = text.strip()
+    if voice:
+        text = re.sub(r"^(?:hey[ ,]+)?talos[ ,]+", "", text, flags=re.I).rstrip(".!? ")
+    text = routine_controls.normalize_clock(text)
     brief = re.fullmatch(r"brief me on (.{1,160}?) every (.+)", text, re.I)
     create = CREATE.fullmatch(
         f"remind me every {brief[2]} to {brief[1]}" if brief else text
@@ -59,43 +65,27 @@ def handle(db, text, *, voice, apply, request_id=None):
     listing = re.fullmatch(
         r"(?:list|show) (?:my )?(?:recurring reminders|routines)[.!?]?", text, re.I
     )
-    cancel = re.fullmatch(
-        r"cancel (?:recurring reminder|routine) #?(\d{1,17})[.!]?", text, re.I
-    )
-    if not (create or listing or cancel):
+    change = routine_controls.CONTROL.fullmatch(text)
+    if not (create or listing or change):
         return None
-    if voice:
-        return {"reply": "Manage recurring reminders in the private message field."}
     initialize(db)
+    if change:
+        return routine_controls.control(db, change, apply=apply, next_due=next_due, request_id=request_id)
     if listing:
+        if voice:
+            active, paused = db.execute("SELECT count(*) FILTER(WHERE active=1), count(*) FILTER(WHERE active=-1) FROM recurring_reminders").fetchone()
+            return {"reply": f"You have {active} active and {paused} paused routines. Details are in the private message field."}
         rows = db.execute(
-            "SELECT id,description,detail FROM recurring_reminders WHERE active=1 ORDER BY due,id"
+            "SELECT id,description,detail,active FROM recurring_reminders WHERE active!=0 ORDER BY due,id"
         )
         return {
             "private": True,
-            "reply": "\n".join(f"#{i} · {d} · {body}" for i, d, body in rows)
+            "reply": "\n".join(f"#{i} · {d} · {body}" + (" · paused" if active == -1 else "") for i,d,body,active in rows)
             or "No active recurring reminders.",
         }
     if not apply:
         return {"reply": "Recurring reminder preview. Changes are off in this room."}
     now = datetime.now(UTC)
-    if cancel:
-        with db:
-            db.execute("BEGIN IMMEDIATE")
-            row = db.execute(
-                "SELECT receipt FROM recurring_reminders WHERE id=? AND active=1",
-                (cancel[1],),
-            ).fetchone()
-            if not row:
-                return {"reply": "No active recurring reminder with that ID."}
-            db.execute(
-                "UPDATE recurring_reminders SET active=0 WHERE id=?", (cancel[1],)
-            )
-            db.execute(
-                "UPDATE inbox SET acknowledged_at=COALESCE(acknowledged_at,?) WHERE id=?",
-                (now.isoformat(), row[0]),
-            )
-        return {"reply": f"Cancelled recurring reminder #{cancel[1]}."}
     day, hour, minute, meridiem, zone, detail = create.groups()
     hour, minute = int(hour), int(minute)
     if minute > 59 or (meridiem and not 1 <= hour <= 12) or hour > 23:
@@ -120,6 +110,11 @@ def handle(db, text, *, voice, apply, request_id=None):
         raise ValueError("Invalid request ID.")
     label = "Scheduled briefing" if brief else "Recurring reminder"
 
+    def confirmation(ident):
+        if voice:
+            return {"reply": f"Scheduled routine number {ident}. {description}."}
+        return {"private": True, "reply": f"{label} #{ident} · {description} · {detail}"}
+
     def existing_receipt():
         if request_id is None:
             return None
@@ -130,7 +125,7 @@ def handle(db, text, *, voice, apply, request_id=None):
             return None
         if (prior[1], prior[2]) != (description, detail):
             raise ValueError("Request ID already used for another recurrence.")
-        return {"private": True, "reply": f"{label} #{prior[0]} · {description} · {detail}"}
+        return confirmation(prior[0])
 
     prior = existing_receipt()
     if prior is not None:
@@ -160,7 +155,8 @@ def handle(db, text, *, voice, apply, request_id=None):
                 receipt,
             ),
         ).lastrowid
-    return {"private": True, "reply": f"{label} #{ident} · {description} · {detail}"}
+        routine_controls.track_delivery(db, ident, receipt)
+    return confirmation(ident)
 
 
 def advance(db, now):
@@ -169,11 +165,13 @@ def advance(db, now):
     ).fetchone():
         return
     rows = db.execute(
-        "SELECT id,detail,spec,due FROM recurring_reminders WHERE active=1 AND due<=? ORDER BY due,id LIMIT 8",
+        "SELECT id,detail,spec,due,receipt FROM recurring_reminders WHERE active=1 AND due<=? ORDER BY due,id LIMIT 8",
         (now.isoformat(),),
     ).fetchall()
     next_by_spec = {}
-    for ident, detail, spec, previous in rows:
+    if rows:
+        initialize(db)
+    for ident, detail, spec, previous, previous_receipt in rows:
         schedule = json.loads(spec)
         if spec not in next_by_spec:
             next_by_spec[spec] = next_due(schedule, now)
@@ -184,6 +182,9 @@ def advance(db, now):
                 "UPDATE recurring_reminders SET due=? WHERE id=? AND active=1 AND due=?",
                 (due.isoformat(), ident, previous),
             ).rowcount:
+                db.execute("""DELETE FROM routine_deliveries WHERE routine=? AND receipt IN
+                              (SELECT id FROM inbox WHERE id=routine_deliveries.receipt AND acknowledged_at IS NOT NULL)""", (ident,))
+                routine_controls.track_delivery(db,ident,previous_receipt)
                 if schedule.get("talosAction") == "brief":
                     summary = saved_brief(db, detail)["reply"]
                     receipt = _inbox(
@@ -193,6 +194,7 @@ def advance(db, now):
                     receipt = _inbox(
                         db, "reminder", detail, due, now, event_kind="private_recurring"
                     )
+                routine_controls.track_delivery(db,ident,receipt)
                 db.execute(
                     "UPDATE recurring_reminders SET receipt=? WHERE id=?",
                     (receipt, ident),

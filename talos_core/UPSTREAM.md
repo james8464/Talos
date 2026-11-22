@@ -102,3 +102,11 @@ The behavior replays are in `tests/test_proactive_review.py`. Set `TALOS_TEST_KO
 The terminal uses the per-command polling schedule from OpenClaw's `src/agents/command-poll-backoff.ts`. Status probes slow down after quiet polls while journal events continue to appear every two seconds. The model supervisor uses full-jitter reconnect delays from Hermes's `apps/shared/src/reconnect-backoff.ts` and resets its retry ladder only after five seconds of readiness.
 
 Run `python3 tools/retire_upstream.py` to replay the integrated behaviors, check the pinned hashes and retire the six allowlisted files. Four are byte-identical scheduling helpers already shipped by Talos. Each original is recoverable at `state/.migrated-upstream/<project>/<sha256>/<original path>`. Downloaded trees are partial source references after retirement. To rebuild an intact upstream checkout, restore the archived files to their original paths or extract the pinned release again. No upstream remote repository is modified.
+
+## Voice and background behavior ports
+
+- OpenClaw's `src/cron/service/jobs.ts` and `jobs-scheduling.ts` informed Talos's durable pause and resume controls. Spoken requests can select a routine by exact subject or spoken number. Resuming computes its next future occurrence. The regressions exercise restart, ambiguous subjects, cancellation, and a synthesized and recognized spoken request.
+- OpenClaw's `src/auto-reply/heartbeat.ts` and `tokens.ts` distinguish quiet acknowledgments from substantive reports. Talos preserves verified JSON proposals and handles acknowledgment tokens at the edges, including markup and UTF-16 length boundaries.
+- Hermes's `tools/session_search_tool.py` provides anchored windows around matching conversation turns. Talos applies the idea to a bounded, expiring voice session. It quotes the requested speaker or exchange and keeps the ordinary model prompt short.
+
+These are partial ports. The remaining code in the pinned source files stays available for further comparison.

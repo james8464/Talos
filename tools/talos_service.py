@@ -13,7 +13,7 @@ LABEL = "local.talos.room"
 LAUNCHCTL = "/bin/launchctl"
 
 
-def configuration(root=ROOT, *, respan=False):
+def configuration(root=ROOT, *, respan=False, sections=False):
     # Adapted from OpenClaw's launchd-plist.ts. See talos_core/LICENSE-OpenClaw.
     state = root / "state"
     local_python = state / "kokoro-env" / "bin" / "python"
@@ -21,7 +21,8 @@ def configuration(root=ROOT, *, respan=False):
     return {
         "Label": LABEL,
         "ProgramArguments": [str(python), str(root / "run_talos.py"),
-                             "--headless", "--offline", "--system-voice", *(["--respan-reviews"] if respan else [])],
+                             "--headless", "--offline", "--system-voice", *(["--respan-reviews"] if respan else []),
+                             *(["--section-reviews"] if sections else [])],
         "WorkingDirectory": str(root),
         "EnvironmentVariables": {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"},
         "RunAtLoad": True,
@@ -40,9 +41,9 @@ def launchctl(*args, check=False, capture=False):
     return subprocess.run([LAUNCHCTL, *args], check=check, capture_output=capture)
 
 
-def install(plist, domain, *, respan=False):
+def install(plist, domain, *, respan=False, sections=False):
     service = f"{domain}/{LABEL}"
-    data = plistlib.dumps(configuration(respan=respan))
+    data = plistlib.dumps(configuration(respan=respan, sections=sections))
     loaded = launchctl("print", service, capture=True).returncode == 0
     changed = not plist.is_file() or plist.read_bytes() != data
     if loaded and not changed:
@@ -70,18 +71,19 @@ def install(plist, domain, *, respan=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("print", "install", "status", "stop"))
+    parser.add_argument("--section-reviews", action="store_true", help="Start OpenCode and OpenClaude section workers at login.")
     parser.add_argument("--respan-reviews", action="store_true", help="Run the Respan reviewer with the room at login.")
     args = parser.parse_args()
     action = args.action
     if action == "print":
-        sys.stdout.buffer.write(plistlib.dumps(configuration(respan=args.respan_reviews)))
+        sys.stdout.buffer.write(plistlib.dumps(configuration(respan=args.respan_reviews, sections=args.section_reviews)))
         return 0
     domain = f"gui/{os.getuid()}"
     service = f"{domain}/{LABEL}"
     plist = Path.home() / "Library" / "LaunchAgents" / (LABEL + ".plist")
     try:
         if action == "install":
-            install(plist, domain, respan=args.respan_reviews)
+            install(plist, domain, respan=args.respan_reviews, sections=args.section_reviews)
             print(f"Registered {LABEL}.")
         elif action == "status":
             return launchctl("print", service).returncode

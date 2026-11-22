@@ -239,6 +239,27 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
     }
     private(set) var draftContainsVoice = false
+    var draftLimit: Int { 800 }
+    private var dictationStart: (text: String, voice: Bool)?
+    
+    func submitDraft() {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !busy, !speaking, !dictating, !text.isEmpty, draft.unicodeScalars.count <= draftLimit else { return }
+        send(text, source: draftContainsVoice ? "voice" : "text")
+        draft = ""
+    }
+    
+    func cancelDictation() {
+        guard dictating else { return }
+        stopRecognition()
+        captureMode = .room
+        if let saved = dictationStart {
+            draft = saved.text
+            draftContainsVoice = saved.voice
+        }
+        dictationStart = nil
+        beginRecognition()
+    }
     @Published private var captureMode = VoiceCaptureMode.room
     var dictating: Bool { captureMode != .room }
     @Published var occupancy = "Camera off"
@@ -247,12 +268,13 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var voiceLabel = "Voice: connecting"
     @Published var liveTranscript = ""
     @Published var lastTiming = ""
-    private let startupLine = "Talos online. I was beginning to think you had forgotten me."
     private var kokoroVoice: String?
     #if TALOS_CONTROLLER_REPLAY
     // Test binaries can render into a silent sink on hosts without an audio device.
     var replayClip: ((Data) throws -> Void)?
     var replayStop: (() -> Void)?
+    var replayUtterance: ((String) -> Void)?
+    func replayCaption(_ text: String) { commitVoice(text) }
     #endif
     private var streamID: String?
     private var streamTask: Task<Void, Never>?
@@ -275,11 +297,27 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
     private lazy var calendar = MeetingCalendar()
     let client: RoomClient?
+    @Published var reviewingPlan = false
     private var vaultURL: URL? {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "--token-file"), args.indices.contains(i+1) else { return nil }
         return URL(fileURLWithPath: args[i+1]).deletingLastPathComponent().appendingPathComponent("Talos Memory")
     }
+    func openLiveActivity() {
+        guard let state = vaultURL?.deletingLastPathComponent() else { return }
+        let note = state.appendingPathComponent("Talos live.md")
+        guard FileManager.default.fileExists(atPath: note.path) else {
+            status = "Start the Talos memory workers to publish the live activity note."
+            return
+        }
+        var url = URLComponents()
+        url.scheme = "obsidian"
+        url.host = "open"
+        url.queryItems = [URLQueryItem(name: "path", value: note.path)]
+        if let link = url.url, NSWorkspace.shared.open(link) { return }
+        NSWorkspace.shared.open(note)
+    }
+
     func openVault() {
         guard let url = vaultURL else { return }
         do {
@@ -422,11 +460,17 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var facingOffer: String?
     private var facingContext: String?
     private var facingSince: TimeInterval?
+    private var continuation: SpokenContinuation?
+    private var conversationLastTurn: TimeInterval?
     @Published var conversationStarted: TimeInterval?
     private func conversationActive(_ now: TimeInterval) -> Bool {
-        conversationStarted.map { now - $0 < 90 } ?? false
+        guard let start = conversationStarted else { return false }
+        return now - max(start, conversationLastTurn ?? start) < 90
     }
     func toggleConversation() {
+        guard client != nil else { status = "Connect to the Talos service first."; return }
+        continuation = nil
+        conversationLastTurn = nil
         focus.clear()
         facingOffer = nil
         facingContext = nil
@@ -449,7 +493,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var playbackText = ""
     private var interruptedPlayback = ""
     private var openFocusAfterPlayback = false
-    @Published var useLocalTurnModel = false
+    @Published var useLocalTurnModel = false {
+        didSet { if !isTrial { UserDefaults.standard.set(useLocalTurnModel, forKey: "roomPauseModel") } }
+    }
     private var recognitionFailures = 0
     private var microphoneStarting = false
     private var cameraStarting = false
@@ -479,6 +525,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         if !isTrial { rememberVisitors = UserDefaults.standard.object(forKey: "rememberVisitors") as? Bool ?? false }
         if !isTrial { rememberVoice = UserDefaults.standard.bool(forKey: "rememberVoiceTranscripts") }
         if !isTrial { speakUnprompted = UserDefaults.standard.bool(forKey: "speakUnprompted") }
+        if !isTrial { useLocalTurnModel = UserDefaults.standard.bool(forKey: "roomPauseModel") }
         privateSources.client = client
         goals.client = client
         speaker.delegate = self
@@ -511,15 +558,15 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                                 status = "Practice room · temporary inbox"
                                 addLine("Trial", "Switch the microphone on when ready. Try a pause, a correction, a side conversation, and an interruption. Timing appears after a spoken reply.")
                             } else {
-                                addLine("Talos", startupLine)
                                 status = "Room ready"
                                 startRoom()
                             }
                         }
                     } catch { status = error.localizedDescription }
                 }
-                if conversationStarted != nil && !conversationActive(ProcessInfo.processInfo.systemUptime) {
+                if conversationStarted != nil && !speaking && !busy && !conversationActive(ProcessInfo.processInfo.systemUptime) {
                     conversationStarted = nil
+                    continuation = nil
                     facingOffer = nil
                     facingContext = nil
                 }
@@ -532,7 +579,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
 
     func startRoom() {
         if !microphone { toggleMicrophone() }
-        if !cameraRunning { toggleCamera() }
+        if acceptFacing && !cameraRunning { toggleCamera() }
     }
 
     func toggleMicrophone() {
@@ -541,6 +588,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             facingOffer = nil
             openFocusAfterPlayback = false
             microphone = false
+            dictationStart = nil
+            continuation = nil
             conversationStarted = nil
             leaveVisitor()
             captureMode = .room
@@ -558,10 +607,16 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
             }
             guard permitted && speechStatus == .authorized else {
+                captureMode = .room
+                dictationStart = nil
+                conversationStarted = nil
                 status = "Allow microphone and speech recognition in System Settings."
                 return
             }
             guard let recognizer, recognizer.supportsOnDeviceRecognition else {
+                captureMode = .room
+                dictationStart = nil
+                conversationStarted = nil
                 status = "On-device speech recognition is unavailable for this Mac's language."
                 return
             }
@@ -765,7 +820,17 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     func toggleDictation() {
-        guard microphone, !busy, !speaking, captureMode != .finishingDraft else { return }
+        continuation = nil
+        guard !busy, !speaking, captureMode != .finishingDraft else { return }
+        if !dictating {
+            guard client != nil else { status = "Connect to the Talos service first."; return }
+            dictationStart = (draft, draftContainsVoice)
+            if !microphone {
+                captureMode = .dictation
+                toggleMicrophone()
+                return
+            }
+        }
         if dictating && recognition != nil {
             captureMode = .finishingDraft
             finishCapture()
@@ -790,6 +855,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             return
         }
         if captureMode.appendFinalToDraft(finalText, draft: &draft) {
+            if !dictating { dictationStart = nil }
             draftContainsVoice = true
             stopRecognition()
             beginRecognition()
@@ -800,8 +866,26 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         let identified = profileForTurn(at: now)
         let personal = identified != nil && finalText.range(of: #"(?i)\b(?:i|my|we|our)\b|^what (?:did i|do you)"#, options: .regularExpression) != nil
         let focused = focus.request(finalText, at: now)
-        let useFacing = focused == nil && (personal || facingRequest(finalText, at: now))
-        let request = focused ?? (useFacing ? finalText : nil)
+        var useFacing = focused == nil && (personal || facingRequest(finalText, at: now))
+        var request = focused ?? (useFacing ? finalText : nil)
+        if let saved = continuation {
+            if identified != nil || now > saved.expires || saved.conversation != conversationStarted {
+                continuation = nil
+            } else if let response = saved.response(to: finalText, at: now, conversation: conversationStarted) {
+                continuation = nil
+                switch response {
+                case .cancelled:
+                    addLine("Talos", "Request cancelled.")
+                    say("Request cancelled.")
+                    return
+                case .completed(let completed):
+                    request = completed
+                    useFacing = saved.viaFacing
+                }
+            } else if request != nil {
+                continuation = nil
+            }
+        }
         if request == "" {
             focus.open(at: now, question: false, called: true)
         }
@@ -810,9 +894,20 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             beginRecognition()
             return
         }
+        if conversationStarted != nil {
+            if text.range(of: #"(?i)^(?:end (?:this |the |our )?conversation|stop listening to this conversation)[.!? ]*$"#,
+                          options: .regularExpression) != nil {
+                toggleConversation()
+                addLine("Talos", "Conversation ended.")
+                say("Conversation ended.")
+                return
+            }
+            conversationLastTurn = now
+        }
         if !useFacing, roomRequest(finalText) != nil,
            text.range(of: #"(?i)^(?:can we talk|let['’]s (?:talk|chat)|start a conversation)[?.! ]*$"#, options: .regularExpression) != nil {
-            conversationStarted = ProcessInfo.processInfo.systemUptime
+            conversationLastTurn = nil
+            conversationStarted = now
             focus.clear()
             facingOffer = nil
             facingContext = nil
@@ -823,16 +918,12 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         if !useFacing { facingOffer = nil; facingContext = nil }
         let followUp = focus.isFollowUp(finalText, at: now) || (!interruptedPlayback.isEmpty && roomRequest(finalText) == nil)
         focus.clear()
-        if !useFacing && needsContinuation(text) && text.range(of: #"(?i)^(?:(?:please|could you|can you) )?(?:remind|add|create|save|make a note|record)\b"#, options: .regularExpression) != nil {
-            if draft.isEmpty {
-                draft = text
-                draftContainsVoice = true
-                addLine("Talos", "I heard part of a request. Finish it in the message field or use Dictate a message.")
-            } else {
-                addLine("Talos", "I heard only part of that request. Please repeat it.")
-            }
-            stopRecognition()
-            beginRecognition()
+        if identified == nil, (!useFacing || conversationStarted != nil),
+           let partial = SpokenContinuation(text, at: now, conversation: conversationStarted, viaFacing: useFacing) {
+            continuation = partial
+            let question = "Say continue, followed by the rest of your request, or say cancel that request."
+            addLine("Talos", question)
+            say(question)
         } else if text.count > 800 {
             stopRecognition()
             addLine("Talos", "That turn was too long. Could you split it into two?")
@@ -1265,6 +1356,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func say(_ text: String, id: Int? = nil, turnStart: Date? = nil) {
+        #if TALOS_CONTROLLER_REPLAY
+        if let replayUtterance { replayUtterance(text); return }
+        #endif
         speaking = true
         playbackText = text
         speechID = id
@@ -1346,6 +1440,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         speechID = nil
         systemUtterance = nil
         if !keepListening { stopRecognition() }
+        if delivered && conversationStarted != nil { conversationLastTurn = ProcessInfo.processInfo.systemUptime }
         if openFocusAfterPlayback {
             focus.open(at: ProcessInfo.processInfo.systemUptime, question: playbackText.contains("?"))
         }
@@ -1405,116 +1500,6 @@ struct CameraPreview: NSViewRepresentable {
     }
 }
 
-struct RoomView: View {
-    @ObservedObject var room: RoomController
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(room.isTrial ? "Talos practice room" : "Talos").font(.largeTitle.bold())
-            Text(room.status).foregroundStyle(.secondary)
-            HStack {
-                Text(room.voiceLabel)
-                if !room.modelState.isEmpty { Text("Model: \(room.modelState)") }
-                if !room.lastTiming.isEmpty { Text(room.lastTiming) }
-            }.font(.caption).foregroundStyle(.secondary)
-            HStack {
-                Button(room.conversationStarted == nil ? "Talk for 90 seconds" : "End conversation", action: room.toggleConversation)
-                    .disabled(room.busy || room.speaking)
-                Button(room.microphone ? "Microphone on" : "Microphone off", action: room.toggleMicrophone)
-                if room.microphone {
-                    Button(room.dictating ? "Finish dictation" : "Dictate a message", action: room.toggleDictation)
-                        .disabled(room.busy || room.speaking)
-                }
-                Button(room.cameraRunning ? "Camera on" : "Camera off", action: room.toggleCamera)
-                Button("Goals") { room.goals.open(); room.presentGoals = true }
-                Menu("Memory") {
-                    Button("Private sources and commitments") { room.presentSources = true }
-                    Button("Open memory folder", action: room.openVault)
-                    ForEach(room.profiles, id: \.id) { profile in
-                        Button("Forget visual reference for " + profile.name) { room.forgetCandidate = profile }
-                    }
-                }
-                Button("Next meeting brief") { room.showMeetingBrief(.upcoming) }
-                    .disabled(room.isTrial || room.busy || room.speaking || room.dictating)
-                if room.speaking { Button("Stop speaking", action: room.stopSpeaking) }
-            }
-            if room.microphone {
-                Text(room.dictating ? "Pause as needed. Finish dictation, review the message, then send." :
-                     (room.acceptFacing && room.cameraRunning ? "Face the Mac to ask a question, or say “Hey Talos”." : "Start a hands-free request with “Hey Talos”.")).font(.caption)
-            }
-            if let session = room.previewSession {
-                HStack(alignment: .center, spacing: 16) {
-                    CameraPreview(session: session)
-                        .frame(width: 224, height: 126)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Live camera").font(.headline)
-                        Text(room.occupancy).foregroundStyle(.secondary)
-                        Text(room.acceptFacing ? "Facing detection · visual questions use one local frame" : "Visual questions use one local frame").font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            if !room.liveTranscript.isEmpty {
-                Text("Hearing: \(room.liveTranscript)").foregroundStyle(.secondary)
-            }
-            if room.draft.count > 800 {
-                Text("Shorten the message to 800 characters before sending.").font(.caption)
-            }
-            Toggle("Accept direct requests while one person faces the Mac", isOn: $room.acceptFacing)
-            Toggle("Offer introductions and remember consenting visitors", isOn: $room.rememberVisitors)
-                .disabled(!room.acceptFacing)
-            Toggle("Use local model for mid-sentence pauses", isOn: $room.useLocalTurnModel)
-            Toggle("Speak proactive updates and introductions", isOn: $room.speakUnprompted)
-            Toggle("Remember voice transcripts", isOn: $room.rememberVoice)
-            if let name = room.visitorName { Text("Remembering this conversation with " + name).font(.caption) }
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(Array(room.lines.enumerated()), id: \.offset) { _, line in
-                            Text(line).textSelection(.enabled)
-                        }
-                        Color.clear.frame(height: 1).id("end")
-                    }.frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .onChange(of: room.lines) { _, _ in proxy.scrollTo("end", anchor: .bottom) }
-            }
-            if room.workPlanID != nil {
-                VStack(alignment: .leading) {
-                    Text("Proposed local changes").font(.headline)
-                    ForEach(Array(room.workPlanLines.enumerated()), id: \.offset) { _, line in Text(line) }
-                    if !room.remainingWork.isEmpty { Text("Still open: \(room.remainingWork)") }
-                    HStack {
-                        Button("Apply listed steps", action: room.applyPlan).disabled(room.workPlanLines.isEmpty || room.busy || room.speaking || room.dictating)
-                        Button("Dismiss", action: room.dismissPlan).disabled(room.busy)
-                    }
-                }
-            }
-            HStack {
-                TextField("Message Talos", text: $room.draft).onSubmit(submit)
-                Button("Preview plan", action: room.previewDraft)
-                    .disabled(room.busy || room.speaking || room.dictating || room.draftContainsVoice || room.draft.isEmpty || room.draft.count > 800)
-                Button("Send", action: submit).disabled(room.busy || room.speaking || room.dictating || room.draft.isEmpty || room.draft.count > 800)
-            }
-        }
-        .padding(24)
-        .frame(minWidth: 660, minHeight: 440)
-        .alert("Forget this visual reference?", isPresented: Binding(get: { room.forgetCandidate != nil },
-                set: { if !$0 { room.forgetCandidate = nil } }), presenting: room.forgetCandidate) { profile in
-            Button("Forget reference", role: .destructive) { room.forgetReference(profile) }
-            Button("Cancel", role: .cancel) { }
-        } message: { profile in Text("Talos will stop suggesting " + profile.name + " from the camera. Saved conversation notes will remain.") }
-        .sheet(isPresented: $room.presentGoals, onDismiss: { room.goals.showing = false }) { GoalPanel(goals: room.goals) }
-        .sheet(isPresented: $room.presentSources) { PrivateSources(model: room.privateSources) }
-        .task { room.connect() }
-    }
-
-    private func submit() {
-        guard !room.busy, !room.speaking, !room.dictating, room.draft.count <= 800 else { return }
-        room.send(room.draft, source: room.draftContainsVoice ? "voice" : "text")
-        room.draft = ""
-    }
-}
-
 final class TalosAppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }
@@ -1528,5 +1513,7 @@ struct TalosApp: App {
 
     var body: some Scene {
         Window("Talos", id: "room") { RoomView(room: room) }
+            .defaultSize(width: 580, height: 540)
+        Settings { RoomSettings(room: room) }
     }
 }

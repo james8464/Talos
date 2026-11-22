@@ -257,13 +257,16 @@ def run_trial(args) -> None:
                 app_process.wait(timeout=5)
 
 
-def start_memory_workers(model, *, local_only, children, respan=False, room_owner=False):
+def start_memory_workers(model, *, local_only, children, respan=False, room_owner=False, sections=False):
     heartbeat = ["overnight_goal.py", "--heartbeat", "--watch", "--model", model]
     if local_only:
         heartbeat.append("--local-only")
     workers = [heartbeat, ["vault_watch.py"], ["maintenance.py", "--model", model]]
     if respan:
         workers.append(["respan_worker.py", *(["--room-owner"] if room_owner else [])])
+    if sections:
+        workers.extend(["section_workers.py", "--engine", engine, *(["--room-owner"] if room_owner else [])]
+                       for engine in ("OpenCode", "OpenClaude"))
     for script, *options in workers:
         children.append(subprocess.Popen([sys.executable, str(ROOT / script), *options]))
 
@@ -288,6 +291,7 @@ def main() -> int:
     parser.add_argument("--system-voice", action="store_true", help="Use the macOS voice without Kokoro.")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--ollama-port", type=int, default=11435)
+    parser.add_argument("--section-reviews", action="store_true", help="Run OpenCode and OpenClaude source-section reviews in the background.")
     parser.add_argument("--respan-reviews", action="store_true", help="Enable scheduled Respan source and anonymized graph review even with offline room turns.")
     parser.add_argument("--offline", action="store_true", help="Require an already downloaded model.")
     parser.add_argument("--attach", action="store_true", help="Open the native app against a running Talos service.")
@@ -309,7 +313,7 @@ def main() -> int:
             if args.shadow or args.build_only or args.room_trial:
                 raise ValueError("Memory-only mode runs the live memory workers. Choose one launch mode.")
             os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
-            start_memory_workers(args.model, local_only=args.offline, children=children, respan=args.respan_reviews or not args.offline)
+            start_memory_workers(args.model, local_only=args.offline, children=children, sections=args.section_reviews, respan=args.respan_reviews or not args.offline)
             talos_activity.display(STATE, args.port, stop=activity_stop)
             return 0
         if args.room_trial:
@@ -340,7 +344,7 @@ def main() -> int:
         backend = ProjectModel(args.model, args.ollama_port, args.offline)
         backend.worker.start()
         if not args.shadow:
-            start_memory_workers(args.model, local_only=args.offline, children=children, respan=args.respan_reviews or not args.offline, room_owner=True)
+            start_memory_workers(args.model, local_only=args.offline, children=children, sections=args.section_reviews, respan=args.respan_reviews or not args.offline, room_owner=True)
 
         def launch_app() -> None:
             nonlocal viewer

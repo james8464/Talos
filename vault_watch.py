@@ -6,12 +6,13 @@ import sys
 import time
 from pathlib import Path
 from datetime import datetime
+from contextlib import closing
 
 import knowledge_map
 import mac_context
 from feature_targets import FILE
 from maintenance_schedule import stamp
-from talos_activity import JOURNAL, record
+from talos_activity import JOURNAL, checked_time, record, runtime_evidence, runtime_locks, service_snapshot
 from vault_graph import MARKER, ROOT, code_name, link, publish_code, source_files, write_note
 
 
@@ -28,31 +29,44 @@ class VaultPublisher:
         self.source_stamps = None
         self.cache = {}
         self.live_stamps = None
+        self.next_live_pulse = 0.
 
     def publish_live(self):
         journal = self.state / JOURNAL
-        stamps = tuple(stamp(p) for p in (journal, self.state / (JOURNAL + "-wal"), self.folder, self.state / "Talos migrations.md"))
-        if stamps == self.live_stamps:
+        watched = [self.folder, self.state / "Talos migrations.md", self.state / "heartbeat.json"]
+        for name in (JOURNAL, "section-reviews.sqlite3", "respan-review.sqlite3", mac_context.INDEX_NAME):
+            watched.extend((self.state / name, self.state / (name + "-wal")))
+        locks = runtime_locks(self.state)
+        stamps = (tuple(stamp(p) for p in watched), locks)
+        now = time.monotonic()
+        if stamps == self.live_stamps and now < self.next_live_pulse:
             return
-        lines = [MARKER, "# Talos live", ""]
+        lines = [MARKER, "# Talos live", "", f"Status sampled {checked_time(time.time())}", "", "## Services", ""]
+        lines.extend(f"    {line}" for line in service_snapshot(self.state, locks))
+        lines.extend(("", "## Latest results", ""))
+        receipts = runtime_evidence(self.state)
+        lines.extend(f"    {line}" for line in (receipts or ["Waiting for the first runtime receipt."]))
+        lines.extend(("", "## Knowledge graph", ""))
         for name in ("Talos memory map", "Project connections", "Code index", "Development history", "Recent source edits"):
             if (self.folder / (name + ".md")).is_file():
                 lines.append(f"- [[Talos Memory/Talos maps/{name}|{name}]]")
         if (self.state / "Talos migrations.md").is_file():
             lines.append("- [[Talos migrations|Verified upstream migrations]]")
         if journal.is_file():
-            from contextlib import closing
-            with closing(sqlite3.connect(journal.resolve().as_uri() + "?mode=ro", uri=True, timeout=.2)) as db:
-                if db.execute("SELECT 1 FROM sqlite_master WHERE name='events'").fetchone():
+            try:
+                with closing(sqlite3.connect(journal.resolve().as_uri() + "?mode=ro", uri=True, timeout=.2)) as db:
                     rows = db.execute("""SELECT stamp,component,message FROM events
-                        WHERE component IN ('Respan','Model','Migration') ORDER BY id DESC LIMIT 8""").fetchall()
-                    if rows:
-                        lines.extend(("", "## Latest reviewer and model activity", ""))
-                    for timestamp, component, message in rows:
-                        clock = datetime.fromtimestamp(timestamp).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
-                        lines.append(f"    {clock}  {component}  {' '.join(message.splitlines())}")
+                        WHERE component IN ('Respan','Model','OpenCode','OpenClaude','Index maintenance')
+                        ORDER BY id DESC LIMIT 8""").fetchall()
+            except sqlite3.Error:
+                rows = []
+            if rows:
+                lines.extend(("", "## Recent worker activity", ""))
+            for timestamp, component, message in rows:
+                lines.append(f"    {checked_time(timestamp)}  {component}  {' '.join(message.splitlines())}")
         write_note(self.state / "Talos live.md", "\n".join(lines) + "\n", managed=True)
         self.live_stamps = stamps
+        self.next_live_pulse = now + 60
 
     def poll(self):
         stamps = {p: stamp(p) for p in source_files(self.root)}

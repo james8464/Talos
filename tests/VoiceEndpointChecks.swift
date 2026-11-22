@@ -35,6 +35,14 @@ struct VoiceEndpointChecks {
 
     @MainActor
     static func main() throws {
+        let partialRequest = SpokenContinuation("remind me in five minutes to", at: 100, conversation: 95, viaFacing: true)!
+        precondition(partialRequest.response(to: "continue check the oven", at: 105, conversation: 95)
+                     == .completed("remind me in five minutes to check the oven"))
+        precondition(partialRequest.response(to: "Hey Talos, never mind.", at: 101, conversation: 95) == .cancelled)
+        precondition(partialRequest.response(to: "continue check the oven", at: 131, conversation: 95) == nil)
+        precondition(partialRequest.response(to: "continue check the oven", at: 105, conversation: 97) == nil)
+        precondition(partialRequest.response(to: "unaddressed conversation", at: 105, conversation: 95) == nil)
+        precondition(SpokenContinuation("tell me about", at: 100, conversation: nil, viaFacing: false) == nil)
         checkSpeechInputFormats()
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Paris")!

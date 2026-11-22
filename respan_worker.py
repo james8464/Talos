@@ -11,6 +11,7 @@ from pathlib import Path
 import graph_review
 from room_research import FREE_MODEL, respan_completion
 from talos_activity import lock_state, record
+from talos_core.review_ack import review_content
 from upstream_comparison import compare
 from upstream_review import inventory
 
@@ -28,8 +29,8 @@ SOURCE_PROMPT = (
 
 
 def source_response(complete, prompt):
-    response = complete(SOURCE_PROMPT, prompt)
-    if response.strip() in ("HEARTBEAT_OK", "NO_REPLY"):
+    response = review_content(complete(SOURCE_PROMPT, prompt))
+    if response is None:
         return json.dumps(dict.fromkeys(("upstream_quote", "talos_quote", "feature", "acceptance"), ""))
     return response
 

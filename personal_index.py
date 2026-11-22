@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import mac_context
+import memory_connections
 import personal_files
 import knowledge_sources
 
@@ -137,6 +138,45 @@ def refresh_source(db, app, source):
                (src, app, stamp, count, json.dumps(relatives)))
 
 
+def store_import_count(db, source, app, count):
+    signature = memory_connections.CATALOG_SIGNATURE if app == "Projects" else ""
+    db.execute("""INSERT INTO source_summary VALUES(?,?,?,?,'[]') ON CONFLICT(source)
+                  DO UPDATE SET app=excluded.app,signature=excluded.signature,count=excluded.count,relatives='[]'
+                  WHERE (app,signature,count,relatives) IS NOT (excluded.app,excluded.signature,excluded.count,'[]')""",
+               (source, app, signature, count))
+
+
+def refresh_import(db, app, source, records):
+    """Reconcile one exported source while retaining FTS rowids used by evidence receipts."""
+    db.execute("CREATE TEMP TABLE IF NOT EXISTS import_rows(record, body)")
+    db.execute("""CREATE TEMP TABLE IF NOT EXISTS import_matches(
+        record, ordinal INTEGER, old_id INTEGER, new_id INTEGER, PRIMARY KEY(record,ordinal))""")
+    db.execute("DELETE FROM import_rows")
+    db.execute("DELETE FROM import_matches")
+    count = db.executemany("INSERT INTO import_rows VALUES(?,?)", records).rowcount
+    if app == "Projects":
+        memory_connections.update_project_catalog(db, source, db.execute("SELECT record FROM import_rows"))
+
+    # Exports can repeat a key. Match each occurrence in input order, including on
+    # migration from an older index. Staging in SQLite keeps large texts off the heap.
+    db.execute("""INSERT INTO import_matches(record,ordinal,old_id)
+                  SELECT record,row_number() OVER (PARTITION BY record ORDER BY rowid),rowid
+                  FROM personal WHERE source=?""", (source,))
+    db.execute("""INSERT INTO import_matches(record,ordinal,new_id)
+                  SELECT record,row_number() OVER (PARTITION BY record ORDER BY rowid),rowid
+                  FROM import_rows WHERE true
+                  ON CONFLICT(record,ordinal) DO UPDATE SET new_id=excluded.new_id""")
+    db.execute("""DELETE FROM personal WHERE rowid IN (
+                  SELECT old_id FROM import_matches WHERE new_id IS NULL)""")
+    db.execute("""UPDATE personal SET body=n.body
+                  FROM import_matches m JOIN import_rows n ON n.rowid=m.new_id
+                  WHERE personal.rowid=m.old_id AND personal.body IS NOT n.body""")
+    db.execute("""INSERT INTO personal(app,source,record,body)
+                  SELECT ?,?,n.record,n.body FROM import_matches m JOIN import_rows n ON n.rowid=m.new_id
+                  WHERE m.old_id IS NULL ORDER BY n.rowid""", (app, source))
+    return count
+
+
 def search_terms(query):
     query = query.replace("“", '"').replace("”", '"')
     if query.count('"') % 2:
@@ -208,6 +248,7 @@ def sync(state, library, query=None, app_filter=None, *, files_home=None, knowle
         db.execute("BEGIN IMMEDIATE")
         db.execute("""CREATE VIRTUAL TABLE IF NOT EXISTS personal USING fts5(
             app UNINDEXED, source UNINDEXED, record UNINDEXED, body, tokenize='unicode61')""")
+        memory_connections.ensure_project_catalog(db)
         enabled = mac_context.enabled(state)
         db.execute("""CREATE TABLE IF NOT EXISTS indexed_sources(
             source TEXT PRIMARY KEY, signature TEXT NOT NULL)""")
@@ -237,14 +278,12 @@ def sync(state, library, query=None, app_filter=None, *, files_home=None, knowle
             files_home = library.parent
         if files_home is not None:
             count = refresh_files(db, files_home)
-            db.execute("INSERT OR REPLACE INTO source_summary VALUES(?,?,?,?,?)",
-                       (source, "Files", "", count, "[]"))
+            store_import_count(db, source, "Files", count)
         if db.execute("SELECT 1 FROM source_summary WHERE source=?", (source,)).fetchone():
             active.add(source)
             enabled.add("Files")
         for kind, records in knowledge:
             source = knowledge_sources.PREFIX + kind
-            db.execute("DELETE FROM personal WHERE source=?", (source,))
             if kind == "Confirmations":
                 records = (
                     (f"{app}:{origin}:{key}", body)
@@ -255,11 +294,8 @@ def sync(state, library, query=None, app_filter=None, *, files_home=None, knowle
                          '"tracking number" OR "ticket confirmation" OR "itinerary confirmation"',),
                     ) if (app == "Mail archive" or origin in active) and knowledge_sources.CONFIRMATION.search(body)
                 )
-            db.executemany("INSERT INTO personal VALUES(?,?,?,?)",
-                           ((kind, source, key, body) for key, body in records))
-            count = db.execute("SELECT count(*) FROM personal WHERE source=?", (source,)).fetchone()[0]
-            db.execute("INSERT OR REPLACE INTO source_summary VALUES(?,?,?,?,?)",
-                       (source, kind, "", count, "[]"))
+            count = refresh_import(db, kind, source, records)
+            store_import_count(db, source, kind, count)
         for source, kind in db.execute("SELECT source,app FROM source_summary WHERE source GLOB ?",
                                        (knowledge_sources.PREFIX + "*",)):
             active.add(source)
@@ -270,6 +306,7 @@ def sync(state, library, query=None, app_filter=None, *, files_home=None, knowle
                            (knowledge_sources.PREFIX + "Confirmations", kind + ":*"))
         stored = {r[0] for r in db.execute("SELECT source FROM source_summary UNION SELECT source FROM indexed_sources")}
         for stale in stored - active:
+            db.execute("DELETE FROM indexed_projects WHERE source=?", (stale,))
             db.execute("DELETE FROM personal WHERE source=?", (stale,))
             db.execute("DELETE FROM indexed_sources WHERE source=?", (stale,))
             db.execute("DELETE FROM source_summary WHERE source=?", (stale,))

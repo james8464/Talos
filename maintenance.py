@@ -90,6 +90,9 @@ def job_loop(state, model, home):
                 except (OSError, ValueError, RuntimeError) as error:
                     comparison = f"upstream comparison deferred ({type(error).__name__})"
                 result = f"{feature_queue.review(state, model)} · {comparison}"
+            elif kind == "index_maintenance":
+                from index_maintenance import merge_step
+                result = merge_step(state)
             elif kind == "memory_review":
                 import memory_review
                 result = memory_review.review(state, model)
@@ -112,6 +115,8 @@ def watch(state, model):
             return
         schedule = MaintenanceSchedule()
         cycle = 0
+        next_index_check = 0.0
+        index_outcome = "Awaiting an idle index check"
         home = Path.home()
 
         def observed_job(kind, **options):
@@ -145,6 +150,17 @@ def watch(state, model):
                 time.sleep(5)
                 continue
             if (state / mac_context.INDEX_NAME).is_file():
+                if time.monotonic() >= next_index_check:
+                    try:
+                        result = worker.request("index_maintenance")
+                    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                        index_outcome = f"Index check unavailable ({type(error).__name__})"
+                        next_index_check = time.monotonic() + 60
+                    else:
+                        if result is not None:
+                            index_outcome = result["message"]
+                            next_index_check = time.monotonic() + result["retry_in"]
+                lines.append("Search index maintenance · " + index_outcome)
                 lines.append("Latest AI memory review · " + schedule.poll_memory(state, run=observed_job))
             cycle += 1
             label = datetime.now().astimezone().isoformat(timespec="seconds")

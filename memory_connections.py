@@ -12,25 +12,64 @@ SOURCES = ("Files", "Cloud documents", "Notes", "Calendar", "Reminders",
 PROJECT_RECORD = re.compile(r"([^:]+):[0-9a-f]{40,64}")
 
 
+CATALOG_SIGNATURE = "project-names-v1"
+
+
+def project_name(record):
+    match = PROJECT_RECORD.fullmatch(record) if isinstance(record, str) else None
+    return match[1].casefold() if match and PROJECT.fullmatch(match[1]) else None
+
+
+def ensure_project_catalog(db):
+    """Backfill pre-catalog indexes once inside the caller's write transaction."""
+    tables = {r[0] for r in db.execute(
+        "SELECT name FROM sqlite_master WHERE name IN ('indexed_projects','source_summary')")}
+    if "indexed_projects" not in tables:
+        db.execute("""CREATE TABLE indexed_projects(name TEXT, source TEXT,
+                      PRIMARY KEY(name,source)) WITHOUT ROWID""")
+        rows = db.execute("SELECT coalesce(source,''),record FROM personal WHERE app='Projects'")
+        db.executemany("INSERT OR IGNORE INTO indexed_projects VALUES(?,?)",
+                       ((name, source) for source, record in rows if (name := project_name(record))))
+    elif "source_summary" in tables:
+        # An older maintenance worker replaces the Projects summary with an empty
+        # signature. Repair just that source if both versions have been running.
+        legacy = db.execute("SELECT source FROM source_summary WHERE app='Projects' AND signature=''").fetchall()
+        if not legacy:
+            return
+        for (source,) in legacy:
+            rows = db.execute("SELECT record FROM personal WHERE source=? AND app='Projects'", (source,))
+            update_project_catalog(db, source, rows)
+    if "source_summary" in tables:
+        db.execute("UPDATE source_summary SET signature=? WHERE app='Projects' AND signature=''", (CATALOG_SIGNATURE,))
+
+
+def update_project_catalog(db, source, records):
+    names = {name for (record,) in records if (name := project_name(record))}
+    existing = {row[0] for row in db.execute("SELECT name FROM indexed_projects WHERE source=?", (source,))}
+    db.executemany("DELETE FROM indexed_projects WHERE name=? AND source=?",
+                   ((name, source) for name in existing - names))
+    db.executemany("INSERT INTO indexed_projects VALUES(?,?)", ((name, source) for name in names - existing))
+
+
 def refresh(state):
     path = state / mac_context.INDEX_NAME
     with closing(sqlite3.connect(path, timeout=5)) as db, db:
         enabled = mac_context.enabled(state)
         apps = (*SOURCES, *sorted(enabled))
         markers = ",".join("?" for _ in apps)
-        names = set()
-        for (record,) in db.execute("SELECT record FROM personal WHERE app='Projects'"):
-            match = PROJECT_RECORD.fullmatch(record)
-            if match and PROJECT.fullmatch(match[1]):
-                names.add(match[1].casefold())
         db.execute("BEGIN IMMEDIATE")
+        ensure_project_catalog(db)
         db.execute("""CREATE TABLE IF NOT EXISTS memory_connections (
             project TEXT, app TEXT, source TEXT, record TEXT,
             PRIMARY KEY(project, app, source, record)) WITHOUT ROWID""")
+        # The reviewer joins projects by an exact evidence record. The primary key
+        # serves project lookups; this covering index serves the reverse direction.
+        db.execute("""CREATE INDEX IF NOT EXISTS memory_connections_by_record
+                      ON memory_connections(app,source,record,project)""")
         db.execute("""CREATE TEMP TABLE next_links(
             project TEXT, app TEXT, source TEXT, record TEXT,
             PRIMARY KEY(project, app, source, record)) WITHOUT ROWID""")
-        for name in sorted(names)[:100]:
+        for (name,) in db.execute("SELECT DISTINCT name FROM indexed_projects ORDER BY name LIMIT 100"):
             rows = db.execute(
                 f"""SELECT app,source,record FROM personal WHERE personal MATCH ?
                     AND app IN ({markers}) ORDER BY rank LIMIT 120""", (f'"{name}"', *apps)

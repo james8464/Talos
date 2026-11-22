@@ -145,6 +145,38 @@ func needsContinuation(_ caption: String) -> Bool {
                   options: .regularExpression) != nil
 }
 
+/// A short-lived, explicitly completed request. Ambient speech can never append to it.
+struct SpokenContinuation {
+    enum Response: Equatable { case completed(String), cancelled }
+    let prefix: String
+    let expires: TimeInterval
+    let conversation: TimeInterval?
+    let viaFacing: Bool
+
+    init?(_ words: String, at now: TimeInterval, conversation: TimeInterval?, viaFacing: Bool) {
+        let prefix = words.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard needsContinuation(prefix), prefix.unicodeScalars.count <= 800,
+              prefix.range(of: #"(?i)^(?:(?:please|could you|can you) )?(?:remind|add|create|save|make a note|record)\b"#,
+                           options: .regularExpression) != nil else { return nil }
+        self.prefix = prefix
+        self.expires = now + 30
+        self.conversation = conversation
+        self.viaFacing = viaFacing
+    }
+
+    func response(to words: String, at now: TimeInterval, conversation current: TimeInterval?) -> Response? {
+        guard now <= expires, current == conversation else { return nil }
+        let spoken = (roomRequest(words) ?? words).trimmingCharacters(in: .whitespacesAndNewlines)
+        if spoken.range(of: #"(?i)^(?:cancel (?:that|the) request|never mind)[.!? ]*$"#, options: .regularExpression) != nil {
+            return .cancelled
+        }
+        guard let marker = spoken.range(of: #"(?i)^continue[,:]?\s+"#, options: .regularExpression) else { return nil }
+        let rest = spoken[marker.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !rest.isEmpty else { return nil }
+        return .completed(prefix + " " + rest)
+    }
+}
+
 // A facing cue carries no identity. A missing angle or an extra person cancels it.
 struct FacingAttention {
     private(set) var since: TimeInterval?

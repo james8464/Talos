@@ -348,9 +348,14 @@ def heartbeat(state, model, *, local_only=False):
         except (OSError, ValueError, sqlite3.Error) as error:
             status["map"] = type(error).__name__
         try:
-            status["source_version"], status["baseline"] = baseline(status)
+            previous = (status.get("source_version"), status.get("baseline"))
+            version, result = baseline(status)
+            if previous != (version, "passed") or result != "passed":
+                status["baseline_verified_at"] = time.time()
+            status["source_version"], status["baseline"] = version, result
         except (OSError, subprocess.SubprocessError) as error:
             status["baseline"] = type(error).__name__
+            status.pop("baseline_verified_at", None)
         idle = power_and_idle()
         if now - status.get("last_attempt", 0) < 3600:
             outcome = "next hourly review pending"

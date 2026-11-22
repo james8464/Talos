@@ -42,6 +42,19 @@ struct NativeRoomReplay {
         room.connect()
         try await waitUntil { room.status.contains("Practice room") }
         precondition(!room.microphone && !room.cameraRunning && !room.speaking)
+        var spoken: [String] = []
+        room.replayUtterance = { spoken.append($0) }
+        room.replayCaption("Hey Talos, remind me in five minutes to")
+        precondition(spoken.last?.contains("continue") == true && !room.busy && room.draft.isEmpty)
+        room.replayCaption("other people talking")
+        precondition(!room.busy)
+        room.replayCaption("Continue check the oven")
+        try await waitUntil { !room.busy && spoken.count == 2 }
+        precondition(room.lines.contains { $0.lowercased().contains("you: remind me in five minutes to check the oven") })
+        room.replayCaption("Hey Talos, remind me in five minutes to")
+        room.replayCaption("cancel that request")
+        precondition(spoken.last == "Request cancelled." && !room.busy)
+        room.replayUtterance = nil
         func send(_ text: String, expect: String) async throws {
             room.send(text)
             try await waitUntil { !room.busy }

@@ -53,18 +53,17 @@ Say “Hey Talos, remind me in one minute to stretch” to set a local reminder 
 loads. Whole minutes, hours and days are supported on this path. Other phrasing goes to
 the normal planner.
 
-The app displays **“Talos online”** when it connects. The default voice is Kokoro
+The room shows its connection and microphone state in the main window. The default voice is Kokoro
 `bm_george`. Its models and Python environment are prepared on the first online run.
 Use `--voice am_michael` to select another English Kokoro voice or `--system-voice` for
-macOS speech. The app labels the active voice and any fallback.
+macOS speech. Room settings shows the active voice and any fallback.
 
-Room mode starts when the service connects. On first launch, grant macOS microphone,
-speech recognition, and camera permissions. Each sensor has its own off switch. During a voice reply, a new recognized phrase can interrupt playback. “Hey Talos, stop” also stops announcements. A partial “wait” can silence a conversational reply while the recognizer continues listening for the rest of a correction. During response planning it pauses. The speech client uses
+Room mode starts when the service connects. Allow microphone and speech recognition for dictation. The camera starts when you enable it or have previously opted into facing requests. Each sensor has its own off switch. During a voice reply, a new recognized phrase can interrupt playback. “Hey Talos, stop” also stops announcements. A partial “wait” can silence a conversational reply while the recognizer continues listening for the rest of a correction. During response planning it pauses. The speech client uses
 on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,
 decision time, queue time, and time from transcript submission to first audio.
 
-Choose **Talk for 90 seconds**, or say **“Hey Talos, can we talk?”**, to have a
-conversation without repeating a wake word. **End conversation** closes the window early.
+Choose **Talk to Talos**, or say **“Hey Talos, can we talk?”**, to have a
+conversation without repeating a wake word. The session stays open through replies and closes after 90 seconds of inactivity. Choose **End conversation** or say “end this conversation” to stop it early.
 With facing requests enabled and the camera on, a sustained view of one person facing the Mac can also start a
 direct question. Looking away, another detected person, or stale visual readings stop
 new visually directed turns. The camera gives a cue about intended address. It cannot
@@ -77,7 +76,7 @@ Local tasks, notes and timed reminders started this way are read back first. Say
 **confirm** or **cancel**. Saying **“Hey Talos”** still starts an explicit request.
 Its short follow-up window accepts a reminder delay or “Actually, make that five minutes.”
 For a longer
-request, choose **Dictate a message**, pause as needed, then finish dictation, review the
+request, choose **Room options → Dictate a draft**, pause as needed, then finish dictation, review the
 text, and press **Send**. Dictated messages keep the voice transcript retention setting.
 
 Try “Hey Talos, add buy paper to my to-do list.” For “Hey Talos, remind me to take out
@@ -192,7 +191,7 @@ python3 run_talos.py --room-trial
 
 The practice window starts with both sensors off. Its inbox, goals, history and token use
 a temporary directory. Switch on the practice microphone, use synthetic names and compare
-these cases with **Use local model for mid-sentence pauses** off and on.
+these cases with **Use the local model for mid-sentence pauses** off and on.
 
 | Say or do | Check |
 | --- | --- |
@@ -491,10 +490,20 @@ Run `./Start-Talos.command --memory-only --offline` to start the memory workers 
 
 ## Running the room and watching its work
 
-On the Mac, open `Start-Talos-Service.command` to register the room at login, open its native app and display the activity feed. The existing local model and the Respan credential must already be configured. The login service keeps ordinary room conversations local and enables the background Respan reviewer. The service runs while the Mac is awake and the user is logged in. To stop it, run `python3 tools/talos_service.py stop`.
+On the Mac, open `Start-Talos-Service.command` to register the room at login, open its native app and display the activity feed. The existing local model and the Respan credential must already be configured. The login service keeps ordinary room conversations local and enables the background Respan reviewer and the OpenCode and OpenClaude source-section workers. The service runs while the Mac is awake and the user is logged in. To stop it, run `python3 tools/talos_service.py stop`.
 
 Open `Talos-Activity.command` at any time. The monitor probes port 8765 and shows the status of each worker separately. Respan events identify the model, actual source path and byte range, request and response, token usage when returned, accepted finding or abstention, and the next retry. Connection failures leave the source position available for retry. A memory-only launch runs without a listening room. Use `./Start-Talos.command --memory-only --offline --respan-reviews` for that mode with cloud review enabled.
 
 Try saying “Talos, check in with me in three hours.” The room keeps the request across restarts. If the question plays and you do not answer, it asks once more ten minutes later. “I’m okay” closes the check-in and “cancel my check-in” cancels it. A question overdue by more than two minutes expires. Saying “I feel unwell” offers the check-in locally. Silence alone never triggers contact with another person.
 
 If Obsidian has the project’s `state` directory open as its vault, open **Talos live** there for recent reviewer and model activity, or **Talos migrations** for verified changes linked to their individual notes. The existing project, evidence and code maps stay inside `Talos Memory/Talos maps`. The publisher updates the root notes as the worker records real activity and verified migrations.
+
+## Speech, background reviews and progress
+
+Use **Talk to Talos** (⌘⇧D) for a conversation. To continue an unfinished addressed request such as “Hey Talos, remind me in ten minutes to…”, say “continue check the oven” within 30 seconds. “Cancel that request” discards it. The keyboard button opens a text field. Room options includes reviewed draft dictation, memory, goals and the live activity note. Long action plans open in a scrollable sheet for review before applying them.
+
+Try “What did we say about my notebook?”, “Pause my routine to water the plants”, or “What’s eighteen percent of 240?” followed by “Split that between three people.” Topic recall uses the current conversation. Arithmetic, conversions and routine controls run locally.
+
+Use `python3 section_workers.py --sections` for the upstream assignments. `./Start-Talos.command --memory-only --offline --respan-reviews --section-reviews` starts the live terminal and both external section reviewers without a room listener. Each reviewer compares bounded source excerpts, verifies cited quotes and can draft an implementation and regression for its finding. Inspect `state/section-patches/<id>/change.diff`, `regression.py` and `receipt.json` to review a draft. Checks cover applying the diff and parsing the code. Running its behavioral regression and approving the live change are separate steps.
+
+The **Talos live** note in the `state` vault reports when its sample was taken, worker locks, provider replies and retry deadlines. Local index maintenance records its completed merge, document count and search checks. Developer-verified changes have a separate label.

@@ -1,6 +1,8 @@
 """Interruptible Ollama generation for the read-only room conversation path."""
 
 import http.client
+from room_dialogue import with_spoken_instructions
+
 import json
 import os
 import re
@@ -49,11 +51,11 @@ class SpokenStream:
                   "minItems": 1, "maxItems": 4}
         payload = {"model": model, "stream": True, "think": False, "format": schema,
                    "keep_alive": -1 if "TALOS_OLLAMA_PORT" in os.environ else "30m",
-                   "messages": [*messages, {"role": "system", "content":
+                   "messages": with_spoken_instructions(messages,
                        "Respond with a JSON array. Put each complete spoken sentence in its own string. "
                        "Lead with a short sentence that directly answers the question. Use stable facts for general "
                        "questions. Claims about current conditions, dates or year-to-year changes need supporting "
-                       "evidence in this conversation. Use at most four sentences and 500 characters total. /no_think"}],
+                       "evidence in this conversation. Use at most four sentences and 500 characters total. /no_think"),
                    "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": 192}}
         conn = http.client.HTTPConnection(OLLAMA_HOST, int(os.environ.get("TALOS_OLLAMA_PORT", OLLAMA_PORT)), timeout=60)
         try:
@@ -97,9 +99,9 @@ class SpokenStream:
                 if self.emitted:
                     raise
                 if attempt == 0:
-                    messages = [*messages, {"role": "system", "content":
-                        "Answer the speaker using only the facts they reported. Avoid repeating their words "
-                        "or claiming any action. Write a short conversational answer."}]
+                    messages = with_spoken_instructions(messages,
+                        "Use the context and answer the speaker's current request. Return a JSON array of "
+                        "short spoken sentences. Never repeat their words or claim an unverified action.")
         return "Tell me a little more about that."
 
     def _answer(self, messages, model, allowed):

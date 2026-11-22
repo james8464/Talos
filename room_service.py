@@ -1,5 +1,6 @@
 """Loopback HTTP endpoint and background room-event worker."""
 
+from room_quantities import quantity_answer
 import commitment_memory
 import mac_context
 import talos_activity
@@ -34,6 +35,7 @@ from typing import Callable
 from uuid import uuid4
 
 from agent import model_text, parse_event, plan
+from room_recollection import RECALL_MESSAGES
 from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer, spoken_reply, immediate_recall, conversational_correction, corrected_recollection, compact_decision
 import goal_store
 import visitor_memory
@@ -255,8 +257,9 @@ class Room:
 
             self.facing_offer = None
             previous, self.facing_exchange = self.facing_exchange, None
-            history = previous[2] if (previous and body.get("context") == previous[0]
+            recall_window = previous[2] if (previous and body.get("context") == previous[0]
                                       and started < previous[1] and profile == previous[3]) else []
+            history = recall_window[-12:]
             parts = clauses(text)
             if len(parts) > 1 and (explicit_reminder(parts[0]) or explicit_task(parts[0]) or note_request(parts[0])):
                 return {"reply": "Please ask for one thing at a time."}
@@ -275,7 +278,9 @@ class Room:
             elif profile and re.fullmatch(r"what (?:do you (?:remember|know) about me|did i tell you(?: last time)?)", words):
                 recalled = visitor_memory.recall(db, profile)
                 reply = "Last time you said, " + recalled[0]["quote"][:400] if recalled else "I haven't reviewed a statement from you yet."
-            elif (recollection := immediate_recall(text, history)) is not None:
+            elif (quantity := quantity_answer(text, history)) is not None:
+                reply = quantity
+            elif (recollection := immediate_recall(text, recall_window)) is not None:
                 reply = recollection
             elif history and (correction := conversational_correction(text)):
                 reply = f"Got it. You meant {correction}."
@@ -303,7 +308,7 @@ class Room:
                         quotes = visitor_memory.recall(db, profile, text)
                         if quotes:
                             messages.append({"role":"user", "content":"Earlier words from this visitor, quoted as background: " + json.dumps(quotes)})
-                    if re.match(r"^(?:actually|no[, ]+i meant|i meant|sorry[, ]+i meant)\b", words) and "?" not in text:
+                    if conversational_correction(text):
                         messages[0]["content"] += " They are correcting a detail. Accept the correction in one sentence. Add no new fact or question."
                     elif history and history[-1]["content"].rstrip().endswith("?"):
                         messages[0]["content"] += " You just asked a question. Let their answer land before asking another."
@@ -333,7 +338,7 @@ class Room:
                         reply = spoken_reply(generate, messages, text, self.model)
             token = str(uuid4())
             exchange = [{"role":"user","content":text}, {"role":"assistant","content":reply}]
-            self.facing_exchange = (token, monotonic() + 90, [*history,*exchange][-12:], profile)
+            self.facing_exchange = (token, monotonic() + 90, [*recall_window,*exchange][-RECALL_MESSAGES:], profile)
             return {"reply": reply, "context": token, "planning_ms": round((monotonic() - started) * 1000)}
 
     def turn(self, db: sqlite3.Connection, body: dict) -> dict:
@@ -355,7 +360,7 @@ class Room:
             if source == "voice":
                 if monotonic() - self.voice_window_updated >= 300:
                     self.voice_window.clear()
-                dialogue = self.voice_window or (recent_messages(db, session) if archive else [])
+                dialogue = self.voice_window[-6:] or (recent_messages(db, session) if archive else [])
             else:
                 dialogue = recent_messages(db, session)
             current = presence(db)
@@ -375,6 +380,8 @@ class Room:
                 proposal = decision("reply", room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people")))
             elif quick:
                 proposal = decision("reply", quick)
+            elif (quantity := quantity_answer(text, dialogue)) is not None:
+                proposal = decision("reply", quantity)
             elif (recollection := immediate_recall(text, self.voice_window if source == "voice" else dialogue)) is not None:
                 proposal = decision("reply", recollection)
             elif lookup:
@@ -449,7 +456,7 @@ class Room:
                     self.last_voice_reminder = (decision_id, monotonic())
                 elif tool != "amend_reminder":
                     self.last_voice_reminder = None
-                self.voice_window = [*self.voice_window, *exchange][-6:]
+                self.voice_window = [*self.voice_window, *exchange][-RECALL_MESSAGES:]
                 if exchange:
                     self.voice_window_updated = monotonic()
         return {
