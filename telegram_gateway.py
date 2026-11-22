@@ -170,9 +170,29 @@ def reply_reference(message, bot, owner):
     return {"speaker": "Talos" if sender["id"] == bot else "user", "excerpt": excerpt[:1200]}
 
 
+COMMAND_PAGES = (
+    "/start or /help — show how to chat\n/commands [page] — browse commands\n/new or /reset — clear this chat’s local context",
+    "/voice — show the current setting\n/voice off — reply in text\n/voice voice_only — speak replies to voice notes\n/voice all — speak replies to text and voice notes",
+)
+
+
+def command_page(arguments):
+    pages = len(COMMAND_PAGES)
+    valid = [str(number) for number in range(1, pages + 1)]
+    if arguments and (len(arguments) != 1 or arguments[0] not in valid):
+        return f"Use /commands PAGE with a page from 1 to {pages}."
+    number = int(arguments[0]) if arguments else 1
+    result = f"Telegram commands ({number}/{pages})\n{COMMAND_PAGES[number - 1]}"
+    if number < pages:
+        result += f"\nNext: /commands {number + 1}"
+    return result
+
+
 def reply_to(db, bot, owner, text, model, *, reference=None, dictation=False):
+    if not dictation and text.split()[:1] == ["/commands"]:
+        return command_page(text.split()[1:])
     if not dictation and text in ("/start", "/help"):
-        return "Send text, a photo with a question, or a short voice note. /voice configures spoken replies. /new clears this chat’s local context. Mac files and actions are unavailable here."
+        return "Send text, a photo with a question, or a short voice note. /commands lists available commands. /voice configures spoken replies. /new clears this chat’s local context. Mac files and actions are unavailable here."
     if not dictation and text in ("/new", "/reset"):
         return "Started a fresh conversation."
     if not dictation and text.startswith("/"):
