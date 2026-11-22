@@ -34,6 +34,7 @@ Reviewed NousResearch/hermes-agent at `0f602c5f6f18615632535251d62a2db74ce93b69`
 | --- | --- |
 | `plugins/platforms/telegram/adapter.py` | Fixtures now verify expiring private-chat pairing, sender rejection, replay after restart, and multipart delivery after rate limiting. Owner JPEG photos and JPEG attachments now use bounded reads and local vision. Replies to photos reopen just the selected image. Direct text replies use a source-checked quote even outside the recent history window. Live transport, albums, other audio attachments and video remain open. Keep family records and biometric data on the Mac. |
 | `tools/transcription_local.py` and `gateway/session_config.py` | Talos adapts the pinned voice activity detector settings and segment confidence filter for local CPU Whisper. The private chat remembers its off, voice-only or all-replies preference across restarts. |
+| `hermes_cli/goals.py` and `goal_command.py` | The terminal can set a writing objective per session, add acceptance criteria, persist a draft, request revisions and stop on a supported completion verdict. Fixtures cover an expired claim, pause during review, restart, separate sessions and the run budget. |
 | `hermes_cli/setup_quick.py` | Start with an empty temporary profile, select a local provider, interrupt setup, and resume without losing the selection. |
 | `tools/skill_manager_tool.py` | Convert a successful repeated procedure into a versioned candidate, evaluate it against held-out tasks, and restore the previous version if quality drops. |
 

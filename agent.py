@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import TextIO
 from uuid import uuid4
 
+import session_goals
+
 from agent_memory import (
     STATE_PATH, decisions, open_memory, recent_context, record_decision, review_decision,
 )
@@ -376,7 +378,11 @@ def interactive_chat(
                 case "/quit" | "/exit":
                     return 0
                 case "/help":
-                    print("/status  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /search QUERY  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
+                    print("/status  /goal [OBJECTIVE|status|pause|resume|clear]  /subgoal CRITERION  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /search QUERY  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
+                case "/goal" | "/subgoal":
+                    result = session_goals.command(database, session, request, model=model, generate=model_text,
+                                                   ready=check_ollama_model, subgoal=command == "/subgoal")
+                    print(result, file=output, flush=True)
                 case "/status":
                     show_status(model, output)
                 case "/new" | "/reset" | "/branch" | "/fork" | "/resume" | "/sessions":
