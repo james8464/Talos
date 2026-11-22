@@ -159,13 +159,25 @@ def corrected_recollection(text, history):
     return None
 
 
+def spoken_problem(reply, text, prior):
+    def words(value):
+        return re.findall(r"\w+", value.casefold())
+    spoken = words(reply)
+    if any(len(phrase) >= 4 and spoken == phrase for phrase in (words(text), words(prior))):
+        return "echo"
+    if re.search(r"\b(?:I(?:['’]ve| have) been (?:looking|searching) for|I (?:went looking for|picked up|tried on|was wearing))\b", reply, re.I):
+        return "claim"
+    if re.search(r"\bI(?:['’]ve| have)? (?:just |already )?(?:sent|scheduled|booked|deleted|emailed|texted|"
+                 r"(?:set|created|saved) (?:you |your |a |the )?(?:reminder|task|message|note))\b", reply, re.I):
+        return "claim"
+    return None
+
+
 def spoken_reply(generate, messages, text, model):
     """Keep the model's scratch work and transcriber-style echoes out of playback."""
     schema = {"type": "object", "properties": {"talos_says": {"type": "string", "maxLength": 500}},
               "required": ["talos_says"], "additionalProperties": False}
-    normalized = re.findall(r"\w+", text.casefold())
     prior = next((m["content"] for m in reversed(messages) if m["role"] == "assistant"), "")
-    last_reply = re.findall(r"\w+", prior.casefold())
     for attempt in range(2):
         raw = generate(messages, model=model, schema=schema, max_tokens=192)
         try:
@@ -174,15 +186,12 @@ def spoken_reply(generate, messages, text, model):
                 raise ValueError
         except (ValueError, TypeError, KeyError, AttributeError) as error:
             raise RuntimeError("Invalid spoken reply from the local model.") from error
-        spoken = re.findall(r"\w+", reply.casefold())
-        echo = (len(normalized) >= 4 and spoken == normalized) or (len(last_reply) >= 4 and spoken == last_reply)
-        physical_claim = re.search(r"\b(?:I(?:['’]ve| have) been (?:looking|searching) for|I (?:went looking for|picked up|tried on|was wearing))\b",
-                                   reply, re.I)
-        if not echo and not physical_claim:
+        problem = spoken_problem(reply, text, prior)
+        if not problem:
             return reply
         if attempt == 0:
-            guidance = ("You described doing a physical activity yourself. Answer using only what the user reported."
-                        if physical_claim else "You repeated the speaker. Respond briefly to their specific detail.")
+            guidance = ("You claimed an action without evidence. Answer using only what the user reported."
+                        if problem == "claim" else "You repeated the speaker. Respond briefly to their specific detail.")
             messages = [*messages, {"role": "system", "content": guidance}]
     return "Tell me a little more about that."
 

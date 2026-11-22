@@ -30,6 +30,31 @@ struct RoomClient {
         }
         return result
     }
+    @MainActor
+    func spokenTurn(body: [String: Any], receive: ([String: Any]) async throws -> Void) async throws -> [String: Any] {
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/v1/voice/facing/stream")!)
+        request.timeoutInterval = 150
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (bytes, response) = try await Self.transport.bytes(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            throw RoomError("The spoken request failed.")
+        }
+        for try await line in bytes.lines {
+            try Task.checkCancellation()
+            guard line.utf8.count <= 248192,
+                  let event = try JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any] else {
+                throw RoomError("Invalid spoken response.")
+            }
+            if let result = event["result"] as? [String: Any] { return result }
+            if let error = event["error"] as? String { throw RoomError(error) }
+            try await receive(event)
+        }
+        throw RoomError("The spoken response ended early.")
+    }
+
 }
 
 struct RoomError: LocalizedError {
@@ -224,6 +249,13 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var lastTiming = ""
     private let startupLine = "Talos online. I was beginning to think you had forgotten me."
     private var kokoroVoice: String?
+    #if TALOS_CONTROLLER_REPLAY
+    // Test binaries can render into a silent sink on hosts without an audio device.
+    var replayClip: ((Data) throws -> Void)?
+    var replayStop: (() -> Void)?
+    #endif
+    private var streamID: String?
+    private var streamTask: Task<Void, Never>?
     private var player: AVAudioPlayer?
     private var finalClip = false
     private var latestPresence: Bool?
@@ -385,6 +417,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
         return true
     }
+    private var lastActivityPulse = -Double.infinity
     private var firstCaptionAt: TimeInterval?
     private var facingOffer: String?
     private var facingContext: String?
@@ -587,7 +620,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 let text = recognized.map { echo.isEmpty ? $0 : ConversationFocus.removePlaybackPrefix($0, playback: echo) }
                 if self.speaking {
                     let now = ProcessInfo.processInfo.systemUptime
-                    let engaged = self.openFocusAfterPlayback || self.conversationActive(now) || (self.facingContext != nil &&
+                    let engaged = self.streamID != nil || self.openFocusAfterPlayback || self.conversationActive(now) || (self.facingContext != nil &&
                         self.facing.available(from: now, until: now)) || self.profileForTurn(at: now) != nil
                     if let text, engaged, error == nil, !ConversationFocus.isInterruption(text, playback: self.playbackText), ConversationFocus.conversationalInterruption(text, playback: self.playbackText, allowSpeech: true) {
                         if final && ConversationFocus.pauseOnly(text) {
@@ -611,9 +644,15 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         return
                     }
                 }
-                if self.firstCaptionAt == nil, let startOffset {
-                    Task { _ = try? await self.client?.request("room/activity", body: [:]) }
-                    self.firstCaptionAt = min(ProcessInfo.processInfo.systemUptime, recognitionStart + startOffset)
+                if let startOffset {
+                    let now = ProcessInfo.processInfo.systemUptime
+                    if self.firstCaptionAt == nil || now - self.lastActivityPulse >= 5 {
+                        self.lastActivityPulse = now
+                        Task { _ = try? await self.client?.request("room/activity", body: [:]) }
+                    }
+                    if self.firstCaptionAt == nil {
+                        self.firstCaptionAt = min(now, recognitionStart + startOffset)
+                    }
                 }
                 switch VoiceRecognitionUpdate(text: text, final: final, failed: error != nil) {
                 case .pending:
@@ -840,7 +879,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         addLine("You", text)
         status = "Thinking…"
         let submitted = Date()
-        Task {
+        let requestID = UUID().uuidString
+        let stream = viaFacing && source == "voice" && kokoroVoice != nil
+        if stream { streamID = requestID }
+        let task = Task {
             do {
                 let interval = attentionInterval
                 let offer = interval == facingSince ? facingOffer : nil
@@ -851,11 +893,37 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 var body: [String: Any] = [
                     "camera_available": cameraRunning,
                     "offer": offer ?? "", "context": context ?? "",
-                    "text": text, "source": source, "remember": rememberVoice || visitorID != nil, "visitor": visitorID ?? "", "follow_up": followUp, "request_id": UUID().uuidString,
+                    "text": text, "source": source, "remember": rememberVoice || visitorID != nil, "visitor": visitorID ?? "", "follow_up": followUp, "request_id": requestID,
                     "occupied": (cameraRunning && Date().timeIntervalSince(presenceAt) < 75
                                  ? latestPresence : nil).map { $0 as Any } ?? NSNull(),
                 ]
-                var result = try await client.request(route, body: body)
+                var played: [String] = []
+                var streamStarted = false
+                var audioFailed = false
+                var result: [String: Any]
+                if stream {
+                    result = try await client.spokenTurn(body: body) { event in
+                        guard self.streamID == requestID else { throw CancellationError() }
+                        if event["started"] as? Bool == true {
+                            streamStarted = true
+                            self.speaking = true
+                            self.playbackText = ""
+                            if let speechEnd { self.playbackMeasurement = (nil, speechEnd) }
+                            self.beginRecognition()
+                        } else if let sentence = event["sentence"] as? String, !audioFailed {
+                            do {
+                                try await self.playStreamedSentence(sentence, client: client, first: played.isEmpty)
+                                played.append(sentence)
+                            } catch {
+                                try Task.checkCancellation()
+                                audioFailed = true
+                            }
+                        }
+                    }
+                } else {
+                    result = try await client.request(route, body: body)
+                }
+                try Task.checkCancellation()
                 if result["request_frame"] as? Bool == true {
                     let epoch = cameraEpoch
                     let snapshot = await camera?.snapshot()
@@ -892,21 +960,40 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         }
                     }
                     if source == "voice" {
-                        if let speechEnd {
-                            playbackMeasurement = (result["id"] as? Int, speechEnd)
+                        if streamStarted && !played.isEmpty {
+                            if audioFailed {
+                                while player?.isPlaying == true { try await Task.sleep(for: .milliseconds(10)) }
+                                let remainder = String(reply.dropFirst(played.joined(separator: " ").count))
+                                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                                if remainder.isEmpty { finishSpeech(delivered: true) }
+                                else { systemSpeech(remainder) }
+                            } else if player?.isPlaying == true {
+                                finalClip = true
+                            } else {
+                                finishSpeech(delivered: true)
+                            }
+                        } else {
+                            if let speechEnd { playbackMeasurement = (result["id"] as? Int, speechEnd) }
+                            openFocusAfterPlayback = !viaFacing
+                            say(reply, turnStart: submitted)
                         }
-                        openFocusAfterPlayback = source == "voice" && !viaFacing
-                        say(reply, turnStart: submitted)
                     }
                 }
                 status = "Connected"
             } catch {
+                if Task.isCancelled { return }
+                if stream, speaking { stopSpeaking() }
                 status = error.localizedDescription
                 addLine("Service", status)
+            }
+            if streamID == requestID {
+                streamID = nil
+                streamTask = nil
             }
             busy = false
             beginRecognition()
         }
+        if stream { streamTask = task }
     }
 
     func previewDraft() {
@@ -1106,10 +1193,51 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
     }
 
+    private func playStreamedSentence(_ text: String, client: RoomClient, first: Bool) async throws {
+        let result = try await client.request("voice", body: ["text": text])
+        try Task.checkCancellation()
+        guard let encoded = result["wav"] as? String, let data = Data(base64Encoded: encoded) else {
+            throw RoomError("Kokoro returned invalid audio.")
+        }
+        #if TALOS_CONTROLLER_REPLAY
+        if let replayClip {
+            try replayClip(data)
+            if first { recordPlaybackStart() }
+            return
+        }
+        #endif
+        let audio = try AVAudioPlayer(data: data)
+        while player?.isPlaying == true { try await Task.sleep(for: .milliseconds(10)) }
+        try Task.checkCancellation()
+        finalClip = false
+        audio.delegate = self
+        playbackText = text
+        player = audio
+        guard audio.play() else { throw RoomError("Kokoro audio could not play.") }
+        if first { recordPlaybackStart() }
+    }
+
+    private func cancelStream() {
+        guard let id = streamID else { return }
+        streamID = nil
+        streamTask?.cancel()
+        streamTask = nil
+        busy = false
+        Task { _ = try? await client?.request("voice/stream/cancel", body: ["request_id": id]) }
+    }
+
+    private func stopPlayer() {
+        #if TALOS_CONTROLLER_REPLAY
+        replayStop?()
+        #endif
+        player?.stop()
+    }
+
     private func interruptForConversation() {
+        cancelStream()
         playbackEpoch = UUID()
         speechRequest?.cancel()
-        player?.stop()
+        stopPlayer()
         systemUtterance = nil
         if speaker.isSpeaking { speaker.stopSpeaking(at: .immediate) }
         if let speechID { pendingAcknowledgment = speechID }
@@ -1123,6 +1251,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     func stopSpeaking() {
+        cancelStream()
         if let speechID { pendingAcknowledgment = speechID }
         playbackEpoch = UUID()
         speechRequest?.cancel()
@@ -1130,7 +1259,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         if speaker.isSpeaking {
             speaker.stopSpeaking(at: .immediate)
         } else {
-            player?.stop()
+            stopPlayer()
             finishSpeech(delivered: false)
         }
     }
