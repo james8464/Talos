@@ -166,6 +166,65 @@ class RefinementTests(unittest.TestCase):
             )
         self.assertNotIn("draft.md", self.request("/v1/context/brief")["reply"])
 
+    def test_find_project_file_reads_current_names_and_respects_speech_controls(self):
+        project = self.path.parent / "Selected project"
+        project.mkdir()
+        exact = project / "Café notes.md"
+        exact.write_text("private fixture contents")
+        (project / "Old café notes.md").touch()
+        (project / ".café notes.md").touch()
+        outside = self.path.parent / "Outside café notes.md"
+        outside.touch()
+        (project / "Linked café notes.md").symlink_to(outside)
+        query = "Find a file named Cafe\u0301 notes.md."
+        source = dict(kind="document", path=str(project), owner="Example", person="Example",
+                      topic="Fixture")
+        key = self.request("/v1/context/select", source)["id"]
+        with patch("room_service.plan", side_effect=AssertionError("unexpected planner")):
+            result = self.request("/v1/turn", {"text": query})
+            self.assertEqual([r["url"] for r in result["sources"]],
+                             [exact.as_uri(), (project / "Old café notes.md").as_uri()])
+            self.assertNotIn("private fixture contents", str(result))
+            voice = {"text": query, "source": "voice"}
+            for route in ("/v1/turn", "/v1/voice/facing"):
+                private = self.request(route, voice)
+                self.assertFalse(private["sources"])
+                self.assertNotIn("Old café", private["reply"])
+            self.request("/v1/context/select", dict(source, speak=True))
+            spoken = self.request("/v1/turn", voice)
+            self.assertIn(exact.name, spoken["reply"])
+            self.assertFalse(spoken["sources"])
+            exact.unlink()
+            result = self.request("/v1/turn", {"text": query})
+            self.assertEqual(len(result["sources"]), 1)
+            self.request("/v1/context/forget", {"id": key})
+            self.assertFalse(self.request("/v1/turn", {"text": query})["sources"])
+
+    def test_find_file_respects_revocation_and_reports_unavailable_sources(self):
+        root = self.path.parent
+        selected = root / "selected"
+        selected.mkdir()
+        (selected / "agenda.pdf").touch()
+        source = dict(kind="document", path=str(selected), owner="Example", person="Example", topic="Review")
+        self.request("/v1/context/select", source)
+        direct = dict(source, path=str(selected / "agenda.pdf"))
+        self.request("/v1/context/select", direct)
+        def find():
+            return self.request("/v1/turn", {"text": "Find the file agenda.pdf"})
+        self.assertEqual(len(find()["sources"]), 1)
+        self.request("/v1/context/select", dict(source, retain="false"), expected_error=400)
+        self.request("/v1/context/select", dict(source, retain=False))
+        self.assertEqual(len(find()["sources"]), 1)
+        selected.rename(root / "original")
+        selected.symlink_to(root / "original", target_is_directory=True)
+        result = find()
+        self.assertFalse(result["sources"])
+        self.assertIn("unavailable", result["reply"])
+        selected.unlink()
+        (root / "original").rename(selected)
+        self.request("/v1/context/select", dict(direct, retain=False))
+        self.assertFalse(find()["sources"])
+
     def test_interrupting_with_new_reminder_cannot_arm_a_later_action(self):
         self.room.model_state = lambda: "warming"
         response = self.request(

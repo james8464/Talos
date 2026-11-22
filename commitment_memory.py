@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import re
 import sqlite3
+import unicodedata
 from contextlib import closing
 from datetime import date, datetime, timedelta, timezone
 
@@ -235,6 +236,67 @@ def evidence(src, raw, mtime):
             yield stamp, "delivery", m[0][:180], "", pointer
 
 
+DOCUMENT_TYPES = {".txt", ".md", ".csv", ".xlsx", ".docx", ".pdf", ".pages", ".numbers"}
+FILE_REQUEST = re.compile(
+    r"(?:(?:hey )?talos[, ]+)?(?:please )?(?:find|locate|look for) "
+    r"(?:the |a |my )?file (?:named |called )?(.+?)[?.!]?", re.I
+)
+
+
+def folder_documents(folder):
+    return (p for p in folder.iterdir() if not p.name.startswith(".")
+            and p.suffix.casefold() in DOCUMENT_TYPES and not p.is_symlink() and p.is_file())
+
+
+def find_file(db, phrase, spoken):
+    def normalized(name):
+        return unicodedata.normalize("NFC", name).casefold()
+
+    query = normalized(phrase.strip().strip('"“”').strip())
+    if not query:
+        return {"reply": "Which filename should I look for?", "sources": []}
+    terms = query.split()
+    matches = {}
+    unavailable = False
+    for (value,) in db.execute(
+        """SELECT DISTINCT path FROM context_sources WHERE kind='document'
+           AND retain=1 AND (?=0 OR speak=1)""", (spoken,)
+    ):
+        root = Path(value)
+        try:
+            # Selected paths are canonical at enrollment. Ignore later symlink substitutions.
+            if root.resolve(strict=True) != root:
+                unavailable = True
+                continue
+            if root.is_dir():
+                candidates = folder_documents(root)
+            elif root.is_file():
+                candidates = (root,)
+            else:
+                unavailable = True
+                continue
+            for path in candidates:
+                name = normalized(path.name)
+                if all(term in name for term in terms):
+                    matches[path] = (name != query, name, str(path))
+        except (OSError, RuntimeError):
+            unavailable = True
+    ranked = sorted(matches, key=matches.get)
+    if ranked:
+        shown = ranked[:2 if spoken else 8]
+        reply = "I found " + ", ".join(p.name for p in shown) + "."
+        if len(shown) < len(ranked):
+            reply += f" There are {len(ranked) - len(shown)} more matches."
+    else:
+        reply = ("No matching file found in the document sources enabled for speech." if spoken
+                 else "No matching file found in the selected document sources.")
+    if unavailable:
+        reply += " Some selected sources were unavailable."
+    return {"reply": reply, "sources": [] if spoken else [
+        {"title": path.name, "url": path.as_uri()} for path in ranked[:8]
+    ]}
+
+
 def refresh(db, src, now):
     path = Path(src["path"])
     digest, issue, rows = "", "", []
@@ -257,21 +319,7 @@ def refresh(db, src, now):
             if path.is_dir():
                 rows = [
                     (p.stat().st_mtime, "document", p.name, "", p.name)
-                    for p in path.iterdir()
-                    if not p.is_symlink()
-                    and not p.name.startswith(".")
-                    and p.is_file()
-                    and p.suffix.casefold()
-                    in (
-                        ".txt",
-                        ".md",
-                        ".csv",
-                        ".xlsx",
-                        ".docx",
-                        ".pdf",
-                        ".pages",
-                        ".numbers",
-                    )
+                    for p in folder_documents(path)
                 ]
                 rows.sort()
                 digest = hashlib.sha256(json.dumps(rows).encode()).hexdigest()

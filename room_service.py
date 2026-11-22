@@ -562,6 +562,8 @@ class Room:
             return private_result
         profile = body.get("visitor") if voice else None
         session = visitor_memory.visit_session(db, profile) if profile else ("native_voice" if voice else TEXT_SESSION)
+        if file_request := commitment_memory.FILE_REQUEST.fullmatch(text.strip()):
+            return commitment_memory.find_file(db, file_request[1], voice)
         if commitment_memory.BRIEF.fullmatch(text.strip()):
             words = text.lower().strip(" .?!")
             cutoff = None
@@ -629,7 +631,11 @@ class Room:
                         raise ValueError("Choose a source file, owner, topic and contact.")
                     if not isinstance(body.get("selector",""),str) or type(body.get("speak",False)) is not bool:
                         raise ValueError("Use a text chat selector and a boolean speech setting.")
-                    sid = commitment_memory.select(db, *(body[key] for key in fields), speak=body.get("speak") is True, selector=body.get("selector",""))
+                    retain = body.get("retain", True)
+                    if type(retain) is not bool:
+                        raise ValueError("Use a boolean retention setting.")
+                    sid = commitment_memory.select(db, *(body[key] for key in fields), retain=retain,
+                                                   speak=body.get("speak") is True, selector=body.get("selector",""))
                     row = db.execute("SELECT * FROM context_sources WHERE id=?", (sid,)).fetchone()
                     commitment_memory.refresh(db, row, datetime.now(UTC).timestamp())
                     return 200, {"id": sid}
