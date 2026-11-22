@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from agent_memory import STATE_PATH
+from agent import model_text
 from local_runtime import check_ollama_model, request_ollama_json
 from room_service import DEFAULT_PORT, Room, run
 from room_voice import DEFAULT_VOICE, KokoroVoice, prepare_assets, voice_python
@@ -70,6 +71,8 @@ class ProjectModel:
         self.stopping = threading.Event()
         self.lock = threading.Lock()
         self.children = set()
+        self.ready_server = None
+        self.voice_verified = False
         self.worker = threading.Thread(target=self.run, name="talos-model", daemon=True)
 
     @contextmanager
@@ -91,6 +94,26 @@ class ProjectModel:
                     process.wait()
             with self.lock:
                 self.children.discard(process)
+
+    def generate_voice(self, messages, **options):
+        with self.lock:
+            server = self.ready_server
+            verified = self.voice_verified
+        if server is None or server.poll() is not None or options.get("model") != self.model:
+            raise RuntimeError("The supervised local voice model is unavailable.")
+        try:
+            if not verified:
+                check_ollama_model(self.model)
+                with self.lock:
+                    if self.ready_server is not server:
+                        raise RuntimeError("The supervised model restarted.")
+                    self.voice_verified = True
+            return model_text(messages, **options)
+        except (OSError, RuntimeError, ValueError):
+            with self.lock:
+                if self.ready_server is server:
+                    self.voice_verified = False
+            raise
 
     def serve(self):
         ollama = shutil.which("ollama")
@@ -122,8 +145,16 @@ class ProjectModel:
                 check_ollama_model(self.model)
             self.state = "warming up"
             warm_model(self.model)
-            self.state = "ready"
-            server.wait()
+            with self.lock:
+                self.ready_server = server
+                self.voice_verified = True
+                self.state = "ready"
+            try:
+                server.wait()
+            finally:
+                with self.lock:
+                    self.ready_server = None
+                    self.voice_verified = False
             if not self.stopping.is_set():
                 raise RuntimeError("Project Ollama exited.")
 
@@ -253,7 +284,8 @@ def main() -> int:
                                 "--token-file", str(TOKEN_PATH), "--port", str(args.port)], check=True)
 
         run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice, online=not args.offline,
-                            model_state=lambda: backend.state, app_launch_enabled=app is not None),
+                            model_state=lambda: backend.state, app_launch_enabled=app is not None,
+                            voice_generate=backend.generate_voice),
             TOKEN_PATH, ready=launch_app)
     except KeyboardInterrupt:
         return 0
