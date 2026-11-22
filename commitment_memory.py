@@ -22,6 +22,15 @@ DAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|\d{4}-\d{2}-\d
 PROMISE = re.compile(
     r"\bI(?:['’]ll| will| promise to| agreed to)\s+([^.!?\n]{2,220})", re.I
 )
+_REPORTED = re.compile(
+    r"""
+    ^[ \t]*>[^\n]*                         # quoted reply line
+    | (?<!\d)"[^"]*(?:"|\Z)                # double quote, excluding an inch mark
+    | “[^”]*(?:”|\Z)
+    | ‘(?:[^’]++|’(?=\w))*(?:’|\Z)         # keep apostrophes inside quoted words
+    | (?<!\w)'(?!\d{2}s\b)(?:[^']++|'(?=\w))*(?:'|\Z)
+    """, re.M | re.X,
+)
 DATE = re.compile(r"\b(" + DAYS + r")\b", re.I)
 REVISED = re.compile(r"\b(" + DAYS + r") (?:is fine|works|instead|is better)\b", re.I)
 DELIVERED = re.compile(
@@ -32,6 +41,11 @@ BRIEF = re.compile(
     r"(?:hey talos[, ]+)?(?:what do i owe(?: people)?|(?:show|list) my commitments|give me my commitment brief)(?: right now| before tomorrow| by tomorrow| today)?[?.! ]*",
     re.I,
 )
+
+
+def authored_text(body):
+    """Mask reported speech, preserving offsets and line breaks for source excerpts."""
+    return _REPORTED.sub(lambda m: "\n".join("_" * len(line) for line in m[0].split("\n")), body)
 
 
 def schema(db):
@@ -132,7 +146,7 @@ def messages(src, raw):
                     continue
             stamp = parsedate_to_datetime(str(msg["date"])).timestamp()
             text = re.split(
-                r"(?im)^On .+ wrote:|^-+Original Message-+|^From:|^>",
+                r"(?im)^On .+ wrote:|^-+Original Message-+|^From:",
                 part.get_content(),
             )[0]
             yield stamp, outgoing, text, str(msg.get("Message-ID", f"message {i}"))
@@ -227,13 +241,14 @@ def evidence(src, raw, mtime):
     for stamp, outgoing, body, pointer in (
         selected_chat(src) if raw is None else messages(src, raw)
     ):
-        if outgoing and (m := PROMISE.search(body)):
+        authored = authored_text(body)
+        if outgoing and (m := PROMISE.search(authored)):
             due = DATE.search(m[1])
-            yield stamp, "promise", m[1].strip(), due[0] if due else "", pointer
-        elif not outgoing and (m := REVISED.search(body)):
+            yield stamp, "promise", body[m.start(1):m.end(1)].strip(), due[0] if due else "", pointer
+        elif not outgoing and (m := REVISED.search(authored)):
             yield stamp, "revision", m[0], m[1], pointer
-        elif outgoing and (m := DELIVERED.search(body)):
-            yield stamp, "delivery", m[0][:180], "", pointer
+        elif outgoing and (m := DELIVERED.search(authored)):
+            yield stamp, "delivery", body[m.start():m.end()][:180], "", pointer
 
 
 DOCUMENT_TYPES = {".txt", ".md", ".csv", ".xlsx", ".docx", ".pdf", ".pages", ".numbers"}
@@ -333,6 +348,8 @@ def refresh(db, src, now):
             if len(raw) > 8_000_000:
                 raise ValueError("Select an export under 8 MB.")
             digest = hashlib.sha256(raw).hexdigest()
+            if src["kind"] in ("email", "imessage", "whatsapp"):
+                digest = "authored-v2:" + digest
             if digest != src["digest"]:
                 rows = list(evidence(src, raw, path.stat().st_mtime))
     except (
