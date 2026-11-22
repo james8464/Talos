@@ -151,3 +151,22 @@ class StandingGoalTests(unittest.TestCase):
         code = "```xml\n<think>example</think>\n```"
         with patch("agent.request_ollama_json", return_value={"done": True, "message": {"content": code}}):
             self.assertEqual(model_text([]), code)
+
+    def test_running_room_reviews_queue_and_preserves_draft_when_interrupted(self):
+        from room_service import Room
+        from idle_lab import IdleReviewDeferred
+        self.console("/goal queue Write a color card\n", Mock())
+        room = Room(self.path, "fixture", model_state=lambda: "ready")
+        room.lab.quiet_until = 0
+        with patch("room_service.power_and_idle", return_value=True), \
+                patch.object(room.lab, "infer", side_effect=["blue first", IdleReviewDeferred()]) as infer:
+            self.assertTrue(room.review_session_goals())
+            self.assertNotIn("model", infer.call_args.kwargs)
+        with closing(open_memory(self.path)) as db:
+            row = session_goals.current(db, "text")
+            self.assertEqual((row["draft"], row["status"], row["lease_until"]), ("blue first", "queued", 0))
+        with patch("room_service.power_and_idle", return_value=True), \
+                patch.object(room.lab, "infer", side_effect=["blue final", verdict()]):
+            self.assertTrue(room.review_session_goals())
+        with closing(open_memory(self.path)) as db:
+            self.assertEqual(session_goals.current(db, "text")["status"], "done")

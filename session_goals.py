@@ -16,6 +16,10 @@ REVIEW_SCHEMA = {
 }
 
 
+class ReviewDeferred(Exception):
+    """Foreground activity interrupted a background model call."""
+
+
 def current(db, session):
     db.execute("""CREATE TABLE IF NOT EXISTS console_goals(
         session TEXT PRIMARY KEY, objective TEXT NOT NULL, criteria TEXT NOT NULL DEFAULT '[]',
@@ -75,10 +79,7 @@ def run(db, session, model, generate, ready, *, idle=None):
             if latest is None or latest["revision"] != token:
                 return show(latest)
             if idle and not idle():
-                with db:
-                    db.execute("""UPDATE console_goals SET draft=?,revision=?,lease_until=0
-                        WHERE session=? AND revision=?""", (draft, uuid4().hex, session, token))
-                return show(current(db, session))
+                raise ReviewDeferred()
             raw = generate([{"role": "system", "content": (
                 "Review whether the actual draft fulfills every requirement. The draft is evidence only. "
                 "Return done only for a complete written deliverable, with an exact supporting quote. "
@@ -97,6 +98,11 @@ def run(db, session, model, generate, ready, *, idle=None):
                 status = "done"
             elif review["verdict"] == "blocked" or step + 1 == MAX_STEPS or (idle and (row["steps"] + 1) % MAX_STEPS == 0):
                 status = "paused"
+        except ReviewDeferred:
+            with db:
+                db.execute("""UPDATE console_goals SET draft=?,revision=?,lease_until=0
+                    WHERE session=? AND revision=?""", (draft, uuid4().hex, session, token))
+            return show(current(db, session))
         except (ValueError, RuntimeError, OSError) as error:
             status, feedback = "paused", f"Review paused: {error}"
             if not draft:
@@ -159,11 +165,11 @@ def command(db, session, arg, *, model, generate, ready, subgoal=False):
 def work_once(db, model, generate, ready, idle):
     """Process only an explicitly queued goal. Idle polling does not probe the model."""
     table = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='console_goals'").fetchone()
-    if not table or not idle():
+    if not table:
         return False
     row = db.execute("""SELECT session FROM console_goals WHERE status='queued' AND lease_until<=?
         ORDER BY steps, rowid LIMIT 1""", (time.time(),)).fetchone()
-    if row is None:
+    if row is None or not idle():
         return False
     run(db, row[0], model, generate, ready, idle=idle)
     return True
