@@ -192,7 +192,7 @@ def reply_to(db, bot, owner, text, model, *, reference=None, dictation=False):
     if not dictation and text.split()[:1] == ["/commands"]:
         return command_page(text.split()[1:])
     if not dictation and text in ("/start", "/help"):
-        return "Send text, a photo with a question, or a short voice note. /commands lists available commands. /voice configures spoken replies. /new clears this chat’s local context. Mac files and actions are unavailable here."
+        return "Send text, a photo with a question, a short voice note, or a short MP3 or Ogg/Opus audio file for a transcript. /commands lists available commands. /voice configures spoken replies. /new clears this chat’s local context. Mac files and actions are unavailable here."
     if not dictation and text in ("/new", "/reset"):
         return "Started a fresh conversation."
     if not dictation and text.startswith("/"):
@@ -291,7 +291,7 @@ def flush_reply(db, call, bot, owner):
                                (bot, owner, bot, owner))
 
 
-def voice_text(voice, call, download):
+def voice_text(voice, call, download, *, attachment=False):
     model_directory()
     if not isinstance(voice, dict) or not isinstance(voice.get("file_id"), str):
         raise ValueError("Missing voice file.")
@@ -305,7 +305,7 @@ def voice_text(voice, call, download):
     audio = download(info["file_path"])
     if len(audio) > MAX_VOICE_BYTES:
         raise ValueError("Voice note exceeds the size limit.")
-    return transcribe_note(audio)
+    return transcribe_note(audio, attachment=True) if attachment else transcribe_note(audio)
 
 
 def poll(db, call, bot, owner, model, *, download=None, download_voice=None):
@@ -333,26 +333,34 @@ def poll(db, call, bot, owner, model, *, download=None, download_voice=None):
                 variants = photo_variants(parent)
                 caption = text
         voice = message.get("voice") if allowed and download_voice is not None else None
+        attachment = message.get("audio") if allowed and download_voice is not None else None
         dictation = voice is not None
-        if not (text or variants or dictation):
+        if not (text or variants or dictation or attachment is not None):
             # No side effect to replay. One cursor write can cover a run of ignored updates.
             skipped = seen = ident
             continue
         answer = None
         save_turn = bool(text and not text.startswith("/"))
-        if dictation:
+        if dictation or attachment is not None:
             try:
-                text = voice_text(voice, call, download_voice)
-                if not text:
+                if attachment is not None:
+                    transcript = voice_text(attachment, call, download_voice, attachment=True)
+                    answer = f"Transcript:\n{transcript}" if transcript else "I couldn’t make out speech in that audio file."
+                else:
+                    text = voice_text(voice, call, download_voice)
+                if dictation and not text:
                     answer = "I couldn’t make out speech in that voice note. Please try again."
             except VoiceUnavailable:
                 answer = "Local voice transcription is unavailable. You can still send text."
             except ApiError as error:
                 if error.code == 429 or error.code >= 500:
                     raise
-                answer = "I couldn’t retrieve that voice note. Please resend it."
+                answer = "I couldn’t retrieve that audio. Please resend it."
             except (ValueError, OSError, RuntimeError, http.client.HTTPException):
-                answer = "I couldn’t read that voice note. Send an Ogg/Opus note up to 90 seconds and 2 MB."
+                if attachment is not None:
+                    answer = "I couldn’t read that audio file. Send a single-stream MP3 or Ogg/Opus clip up to 90 seconds and 2 MB."
+                else:
+                    answer = "I couldn’t read that voice note. Send an Ogg/Opus note up to 90 seconds and 2 MB."
             save_turn = bool(text and answer is None)
         mode_change = None
         mode_row = db.execute("SELECT mode FROM voice_modes WHERE bot=? AND owner=?", (bot, owner)).fetchone()
