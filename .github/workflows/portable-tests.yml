@@ -29,3 +29,18 @@ jobs:
         env:
           TALOS_TEST_REAL_MINUTE: '1'
         run: python -m unittest discover -s tests -v
+
+  native-room:
+    runs-on: macos-26
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Replay the native room controller and interrupted spoken turns
+        env:
+          PYTHONPATH: tests:.
+        run: python -m unittest -v test_native_room_flow test_spoken_stream.SpokenStreamFlow.test_native_first_clip_interrupt_and_replacement_turn
