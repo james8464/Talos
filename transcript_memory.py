@@ -3,6 +3,8 @@
 import json
 import re
 import sqlite3
+
+from memory_ranking import diverse
 from datetime import UTC, datetime
 
 TEXT_SESSION = "text"
@@ -52,12 +54,45 @@ def insert_transcripts(database: sqlite3.Connection, session: str, messages: lis
     )
 
 
+def fork_session(database: sqlite3.Connection, source: str, child: str) -> None:
+    """Capture immutable session ranges in the caller's session-creation transaction."""
+    database.execute("""CREATE TABLE IF NOT EXISTS console_forks (
+        child TEXT PRIMARY KEY, parent TEXT NOT NULL, through_id INTEGER NOT NULL)""")
+    database.execute("""INSERT INTO console_forks SELECT ?, ?, coalesce(max(id), 0)
+                        FROM transcripts WHERE session=?""", (child, source, source))
+
+
+def session_rows(database: sqlite3.Connection, session: str, *, recent=False):
+    # Nonempty segments are disjoint and ordered by the last transcript ID at each fork.
+    segments = [(session, 2**63 - 1)]
+    if session.startswith("console/") and database.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='console_forks'"
+    ).fetchone():
+        segments.extend(database.execute("""WITH RECURSIVE lineage(parent, through_id, depth) AS (
+                SELECT parent, through_id, 1 FROM console_forks WHERE child=?
+                UNION ALL SELECT f.parent, f.through_id, l.depth + 1 FROM lineage l
+                JOIN console_forks f ON f.child=l.parent
+            ) SELECT parent, through_id FROM lineage WHERE through_id>0 ORDER BY depth""", (session,)))
+    remaining = 6
+    if not recent:
+        segments.reverse()
+    for name, cutoff in segments:
+        if recent:
+            rows = database.execute("""SELECT role, text FROM transcripts
+                WHERE session=? AND id<=? ORDER BY id DESC LIMIT ?""", (name, cutoff, remaining))
+            for row in rows:
+                yield row
+                remaining -= 1
+            if remaining == 0:
+                break
+        else:
+            yield from database.execute("""SELECT recorded_at, role, text FROM transcripts
+                WHERE session=? AND id<=? ORDER BY id""", (name, cutoff))
+
+
 def recent_messages(database: sqlite3.Connection, session: str = TEXT_SESSION) -> list[dict]:
-    rows = database.execute(
-        "SELECT role, text AS content FROM transcripts WHERE session = ? ORDER BY id DESC LIMIT 6",
-        (session,),
-    ).fetchall()
-    return [{"role": row["role"], "content": row["content"][-800:]} for row in reversed(rows)]
+    rows = list(session_rows(database, session, recent=True))
+    return [{"role": row["role"], "content": row["text"][-800:]} for row in reversed(rows)]
 
 
 def fts_query(query: str) -> str:
@@ -69,19 +104,20 @@ def fts_query(query: str) -> str:
 
 
 def search_transcripts(
-    database: sqlite3.Connection, query: str, *, exclude_session: str = ""
+    database: sqlite3.Connection, query: str, *, exclude_session: str = "", include_named_text: bool = True
 ) -> list[dict]:
     match = fts_query(query)
     if not match:
         return []
     rows = database.execute("""
         SELECT transcripts.recorded_at, transcripts.session, transcripts.role, transcripts.text,
-               snippet(transcript_search, 0, '', '', ' … ', 32) AS excerpt
+               snippet(transcript_search, 0, '', '', ' … ', 32) AS excerpt, rank AS fts_rank
         FROM transcript_search JOIN transcripts ON transcripts.id = transcript_search.rowid
         WHERE transcript_search MATCH ? AND transcripts.session != ? AND transcripts.session NOT LIKE 'visit/%'
-        ORDER BY rank, transcripts.id DESC LIMIT 5
-    """, (match, exclude_session))
-    return [dict(row) for row in rows]
+              AND (? OR transcripts.session NOT LIKE 'console/%')
+        ORDER BY rank, transcripts.id DESC LIMIT 24
+    """, (match, exclude_session, include_named_text))
+    return [{k: row[k] for k in row.keys() if k != "fts_rank"} for row in diverse(rows.fetchall(), 5)]
 
 
 def transcript_excerpts(records: list[dict]) -> list[dict]:

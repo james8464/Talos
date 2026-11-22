@@ -22,7 +22,7 @@ from local_runtime import OLLAMA_MODEL, check_ollama_model, request_ollama_json,
 from room_dialogue import compact_decision
 from talos_identity import PERSONALITY, SPOKEN_STYLE, capability_context
 from transcript_memory import (
-    TEXT_SESSION, recall_prompt, recent_messages, remember, search_transcripts, transcript_excerpts,
+    TEXT_SESSION, fork_session, recall_prompt, recent_messages, remember, search_transcripts, session_rows, transcript_excerpts,
 )
 
 LOOKUP_TOOLS = ("search_memory", "list_inbox", "review_decisions", "current_time")
@@ -251,7 +251,7 @@ def chat(database: sqlite3.Connection, message: str, *, model: str = OLLAMA_MODE
     check_ollama_model(model)
     system = (
         PERSONALITY + "\n" + capability_context("text")
-        + (recall_prompt(search_transcripts(database, message)) if session == TEXT_SESSION else "")
+        + (recall_prompt(search_transcripts(database, message, include_named_text=False)) if session == TEXT_SESSION else "")
     )
     turn = {"role": "user", "content": message}
     reply = model_text(
@@ -341,10 +341,7 @@ def export_session(database: sqlite3.Connection, session: str, path: Path) -> in
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
         temporary = Path(stream.name)
         try:
-            rows = database.execute(
-                "SELECT recorded_at, role, text FROM transcripts WHERE session=? ORDER BY id", (session,)
-            )
-            for row in rows:
+            for row in session_rows(database, session):
                 stream.write(json.dumps(dict(row), ensure_ascii=False) + "\n")
                 count += 1
             stream.flush()
@@ -377,10 +374,10 @@ def interactive_chat(
                 case "/quit" | "/exit":
                     return 0
                 case "/help":
-                    print("/status  /new [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
+                    print("/status  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
                 case "/status":
                     show_status(model, output)
-                case "/new" | "/reset" | "/resume" | "/sessions":
+                case "/new" | "/reset" | "/branch" | "/fork" | "/resume" | "/sessions":
                     database.execute("CREATE TABLE IF NOT EXISTS console_sessions (name TEXT PRIMARY KEY)")
                     name = request.strip()
                     if command == "/sessions":
@@ -406,6 +403,8 @@ def interactive_chat(
                             added = database.execute("INSERT OR IGNORE INTO console_sessions VALUES(?)", (name,))
                             if not added.rowcount:
                                 raise ValueError("Session already exists. Use /resume NAME.")
+                            if command in ("/branch", "/fork"):
+                                fork_session(database, session, f"console/{name}")
                     session = TEXT_SESSION if name == TEXT_SESSION else f"console/{name}"
                     print(f"Current session: {name}", file=output, flush=True)
                 case "/history":

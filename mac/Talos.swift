@@ -536,8 +536,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         let endpoint = VoiceEndpoint()
         activity = endpoint
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { audio, _ in
-            endpoint.observe(audio, at: ProcessInfo.processInfo.systemUptime)
-            buffer.append(audio)
+            let compatible = SpeechAudioBufferNormalizer.speechCompatibleBuffer(from: audio)
+            endpoint.observe(compatible, at: ProcessInfo.processInfo.systemUptime)
+            buffer.append(compatible)
         }
         tapInstalled = true
         do {

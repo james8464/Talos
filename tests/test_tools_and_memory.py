@@ -146,6 +146,18 @@ class ToolsAndMemoryTests(unittest.TestCase):
         without_voice = search_transcripts(self.database, "green tag", exclude_session="voice:another")
         self.assertTrue(all(row["session"] == "text" for row in without_voice))
 
+    def test_recall_returns_distinct_evidence_before_repeated_equal_rank_hits(self):
+        from memory_ranking import tokens
+        with tempfile.TemporaryDirectory() as directory, closing(open_memory(Path(directory) / "trial.db")) as db:
+            items = ["violet bicycle", *["violet keys"] * 8]
+            remember(db, "text", [{"role": "user", "content": text} for text in items])
+            remember(db, "visit/fixture", [{"role": "user", "content": "violet visitor"}])
+            hits = search_transcripts(db, "violet")
+            self.assertEqual([row["text"] for row in hits[:2]], ["violet keys", "violet bicycle"])
+            self.assertEqual(len(hits), 5)
+            self.assertIn("京都", tokens("京都駅"))
+            self.assertTrue(all(row["session"] == "text" and "fts_rank" not in row for row in hits))
+
     def test_recall_treats_search_syntax_as_text(self):
         remember(self.database, "voice:one", [
             {"role": "user", "content": "The passport is in the red folder."}
