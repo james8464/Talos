@@ -3,13 +3,16 @@
 import argparse
 import json
 import os
+import re
 import sqlite3
 import sys
+import tempfile
 import time
 from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TextIO
+from uuid import uuid4
 
 from agent_memory import (
     STATE_PATH, decisions, open_memory, recent_context, record_decision, review_decision,
@@ -240,20 +243,21 @@ def plan(
     raise RuntimeError("The local model reached its lookup limit without making a decision.")
 
 
-def chat(database: sqlite3.Connection, message: str, *, model: str = OLLAMA_MODEL) -> str:
+def chat(database: sqlite3.Connection, message: str, *, model: str = OLLAMA_MODEL,
+         session: str = TEXT_SESSION) -> str:
     message = message.strip()
     if not 1 <= len(message) <= 4000:
         raise ValueError("A chat message must contain 1 to 4,000 characters.")
     check_ollama_model(model)
     system = (
         PERSONALITY + "\n" + capability_context("text")
-        + recall_prompt(search_transcripts(database, message))
+        + (recall_prompt(search_transcripts(database, message)) if session == TEXT_SESSION else "")
     )
     turn = {"role": "user", "content": message}
     reply = model_text(
-        [{"role": "system", "content": system}, *recent_messages(database), turn], model=model
+        [{"role": "system", "content": system}, *recent_messages(database, session), turn], model=model
     )
-    remember(database, TEXT_SESSION, [turn, {"role": "assistant", "content": reply}])
+    remember(database, session, [turn, {"role": "assistant", "content": reply}])
     return reply
 
 
@@ -331,10 +335,31 @@ def owner_task(database: sqlite3.Connection, request: str, *, apply: bool, model
     return process_event(database, event, apply=apply, trusted_owner=True, model=model)
 
 
+def export_session(database: sqlite3.Connection, session: str, path: Path) -> int:
+    """Publish a complete, private JSONL file without replacing another export."""
+    count = 0
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
+        temporary = Path(stream.name)
+        try:
+            rows = database.execute(
+                "SELECT recorded_at, role, text FROM transcripts WHERE session=? ORDER BY id", (session,)
+            )
+            for row in rows:
+                stream.write(json.dumps(dict(row), ensure_ascii=False) + "\n")
+                count += 1
+            stream.flush()
+            os.fsync(stream.fileno())
+            os.link(temporary, path)
+        finally:
+            temporary.unlink(missing_ok=True)
+    return count
+
+
 def interactive_chat(
     database: sqlite3.Connection, source: TextIO, output: TextIO, errors: TextIO, *,
     apply: bool, model: str,
 ) -> int:
+    session = TEXT_SESSION
     mode = "local actions enabled" if apply else "shadow tasks"
     print(f"Talos text console ({mode}). /help lists commands.", file=output, flush=True)
     while True:
@@ -352,9 +377,57 @@ def interactive_chat(
                 case "/quit" | "/exit":
                     return 0
                 case "/help":
-                    print("/status  /task REQUEST  /inbox  /quit", file=output, flush=True)
+                    print("/status  /new [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
                 case "/status":
                     show_status(model, output)
+                case "/new" | "/reset" | "/resume" | "/sessions":
+                    database.execute("CREATE TABLE IF NOT EXISTS console_sessions (name TEXT PRIMARY KEY)")
+                    name = request.strip()
+                    if command == "/sessions":
+                        names = [TEXT_SESSION, *(row[0] for row in database.execute(
+                            "SELECT name FROM console_sessions ORDER BY name"))]
+                        for entry in names:
+                            marker = "*" if session in (entry, f"console/{entry}") else " "
+                            print(f"{marker} {entry}", file=output, flush=True)
+                        continue
+                    if command != "/resume" and not name:
+                        name = uuid4().hex[:12]
+                    if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", name):
+                        raise ValueError("Use a session name of 1–64 letters, digits, underscores or hyphens.")
+                    if command == "/resume":
+                        if name != TEXT_SESSION and not database.execute(
+                            "SELECT 1 FROM console_sessions WHERE name=?", (name,)
+                        ).fetchone():
+                            raise ValueError("Unknown session. Use /sessions.")
+                    else:
+                        if name == TEXT_SESSION:
+                            raise ValueError("The default session already exists. Use /resume text.")
+                        with database:
+                            added = database.execute("INSERT OR IGNORE INTO console_sessions VALUES(?)", (name,))
+                            if not added.rowcount:
+                                raise ValueError("Session already exists. Use /resume NAME.")
+                    session = TEXT_SESSION if name == TEXT_SESSION else f"console/{name}"
+                    print(f"Current session: {name}", file=output, flush=True)
+                case "/history":
+                    rows = recent_messages(database, session)
+                    for row in rows:
+                        print(f"{row['role']}> {row['content']}", file=output, flush=True)
+                    if not rows:
+                        print("No recent text turns.", file=output, flush=True)
+                case "/save":
+                    if not request.strip():
+                        raise ValueError("Usage: /save FILE.jsonl")
+                    path = Path(request.strip()).expanduser()
+                    count = export_session(database, session, path)
+                    print(f"Exported {count} messages to {path}.", file=output, flush=True)
+                case "/recall":
+                    if not request.strip():
+                        raise ValueError("Usage: /recall QUERY")
+                    matches = search_transcripts(database, request)
+                    for row in matches:
+                        print(f"{row['recorded_at']} {row['role']}> {row['excerpt']}", file=output, flush=True)
+                    if not matches:
+                        print("No matching archived turns.", file=output, flush=True)
                 case "/task":
                     result = owner_task(database, request, apply=apply, model=model)
                     print(json.dumps(result, ensure_ascii=False), file=output, flush=True)
@@ -364,7 +437,7 @@ def interactive_chat(
                 case _:
                     if command.startswith("/"):
                         raise ValueError("Unknown console command. Type /help for options.")
-                    reply = chat(database, message, model=model)
+                    reply = chat(database, message, model=model, session=session)
                     print(f"Talos> {reply}", file=output, flush=True)
         except (OSError, ValueError, RuntimeError, sqlite3.Error) as error:
             print(f"Talos: {error}", file=errors, flush=True)

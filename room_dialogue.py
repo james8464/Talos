@@ -85,6 +85,13 @@ def explicit_reminder(message):
         trailing = re.fullmatch(_REQUEST_PREFIX + r"remind me to (.+?) in " + _DURATION + r"[.!?]?",
                                 message.strip(), re.I)
         if trailing is None:
+            # Keep the speaker's own relationship and wording in the reminder.
+            trailing = re.fullmatch(
+                _REQUEST_PREFIX + r"(I promised [^.!?;\n]{1,385})[.!;,]\s+"
+                + _REQUEST_PREFIX + r"remind me (?:about (?:it|that) )?in " + _DURATION + r"[.!?]?",
+                message.strip(), re.I,
+            )
+        if trailing is None:
             return None
         task, number, unit = trailing.groups()
     else:
