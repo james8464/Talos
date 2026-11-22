@@ -143,6 +143,28 @@ def parse_decision(content: str) -> dict:
     return decision
 
 
+# OpenClaw src/shared/text/reasoning-tags.ts, leading scope for local model replies.
+_REASON_TAG = re.compile(r"<\s*(/?)\s*(think|thinking|thought|antthinking|(?:antml|mm):(?:think|thinking|thought))\s*>", re.I)
+
+
+def visible_model_text(content):
+    if not isinstance(content, str):
+        raise RuntimeError("The local model returned no text.")
+    text = content.lstrip()
+    while (opening := _REASON_TAG.match(text)) and not opening[1]:
+        depth = 1
+        for tag in _REASON_TAG.finditer(text, opening.end()):
+            depth += -1 if tag[1] else 1
+            if depth == 0:
+                text = text[tag.end():].lstrip()
+                break
+        else:
+            raise RuntimeError("The local model did not finish its visible answer.")
+    if not text.strip():
+        raise RuntimeError("The local model returned no text.")
+    return text
+
+
 def model_text(
     messages: list[dict], *, model: str = OLLAMA_MODEL, schema: dict | None = None,
     max_tokens: int = 512,
@@ -159,9 +181,7 @@ def model_text(
     if response.get("done") is not True or response.get("done_reason") == "length":
         raise RuntimeError("The local model did not finish its response.")
     content = message.get("content") if isinstance(message, dict) else None
-    if not isinstance(content, str) or not content.strip():
-        raise RuntimeError("The local model returned no text.")
-    return content
+    return visible_model_text(content)
 
 
 def read_tool(database: sqlite3.Connection, tool: str, detail: str):

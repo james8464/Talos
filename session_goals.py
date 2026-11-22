@@ -65,7 +65,7 @@ def run(db, session, model, generate, ready, *, idle=None):
             draft = generate([{"role": "system", "content": (
                 "Produce the requested written deliverable in full. You can use the supplied local "
                 "conversation as reference. You have no external actions here. State missing evidence. "
-                "Improve the previous draft using the review feedback.")}, {"role": "user", "content":
+                "Improve the previous draft using the review feedback. Output only the deliverable. /no_think")}, {"role": "user", "content":
                 json.dumps({**requirements, "conversation": recent_messages(db, session),
                             "previous_draft": draft, "feedback": row["feedback"]}, ensure_ascii=False)}],
                 model=model, max_tokens=1800).strip()

@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import session_goals
-from agent import interactive_chat
+from agent import interactive_chat, model_text
 from agent_memory import open_memory
 
 
@@ -138,3 +138,16 @@ class StandingGoalTests(unittest.TestCase):
         self.assertEqual(calls, ["/api/tags", "/api/chat", "/api/chat"])
         self.assertIn("Done goal after 1 step", shown)
         self.assertIn("The card is blue.", shown)
+
+    def test_writer_reasoning_blocks_do_not_reach_goals_or_conversation_history(self):
+        for raw in ("<think>internal</think> blue", "<mm:thought>internal</mm:thought>blue",
+                    "<think>draft <thought>inner</thought></think><thinking>more</thinking>blue"):
+            with patch("agent.request_ollama_json", return_value={"done": True, "message": {"content": raw}}):
+                self.assertEqual(model_text([]), "blue")
+        for raw in ("<think>incomplete", "<think>private only</think>"):
+            with patch("agent.request_ollama_json", return_value={"done": True, "message": {"content": raw}}):
+                with self.assertRaises(RuntimeError):
+                    model_text([])
+        code = "```xml\n<think>example</think>\n```"
+        with patch("agent.request_ollama_json", return_value={"done": True, "message": {"content": code}}):
+            self.assertEqual(model_text([]), code)
