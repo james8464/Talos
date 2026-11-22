@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import tempfile
 import time
@@ -25,6 +26,24 @@ class ConversationActivityTests(unittest.TestCase):
             self.assertFalse(conversation_busy(state, grace=0))
             self.assertTrue(conversation_busy(state))
             self.assertEqual((state / "conversation.activity").read_bytes(), b"")
+
+    def test_a_crashed_foreground_process_releases_the_signal(self):
+        with tempfile.TemporaryDirectory() as folder:
+            state = Path(folder)
+            code = ("from conversation_activity import foreground\n"
+                    "from pathlib import Path\nimport sys\n"
+                    "with foreground(Path(sys.argv[1])):\n"
+                    " print('held', flush=True)\n sys.stdin.read()")
+            with subprocess.Popen([sys.executable, "-c", code, str(state)], stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE, text=True,
+                                  cwd=Path(__file__).resolve().parents[1]) as child:
+                try:
+                    self.assertEqual(child.stdout.readline().strip(), "held")
+                    self.assertTrue(conversation_busy(state, grace=0))
+                finally:
+                    child.kill()
+                    child.wait()
+            self.assertFalse(conversation_busy(state, grace=0))
 
     def test_worker_cancels_an_independent_process_and_retries_after_quiet(self):
         with tempfile.TemporaryDirectory() as folder, ThreadPoolExecutor(max_workers=1) as executor:
