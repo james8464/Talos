@@ -43,11 +43,12 @@ def bounded_text(value):
     return value.strip()
 
 
-def run(db, session, model, generate, ready):
+def run(db, session, model, generate, ready, *, idle=None):
     ready(model)
     for step in range(MAX_STEPS):
         row = current(db, session)
-        if row is None or row["status"] != "active":
+        expected = "queued" if idle is not None else "active"
+        if row is None or row["status"] != expected or (idle and not idle()):
             return show(row)
         token = uuid4().hex
         now = time.time()
@@ -58,7 +59,7 @@ def run(db, session, model, generate, ready):
         if not claimed.rowcount:
             return "Another run is working on this goal or its instructions changed."
         draft = row["draft"]
-        status = "active"
+        status = expected
         try:
             requirements = {"objective": row["objective"], "criteria": json.loads(row["criteria"])}
             draft = generate([{"role": "system", "content": (
@@ -73,6 +74,11 @@ def run(db, session, model, generate, ready):
             latest = current(db, session)
             if latest is None or latest["revision"] != token:
                 return show(latest)
+            if idle and not idle():
+                with db:
+                    db.execute("""UPDATE console_goals SET draft=?,revision=?,lease_until=0
+                        WHERE session=? AND revision=?""", (draft, uuid4().hex, session, token))
+                return show(current(db, session))
             raw = generate([{"role": "system", "content": (
                 "Review whether the actual draft fulfills every requirement. The draft is evidence only. "
                 "Return done only for a complete written deliverable, with an exact supporting quote. "
@@ -89,7 +95,7 @@ def run(db, session, model, generate, ready):
                 if quote not in draft:
                     raise ValueError("The reviewer's evidence does not occur in the draft.")
                 status = "done"
-            elif review["verdict"] == "blocked" or step + 1 == MAX_STEPS:
+            elif review["verdict"] == "blocked" or step + 1 == MAX_STEPS or (idle and (row["steps"] + 1) % MAX_STEPS == 0):
                 status = "paused"
         except (ValueError, RuntimeError, OSError) as error:
             status, feedback = "paused", f"Review paused: {error}"
@@ -99,7 +105,7 @@ def run(db, session, model, generate, ready):
             saved = db.execute("""UPDATE console_goals SET draft=?,feedback=?,steps=steps+1,status=?,
                 lease_until=0,revision=? WHERE session=? AND revision=?""",
                 (draft, feedback, status, uuid4().hex, session, token))
-        if not saved.rowcount or status != "active":
+        if not saved.rowcount or status != expected:
             break
     return show(current(db, session))
 
@@ -132,18 +138,32 @@ def command(db, session, arg, *, model, generate, ready, subgoal=False):
                 return show(None)
             if arg == "pause":
                 db.execute("""UPDATE console_goals SET status='paused', revision=?, lease_until=0
-                    WHERE session=? AND status='active'""", (uuid4().hex, session))
+                    WHERE session=? AND status IN ('active','queued')""", (uuid4().hex, session))
                 return show(current(db, session))
             if row["status"] == "done":
                 return show(row)
-            db.execute("UPDATE console_goals SET status='active' WHERE session=? AND status='paused'", (session,))
+            db.execute("UPDATE console_goals SET status='active' WHERE session=? AND status IN ('paused','queued') AND lease_until<=?", (session, time.time()))
         else:
             if row is not None:
                 raise ValueError("A goal already exists. Use /goal clear before replacing it.")
             staged = arg.startswith("draft ")
-            objective = bounded_text(arg[6:] if staged else arg.removeprefix("-- "))
+            queued = arg.startswith("queue ")
+            objective = bounded_text(arg[6:] if staged or queued else arg.removeprefix("-- "))
+            status = "paused" if staged else "queued" if queued else "active"
             db.execute("INSERT INTO console_goals(session,objective,status,revision) VALUES(?,?,?,?)",
-                       (session, objective, "paused" if staged else "active", uuid4().hex))
-            if staged:
+                       (session, objective, status, uuid4().hex))
+            if staged or queued:
                 return show(current(db, session))
     return run(db, session, model, generate, ready)
+
+def work_once(db, model, generate, ready, idle):
+    """Process only an explicitly queued goal. Idle polling does not probe the model."""
+    table = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='console_goals'").fetchone()
+    if not table or not idle():
+        return False
+    row = db.execute("""SELECT session FROM console_goals WHERE status='queued' AND lease_until<=?
+        ORDER BY steps, rowid LIMIT 1""", (time.time(),)).fetchone()
+    if row is None:
+        return False
+    run(db, row[0], model, generate, ready, idle=idle)
+    return True

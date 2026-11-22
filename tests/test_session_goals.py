@@ -72,3 +72,69 @@ class StandingGoalTests(unittest.TestCase):
         out, _ = self.console("/goal resume\n", llm)
         self.assertIn(f"Paused goal after {session_goals.MAX_STEPS} steps", out)
         self.assertEqual(llm.call_count, 2 * session_goals.MAX_STEPS)
+
+    def test_background_queue_defers_without_model_and_recovers_after_activity(self):
+        self.console("/goal queue Write a color card\n", Mock(side_effect=AssertionError))
+        writer = Mock(side_effect=["blue first draft", "blue final", verdict()])
+        ready = Mock()
+        with closing(open_memory(self.path)) as db:
+            self.assertFalse(session_goals.work_once(db, "fixture", writer, ready, lambda: False))
+            ready.assert_not_called()
+            self.assertTrue(session_goals.work_once(db, "fixture", writer, ready, Mock(side_effect=[True, True, False])))
+            row = session_goals.current(db, "text")
+            self.assertEqual((row["status"], row["draft"], row["lease_until"]), ("queued", "blue first draft", 0))
+        with closing(open_memory(self.path)) as db:
+            self.assertTrue(session_goals.work_once(db, "fixture", writer, ready, lambda: True))
+            self.assertIn("blue first draft", writer.call_args_list[1].args[0][-1]["content"])
+            self.assertFalse(session_goals.work_once(db, "fixture", writer, ready, lambda: True))
+        out, _ = self.console("/goal show\n", Mock())
+        self.assertIn("Done goal after 1 step", out)
+
+    def test_worker_command_processes_console_queue_through_loopback_api(self):
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        import os
+        import subprocess
+        import sys
+        import threading
+        calls = []
+
+        class Model(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def reply(self, result):
+                payload = json.dumps(result).encode()
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def do_GET(self):
+                calls.append(self.path)
+                self.reply({"models": [{"name": "fixture"}]})
+
+            def do_POST(self):
+                body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                calls.append(self.path)
+                answer = verdict() if body.get("format") else "The card is blue."
+                self.reply({"done": True, "done_reason": "stop", "message": {"content": answer}})
+
+        root = Path(__file__).resolve().parents[1]
+        cli = [sys.executable, str(root / "agent.py"), "--db", str(self.path), "--model", "fixture", "chat"]
+        subprocess.run(cli, input="/goal queue Draw up a color card\n", text=True, check=True, capture_output=True)
+        with ThreadingHTTPServer(("127.0.0.1", 0), Model) as server:
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                worker = [sys.executable, "-c",
+                          "import agent,idle_lab; idle_lab.power_and_idle=lambda: True; raise SystemExit(agent.main())",
+                          "--db", str(self.path), "--model", "fixture", "goal-worker"]
+                subprocess.run(worker, cwd=root, check=True, capture_output=True, timeout=10,
+                               env={**os.environ, "TALOS_OLLAMA_PORT": str(server.server_port)})
+            finally:
+                server.shutdown()
+                thread.join()
+        shown = subprocess.run(cli, input="/goal show\n", text=True, check=True, capture_output=True).stdout
+        self.assertEqual(calls, ["/api/tags", "/api/chat", "/api/chat"])
+        self.assertIn("Done goal after 1 step", shown)
+        self.assertIn("The card is blue.", shown)

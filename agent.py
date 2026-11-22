@@ -378,7 +378,7 @@ def interactive_chat(
                 case "/quit" | "/exit":
                     return 0
                 case "/help":
-                    print("/status  /goal [OBJECTIVE|status|pause|resume|clear]  /subgoal CRITERION  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /search QUERY  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
+                    print("/status  /goal [OBJECTIVE|queue OBJECTIVE|status|pause|resume|clear]  /subgoal CRITERION  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /search QUERY  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
                 case "/goal" | "/subgoal":
                     result = session_goals.command(database, session, request, model=model, generate=model_text,
                                                    ready=check_ollama_model, subgoal=command == "/subgoal")
@@ -469,6 +469,8 @@ def main() -> int:
     chat_parser.add_argument(
         "--apply", action="store_true", help="Enable local writes for /task in the console."
     )
+    worker = commands.add_parser("goal-worker", help="Run explicitly queued writing goals while the Mac is idle.")
+    worker.add_argument("--watch", action="store_true", help="Keep looking for queued goals.")
     commands.add_parser("status", help="Show capabilities and check local prerequisites.")
     search = commands.add_parser("recall", help="Search archived voice and text conversations.")
     search.add_argument("query")
@@ -487,6 +489,20 @@ def main() -> int:
     try:
         with closing(open_memory(args.db)) as database:
             match args.command:
+                case "goal-worker":
+                    from idle_lab import power_and_idle
+                    while True:
+                        try:
+                            worked = session_goals.work_once(database, args.model, model_text, check_ollama_model,
+                                                             power_and_idle)
+                        except (OSError, RuntimeError) as error:
+                            if not args.watch:
+                                raise
+                            print(f"Goal worker deferred: {error}", file=sys.stderr, flush=True)
+                            worked = False
+                        if not args.watch:
+                            return 0
+                        time.sleep(1 if worked else 30)
                 case "listen":
                     return listen(
                         database, sys.stdin, sys.stdout, sys.stderr, apply=args.apply, model=args.model
