@@ -1,0 +1,69 @@
+# Upstream source used by Talos
+
+The reference tree in `state/openclaw-src` is OpenClaw v2026.11.6, commit `06afb10d3272cc9deaf38ca6a3b7b839d5935638`. The GitHub source archive SHA-256 was `953b323a3d1825eabe968f29b8c1c3352a42bec560c60717d89501befc87dd2e`. It contains platform apps, extensions, tests, and documentation. The modules below run inside Talos independently of that checkout.
+
+| Upstream implementation | Talos integration |
+| --- | --- |
+| src/cron/schedule.ts, parse.ts, schedule-number.ts | Standalone calendar engine for future occurrences, anchored intervals and timezone-aware cron expressions. Talos persists reminders and briefing schedules in its existing SQLite store. |
+| src/infra/format-time/parse-offsetless-zoned-datetime.ts, map-size.ts, src/shared/iso-time.ts, packages/normalization-core/src/number-coercion.ts and string-coerce.ts | Calendar validation, bounded formatter caches and handling of skipped and repeated hours. Module imports point at local files. Node 22.18+ runs these TypeScript sources directly. |
+| extensions/memory-core/src/memory/mmr.ts and tokenize.ts | Python adaptation of normalized relevance, incremental maximum similarity and CJK tokenization for FTS5 transcript search. Fetches 24 scoped candidates and selects five. |
+| packages/retry/src/index.ts | Bounded exponential retry adapted for Talos background orders. Talos adds SQLite task claims, cancellation, and atomic receipts. |
+| src/agents/tool-loop-no-progress.ts | Talos compares read-only tool arguments and outcomes across its bounded planning pass. An unchanged repeat triggers a final decision with lookups disabled. |
+| extensions/telegram/src/allow-from.ts and src/update-offset-store.ts | Positive numeric sender IDs, optional tg/telegram prefixes and a per-bot SQLite polling cursor. |
+| src/tts/speech-text.ts and src/shared/text/strip-markdown.ts | Spoken replies use link labels, drop Markdown emphasis, and direct code-heavy answers to the screen. Both voices receive the same text. |
+| apps/macos/Sources/OpenClaw/QuickChatDictation.swift and SpeechAudioBufferNormalizer.swift | Native selection-aware transcript replacement, punctuation spacing and multichannel-to-mono audio normalization. Talos keeps its own microphone lifecycle, on-device recognition and explicit Send action. |
+
+OpenClaw code is distributed under the accompanying MIT license. The calendar parser, Croner, carries its own license in the scheduling directory. The full MIT notice applies to the Swift and Python adaptations as well.
+
+[OpenClaw revision](https://github.com/openclaw/openclaw/tree/06afb10d3272cc9deaf38ca6a3b7b839d5935638)
+
+## Capability coverage
+
+| Capability | Behavior verified in Talos | Remaining scope |
+| --- | --- | --- |
+| Durable work | Explicit local work orders survive restart, concurrent cancellation prevents late writes, and receipts commit in the same SQLite transaction as job completion. | General-purpose workflows, nested workers, and cross-device handoff. |
+| Scheduled work | Private recurring reminders and evidence-based project briefings, missed-run coalescing, and timezone transitions. | Event and stream triggers, remote delivery, and general scheduled tool execution. |
+| Conversation and recall | Session filtering precedes FTS retrieval and diversity ranking. Reviewed dictation supports revised captions and long turns. | Model-quality and end-to-end microphone latency comparisons on a live Mac. |
+| Integrations | Owner-only Telegram text, quoted replies, JPEG attachments, photo follow-ups, local Ogg/Opus transcription, selectable voice replies and delivery receipts have fixture coverage. | Live Telegram delivery, audio files beyond voice notes, video, albums, groups, other channels, device nodes and plugins. |
+
+## Hermes comparison
+
+Reviewed NousResearch/hermes-agent at `0f602c5f6f18615632535251d62a2db74ce93b69`. Talos's terminal now exposes recent text history and ranked transcript recall without loading a model. Hermes's command registry provided the reference for making history directly discoverable.
+
+| Hermes source | Next Talos acceptance test |
+| --- | --- |
+| `plugins/platforms/telegram/adapter.py` | Fixtures now verify expiring private-chat pairing, sender rejection, replay after restart, and multipart delivery after rate limiting. Owner JPEG photos and JPEG attachments now use bounded reads and local vision. Replies to photos reopen just the selected image. Direct text replies use a source-checked quote even outside the recent history window. Live transport, albums, other audio attachments and video remain open. Keep family records and biometric data on the Mac. |
+| `tools/transcription_local.py` and `gateway/session_config.py` | Talos adapts the pinned voice activity detector settings and segment confidence filter for local CPU Whisper. The private chat remembers its off, voice-only or all-replies preference across restarts. |
+| `hermes_cli/setup_quick.py` | Start with an empty temporary profile, select a local provider, interrupt setup, and resume without losing the selection. |
+| `tools/skill_manager_tool.py` | Convert a successful repeated procedure into a versioned candidate, evaluate it against held-out tasks, and restore the previous version if quality drops. |
+
+## Extension inventory at the pinned OpenClaw revision
+
+Each entry corresponds to an upstream plugin manifest. End-to-end parity for these plugins is unverified. The individual algorithms already adapted above cover part of their behavior. This inventory excludes core commands and platform applications.
+
+**Channel plugins (28)**
+
+`a2a`, `buzz`, `clickclack`, `discord`, `feishu`, `googlechat`, `imessage`, `irc`, `line`, `matrix`, `mattermost`, `msteams`, `nextcloud-talk`, `nostr`, `qa-channel`, `raft`, `reef`, `signal`, `slack`, `sms`, `synology-chat`, `telegram`, `tlon`, `twitch`, `whatsapp`, `x`, `zalo`, `zalouser`.
+
+**Provider plugins (69)**
+
+`abliteration`, `amazon-bedrock`, `amazon-bedrock-mantle`, `anthropic`, `anthropic-vertex`, `apple-fm`, `arcee`, `baseten`, `bifrost`, `byteplus`, `cerebras`, `chutes`, `clawrouter`, `cloudflare-ai-gateway`, `codex`, `cohere`, `comfy`, `copilot-proxy`, `deepinfra`, `deepseek`, `fal`, `featherless`, `fireworks`, `github-copilot`, `gmi`, `google`, `groq`, `huggingface`, `kie`, `kilocode`, `kimi-coding`, `levanto`, `liquid-ai`, `litellm`, `llama-cpp`, `lmstudio`, `longcat`, `meta`, `microsoft-foundry`, `minimax`, `mistral`, `moonshot`, `novita`, `nvidia`, `ollama`, `omlx`, `onnx`, `openai`, `opencode`, `opencode-go`, `openrouter`, `qianfan`, `qwen`, `radius`, `requesty`, `sglang`, `stepfun`, `synthetic`, `tencent`, `together`, `typesafe`, `venice`, `vercel-ai-gateway`, `vllm`, `volcengine`, `vydra`, `xai`, `xiaomi`, `zai`.
+
+**Other plugins (81)**
+
+`acpx`, `active-memory`, `admin-http-rpc`, `advisor`, `agent-guidance`, `agentsapi`, `alibaba`, `autoreview`, `azure-speech`, `beam`, `bonjour`, `brave`, `browser`, `canvas`, `cloudflare`, `code-mode-quickjs`, `copilot`, `crabbox`, `cua-computer`, `deepgram`, `device-pair`, `diagnostics-otel`, `diagnostics-prometheus`, `diffs`, `diffs-language-pack`, `document-extract`, `duckduckgo`, `elevenlabs`, `exa`, `facetime`, `file-transfer`, `firecrawl`, `fish-audio-speech`, `geolocation`, `github`, `google-meet`, `gradium`, `imap`, `inworld`, `knowledge`, `linux-node`, `llm-task`, `lobster`, `logbook`, `mcp-events`, `mcp-relay`, `memory-core`, `memory-lancedb`, `memory-wiki`, `microsoft`, `migrate-claude`, `migrate-hermes`, `muse`, `mxc`, `oc-path`, `onepassword`, `openshell`, `parallel`, `perplexity`, `pixverse`, `policy`, `qa-lab`, `runway`, `searxng`, `senseaudio`, `session-share`, `slack-huddles`, `subq`, `talk-voice`, `tavily`, `team-reports`, `teams-meetings`, `tokenjuice`, `tts-local-cli`, `vault`, `visitor-access`, `voice-call`, `voyage`, `web-readability`, `workboard`, `zoom-meetings`.
+
+
+## Hermes command coverage
+
+The pinned Hermes registry declares 105 literal command definitions. Terminal fixture coverage includes fresh named sessions, reopening a session, recent history and JSONL export. Telegram fixtures cover private text, quoted replies, transient JPEG inspection, corrections, reset, durable polling and multipart replies. Real Telegram transport, group routing, music files and video remain unverified. The gateway adapts Hermes’s UTF-16 prefix calculation from `gateway/platforms/base.py` under the accompanying MIT license.
+
+**Session** · `/start`, `/new`, `/topic`, `/clear`, `/redraw`, `/history`, `/save`, `/retry`, `/prompt`, `/undo`, `/rewind`, `/title`, `/handoff`, `/branch`, `/worktree`, `/compress`, `/rollback`, `/snapshot`, `/stop`, `/discard`, `/pause`, `/approve`, `/deny`, `/bg`, `/btw`, `/agents`, `/journey`, `/queue`, `/steer`, `/goal`, `/heartbeat`, `/refine`, `/review`, `/loop`, `/plan`, `/moa`, `/subgoal`, `/status`, `/egress`, `/context`, `/sethome`, `/resume`, `/sessions`, `/restart`.
+
+**Configuration** · `/export`, `/import`, `/config`, `/model`, `/codex-runtime`, `/personality`, `/statusbar`, `/battery`, `/timestamps`, `/verbose`, `/focus`, `/footer`, `/yolo`, `/approvals`, `/reasoning`, `/fast`, `/skin`, `/indicator`, `/voice`, `/wake`, `/busy`, `/autoprune`.
+
+**Info** · `/whoami`, `/profile`, `/diff`, `/commands`, `/help`, `/palette`, `/usage`, `/subscription`, `/login`, `/topup`, `/insights`, `/platforms`, `/platform`, `/copy`, `/paste`, `/image`, `/update`, `/version`, `/debug`.
+
+**Tools & Skills** · `/tools`, `/toolsets`, `/skills`, `/memory`, `/bundles`, `/pet`, `/hatch`, `/learn`, `/init`, `/cron`, `/suggestions`, `/blueprint`, `/curator`, `/kanban`, `/reload`, `/reload-mcp`, `/reload-skills`, `/browser`, `/plugins`.
+
+**Exit** · `/quit`.

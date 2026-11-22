@@ -8,6 +8,11 @@ from memory_ranking import diverse
 from datetime import UTC, datetime
 
 TEXT_SESSION = "text"
+_LINEAGE = """WITH RECURSIVE visible(session, through_id, depth) AS (
+    SELECT ?, 9223372036854775807, 0
+    UNION ALL SELECT f.parent, f.through_id, v.depth + 1
+    FROM visible v JOIN console_forks f ON f.child=v.session
+)"""
 _STOP_WORDS = frozenset(
     "a about again and are as at be can could did do does for from had has have how i in is it "
     "me my of on or please say tell that the this to was we were what when where which who "
@@ -62,17 +67,21 @@ def fork_session(database: sqlite3.Connection, source: str, child: str) -> None:
                         FROM transcripts WHERE session=?""", (child, source, source))
 
 
-def session_rows(database: sqlite3.Connection, session: str, *, recent=False):
-    # Nonempty segments are disjoint and ordered by the last transcript ID at each fork.
-    segments = [(session, 2**63 - 1)]
+def lineage_query(database, session):
+    # Older databases only have the ancestry table after their first fork.
     if session.startswith("console/") and database.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='console_forks'"
     ).fetchone():
-        segments.extend(database.execute("""WITH RECURSIVE lineage(parent, through_id, depth) AS (
-                SELECT parent, through_id, 1 FROM console_forks WHERE child=?
-                UNION ALL SELECT f.parent, f.through_id, l.depth + 1 FROM lineage l
-                JOIN console_forks f ON f.child=l.parent
-            ) SELECT parent, through_id FROM lineage WHERE through_id>0 ORDER BY depth""", (session,)))
+        return _LINEAGE
+    return "WITH visible(session, through_id, depth) AS (SELECT ?, 9223372036854775807, 0)"
+
+
+def session_rows(database: sqlite3.Connection, session: str, *, recent=False):
+    # Nonempty segments are disjoint and ordered by the last transcript ID at each fork.
+    segments = [(session, 2**63 - 1)]
+    if session.startswith("console/"):
+        segments = list(database.execute(lineage_query(database, session) + """
+            SELECT session, through_id FROM visible WHERE through_id>0 ORDER BY depth""", (session,)))
     remaining = 6
     if not recent:
         segments.reverse()
@@ -104,19 +113,28 @@ def fts_query(query: str) -> str:
 
 
 def search_transcripts(
-    database: sqlite3.Connection, query: str, *, exclude_session: str = "", include_named_text: bool = True
+    database: sqlite3.Connection, query: str, *, exclude_session: str = "", include_named_text: bool = True,
+    in_session: str | None = None
 ) -> list[dict]:
     match = fts_query(query)
     if not match:
         return []
-    rows = database.execute("""
+    prefix = ""
+    scope = ""
+    args = []
+    if in_session is not None:
+        prefix = lineage_query(database, in_session)
+        scope = "JOIN visible ON visible.session=transcripts.session AND transcripts.id<=visible.through_id"
+        args.append(in_session)
+    rows = database.execute(prefix + f"""
         SELECT transcripts.recorded_at, transcripts.session, transcripts.role, transcripts.text,
                snippet(transcript_search, 0, '', '', ' … ', 32) AS excerpt, rank AS fts_rank
         FROM transcript_search JOIN transcripts ON transcripts.id = transcript_search.rowid
+        {scope}
         WHERE transcript_search MATCH ? AND transcripts.session != ? AND transcripts.session NOT LIKE 'visit/%'
               AND (? OR transcripts.session NOT LIKE 'console/%')
         ORDER BY rank, transcripts.id DESC LIMIT 24
-    """, (match, exclude_session, include_named_text))
+    """, (*args, match, exclude_session, include_named_text))
     return [{k: row[k] for k in row.keys() if k != "fts_rank"} for row in diverse(rows.fetchall(), 5)]
 
 

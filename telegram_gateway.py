@@ -19,6 +19,7 @@ from agent import model_text
 from conversation import limit_history
 from local_runtime import check_ollama_model
 from room_vision import describe_image
+from telegram_voice import MAX_VOICE_BYTES, MAX_VOICE_SECONDS, VoiceUnavailable, model_directory, render_note, setup_voice, transcribe_note
 
 MAX_PHOTO_BYTES = 180_000
 MAX_PHOTO_PIXELS = 4_000_000
@@ -42,8 +43,17 @@ def owner_id(value):
 def api_client(token):
     def call(method, **params):
         with closing(http.client.HTTPSConnection("api.telegram.org", timeout=40)) as conn:
-            conn.request("POST", f"/bot{token}/{method}", json.dumps(params),
-                         {"Content-Type": "application/json"})
+            if method == "sendVoice":
+                boundary = secrets.token_hex(24)
+                prefix = (f'--{boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n'
+                          f'{params["chat_id"]}\r\n--{boundary}\r\nContent-Disposition: form-data; '
+                          'name="voice"; filename="reply.ogg"\r\nContent-Type: audio/ogg\r\n\r\n')
+                body = prefix.encode() + params["voice"] + f"\r\n--{boundary}--\r\n".encode()
+                mime = f"multipart/form-data; boundary={boundary}"
+            else:
+                body = json.dumps(params)
+                mime = "application/json"
+            conn.request("POST", f"/bot{token}/{method}", body, {"Content-Type": mime})
             response = conn.getresponse()
             body = json.load(response)
             if not body.get("ok"):
@@ -53,7 +63,7 @@ def api_client(token):
     return call
 
 
-def download_photo(token, path):
+def download_photo(token, path, *, limit=MAX_PHOTO_BYTES):
     if not isinstance(path, str) or not re.fullmatch(r"(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?", path, re.I):
         raise ValueError("Invalid Telegram photo path.")
     with closing(http.client.HTTPSConnection("api.telegram.org", timeout=20)) as conn:
@@ -61,7 +71,7 @@ def download_photo(token, path):
         response = conn.getresponse()
         if response.status != 200:
             raise OSError("Telegram photo unavailable.")
-        return response.read(MAX_PHOTO_BYTES + 1)
+        return response.read(limit + 1)
 
 
 def photo_variants(message):
@@ -140,6 +150,10 @@ def open_channel(path):
         bot INTEGER PRIMARY KEY, owner INTEGER, question TEXT, answer TEXT, remaining TEXT, save_turn INTEGER)""")
     db.execute("""CREATE TABLE IF NOT EXISTS turns (
         bot INTEGER, owner INTEGER, seq INTEGER PRIMARY KEY, question TEXT, answer TEXT)""")
+    db.execute("""CREATE TABLE IF NOT EXISTS voice_modes (
+        bot INTEGER, owner INTEGER, mode TEXT NOT NULL, PRIMARY KEY(bot, owner))""")
+    if not any(row[1] == "speak" for row in db.execute("PRAGMA table_info(outbox)")):
+        db.execute("ALTER TABLE outbox ADD COLUMN speak INTEGER NOT NULL DEFAULT 0")
     return db
 
 
@@ -156,12 +170,12 @@ def reply_reference(message, bot, owner):
     return {"speaker": "Talos" if sender["id"] == bot else "user", "excerpt": excerpt[:1200]}
 
 
-def reply_to(db, bot, owner, text, model, *, reference=None):
-    if text in ("/start", "/help"):
-        return "Send a message or a photo with a question. /new clears this chat’s local context. Mac files and actions are unavailable here."
-    if text in ("/new", "/reset"):
+def reply_to(db, bot, owner, text, model, *, reference=None, dictation=False):
+    if not dictation and text in ("/start", "/help"):
+        return "Send text, a photo with a question, or a short voice note. /voice configures spoken replies. /new clears this chat’s local context. Mac files and actions are unavailable here."
+    if not dictation and text in ("/new", "/reset"):
         return "Started a fresh conversation."
-    if text.startswith("/"):
+    if not dictation and text.startswith("/"):
         return "Unknown command. Use /help."
     check_ollama_model(model)
     messages = [{"role": "system", "content": (
@@ -210,11 +224,11 @@ def text_chunk(text):
 
 
 def flush_reply(db, call, bot, owner):
-    pending = db.execute("""SELECT o.question,o.answer,o.remaining,o.save_turn,d.status FROM outbox o
+    pending = db.execute("""SELECT o.question,o.answer,o.remaining,o.save_turn,d.status,o.speak FROM outbox o
                             JOIN delivery d USING(bot) WHERE o.bot=? AND o.owner=?""", (bot, owner)).fetchone()
     if not pending:
         return
-    question, answer, remaining, save_turn, status = pending
+    question, answer, remaining, save_turn, status, speak = pending
     if status == "unconfirmed":
         # A previous send may have reached Telegram before the process stopped.
         with db:
@@ -223,10 +237,19 @@ def flush_reply(db, call, bot, owner):
         return
     while remaining:
         part = text_chunk(remaining)
+        audio = None
+        if speak:
+            try:
+                audio = render_note(part)
+            except (ImportError, OSError, RuntimeError, ValueError):
+                pass  # Local synthesis failed before transmission; deliver the text.
         with db:
             db.execute("UPDATE delivery SET status='unconfirmed' WHERE bot=?", (bot,))
         try:
-            sent = call("sendMessage", chat_id=owner, text=part)
+            if audio:
+                sent = call("sendVoice", chat_id=owner, voice=audio)
+            else:
+                sent = call("sendMessage", chat_id=owner, text=part)
         except ApiError as error:
             if error.code == 429:
                 with db:
@@ -248,7 +271,24 @@ def flush_reply(db, call, bot, owner):
                                (bot, owner, bot, owner))
 
 
-def poll(db, call, bot, owner, model, *, download=None):
+def voice_text(voice, call, download):
+    model_directory()
+    if not isinstance(voice, dict) or not isinstance(voice.get("file_id"), str):
+        raise ValueError("Missing voice file.")
+    if not isinstance(voice.get("duration"), int) or not 0 <= voice["duration"] <= MAX_VOICE_SECONDS:
+        raise ValueError("Invalid voice duration.")
+    if voice.get("file_size", 0) > MAX_VOICE_BYTES:
+        raise ValueError("Voice note exceeds the size limit.")
+    info = call("getFile", file_id=voice["file_id"])
+    if info.get("file_size", 0) > MAX_VOICE_BYTES:
+        raise ValueError("Voice note exceeds the size limit.")
+    audio = download(info["file_path"])
+    if len(audio) > MAX_VOICE_BYTES:
+        raise ValueError("Voice note exceeds the size limit.")
+    return transcribe_note(audio)
+
+
+def poll(db, call, bot, owner, model, *, download=None, download_voice=None):
     flush_reply(db, call, bot, owner)
     cursor = db.execute("SELECT seen,stamp FROM cursor WHERE bot=?", (bot,)).fetchone()
     # Telegram retains updates for at most a day and can randomize IDs after prolonged inactivity.
@@ -272,12 +312,36 @@ def poll(db, call, bot, owner, model, *, download=None):
                     and parent.get("chat", {}).get("type") == "private"):
                 variants = photo_variants(parent)
                 caption = text
-        if not (text or variants):
+        voice = message.get("voice") if allowed and download_voice is not None else None
+        dictation = voice is not None
+        if not (text or variants or dictation):
             # No side effect to replay. One cursor write can cover a run of ignored updates.
             skipped = seen = ident
             continue
         answer = None
         save_turn = bool(text and not text.startswith("/"))
+        if dictation:
+            try:
+                text = voice_text(voice, call, download_voice)
+                if not text:
+                    answer = "I couldn’t make out speech in that voice note. Please try again."
+            except VoiceUnavailable:
+                answer = "Local voice transcription is unavailable. You can still send text."
+            except ApiError as error:
+                if error.code == 429 or error.code >= 500:
+                    raise
+                answer = "I couldn’t retrieve that voice note. Please resend it."
+            except (ValueError, OSError, RuntimeError, http.client.HTTPException):
+                answer = "I couldn’t read that voice note. Send an Ogg/Opus note up to 90 seconds and 2 MB."
+            save_turn = bool(text and answer is None)
+        mode_change = None
+        mode_row = db.execute("SELECT mode FROM voice_modes WHERE bot=? AND owner=?", (bot, owner)).fetchone()
+        mode = mode_row[0] if mode_row else "off"
+        if not dictation and text.split()[:1] == ["/voice"]:
+            args = text.split()[1:]
+            if len(args) == 1 and args[0] in ("off", "voice_only", "all"):
+                mode_change = args[0]
+            answer = f"Spoken replies: {mode_change or mode}. Use /voice off, /voice voice_only, or /voice all."
         if variants:
             try:
                 answer = photo_reply(variants, caption, call, download)
@@ -289,18 +353,22 @@ def poll(db, call, bot, owner, model, *, download=None):
                 answer = "I couldn't read that Telegram photo. Please resend it."
             text = ""
             save_turn = False
-        elif text:
+        elif text and answer is None:
             try:
-                answer = reply_to(db, bot, owner, text, model, reference=reply_reference(message, bot, owner))
+                answer = reply_to(db, bot, owner, text, model,
+                                  reference=reply_reference(message, bot, owner), dictation=dictation)
             except (RuntimeError, OSError):
                 answer = "The local model is unavailable. Please try your message again."
                 save_turn = False
         with db:
+            if mode_change:
+                db.execute("INSERT OR REPLACE INTO voice_modes VALUES(?,?,?)", (bot, owner, mode_change))
             if answer is not None:
                 db.execute("INSERT OR REPLACE INTO delivery VALUES(?,?,'ready',NULL)", (bot, ident))
-                db.execute("INSERT OR REPLACE INTO outbox VALUES(?,?,?,?,?,?)",
-                           (bot, owner, text, answer, answer, save_turn))
-            if text in ("/new", "/reset"):
+                db.execute("INSERT OR REPLACE INTO outbox (bot,owner,question,answer,remaining,save_turn,speak) VALUES(?,?,?,?,?,?,?)",
+                           (bot, owner, text, answer, answer, save_turn,
+                            save_turn and len(answer) <= 600 and (mode == "all" or (dictation and mode == "voice_only"))))
+            if not dictation and text in ("/new", "/reset"):
                 db.execute("DELETE FROM turns WHERE bot=? AND owner=?", (bot, owner))
             db.execute("INSERT OR REPLACE INTO cursor VALUES(?,?,?)", (bot, ident, time.time()))
         if answer is not None:
@@ -349,7 +417,15 @@ def main():
     parser.add_argument("--check", action="store_true", help="Check bot identity, webhook and local model, then exit")
     parser.add_argument("--model", default="qwen3:4b")
     parser.add_argument("--state", type=Path, default=Path(__file__).resolve().parent / "state/telegram")
+    parser.add_argument("--setup-voice", action="store_true", help="Download and verify the local voice-note model, then exit")
     args = parser.parse_args()
+    if args.setup_voice:
+        try:
+            setup_voice()
+        except (ValueError, RuntimeError, OSError) as error:
+            parser.exit(1, f"Voice setup failed: {error}\n")
+        print("Verified local Telegram voice model.")
+        return
     token = os.environ.get("TALOS_TELEGRAM_TOKEN", "")
     if not re.fullmatch(r"[1-9]\d*:[A-Za-z0-9_-]+", token):
         parser.error("Set TALOS_TELEGRAM_TOKEN to your bot token.")
@@ -390,7 +466,8 @@ def main():
             backoff = 1
             while True:
                 try:
-                    poll(db, call, bot, owner, args.model, download=lambda path: download_photo(token, path))
+                    poll(db, call, bot, owner, args.model, download=lambda path: download_photo(token, path),
+                         download_voice=lambda path: download_photo(token, path, limit=MAX_VOICE_BYTES))
                     backoff = 1
                 except ApiError as error:
                     if error.code != 429 and error.code < 500:

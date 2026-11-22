@@ -249,9 +249,11 @@ def chat(database: sqlite3.Connection, message: str, *, model: str = OLLAMA_MODE
     if not 1 <= len(message) <= 4000:
         raise ValueError("A chat message must contain 1 to 4,000 characters.")
     check_ollama_model(model)
+    records = (search_transcripts(database, message, include_named_text=False) if session == TEXT_SESSION
+               else search_transcripts(database, message, in_session=session))
     system = (
         PERSONALITY + "\n" + capability_context("text")
-        + (recall_prompt(search_transcripts(database, message, include_named_text=False)) if session == TEXT_SESSION else "")
+        + recall_prompt(records)
     )
     turn = {"role": "user", "content": message}
     reply = model_text(
@@ -374,7 +376,7 @@ def interactive_chat(
                 case "/quit" | "/exit":
                     return 0
                 case "/help":
-                    print("/status  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
+                    print("/status  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /search QUERY  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
                 case "/status":
                     show_status(model, output)
                 case "/new" | "/reset" | "/branch" | "/fork" | "/resume" | "/sessions":
@@ -419,10 +421,10 @@ def interactive_chat(
                     path = Path(request.strip()).expanduser()
                     count = export_session(database, session, path)
                     print(f"Exported {count} messages to {path}.", file=output, flush=True)
-                case "/recall":
+                case "/recall" | "/search":
                     if not request.strip():
-                        raise ValueError("Usage: /recall QUERY")
-                    matches = search_transcripts(database, request)
+                        raise ValueError(f"Usage: {command} QUERY")
+                    matches = search_transcripts(database, request, in_session=session if command == "/search" else None)
                     for row in matches:
                         print(f"{row['recorded_at']} {row['role']}> {row['excerpt']}", file=output, flush=True)
                     if not matches:
