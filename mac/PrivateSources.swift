@@ -12,6 +12,9 @@ final class PrivateSourceController: ObservableObject {
     @Published var status = ""
     @Published var speak = false
     @Published var sources: [Entry] = []
+    @Published var availableApps: [String] = []
+    @Published var enabledApps: Set<String> = []
+    @Published var savingApps = false
     @Published var brief = ""
     @Published var links: [Evidence] = []
     struct Question: Decodable {
@@ -27,8 +30,19 @@ final class PrivateSourceController: ObservableObject {
         let speak: Int
     }
     struct Evidence: Decodable, Hashable { let title: String; let url: URL }
+    func setApps(_ apps: Set<String>) async throws {
+        guard !savingApps, let client else { return }
+        savingApps = true
+        defer { savingApps = false }
+        let result = try await client.request("context/apps", body: ["apps": apps.sorted()])
+        guard let saved = result["enabled_apps"] as? [String] else { throw RoomError("Couldn't confirm the app settings.") }
+        enabledApps = Set(saved)
+    }
+
     func load() async throws {
         let data = try await client?.request("context/sources") ?? [:]
+        availableApps = data["available_apps"] as? [String] ?? []
+        enabledApps = Set(data["enabled_apps"] as? [String] ?? [])
         sources = try JSONDecoder().decode([Entry].self, from: JSONSerialization.data(withJSONObject: data["sources"] ?? []))
         let result = try await client?.request("context/brief") ?? [:]
         brief = result["reply"] as? String ?? ""
@@ -43,6 +57,20 @@ struct PrivateSources: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack { Text("Private sources and commitments").font(.title2); Spacer(); Button("Done") { dismiss() } }
+            if !model.availableApps.isEmpty {
+                GroupBox("Search from the private message field") {
+                    HStack {
+                        ForEach(model.availableApps, id: \.self) { app in
+                            Toggle(app, isOn: Binding(get: { model.enabledApps.contains(app) }, set: { enabled in
+                                let selected = enabled ? model.enabledApps.union([app]) : model.enabledApps.subtracting([app])
+                                Task {
+                                    do { try await model.setApps(selected) } catch { model.status = error.localizedDescription }
+                                }
+                            }))
+                        }
+                    }.toggleStyle(.checkbox).disabled(model.savingApps)
+                }
+            }
             Picker("Source", selection: $model.kind) {
                 ForEach(["email","imessage","whatsapp","document","calendar"], id: \.self) { Text($0.capitalized) }
             }

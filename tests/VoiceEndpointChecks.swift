@@ -68,6 +68,13 @@ struct VoiceEndpointChecks {
         precondition(ConversationFocus.conversationalInterruption("What about Friday?", playback: "Try again tomorrow.", allowSpeech: true))
         precondition(!ConversationFocus.conversationalInterruption("try again", playback: "Try again tomorrow.", allowSpeech: true))
         precondition(ConversationFocus.conversationalInterruption("stop", playback: "Try again tomorrow.", allowSpeech: true))
+        precondition(ConversationFocus.pauseOnly("Wait,"))
+        precondition(!ConversationFocus.pauseOnly("Wait, I meant Thursday."))
+        precondition(ConversationFocus.conversationalInterruption("wait", playback: "Awaiting your reply.", allowSpeech: true))
+        precondition(!ConversationFocus.conversationalInterruption("wait", playback: "Please wait here.", allowSpeech: true))
+        focus.open(at: 20, question: false)
+        precondition(focus.request("What did I just say?", at: 23) != nil)
+        precondition(focus.request("What did I just say?", at: 29) == nil)
         var facing = FacingAttention()
         for time in [10.0,10.7,11.4] { facing.observe(true, at: time) }
         precondition(facing.accepts("Can you hear me?", from: 10.9, until: 11.8, hasOffer: false))

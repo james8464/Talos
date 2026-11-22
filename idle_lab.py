@@ -143,13 +143,16 @@ class IdleLab:
             )
 
 
-def experiment(db_path, trial, model):
+def experiment(db_path, trial, model, *, reviewer=None):
     with closing(open_memory(db_path)) as db:
         row = db.execute("SELECT * FROM coding_trials WHERE id=?", (trial,)).fetchone()
         if not row:
             return
         stage = row["stage"]
-        target = "room_voice.py" if stage == "speech synthesis" else "room_dialogue.py"
+        target = {
+            "speech synthesis": "room_voice.py",
+            "memory retrieval": "personal_facts.py",
+        }.get(stage, "room_dialogue.py")
         status = "no candidate"
         outdir = db_path.parent / "proposals"
         try:
@@ -162,30 +165,34 @@ def experiment(db_path, trial, model):
                         dest = work / src.relative_to(ROOT)
                         dest.parent.mkdir(exist_ok=True)
                         shutil.copyfile(src, dest)
-                check_ollama_model(model)
                 original = (work / target).read_text()
-                prompt = (
-                    "Repeated slow "
-                    + stage
-                    + ". Improve latency while preserving behavior. Return JSON with before and after strings. "
-                    "Before must be one exact contiguous excerpt of this Python file. After replaces only that excerpt. "
-                    "If you cannot improve it, return empty strings. Source:\n"
-                    + original
-                )
-                response = request_ollama_json(
-                    "POST",
-                    "/api/generate",
-                    timeout=120,
-                    payload={
-                        "model": model,
-                        "prompt": prompt,
-                        "format": "json",
-                        "stream": False,
-                        "think": False,
-                        "options": {"temperature": 0, "num_predict": 1200},
-                    },
-                )
-                proposal = json.loads(response.get("response", ""))
+                if reviewer is not None:
+                    # Only code from a fixed target and a non-personal stage go to the reviewer.
+                    proposal = reviewer(stage, original)
+                else:
+                    check_ollama_model(model)
+                    prompt = (
+                        "Repeated slow "
+                        + stage
+                        + ". Improve latency while preserving behavior. Return JSON with before and after strings. "
+                        "Before must be one exact contiguous excerpt of this Python file. After replaces only that excerpt. "
+                        "If you cannot improve it, return empty strings. Source:\n"
+                        + original
+                    )
+                    response = request_ollama_json(
+                        "POST",
+                        "/api/generate",
+                        timeout=120,
+                        payload={
+                            "model": model,
+                            "prompt": prompt,
+                            "format": "json",
+                            "stream": False,
+                            "think": False,
+                            "options": {"temperature": 0, "num_predict": 1200},
+                        },
+                    )
+                    proposal = json.loads(response.get("response", ""))
                 before, after = proposal.get("before"), proposal.get("after")
                 if (
                     not isinstance(before, str)
@@ -223,7 +230,7 @@ def experiment(db_path, trial, model):
                 )
                 ast.parse((work / target).read_text())
                 outdir.mkdir(mode=0o700, exist_ok=True)
-                filename = outdir / f"trial-{trial}.patch"
+                filename = outdir / f"{db_path.stem}-trial-{trial}.patch" if reviewer else outdir / f"trial-{trial}.patch"
                 filename.write_text(diff)
                 status = "applies and parses; replay pending"
                 # Candidate code can read only this copy and the installed runtime. No network access.
@@ -269,7 +276,7 @@ def experiment(db_path, trial, model):
                             "-p",
                             "test_room_voice.py"
                             if target == "room_voice.py"
-                            else "test_room_dialogue.py",
+                            else "test_room_refinement.py" if target == "personal_facts.py" else "test_room_dialogue.py",
                         ],
                         env=env,
                         cwd=work,
@@ -309,8 +316,8 @@ def experiment(db_path, trial, model):
             SyntaxError,
             OSError,
             subprocess.SubprocessError,
-        ):
-            pass
+        ) as error:
+            status = "review stopped: " + type(error).__name__
         finally:
             with db:
                 db.execute(

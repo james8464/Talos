@@ -1,6 +1,8 @@
 """Local actions with transactional records and a private inbox."""
 
+import re
 import sqlite3
+import subprocess
 from datetime import UTC, datetime, timedelta
 
 MAX_REMINDER_MINUTES = 30 * 24 * 60
@@ -10,6 +12,49 @@ LOCAL_WRITES = {
     "create_task": "task",
     "save_note": "note",
 }
+
+
+MAC_APPS = {
+    "Calendar": "com.apple.iCal",
+    "Contacts": "com.apple.AddressBook",
+    "Finder": "com.apple.finder",
+    "Mail": "com.apple.mail",
+    "Messages": "com.apple.MobileSMS",
+    "Notes": "com.apple.Notes",
+    "Preview": "com.apple.Preview",
+    "Reminders": "com.apple.reminders",
+    "Safari": "com.apple.Safari",
+}
+_APP_REQUEST = re.compile(
+    r"(?:(?:hey )?talos[, ]+)?(?:(?:can|could|would) you )?(?:please )?(?:open|launch) "
+    r"(?:the app )?(" + "|".join(MAC_APPS) + r")(?: app)?[.!?]?", re.I | re.ASCII
+)
+
+
+def requested_app(text):
+    match = _APP_REQUEST.fullmatch(text.strip())
+    return match[1].capitalize() if match else None
+
+
+def open_mac_app(name, *, enabled, direct):
+    action = "blocked"
+    if not direct:
+        reply = "Start a new addressed request or type the app-opening command."
+    elif not enabled:
+        reply = "App opening is unavailable in this room."
+    else:
+        try:
+            process = subprocess.run(["/usr/bin/open", "-b", MAC_APPS[name]],
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+            if process.returncode == 0:
+                action, reply = "accepted", f"macOS accepted the request to open {name}."
+            else:
+                action, reply = "failed", f"macOS could not open {name}."
+        except subprocess.TimeoutExpired:
+            action, reply = "unverified", f"I couldn't verify whether macOS opened {name}."
+        except OSError:
+            action, reply = "failed", f"I couldn't start the macOS launcher for {name}."
+    return {"tool": "open_app", "action": action, "reply": reply}
 
 
 def initialize_actions(database: sqlite3.Connection) -> None:

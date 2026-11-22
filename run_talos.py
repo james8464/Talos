@@ -253,7 +253,7 @@ def main() -> int:
                                 "--token-file", str(TOKEN_PATH), "--port", str(args.port)], check=True)
 
         run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice, online=not args.offline,
-                            model_state=lambda: backend.state),
+                            model_state=lambda: backend.state, app_launch_enabled=app is not None),
             TOKEN_PATH, ready=launch_app)
     except KeyboardInterrupt:
         return 0

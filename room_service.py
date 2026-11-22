@@ -1,6 +1,8 @@
 """Loopback HTTP endpoint and background room-event worker."""
 
 import commitment_memory
+import mac_context
+import message_drafts
 import personal_facts
 import room_vision
 from idle_lab import IdleLab, IdleReviewDeferred
@@ -23,7 +25,7 @@ from typing import Callable
 from uuid import uuid4
 
 from agent import model_text, parse_event, plan
-from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer, spoken_reply, conversational_correction, corrected_recollection, compact_decision
+from room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer, spoken_reply, immediate_recall, conversational_correction, corrected_recollection, compact_decision
 import goal_store
 import visitor_memory
 from turn_timing import classify
@@ -32,7 +34,7 @@ from talos_identity import SPOKEN_STYLE
 from room_work import clauses, apply_order, note_request, project_brief, propose_work, saved_brief, work_order
 from room_research import external_request, public_answer, search_web
 from agent_memory import STATE_PATH, insert_decision, open_memory
-from local_actions import inbox_items
+from local_actions import inbox_items, open_mac_app, requested_app
 from room_queue import enqueue, next_event, observe_presence, presence, retry_event
 from transcript_memory import TEXT_SESSION, insert_transcripts, recent_messages
 
@@ -66,11 +68,12 @@ def voice_latency(db):
 
 
 class Room:
-    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True, voice=None, online=True, model_state=None):
+    def __init__(self, db_path: Path, model: str, *, apply: bool = True, speak: bool = True, voice=None, online=True, model_state=None, app_launch_enabled=False):
         self.db_path = db_path
         self.model = model
         self.apply = apply
         self.speak = speak and apply
+        self.app_launch_enabled = app_launch_enabled
         self.online = online
         self.model_state = model_state or (lambda: "ready")
         self.voice = voice
@@ -258,6 +261,8 @@ class Room:
             elif profile and re.fullmatch(r"what (?:do you (?:remember|know) about me|did i tell you(?: last time)?)", words):
                 recalled = visitor_memory.recall(db, profile)
                 reply = "Last time you said, " + recalled[0]["quote"][:400] if recalled else "I haven't reviewed a statement from you yet."
+            elif (recollection := immediate_recall(text, history)) is not None:
+                reply = recollection
             elif history and (correction := conversational_correction(text)):
                 reply = f"Got it. You meant {correction}."
             elif history and (recollection := corrected_recollection(text, history)):
@@ -343,6 +348,8 @@ class Room:
                 proposal = decision("reply", room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people")))
             elif quick:
                 proposal = decision("reply", quick)
+            elif (recollection := immediate_recall(text, self.voice_window if source == "voice" else dialogue)) is not None:
+                proposal = decision("reply", recollection)
             elif lookup:
                 answer, sources = self.public_lookup(lookup)
                 proposal = decision("reply", answer)
@@ -552,8 +559,23 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= 800:
             raise ValueError("Use between 1 and 800 characters for the turn.")
         voice = facing or channel == "voice"
+        app = requested_app(text)
+        draft = message_drafts.draft_request(text)
+        if app or draft:
+            with self.turn_lock:
+                self.facing_offer = self.facing_exchange = None
+                self.pending_reminders.pop("native_voice" if voice else TEXT_SESSION, None)
+                direct = not (voice and (facing or body.get("visitor") or body.get("follow_up")))
+                if draft:
+                    return message_drafts.handle(db, draft, voice=voice, direct=direct, apply=self.apply)
+                return open_mac_app(app, enabled=self.app_launch_enabled and self.apply, direct=direct)
+        private_result = mac_context.room_answer(text, self.db_path.parent, voice)
+        if private_result is not None:
+            return private_result
         profile = body.get("visitor") if voice else None
         session = visitor_memory.visit_session(db, profile) if profile else ("native_voice" if voice else TEXT_SESSION)
+        if file_request := commitment_memory.FILE_REQUEST.fullmatch(text.strip()):
+            return commitment_memory.find_file(db, file_request[1], voice)
         if commitment_memory.BRIEF.fullmatch(text.strip()):
             words = text.lower().strip(" .?!")
             cutoff = None
@@ -603,7 +625,15 @@ class Room:
                 case "POST", ("/v1/turn" | "/v1/voice/facing"):
                     return 200, self.handle_room_turn(db, body, facing=path.endswith("/facing"))
                 case "GET", "/v1/context/sources":
-                    return 200, {"sources": [dict(r) for r in db.execute("SELECT id,path,kind,person,topic,speak,checked,error FROM context_sources ORDER BY id")]}
+                    return 200, {"sources": [dict(r) for r in db.execute("SELECT id,path,kind,person,topic,speak,checked,error FROM context_sources ORDER BY id")],
+                                 "available_apps": mac_context.APPS, "enabled_apps": sorted(mac_context.enabled(self.db_path.parent))}
+                case "POST", "/v1/context/apps":
+                    if not self.apply: return 403, {"error": "Source changes are off in shadow mode."}
+                    apps = body.get("apps")
+                    if not isinstance(apps, list) or not all(isinstance(a, str) and a in mac_context.APPS for a in apps):
+                        raise ValueError("Choose one or more listed Mac apps, or an empty list to disable lookup.")
+                    mac_context.configure(self.db_path.parent, apps)
+                    return 200, {"enabled_apps": sorted(set(apps))}
                 case "GET", "/v1/context/brief":
                     return 200, commitment_memory.brief(db)
                 case "POST", "/v1/context/select":
@@ -613,7 +643,11 @@ class Room:
                         raise ValueError("Choose a source file, owner, topic and contact.")
                     if not isinstance(body.get("selector",""),str) or type(body.get("speak",False)) is not bool:
                         raise ValueError("Use a text chat selector and a boolean speech setting.")
-                    sid = commitment_memory.select(db, *(body[key] for key in fields), speak=body.get("speak") is True, selector=body.get("selector",""))
+                    retain = body.get("retain", True)
+                    if type(retain) is not bool:
+                        raise ValueError("Use a boolean retention setting.")
+                    sid = commitment_memory.select(db, *(body[key] for key in fields), retain=retain,
+                                                   speak=body.get("speak") is True, selector=body.get("selector",""))
                     row = db.execute("SELECT * FROM context_sources WHERE id=?", (sid,)).fetchone()
                     commitment_memory.refresh(db, row, datetime.now(UTC).timestamp())
                     return 200, {"id": sid}
@@ -733,6 +767,11 @@ class Room:
                     occupied = body.get("occupied")
                     if "occupied" not in body or (occupied is not None and type(occupied) is not bool):
                         raise ValueError("occupied must be true, false, or null.")
+                    if occupied is not True:
+                        with self.turn_lock:
+                            self.voice_window.clear()
+                            self.facing_offer = self.facing_exchange = self.last_voice_reminder = None
+                            self.pending_reminders.pop("native_voice", None)
                     return 202, {"event_id": observe_presence(db, occupied)}
                 case "POST", "/v1/events":
                     event = parse_event(json.dumps(body))
@@ -752,12 +791,15 @@ class Room:
                     item_id = body.get("id")
                     if type(item_id) is not int or not 1 <= item_id <= 2**63 - 1:
                         raise ValueError("A positive item ID is required.")
-                    row = db.execute(
-                        "SELECT kind FROM inbox WHERE id = ?", (item_id,),
-                    ).fetchone()
-                    if row is None or row["kind"] not in ("speech", "alert", "reminder"):
-                        raise ValueError("Unknown speech item.")
                     with db:
+                        db.execute("BEGIN IMMEDIATE")
+                        row = db.execute(
+                            "SELECT kind, due_at, acknowledged_at FROM inbox WHERE id = ?", (item_id,),
+                        ).fetchone()
+                        if row is None or row["kind"] not in ("speech", "alert", "reminder"):
+                            raise ValueError("Unknown speech item.")
+                        if row["acknowledged_at"] is None and datetime.fromisoformat(row["due_at"]) > datetime.now(UTC):
+                            raise ValueError("This item is not due yet.")
                         db.execute("""UPDATE inbox SET acknowledged_at = ?
                             WHERE id = ? AND acknowledged_at IS NULL""",
                             (datetime.now(UTC).isoformat(), item_id))

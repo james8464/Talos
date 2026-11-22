@@ -11,13 +11,28 @@ import json
 from pathlib import Path
 import re
 import sqlite3
+import unicodedata
 from contextlib import closing
 from datetime import date, datetime, timedelta, timezone
 
+from mac_context import read_messages
+
 KINDS = ("email", "imessage", "whatsapp", "document", "calendar")
 DAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|\d{4}-\d{2}-\d{2}"
-PROMISE = re.compile(
-    r"\bI(?:['’]ll| will| promise to| agreed to)\s+([^.!?\n]{2,220})", re.I
+_PROMISE_START = r"\bI(?:['’]ll| will| promise to| agreed to)\s+"
+PROMISE = re.compile(_PROMISE_START + r"([^.!?\n]{2,220})", re.I)
+_NEXT_PROMISE = re.compile(
+    r"(?:[,;][ \t]*(?:(?:and(?: then)?|then)[ \t]+)?|[ \t]+(?:and(?: then)?|then)[ \t]+)"
+    r"(?=" + _PROMISE_START + r")", re.I,
+)
+_REPORTED = re.compile(
+    r"""
+    ^[ \t]*>[^\n]*                         # quoted reply line
+    | (?<!\d)"[^"]*(?:"|\Z)                # double quote, excluding an inch mark
+    | “[^”]*(?:”|\Z)
+    | ‘(?:[^’]++|’(?=\w))*(?:’|\Z)         # keep apostrophes inside quoted words
+    | (?<!\w)'(?!\d{2}s\b)(?:[^']++|'(?=\w))*(?:'|\Z)
+    """, re.M | re.X,
 )
 DATE = re.compile(r"\b(" + DAYS + r")\b", re.I)
 REVISED = re.compile(r"\b(" + DAYS + r") (?:is fine|works|instead|is better)\b", re.I)
@@ -29,6 +44,11 @@ BRIEF = re.compile(
     r"(?:hey talos[, ]+)?(?:what do i owe(?: people)?|(?:show|list) my commitments|give me my commitment brief)(?: right now| before tomorrow| by tomorrow| today)?[?.! ]*",
     re.I,
 )
+
+
+def authored_text(body):
+    """Mask reported speech, preserving offsets and line breaks for source excerpts."""
+    return _REPORTED.sub(lambda m: "\n".join("_" * len(line) for line in m[0].split("\n")), body)
 
 
 def schema(db):
@@ -129,7 +149,7 @@ def messages(src, raw):
                     continue
             stamp = parsedate_to_datetime(str(msg["date"])).timestamp()
             text = re.split(
-                r"(?im)^On .+ wrote:|^-+Original Message-+|^From:|^>",
+                r"(?im)^On .+ wrote:|^-+Original Message-+|^From:",
                 part.get_content(),
             )[0]
             yield stamp, outgoing, text, str(msg.get("Message-ID", f"message {i}"))
@@ -189,15 +209,13 @@ def messages(src, raw):
 def selected_chat(src):
     # A single selected chat, including outgoing messages. Attributed-body-only
     # messages require a supported export and are outside this text-only reader.
-    uri = Path(src["path"]).as_uri() + "?mode=ro"
-    with closing(sqlite3.connect(uri, uri=True, timeout=1)) as chat:
-        chat.execute("PRAGMA query_only=ON")
-        rows = chat.execute(
-            """SELECT m.date,m.is_from_me,m.text,m.guid FROM chat c
-            JOIN chat_message_join cm ON cm.chat_id=c.rowid JOIN message m ON m.rowid=cm.message_id
-            WHERE c.chat_identifier=? AND m.text IS NOT NULL ORDER BY m.date DESC LIMIT 500""",
-            (src["selector"] or src["person"],),
-        ).fetchall()
+    rows = read_messages(
+        Path(src["path"]),
+        """SELECT m.date,m.is_from_me,m.text,m.guid FROM chat c
+           JOIN chat_message_join cm ON cm.chat_id=c.rowid JOIN message m ON m.rowid=cm.message_id
+           WHERE c.chat_identifier=? AND {visible} ORDER BY m.date DESC LIMIT 500""",
+        (src["selector"] or src["person"],), timeout=1,
+    )
     for stamp, outgoing, text, guid in reversed(rows):
         seconds = stamp / 1e9 if abs(stamp) > 1e12 else stamp
         yield 978307200 + seconds, bool(outgoing), text, str(guid)
@@ -226,13 +244,84 @@ def evidence(src, raw, mtime):
     for stamp, outgoing, body, pointer in (
         selected_chat(src) if raw is None else messages(src, raw)
     ):
-        if outgoing and (m := PROMISE.search(body)):
+        authored = authored_text(body)
+        if not outgoing:
+            if m := REVISED.search(authored):
+                yield stamp, "revision", m[0], m[1], pointer
+            continue
+        # Split explicit coordinated promises while retaining source offsets.
+        clauses = _NEXT_PROMISE.sub(lambda m: "\n" * len(m[0]), authored)
+        seen = set()
+        for m in PROMISE.finditer(clauses):
+            detail = body[m.start(1):m.end(1)].strip()
+            if detail in seen:
+                continue
+            seen.add(detail)
             due = DATE.search(m[1])
-            yield stamp, "promise", m[1].strip(), due[0] if due else "", pointer
-        elif not outgoing and (m := REVISED.search(body)):
-            yield stamp, "revision", m[0], m[1], pointer
-        elif outgoing and (m := DELIVERED.search(body)):
-            yield stamp, "delivery", m[0][:180], "", pointer
+            yield stamp, "promise", detail, due[0] if due else "", pointer
+        if not seen and (m := DELIVERED.search(authored)):
+            yield stamp, "delivery", body[m.start():m.end()][:180], "", pointer
+
+
+DOCUMENT_TYPES = {".txt", ".md", ".csv", ".xlsx", ".docx", ".pdf", ".pages", ".numbers"}
+FILE_REQUEST = re.compile(
+    r"(?:(?:hey )?talos[, ]+)?(?:please )?(?:find|locate|look for) "
+    r"(?:the |a |my )?file (?:named |called )?(.+?)[?.!]?", re.I
+)
+
+
+def folder_documents(folder):
+    return (p for p in folder.iterdir() if not p.name.startswith(".")
+            and p.suffix.casefold() in DOCUMENT_TYPES and not p.is_symlink() and p.is_file())
+
+
+def find_file(db, phrase, spoken):
+    def normalized(name):
+        return unicodedata.normalize("NFC", name).casefold()
+
+    query = normalized(phrase.strip().strip('"“”').strip())
+    if not query:
+        return {"reply": "Which filename should I look for?", "sources": []}
+    terms = query.split()
+    matches = {}
+    unavailable = False
+    for (value,) in db.execute(
+        """SELECT DISTINCT path FROM context_sources WHERE kind='document'
+           AND retain=1 AND (?=0 OR speak=1)""", (spoken,)
+    ):
+        root = Path(value)
+        try:
+            # Selected paths are canonical at enrollment. Ignore later symlink substitutions.
+            if root.resolve(strict=True) != root:
+                unavailable = True
+                continue
+            if root.is_dir():
+                candidates = folder_documents(root)
+            elif root.is_file():
+                candidates = (root,)
+            else:
+                unavailable = True
+                continue
+            for path in candidates:
+                name = normalized(path.name)
+                if all(term in name for term in terms):
+                    matches[path] = (name != query, name, str(path))
+        except (OSError, RuntimeError):
+            unavailable = True
+    ranked = sorted(matches, key=matches.get)
+    if ranked:
+        shown = ranked[:2 if spoken else 8]
+        reply = "I found " + ", ".join(p.name for p in shown) + "."
+        if len(shown) < len(ranked):
+            reply += f" There are {len(ranked) - len(shown)} more matches."
+    else:
+        reply = ("No matching file found in the document sources enabled for speech." if spoken
+                 else "No matching file found in the selected document sources.")
+    if unavailable:
+        reply += " Some selected sources were unavailable."
+    return {"reply": reply, "sources": [] if spoken else [
+        {"title": path.name, "url": path.as_uri()} for path in ranked[:8]
+    ]}
 
 
 def refresh(db, src, now):
@@ -257,21 +346,7 @@ def refresh(db, src, now):
             if path.is_dir():
                 rows = [
                     (p.stat().st_mtime, "document", p.name, "", p.name)
-                    for p in path.iterdir()
-                    if not p.is_symlink()
-                    and not p.name.startswith(".")
-                    and p.is_file()
-                    and p.suffix.casefold()
-                    in (
-                        ".txt",
-                        ".md",
-                        ".csv",
-                        ".xlsx",
-                        ".docx",
-                        ".pdf",
-                        ".pages",
-                        ".numbers",
-                    )
+                    for p in folder_documents(path)
                 ]
                 rows.sort()
                 digest = hashlib.sha256(json.dumps(rows).encode()).hexdigest()
@@ -285,6 +360,8 @@ def refresh(db, src, now):
             if len(raw) > 8_000_000:
                 raise ValueError("Select an export under 8 MB.")
             digest = hashlib.sha256(raw).hexdigest()
+            if src["kind"] in ("email", "imessage", "whatsapp"):
+                digest = "authored-v3:" + digest
             if digest != src["digest"]:
                 rows = list(evidence(src, raw, path.stat().st_mtime))
     except (
@@ -393,6 +470,7 @@ def brief(db, spoken=False, cutoff=None):
     lines, sources, questions = [], [], []
     for (person, topic), rows in groups.items():
         promises = [r for r in rows if r["kind"] == "promise"]
+        current_promises = {(r["source"], key(r)) for r in promises}
         totals = {}
         for revision in (r for r in rows if r["kind"] == "revision"):
             totals[revision["stamp"]] = db.execute(
@@ -419,7 +497,7 @@ def brief(db, spoken=False, cutoff=None):
                 ):
                     due = rev["due"]
                     refs.append(rev)
-                elif not chosen and not questions and not spoken:
+                elif not spoken and not questions and chosen not in current_promises:
                     options = [
                         {
                             "id": [str(r["source"]), str(r["seq"]), key(r)],
