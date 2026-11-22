@@ -278,7 +278,7 @@ class RefinementTests(unittest.TestCase):
         self.assertNotIn("draft.md", self.request("/v1/context/brief")["reply"])
 
     def test_find_project_file_reads_current_names_and_respects_speech_controls(self):
-        project = self.path.parent / "Selected project"
+        project = self.path.parent.resolve() / "Selected project"
         project.mkdir()
         exact = project / "Café notes.md"
         exact.write_text("private fixture contents")
