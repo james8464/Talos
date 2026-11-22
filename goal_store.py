@@ -45,9 +45,9 @@ def _checkpoint(db, goal_id, reason, now, notification=None):
     )
 
 
-def _inbox(db, kind, text, at, now):
+def _inbox(db, kind, text, at, now, *, event_kind="goal_update"):
     tool = "set_reminder" if kind == "reminder" else "log_alert"
-    event = json.dumps({"kind": "goal_update", "summary": text})
+    event = json.dumps({"kind": event_kind, "summary": "Scheduled private notification" if event_kind == "private_recurring" else text})
     proposal = json.dumps({"disposition": "act", "tool": tool, "detail": text})
     row = db.execute(
         "INSERT INTO decisions(recorded_at,event,proposal) VALUES(?,?,?)", (now.isoformat(), event, proposal)
