@@ -62,6 +62,11 @@ def answer(text, frame, people=None):
             return (
                 "I see more than one person. Could you step into the frame on your own?"
             )
+    return describe_image(text, frame)
+
+
+def describe_image(text, frame):
+    """Describe one validated, base64-encoded JPEG without recording a turn."""
     model = os.environ.get("TALOS_VISION_MODEL", "qwen2.5vl:3b")
     try:
         check_ollama_model(model)
@@ -79,7 +84,7 @@ def answer(text, frame, people=None):
                 "messages": [
                     {
                         "role": "system",
-                        "content": "Answer briefly using only visible details from the current frame. If unclear say so. Do not identify people.",
+                        "content": "Answer briefly using only details visible in the supplied image. If unclear say so. Do not identify people.",
                     },
                     {"role": "user", "content": text, "images": [frame]},
                 ],

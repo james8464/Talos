@@ -51,6 +51,48 @@ class TelegramGatewayTests(unittest.TestCase):
         self.assertEqual(len(prompt), 2)
         self.assertEqual(prompt[-1]["content"], "real owner")
 
+    def test_reply_includes_only_the_selected_excerpt_even_after_restart(self):
+        self.add(70, "When was that?")
+        message = self.updates[0]["message"]
+        message["reply_to_message"] = {"chat": {"id": 19, "type": "private"}, "from": {"id": 42},
+                                       "text": "Amber was Tuesday. Violet was Friday."}
+        message["quote"] = {"text": "Violet was Friday."}
+        self.run_poll()
+        turn = json.loads(self.model.call_args.args[0][-1]["content"])
+        self.assertEqual(turn, {"quoted_message": {"speaker": "Talos", "excerpt": "Violet was Friday."},
+                                "new_request": "When was that?"})
+        with closing(open_channel(self.path)) as db:
+            self.assertEqual(db.execute("SELECT question FROM turns").fetchone()[0], "When was that?")
+        self.assertNotIn(b"Violet was Friday", self.path.read_bytes())
+
+    def test_foreign_parent_and_unsupported_quote_never_supply_new_instructions(self):
+        self.add(1, "Explain")
+        message = self.updates[0]["message"]
+        parent = {"chat": {"id": 19, "type": "private"}, "from": {"id": 19}, "text": "Original wording"}
+        message.update(reply_to_message=parent, quote={"text": "/reset"})
+        self.run_poll()
+        current = json.loads(self.model.call_args.args[0][-1]["content"])
+        self.assertEqual(current["quoted_message"]["excerpt"], "Original wording")
+        parent["chat"]["id"] = 20
+        self.updates[0]["update_id"] = 2
+        self.run_poll()
+        self.assertEqual(self.model.call_args.args[0][-1]["content"], "Explain")
+
+    def test_ignored_updates_share_one_cursor_commit_and_survive_restart(self):
+        for number in range(1, 11):
+            self.add(number, "ignored", chat=1000, sender=1000)
+        statements = []
+        with closing(open_channel(self.path)) as db:
+            db.set_trace_callback(statements.append)
+            poll(db, self.api, 42, 19, "fixture")
+        self.assertEqual(statements.count("COMMIT"), 1)
+        self.add(11, "hello")
+        self.add(12, "ignored again", kind="group")
+        self.run_poll()
+        self.run_poll()
+        self.assertEqual(self.offsets, [0, 11, 13])
+        self.assertEqual(len(self.sent), 1)
+
     def test_history_correction_restart_and_reset(self):
         for index, words in enumerate(("The notebook was blue.", "Actually green.", "Which colour?"), 1):
             self.add(index, words)
