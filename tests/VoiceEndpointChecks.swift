@@ -8,8 +8,14 @@ import Foundation
 struct VoiceEndpointChecks {
     static func checkSpeechInputFormats() {
         for count: AVAudioChannelCount in [1, 2, 4] {
+            var layout = AudioChannelLayout()
+            switch count {
+            case 1: layout.mChannelLayoutTag = kAudioChannelLayoutTag_Mono
+            case 2: layout.mChannelLayoutTag = kAudioChannelLayoutTag_Stereo
+            default: layout.mChannelLayoutTag = kAudioChannelLayoutTag_Quadraphonic
+            }
             let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000,
-                                       channels: count, interleaved: false)!
+                                       interleaved: false, channelLayout: AVAudioChannelLayout(layout: &layout))
             let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 8)!
             buffer.frameLength = 2
             for channel in 0..<Int(count) {
