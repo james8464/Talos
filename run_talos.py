@@ -23,6 +23,7 @@ from local_runtime import check_ollama_model, request_ollama_json
 from room_service import DEFAULT_PORT, Room, run
 from room_voice import DEFAULT_VOICE, KokoroVoice, prepare_assets, voice_python
 import talos_activity
+from worker_supervision import WorkerSupervisor
 
 ROOT = Path(__file__).resolve().parent
 STATE = ROOT / "state"
@@ -257,11 +258,11 @@ def run_trial(args) -> None:
                 app_process.wait(timeout=5)
 
 
-def start_memory_workers(model, *, local_only, children, respan=False, room_owner=False, sections=False):
+def start_memory_workers(model, *, local_only, children, respan=False, room_owner=False, sections=False, stop=None):
     heartbeat = ["overnight_goal.py", "--heartbeat", "--watch", "--model", model]
     if local_only:
         heartbeat.append("--local-only")
-    workers = [heartbeat, ["vault_watch.py"], ["maintenance.py", "--model", model]]
+    workers = [heartbeat, ["vault_watch.py"], ["maintenance.py", "--model", model], ["self_repair.py", "--watch"]]
     if respan:
         workers.append(["respan_worker.py", *(["--room-owner"] if room_owner else [])])
     if sections:
@@ -269,6 +270,11 @@ def start_memory_workers(model, *, local_only, children, respan=False, room_owne
                        for engine in ("OpenCode", "OpenClaude"))
     for script, *options in workers:
         children.append(subprocess.Popen([sys.executable, str(ROOT / script), *options]))
+    if stop is not None:
+        supervisor = threading.Thread(target=WorkerSupervisor(STATE, children).watch, args=(stop,),
+                                      name="Talos worker supervisor", daemon=True)
+        supervisor.start()
+        return supervisor
 
 
 def attach_room(port, *, wait=False):
@@ -305,6 +311,7 @@ def main() -> int:
     children = []
     activity_stop = threading.Event()
     viewer = None
+    supervisor = None
     try:
         if args.attach:
             attach_room(args.port, wait=True)
@@ -313,7 +320,8 @@ def main() -> int:
             if args.shadow or args.build_only or args.room_trial:
                 raise ValueError("Memory-only mode runs the live memory workers. Choose one launch mode.")
             os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
-            start_memory_workers(args.model, local_only=args.offline, children=children, sections=args.section_reviews, respan=args.respan_reviews or not args.offline)
+            supervisor = start_memory_workers(args.model, local_only=args.offline, children=children,
+                sections=args.section_reviews, respan=args.respan_reviews or not args.offline, stop=activity_stop)
             talos_activity.display(STATE, args.port, stop=activity_stop)
             return 0
         if args.room_trial:
@@ -344,7 +352,8 @@ def main() -> int:
         backend = ProjectModel(args.model, args.ollama_port, args.offline)
         backend.worker.start()
         if not args.shadow:
-            start_memory_workers(args.model, local_only=args.offline, children=children, sections=args.section_reviews, respan=args.respan_reviews or not args.offline, room_owner=True)
+            supervisor = start_memory_workers(args.model, local_only=args.offline, children=children,
+                sections=args.section_reviews, respan=args.respan_reviews or not args.offline, room_owner=True, stop=activity_stop)
 
         def launch_app() -> None:
             nonlocal viewer
@@ -366,12 +375,18 @@ def main() -> int:
         return 1
     finally:
         activity_stop.set()
+        if supervisor is not None:
+            supervisor.join()
         if viewer is not None:
             viewer.join(timeout=2)
         for worker in reversed(children):
             if worker.poll() is None:
                 worker.terminate()
-                worker.wait()
+                try:
+                    worker.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    worker.kill()
+                    worker.wait()
         if backend is not None:
             backend.close()
     return 0

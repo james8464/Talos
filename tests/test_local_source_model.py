@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import local_source_model as local
 from feature_targets import FILE
-from respan_worker import CONTENDED, LOCAL_READY, LOCK_RETRY, rearm_deferred_sources, turn
+from respan_worker import CONTENDED, LOCAL_READY, LOCK_RETRY, rearm_deferred_jobs, turn
 from upstream_review import inventory
 
 
@@ -106,12 +106,12 @@ class LocalReviewTests(unittest.TestCase):
             db.executemany("INSERT INTO jobs VALUES(?,?,?,?)", [
                 ("Hermes",800,3,"Respan connection unavailable (gaierror)."),
                 ("OpenClaw",900,0,"Compared OpenClaw heartbeat"),
-                ("Knowledge",700,2,"Respan connection unavailable (gaierror).")])
+                ("Knowledge",700,0,"Reviewed knowledge")])
         with patch.object(local,"installed",return_value=None):
-            self.assertEqual(rearm_deferred_sources(self.root,self.state,clock=clock),0)
+            self.assertEqual(rearm_deferred_jobs(self.root,self.state,clock=clock),0)
         with patch.object(local,"installed",return_value=("exe","weights")):
-            self.assertEqual(rearm_deferred_sources(self.root,self.state,clock=clock),1)
-            self.assertEqual(rearm_deferred_sources(self.root,self.state,clock=clock),0)
+            self.assertEqual(rearm_deferred_jobs(self.root,self.state,clock=clock),1)
+            self.assertEqual(rearm_deferred_jobs(self.root,self.state,clock=clock),0)
             with closing(sqlite3.connect(file)) as db:
                 self.assertEqual(db.execute("SELECT due,outcome FROM jobs WHERE name='Hermes'").fetchone(),(100,LOCAL_READY))
                 self.assertEqual(dict(db.execute("SELECT name,due FROM jobs WHERE name!='Hermes'")),{"OpenClaw":900,"Knowledge":700})
@@ -122,7 +122,25 @@ class LocalReviewTests(unittest.TestCase):
                 self.assertIsNone(turn(self.root,self.state,job="Hermes",clock=clock))
             with closing(sqlite3.connect(file)) as db:
                 self.assertEqual(db.execute("SELECT due,failures FROM jobs WHERE name='Hermes'").fetchone(),(100+LOCK_RETRY,3))
-            self.assertEqual(rearm_deferred_sources(self.root,self.state,clock=clock),1)
+            self.assertEqual(rearm_deferred_jobs(self.root,self.state,clock=clock),1)
+
+    def test_knowledge_provider_failure_recovers_locally_without_repeating_cloud_request(self):
+        with closing(sqlite3.connect(self.state/"respan-review.sqlite3")) as db, db:
+            db.execute("CREATE TABLE jobs(name TEXT PRIMARY KEY,due REAL,failures INTEGER,outcome TEXT)")
+            db.execute("INSERT INTO jobs VALUES('Knowledge',900,4,'Respan connection unavailable (gaierror).')")
+        with patch.object(local, "installed", return_value=("exe","weights")), \
+             patch("respan_worker.graph_review.review_local", return_value="Evidence verified") as on_device, \
+             patch("respan_worker.graph_review.review", side_effect=AssertionError("early cloud request")):
+            self.assertEqual(rearm_deferred_jobs(self.root, self.state, clock=lambda:100),1)
+            result = turn(self.root,self.state,job="Knowledge",clock=lambda:100)
+            self.assertIn(local.MODEL,result)
+            self.assertIn("Evidence verified",result)
+            on_device.assert_called_once()
+            self.assertEqual(rearm_deferred_jobs(self.root,self.state,clock=lambda:101),0)
+        with closing(sqlite3.connect(self.state/"respan-review.sqlite3")) as db:
+            due,failures,outcome = db.execute("SELECT due,failures,outcome FROM jobs WHERE name='Knowledge'").fetchone()
+            self.assertEqual((due,failures),(700,0))
+            self.assertEqual(outcome,result)
 
     def test_yields_to_conversation_and_observes_elapsed_deadline(self):
         child = self.root / "slow.py"

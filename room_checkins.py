@@ -74,7 +74,8 @@ def handle(db, text, *, apply, request_id=None, reply_token=None, now=None):
                 return {"reply": "A check-in is already active. You can cancel it first."}
             delivery = schedule(db, now, minutes, QUESTION)
             db.execute("INSERT INTO room_checkins VALUES(?,?,'scheduled',?)", (key, delivery, minutes))
-            return {"reply": f"I’ll check in here in {minutes} minutes. If you don’t reply, I’ll ask once more ten minutes later.",
+            unit = "minute" if minutes == 1 else "minutes"
+            return {"reply": f"I’ll check in here in {minutes} {unit}. If you don’t reply, I’ll ask once more ten minutes later.",
                     "id": delivery}
         if not active and answer:
             active = db.execute("""SELECT c.token,c.delivery,c.status FROM room_checkins c JOIN inbox i

@@ -178,7 +178,8 @@ def launchd_status(label, interval):
 
 _WORKER_LOCKS = (("Maintenance", "maintenance"), ("Heartbeat watcher", "heartbeat-watch"),
                  ("Obsidian publisher", "vault-watch"), ("Respan reviewer", "respan-watch"),
-                 ("OpenCode worker", "section-OpenCode-watch"), ("OpenClaude worker", "section-OpenClaude-watch"))
+                 ("OpenCode worker", "section-OpenCode-watch"), ("OpenClaude worker", "section-OpenClaude-watch"),
+                 ("Self-repair worker", "self-repair-watch"))
 
 
 def runtime_locks(state, port=None):
@@ -251,6 +252,10 @@ def runtime_evidence(state):
     index_receipt = False
     try:
         with closing(sqlite3.connect(uri, uri=True, timeout=.15)) as db:
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='local_graph_review'").fetchone():
+                latest = db.execute("SELECT checked_at,receipt FROM local_graph_review WHERE singleton=1").fetchone()
+                if latest:
+                    receipts.insert(0, f"Local knowledge review · {checked_time(latest[0])} · {clean(latest[1])}")
             row = db.execute("SELECT checked_at,receipt FROM index_merge_state WHERE singleton=1").fetchone()
             if row and row[1]:
                 receipts.append(f"Local index maintenance · {checked_time(row[0])} · {clean(row[1])}")
@@ -261,7 +266,8 @@ def runtime_evidence(state):
     try:
         with closing(sqlite3.connect(uri, uri=True, timeout=.15)) as db:
             for component, label in (("Index maintenance", "Local index maintenance"),
-                                     ("Migration", "Developer-verified migration")):
+                                     ("Migration", "Developer-verified migration"),
+                                     ("Supervisor", "Worker supervision"), ("Repair", "Latest repair activity")):
                 if component == "Index maintenance" and index_receipt:
                     continue
                 row = db.execute("SELECT stamp,message FROM events WHERE component=? ORDER BY id DESC LIMIT 1",
@@ -287,6 +293,19 @@ def runtime_evidence(state):
     return receipts
 
 
+def repair_evidence(state):
+    """Read the incident and source-repair ledgers without starting a repair."""
+    from self_diagnosis import summary as incidents
+    from self_repair import summary as repairs
+    lines = []
+    for read in (repairs, incidents):
+        try:
+            lines.extend(clean(line) for line in read(state))
+        except (OSError, ValueError, sqlite3.Error):
+            lines.append("Repair ledger temporarily unavailable")
+    return lines
+
+
 def snapshot(state, port, *, database=None):
     lines = service_snapshot(state, runtime_locks(state, port))
     if sys.platform == "darwin" and state.resolve() == STATE:
@@ -310,6 +329,7 @@ def snapshot(state, port, *, database=None):
     except (OSError, UnicodeError):
         pass
     lines.extend(runtime_evidence(state))
+    lines.extend(repair_evidence(state))
     try:
         with (state / "feature-requests.jsonl").open("rb") as queue:
             size = queue.seek(0, os.SEEK_END)

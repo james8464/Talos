@@ -71,6 +71,7 @@ class CheckInTests(unittest.TestCase):
     def test_bare_cancel_uses_heard_delivery_not_request_id_and_survives_restart(self):
         request_id = str(uuid4())
         started = self.say("Check in with me in one minute", request_id=request_id)
+        self.assertIn("in 1 minute.", started["reply"])
         first = self.due(started["id"])
         nonce = first["check_in_token"]
         self.assertNotEqual(request_id,nonce)

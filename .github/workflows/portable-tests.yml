@@ -43,4 +43,4 @@ jobs:
       - name: Replay the native room controller and interrupted spoken turns
         env:
           PYTHONPATH: tests:.
-        run: python -m unittest -v test_native_room_flow test_spoken_stream.SpokenStreamFlow.test_native_first_clip_interrupt_and_replacement_turn
+        run: python -m unittest -v test_native_room_flow test_spoken_stream.SpokenStreamFlow.test_native_first_clip_interrupt_and_replacement_turn test_voice_recovery.VoiceRecoveryTests.test_native_kokoro_failure_watchdog_and_cancellation

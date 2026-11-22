@@ -97,11 +97,15 @@ def evidence_lines(text, path):
     return [rows[i * (len(rows) - 1) // 23] for i in range(24)]
 
 
-def run_cpu(runtime, state, prompt, *, timeout=90):
+def run_cpu(runtime, state, prompt, *, timeout=90, grammar=GRAMMAR):
+    """Run one local completion with a caller-owned grammar and bounded context."""
     if conversation_busy(state):
         raise RuntimeError("Local review yielded to a foreground conversation.")
-    grammar = GRAMMAR.encode()
-    payload = str(len(grammar)).encode() + b"\n" + grammar + prompt.encode()
+    grammar = grammar.encode()
+    prompt = prompt.encode()
+    if not 1 <= len(grammar) <= 4096 or not 1 <= len(prompt) <= 24000:
+        raise ValueError("Local inference input exceeds its bounds.")
+    payload = str(len(grammar)).encode() + b"\n" + grammar + prompt
     deadline = time.monotonic() + timeout
     with subprocess.Popen(
         [*runtime],

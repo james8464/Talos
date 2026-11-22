@@ -269,8 +269,34 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     @Published var liveTranscript = ""
     @Published var lastTiming = ""
     private var kokoroVoice: String?
+    private var kokoroRetryAfter: TimeInterval = 0
+    private var checkingOutput = false
+    private var reportingSystemOutput = false
+    private var outputUpload: Task<Void, Never>?
+    private var outputWatchdog: Task<Void, Never>?
+    private var fallbackClips: ArraySlice<String> = []
+    private var streamClipIndex: Int?
+    private var failedStreamClip: Int?
+    private var voiceClock: TimeInterval {
+        #if TALOS_CONTROLLER_REPLAY
+        if let replayVoiceClock { return replayVoiceClock() }
+        #endif
+        return ProcessInfo.processInfo.systemUptime
+    }
+    private var prefersKokoro: Bool {
+        kokoroVoice != nil && voiceClock >= kokoroRetryAfter
+    }
     #if TALOS_CONTROLLER_REPLAY
     // Test binaries can render into a silent sink on hosts without an audio device.
+    var replayVoiceFetch: ((String) async throws -> [String: Any])?
+    var replaySystemOutput: ((AVSpeechUtterance) -> Void)?
+    var replayVoiceClock: (() -> TimeInterval)?
+    var replayVoiceOutcome: ((String) -> Void)?
+    var replayOutputTimeout: Duration?
+    func replayConfigureVoice(_ name: String?) { kokoroVoice = name }
+    func replayCheckVoiceOutput() { checkVoiceOutput() }
+    func replaySystemStarted(_ utterance: AVSpeechUtterance) { speechSynthesizer(speaker, didStart: utterance) }
+    func replaySystemFinished(_ utterance: AVSpeechUtterance) { speechSynthesizer(speaker, didFinish: utterance) }
     var replayClip: ((Data) throws -> Void)?
     var replayStop: (() -> Void)?
     var replayUtterance: ((String) -> Void)?
@@ -986,8 +1012,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         status = "Thinking…"
         let submitted = Date()
         let requestID = UUID().uuidString
-        let stream = viaFacing && source == "voice" && kokoroVoice != nil
-        if stream { streamID = requestID }
+        let stream = viaFacing && source == "voice" && prefersKokoro
+        if stream { streamID = requestID; failedStreamClip = nil }
         let task = Task {
             do {
                 let interval = attentionInterval
@@ -1022,10 +1048,11 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                             self.beginRecognition()
                         } else if let sentence = event["sentence"] as? String, !audioFailed {
                             do {
-                                try await self.playStreamedSentence(sentence, client: client, first: played.isEmpty)
+                                try await self.playStreamedSentence(sentence, client: client, index: played.count)
                                 played.append(sentence)
                             } catch {
                                 try Task.checkCancellation()
+                                self.kokoroFailed()
                                 audioFailed = true
                             }
                         }
@@ -1069,7 +1096,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                             }
                         }
                     }
-                    if source == "voice" {
+                    if result["voice_recovery"] as? String == "test_output" {
+                        checkVoiceOutput()
+                    } else if source == "voice" {
+                        if let failedStreamClip { played = Array(played.prefix(failedStreamClip)); audioFailed = true }
                         if streamStarted && !played.isEmpty {
                             if audioFailed {
                                 while player?.isPlaying == true { try await Task.sleep(for: .milliseconds(10)) }
@@ -1089,7 +1119,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         }
                     }
                 }
-                status = "Connected"
+                if !checkingOutput { status = "Connected" }
             } catch {
                 if Task.isCancelled { return }
                 if stream, speaking { stopSpeaking() }
@@ -1309,7 +1339,9 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
     }
 
-    private func playStreamedSentence(_ text: String, client: RoomClient, first: Bool) async throws {
+    private func playStreamedSentence(_ sentence: String, client: RoomClient, index: Int) async throws {
+        guard prefersKokoro else { throw RoomError("Kokoro is recovering.") }
+        let text = sentence
         let result = try await client.request("voice", body: ["text": text])
         try Task.checkCancellation()
         guard let encoded = result["wav"] as? String, let data = Data(base64Encoded: encoded) else {
@@ -1318,19 +1350,22 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         #if TALOS_CONTROLLER_REPLAY
         if let replayClip {
             try replayClip(data)
-            if first { recordPlaybackStart() }
+            if index == 0 { recordPlaybackStart() }
             return
         }
         #endif
         let audio = try AVAudioPlayer(data: data)
         while player?.isPlaying == true { try await Task.sleep(for: .milliseconds(10)) }
         try Task.checkCancellation()
+        guard prefersKokoro else { throw RoomError("Kokoro is recovering.") }
+        streamClipIndex = index
+        fallbackClips = [text]
         finalClip = false
         audio.delegate = self
         playbackText = text
         player = audio
         guard audio.play() else { throw RoomError("Kokoro audio could not play.") }
-        if first { recordPlaybackStart() }
+        if index == 0 { recordPlaybackStart() }
     }
 
     private func cancelStream() {
@@ -1359,9 +1394,66 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         finishSpeech(delivered: false, keepListening: true)
     }
 
+    private func voiceOutcome(_ code: String) {
+        #if TALOS_CONTROLLER_REPLAY
+        if let replayVoiceOutcome { replayVoiceOutcome(code); return }
+        #endif
+        let previous = outputUpload
+        let client = self.client
+        outputUpload = Task {
+            await previous?.value
+            _ = try? await client?.request("voice/outcome", body: ["outcome": code])
+        }
+    }
+
+    private func checkVoiceOutput() {
+        checkingOutput = true
+        status = "Testing voice output…"
+        say("This is Talos checking voice output.")
+    }
+
+    private func kokoroFailed() {
+        if voiceClock >= kokoroRetryAfter {
+            voiceOutcome("kokoro_failed")
+            addLine("Voice", "Kokoro audio failed. Trying the macOS voice.")
+        }
+        kokoroRetryAfter = voiceClock + 60
+        voiceLabel = "Voice: macOS fallback · Kokoro retry in one minute"
+    }
+
+    private func armOutputWatchdog(_ utterance: AVSpeechUtterance, seconds: Double) {
+        outputWatchdog?.cancel()
+        var delay = Duration.seconds(seconds)
+        #if TALOS_CONTROLLER_REPLAY
+        if let replayOutputTimeout { delay = replayOutputTimeout }
+        #endif
+        outputWatchdog = Task { [weak self] in
+            do { try await Task.sleep(for: delay) } catch { return }
+            guard let self, self.systemUtterance === utterance else { return }
+            self.systemOutputFailed()
+        }
+    }
+
+    private func systemOutputFailed() {
+        systemUtterance = nil
+        if speaker.isSpeaking { speaker.stopSpeaking(at: .immediate) }
+        voiceOutcome("macos_unavailable")
+        finishSpeech(delivered: false, outcome: "unknown")
+        let message = "Voice playback is unavailable. Your reply is on screen. Check the Mac sound output."
+        voiceLabel = "Voice: output unavailable"
+        status = message
+        addLine("Voice", message)
+    }
+
     private func systemSpeech(_ text: String) {
+        guard !text.isEmpty else { finishSpeech(delivered: false); return }
         let utterance = AVSpeechUtterance(string: text)
+        reportingSystemOutput = checkingOutput || kokoroRetryAfter > voiceClock
         systemUtterance = utterance
+        armOutputWatchdog(utterance, seconds: 5)
+        #if TALOS_CONTROLLER_REPLAY
+        if let replaySystemOutput { replaySystemOutput(utterance); return }
+        #endif
         speaker.speak(utterance)
     }
 
@@ -1369,18 +1461,24 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         cancelStream()
         playbackEpoch = UUID()
         speechRequest?.cancel()
-        speechRequest = nil
-        if speaker.isSpeaking {
-            speaker.stopSpeaking(at: .immediate)
-        } else {
-            stopPlayer()
-            finishSpeech(delivered: false)
-        }
+        systemUtterance = nil
+        if speaker.isSpeaking { speaker.stopSpeaking(at: .immediate) }
+        stopPlayer()
+        finishSpeech(delivered: false)
     }
 
-    private func say(_ text: String, id: Int? = nil, turnStart: Date? = nil) {
+    private func fetchVoice(_ clip: String) async throws -> [String: Any] {
+        #if TALOS_CONTROLLER_REPLAY
+        if let replayVoiceFetch { return try await replayVoiceFetch(clip) }
+        #endif
+        guard let client else { throw RoomError("The voice service is unavailable.") }
+        return try await client.request("voice", body: ["text": clip])
+    }
+
+    private func say(_ reply: String, id: Int? = nil, turnStart: Date? = nil) {
         checkInReply = nil
         if id == nil { playingCheckIn = nil }
+        let text = reply
         #if TALOS_CONTROLLER_REPLAY
         if let replayUtterance { replayUtterance(text); return }
         #endif
@@ -1389,7 +1487,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         speechID = id
         stopRecognition()
         beginRecognition()
-        guard let kokoroVoice, let client else {
+        guard let kokoroVoice, prefersKokoro else {
             systemSpeech(text)
             return
         }
@@ -1402,7 +1500,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
             let clips = turnStart != nil ? Self.speechClips(text) : [text]
             do {
                 for (index, clip) in clips.enumerated() {
-                    let result = try await client.request("voice", body: ["text": clip])
+                    let result = try await fetchVoice(clip)
                     guard !Task.isCancelled, playbackEpoch == epoch else { return }
                     guard let encoded = result["wav"] as? String, let data = Data(base64Encoded: encoded) else {
                         throw RoomError("Kokoro returned invalid audio.")
@@ -1411,6 +1509,8 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                     while player?.isPlaying == true { try await Task.sleep(for: .milliseconds(15)) }
                     guard !Task.isCancelled, playbackEpoch == epoch else { return }
                     audio.delegate = self
+                    streamClipIndex = nil
+                    fallbackClips = clips[index...]
                     finalClip = index == clips.count - 1
                     player = audio
                     guard audio.play() else { throw RoomError("Kokoro audio could not play.") }
@@ -1425,7 +1525,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                 }
             } catch {
                 guard !Task.isCancelled, playbackEpoch == epoch else { return }
-                voiceLabel = "Voice: macOS fallback · Kokoro unavailable"
+                kokoroFailed()
                 while player?.isPlaying == true {
                     guard (try? await Task.sleep(for: .milliseconds(20))) != nil else { return }
                 }
@@ -1456,11 +1556,27 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-        Task { @MainActor in if systemUtterance === utterance { recordPlaybackStart() } }
+        Task { @MainActor in
+            guard systemUtterance === utterance else { return }
+            if reportingSystemOutput { voiceOutcome("macos_started") }
+            armOutputWatchdog(utterance, seconds: max(20, Double(utterance.speechString.count) / 4))
+            recordPlaybackStart()
+        }
     }
 
-    private func finishSpeech(delivered: Bool, keepListening: Bool = false) {
-        if let speechID { pendingAcknowledgment = (speechID, delivered ? "played" : "interrupted") }
+    private func finishSpeech(delivered: Bool, keepListening: Bool = false, outcome: String? = nil) {
+        outputWatchdog?.cancel()
+        outputWatchdog = nil
+        let completedTest = delivered && checkingOutput
+        if completedTest {
+            if systemUtterance == nil { voiceOutcome("kokoro_finished") }
+            addLine("Voice", "The audio engine reported that the test finished. If it was silent, check the Mac sound output.")
+        }
+        checkingOutput = false
+        reportingSystemOutput = false
+        fallbackClips = []
+        streamClipIndex = nil
+        if let speechID { pendingAcknowledgment = (speechID, outcome ?? (delivered ? "played" : "interrupted")) }
         if delivered, let token = playingCheckIn {
             checkInReply = (token, ProcessInfo.processInfo.systemUptime + 8)
         }
@@ -1479,21 +1595,44 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         player = nil
         speechRequest = nil
         beginRecognition()
+        if completedTest { status = "Voice test finished" }
+    }
+
+    private func playerFailed(_ failed: AVAudioPlayer) {
+        guard player === failed else { return }
+        kokoroFailed()
+        player = nil
+        if streamID != nil, let streamClipIndex {
+            failedStreamClip = streamClipIndex
+            return  // The pending turn will speak the remainder through the fallback.
+        }
+        playbackEpoch = UUID()
+        speechRequest?.cancel()
+        systemSpeech(fallbackClips.joined(separator: " "))
+    }
+
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        Task { @MainActor in playerFailed(player) }
     }
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
-            guard self.player === player, self.finalClip else { return }
-            finishSpeech(delivered: flag)
+            guard self.player === player else { return }
+            if !flag { playerFailed(player) }
+            else if finalClip { finishSpeech(delivered: true) }
         }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in if systemUtterance === utterance { finishSpeech(delivered: true) } }
+        Task { @MainActor in
+            guard systemUtterance === utterance else { return }
+            if reportingSystemOutput { voiceOutcome("macos_finished") }
+            finishSpeech(delivered: true)
+        }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor in if systemUtterance === utterance { finishSpeech(delivered: false) } }
+        Task { @MainActor in if systemUtterance === utterance { systemOutputFailed() } }
     }
 
     private func addLine(_ role: String, _ text: String) {

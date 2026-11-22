@@ -4,6 +4,7 @@ from room_quantities import quantity_answer
 import commitment_memory
 import mac_context
 import talos_activity
+import voice_recovery
 import room_checkins
 import background_work
 import recurring_reminders
@@ -628,6 +629,15 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= 800:
             raise ValueError("Use between 1 and 800 characters for the turn.")
         voice = facing or channel == "voice"
+        audio_check = voice_recovery.handle(db, text, apply=self.apply)
+        if audio_check is not None:
+            if audio_check.get("voice_recovery") == "test_output":
+                from self_diagnosis import report
+                try:
+                    audio_check["incident_id"] = report(self.db_path.parent, "voice", "User reported unavailable speech output")
+                except (OSError, sqlite3.Error):
+                    pass  # A locked diagnostics store must not prevent the playback test.
+            return audio_check
         reply_token = body.get("reply_to_checkin") if voice and not (
             body.get("offer") or body.get("reviewed_dictation")) else None
         offer = self.facing_offer
@@ -637,6 +647,10 @@ class Room:
                                       reply_token=reply_token)
         if checkin is not None:
             return checkin
+        import self_diagnosis
+        diagnosis = self_diagnosis.room_request(self.db_path.parent,text,apply=self.apply)
+        if diagnosis is not None:
+            return diagnosis
         work = background_work.handle(db, text, voice=voice, apply=self.apply, request_id=body.get("request_id"))
         if work is not None:
             if not voice and self.apply and background_work.COMMAND.fullmatch(text.strip()):
@@ -846,6 +860,14 @@ class Room:
                     return 200, brief
                 case "GET", "/v1/inbox":
                     return 200, {"items": inbox_items(db, limit=50)}
+                case "GET", "/v1/voice/outcome":
+                    return 200, {"receipts": voice_recovery.recent(db)}
+                case "POST", "/v1/voice/outcome":
+                    if not self.apply:
+                        return 403, {"error": "Voice receipts are disabled in shadow mode."}
+                    receipt = voice_recovery.report(db, body)
+                    talos_activity.record(self.db_path.parent, "Voice", voice_recovery.OUTCOMES[receipt["recorded"]])
+                    return 200, receipt
                 case "POST", "/v1/voice/latency":
                     turn, elapsed = body.get("id"), body.get("elapsed_ms")
                     if type(turn) is not int or not 1 <= turn <= 2**63 - 1 or type(elapsed) is not int or not 0 <= elapsed <= 300000:

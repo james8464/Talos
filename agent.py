@@ -42,6 +42,8 @@ CONSOLE_COMMANDS = (
     ("/redraw", "Repaint the console with recent dialogue."),
     ("/copy", "Copy the last assistant reply to the Mac clipboard."),
     ("/version, /v", "Show the installed Talos project version."),
+    ("/repair DESCRIPTION", "Report a problem to local diagnostics."),
+    ("/repairs [ID]", "Show open incidents or inspect one private local report."),
     ("/status", "Show session mode, model and runtime prerequisites."),
     ("/parity [OpenClaw|Hermes]", "Show pinned command name coverage and missing commands."),
     ("/context, /ctx [QUESTION]", "Inspect prompt size and measured usage in this session."),
@@ -609,6 +611,21 @@ def interactive_chat(
                     result = session_goals.command(database, session, request, model=model, generate=model_text,
                                                    ready=check_ollama_model, subgoal=command == "/subgoal")
                     print(result, file=output, flush=True)
+                case "/repair" | "/repairs":
+                    import self_diagnosis
+                    if not location:
+                        raise ValueError("Incident tracking requires a file-backed console database.")
+                    state = Path(location).parent
+                    if command == "/repairs":
+                        if request and not re.fullmatch(r"[0-9]{1,12}",request.strip()):
+                            raise ValueError("Usage: /repairs [ID]")
+                        status = self_diagnosis.details(state,int(request)) if request else "\n".join(self_diagnosis.summary(state))
+                        print(status, file=output, flush=True)
+                    elif apply:
+                        ident = self_diagnosis.report(state, "Console report", request)
+                        print(f"Recorded problem {ident} for local diagnosis.", file=output, flush=True)
+                    else:
+                        print("Problem report is in preview mode.", file=output, flush=True)
                 case "/status":
                     print(f"Session {session} · {mode} · model {model}", file=output, flush=True)
                     show_status(model, output)

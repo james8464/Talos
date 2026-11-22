@@ -49,6 +49,8 @@ class LiveReceiptTests(unittest.TestCase):
         with closing(sqlite3.connect(self.state/mac_context.INDEX_NAME)) as db, db:
             db.execute("CREATE TABLE index_merge_state(singleton,checked_at,receipt)")
             db.execute("INSERT INTO index_merge_state VALUES (1,1000,'segments 6 to 3; records 500 unchanged')")
+            db.execute("CREATE TABLE local_graph_review(singleton,checked_at,receipt)")
+            db.execute("INSERT INTO local_graph_review VALUES (1,1001,'6 indexed records across 3 source families')")
         (self.state/"heartbeat.json").write_text(json.dumps({"checked_at":2000, "baseline":"passed",
             "source_version":"ab"*32,"baseline_verified_at":1500, "trial":9, "stage":"speech", "last_result":"no candidate"}))
         talos_activity.record(self.state,"Migration","ported quiet polls")
@@ -58,6 +60,7 @@ class LiveReceiptTests(unittest.TestCase):
             self.assertIn("Local index maintenance · "+talos_activity.checked_time(1000), output)
             self.assertIn("Local dialogue regression · passed · source abababababab · "+talos_activity.checked_time(1500),output)
             self.assertIn("Developer-verified migration",output)
+            self.assertIn("Local knowledge review · "+talos_activity.checked_time(1001), output)
             self.assertIn("none in the retained activity log",output)
             self.assertIn("no candidate",output)
         (self.state / talos_activity.JOURNAL).unlink()
@@ -94,3 +97,17 @@ class LiveReceiptTests(unittest.TestCase):
             talos_activity.display(self.state, output=out, stop=Stop())
         self.assertIn("Obsidian publisher · stopped", out.getvalue())
         self.assertIn("Obsidian publisher · running", out.getvalue())
+
+    def test_publisher_recovers_missing_generated_indexes_with_unchanged_inputs(self):
+        (self.root / "fixture.py").write_text("answer = 42\n")
+        self.publisher.poll()
+        hubs = [self.publisher.folder / name for name in ("Code index.md", "Talos memory map.md", "Project connections.md")]
+        original = [p.read_bytes() for p in hubs]
+        for path in hubs:
+            path.unlink()
+        self.publisher.poll()
+        self.assertEqual(original, [p.read_bytes() for p in hubs])
+        self.publisher.poll()
+        with closing(sqlite3.connect(self.state / talos_activity.JOURNAL)) as database:
+            count, = database.execute("SELECT count(*) FROM events WHERE component='Repair'").fetchone()
+        self.assertEqual(count, 1)

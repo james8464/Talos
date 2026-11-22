@@ -6,6 +6,7 @@ import re
 import tempfile
 from pathlib import Path
 
+from graph_review import source_groups
 from memory_connections import PROJECT, SOURCES
 from memory_review import current_findings
 
@@ -61,7 +62,7 @@ def evidence_name(app, source, record):
 
 def publish_connections(db, folder, enabled):
     allowed = set(SOURCES) | enabled
-    projects, evidence, findings = {}, {}, {}
+    projects, evidence, findings, groups = {}, {}, {}, {}
 
     def evidence_link(app, source, record):
         name = evidence_name(app, source, record)
@@ -79,6 +80,14 @@ def publish_connections(db, folder, enabled):
                 if a in evidence_sets and b in evidence_sets and len(evidence_sets[a] & evidence_sets[b]) >= 2:
                     projects[a].append(link("Projects", b))
                     projects[b].append(link("Projects", a))
+        for group in source_groups(db, allowed, verified=True):
+            title = "Cross-source evidence " + hashlib.sha256(group.project.encode()).hexdigest()[:20]
+            descriptions = group.description()
+            group_links = [evidence_link(*proof) for proof in group.proofs]
+            groups[title] = (f"# Cross-source project evidence\n\n{link('Projects',group.project)} has "
+                             f"{len(group_links)} selected indexed records across {descriptions['families']} "
+                             "source families.\n\n" + "\n".join("- " + edge for edge in group_links))
+            projects[group.project].append(link("Evidence groups",title))
         for project, edges in projects.items():
             for ident, finding in current_findings(db, project, allowed):
                 title = f"Finding {project} {ident}"
@@ -89,7 +98,7 @@ def publish_connections(db, folder, enabled):
                 edges.append(link("Findings", title))
     sections = {key: f"# {key}\n\n" + "\n".join("- " + edge for edge in edges) for key, edges in projects.items()}
     changes = sum(sync_notes(folder / name, notes) for name, notes in
-                  (("Evidence", evidence), ("Findings", findings), ("Projects", sections)))
+                  (("Evidence", evidence), ("Evidence groups", groups), ("Findings", findings), ("Projects", sections)))
     body = "# Project connections\n\n" + "".join(f"- {link('Projects', key)}\n" for key in projects)
     changes += write_note(folder / "Project connections.md", body)
     return changes
