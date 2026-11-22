@@ -112,6 +112,103 @@ def app_rows(app, path):
     )
 
 
+# A relationship phrase is meaningful only with an explicit Contacts Me-card label.
+_FAMILY_PEER = re.compile(
+    r"my (mother|father|mom|mum|dad|parent|sister|brother|sibling|spouse|partner|"
+    r"wife|husband|daughter|son|child|grandmother|grandfather|cousin|aunt|uncle)", re.I
+)
+
+
+_FAMILY_MESSAGES = re.compile(
+    r"(?:show(?: me)?|search|find) (?:my )?messages (from|with) " + _FAMILY_PEER.pattern + r"[.!?]*",
+    re.I,
+)
+
+
+def family_message_lookup(role, selected, library, *, incoming_only=False):
+    checked, unavailable = [], []
+
+    def result(reply, matches=0):
+        return {"reply": reply, "matches": matches, "private": True,
+                "checked": checked, "unavailable": unavailable}
+
+    if not {"Contacts", "Messages"} <= selected:
+        return result("Enable Contacts and Messages to look up messages by family relationship.")
+    paths = sources(library)
+    books = paths["Contacts"]
+    roles = {"mum": "mother", "mom": "mother", "dad": "father"}
+    relation = roles.get(role, role)
+    links = []
+    try:
+        if not books:
+            raise OSError
+        for book in books:
+            for key, label, name in read(book, """
+                    SELECT n.Z_PK,n.ZLABEL,n.ZNAME FROM ZABCDRELATEDNAME n
+                    JOIN ZABCDRECORD r ON r.Z_PK=n.ZOWNER
+                    WHERE r.ZCONTAINERWHERECONTACTISME IS NOT NULL AND n.ZNAME IS NOT NULL"""):
+                label = (label or "").removeprefix("_$!<").removesuffix(">!$_").strip().casefold()
+                if roles.get(label, label) == relation:
+                    links.append((book, key, name.strip()))
+        checked.append("Contacts")
+        if len(links) != 1 or not links[0][2]:
+            return result("I need one explicit matching relationship on the Contacts Me card.")
+        source, link_id, name = links[0]
+        cards = []
+        for book in books:
+            for key, first, last in read(book, "SELECT Z_PK,ZFIRSTNAME,ZLASTNAME FROM ZABCDRECORD"):
+                full_name = " ".join(part.strip() for part in (first, last) if part and part.strip())
+                if full_name.casefold() == name.casefold():
+                    cards.append((book, key))
+        if len(cards) != 1:
+            return result("The name on the Contacts Me card needs to match exactly one contact.")
+        book, key = cards[0]
+        # A shared mailbox or family telephone cannot establish which person wrote.
+        addresses, phones = set(), set()
+        shared_addresses, shared_phones = set(), set()
+        for directory in books:
+            for owner, value in read(directory, "SELECT ZOWNER,ZADDRESS FROM ZABCDEMAILADDRESS"):
+                if value and value.strip():
+                    target = addresses if (directory, owner) == (book, key) else shared_addresses
+                    target.add(value.strip().casefold())
+            for owner, value in read(directory, "SELECT ZOWNER,ZFULLNUMBER FROM ZABCDPHONENUMBER"):
+                number = re.sub(r"\D", "", value or "")
+                if number:
+                    target = phones if (directory, owner) == (book, key) else shared_phones
+                    target.add(number)
+        addresses -= shared_addresses
+        phones -= shared_phones
+    except (sqlite3.Error, OSError):
+        unavailable.append("Contacts")
+        return result("Contacts is unavailable for this relationship lookup.")
+    if not addresses and not phones:
+        return result("The matching contact has no unique email address or phone number for Messages.")
+    source_ref = source.relative_to(library / "Application Support/AddressBook")
+    lines = [f"Contacts [{source_ref} · relationship {link_id}] {role}: {name}"]
+    matches = 0
+    try:
+        for guid, peer, outgoing, stamp, body in app_rows("Messages", paths["Messages"][0]):
+            if incoming_only and outgoing != 0:
+                continue
+            peer = peer.strip()
+            if peer.casefold() not in addresses and not (
+                re.fullmatch(r"[+0-9 ()\-.]+", peer) and re.sub(r"\D", "", peer) in phones
+            ):
+                continue
+            matches += 1
+            if matches <= 8:
+                date = datetime.fromtimestamp(stamp or 0, UTC).date().isoformat()
+                direction = "You" if outgoing == 1 else "Incoming"
+                lines.append(f"Messages [{guid}] {date} · {direction} · {peer}: {body[:290]}")
+        checked.append("Messages")
+    except (sqlite3.Error, OSError, ValueError, OverflowError):
+        unavailable.append("Messages")
+        return result("Messages is unavailable for this relationship lookup.")
+    if not matches:
+        lines.append("No matching messages among the recent records searched.")
+    return result("\n".join(lines), matches)
+
+
 def lookup(query, apps, library, *, family=False, resolve_contacts=False):
     terms = query.lower().strip(" ?.").split()
     if not terms and not family:
@@ -212,7 +309,8 @@ def lookup(query, apps, library, *, family=False, resolve_contacts=False):
 def room_answer(text, state, voice, library=None):
     match = PREFIX.fullmatch(text.strip())
     family = bool(FAMILY.fullmatch(text.strip()))
-    if not match and not family:
+    family_messages = _FAMILY_MESSAGES.fullmatch(text.strip())
+    if not match and not family and not family_messages:
         return None
     if voice:
         return {
@@ -224,6 +322,13 @@ def room_answer(text, state, voice, library=None):
             "private": True,
         }
     selected = enabled(state)
+    if family_messages:
+        return family_message_lookup(family_messages[2].casefold(), selected, library or Path.home() / "Library",
+                                     incoming_only=family_messages[1].casefold() == "from")
+    if match and match[1].casefold() == "messages":
+        peer = _FAMILY_PEER.fullmatch(match[2].strip(" ?.").casefold())
+        if peer:
+            return family_message_lookup(peer[1], selected, library or Path.home() / "Library")
     resolve_contacts = "Contacts" in selected and not family
     if family:
         selected &= {"Contacts"}
