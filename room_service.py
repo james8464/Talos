@@ -2,6 +2,7 @@
 
 import commitment_memory
 import mac_context
+import talos_activity
 import background_work
 import recurring_reminders
 import message_drafts
@@ -82,6 +83,7 @@ class Room:
         self.speak = speak and apply
         self.app_launch_enabled = app_launch_enabled
         self.online = online
+        self.monitored_model = model_state is not None
         self.model_state = model_state or (lambda: "ready")
         self.voice_generate = voice_generate
         self.voice = voice
@@ -653,12 +655,19 @@ class Room:
                 self.lab.pause()
                 self.review_after = monotonic() + 10
                 if path == "/v1/room/activity": return 200, {"active": True}
-                return self._route(method, path, body)
+                label = {"/v1/turn": "Handle typed turn", "/v1/voice": "Synthesize audio",
+                         "/v1/voice/facing": "Handle spoken turn"}[path]
+                with talos_activity.operation(self.db_path.parent, "Room", label):
+                    result = self._route(method, path, body)
+                    if result[0] >= 400:
+                        talos_activity.record(self.db_path.parent, "Room", f"{label} · HTTP {result[0]}")
+                    return result
         return self._route(method, path, body)
 
     def _route(self, method, path, body):
         if method == "GET" and path == "/health":
-            return 200, {"service": "talos"}
+            return 200, {"service": "talos", "model_state": self.model_state() if self.monitored_model else "unmonitored",
+                         "turn_active": self.turn_lock.locked()}
         if method == "POST" and path == "/v1/voice/endpoint":
             if self.model_state() != "ready" or not self.endpoint_probe.acquire(blocking=False):
                 return 200, {"hold": False, "available": False}
@@ -979,7 +988,9 @@ def create_token(path: Path) -> str:
 def run(
     port: int, room: Room, token_path: Path, *, ready: Callable[[], None] | None = None
 ) -> None:
-    with ThreadingHTTPServer(("127.0.0.1", port), Handler) as server:
+    with ThreadingHTTPServer(("127.0.0.1", port), Handler) as server, talos_activity.room_presence(
+        room.db_path.parent, server.server_port
+    ):
         server.token = create_token(token_path)
         server.room = room
         stopping = threading.Event()
@@ -1011,7 +1022,8 @@ def run(
                 room.orders_ready.clear()
                 try:
                     with closing(open_memory(room.db_path)) as db:
-                        ran = background_work.run_one(db, model_text, room.model, ready=lambda: room.model_state() == "ready")
+                        ran = background_work.run_one(db, model_text, room.model, ready=lambda: room.model_state() == "ready",
+                                                     notify=lambda msg: talos_activity.record(room.db_path.parent, "Jobs", msg))
                 except (OSError, sqlite3.Error) as error:
                     print(f"Talos background work: {type(error).__name__}", flush=True)
                     ran = False

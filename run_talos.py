@@ -4,6 +4,7 @@ import argparse
 import os
 from http.client import HTTPException
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -17,6 +18,7 @@ from agent import model_text
 from local_runtime import check_ollama_model, request_ollama_json
 from room_service import DEFAULT_PORT, Room, run
 from room_voice import DEFAULT_VOICE, KokoroVoice, prepare_assets, voice_python
+import talos_activity
 
 ROOT = Path(__file__).resolve().parent
 STATE = ROOT / "state"
@@ -246,6 +248,14 @@ def run_trial(args) -> None:
                 app_process.wait(timeout=5)
 
 
+def start_memory_workers(model, *, local_only, children):
+    heartbeat = ["overnight_goal.py", "--heartbeat", "--watch", "--model", model]
+    if local_only:
+        heartbeat.append("--local-only")
+    for script, *options in (heartbeat, ["vault_watch.py"], ["maintenance.py", "--model", model]):
+        children.append(subprocess.Popen([sys.executable, str(ROOT / script), *options]))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build and launch the Talos room app and endpoint.")
     parser.add_argument("--model", default="qwen3:4b")
@@ -254,13 +264,24 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--ollama-port", type=int, default=11435)
     parser.add_argument("--offline", action="store_true", help="Require an already downloaded model.")
+    parser.add_argument("--memory-only", action="store_true", help="Run memory workers and a live terminal feed without the room server.")
     parser.add_argument("--shadow", action="store_true", help="Evaluate actions without writing or speaking them.")
     parser.add_argument("--headless", action="store_true", help="Run the endpoint without opening the app.")
     parser.add_argument("--build-only", action="store_true", help="Build the native app without starting models.")
     parser.add_argument("--room-trial", action="store_true", help="Open an offline practice room with temporary data and sensors initially off.")
     args = parser.parse_args()
     backend = None
+    children = []
+    activity_stop = threading.Event()
+    viewer = None
     try:
+        if args.memory_only:
+            if args.shadow or args.build_only or args.room_trial:
+                raise ValueError("Memory-only mode runs the live memory workers. Choose one launch mode.")
+            os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
+            start_memory_workers(args.model, local_only=args.offline, children=children)
+            talos_activity.display(STATE, args.port, stop=activity_stop)
+            return 0
         if args.room_trial:
             run_trial(args)
             return 0
@@ -272,21 +293,29 @@ def main() -> int:
         ):
             raise ValueError("Choose two different ports between 1024 and 65535.")
         check_bind(args.port)
+        if sys.stdout.isatty():
+            print("Starting Talos. Live activity will appear when the room is ready.", flush=True)
         app = None if args.headless else build_app()
         voice = None if args.system_voice else prepare_voice(args.voice, offline=args.offline)
         MODEL_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
         os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
         backend = ProjectModel(args.model, args.ollama_port, args.offline)
         backend.worker.start()
+        if not args.shadow:
+            start_memory_workers(args.model, local_only=args.offline, children=children)
 
         def launch_app() -> None:
+            nonlocal viewer
+            if sys.stdout.isatty():
+                viewer = threading.Thread(target=talos_activity.display, args=(STATE, args.port),
+                                          kwargs={"stop": activity_stop}, daemon=True)
+                viewer.start()
             if app:
                 subprocess.run(["/usr/bin/open", "-n", str(app), "--args",
                                 "--token-file", str(TOKEN_PATH), "--port", str(args.port)], check=True)
 
         run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice, online=not args.offline,
-                            model_state=lambda: backend.state, app_launch_enabled=app is not None,
-                            voice_generate=backend.generate_voice),
+                            model_state=lambda: backend.state, app_launch_enabled=app is not None, voice_generate=backend.generate_voice),
             TOKEN_PATH, ready=launch_app)
     except KeyboardInterrupt:
         return 0
@@ -294,10 +323,23 @@ def main() -> int:
         print(f"Talos startup: {error}", file=sys.stderr)
         return 1
     finally:
+        activity_stop.set()
+        if viewer is not None:
+            viewer.join(timeout=2)
+        for worker in reversed(children):
+            if worker.poll() is None:
+                worker.terminate()
+                worker.wait()
         if backend is not None:
             backend.close()
     return 0
 
 
+def shutdown_on_signal(signum, frame):
+    signal.signal(signum, signal.SIG_IGN)
+    raise KeyboardInterrupt
+
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, shutdown_on_signal)
     raise SystemExit(main())

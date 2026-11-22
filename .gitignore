@@ -3,3 +3,6 @@ __pycache__/
 models/
 state/
 .DS_Store
+graphify-out/
+generated_images/
+.ruff_cache/

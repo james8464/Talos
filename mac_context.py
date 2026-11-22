@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 APPS = ("Contacts", "Messages", "Mail", "WhatsApp")
+INDEX_NAME = "personal-index-v2.sqlite3"
 PREFIX = re.compile(
     r"^(?:search|look in) my (apps|messages|mail|contacts|whatsapp) for\b(.*)$",
     re.IGNORECASE | re.DOTALL,
@@ -18,6 +19,13 @@ FAMILY = re.compile(
     r"^(?:what (?:do (?:my contacts|you) (?:say|know) about|is recorded about) my family|show my family relationships)[?.!]*$",
     re.IGNORECASE,
 )
+
+
+RELATION_QUERY = re.compile(
+    r"who(?: is|[’']s) my (mother|mom|mum|father|dad|sister|brother|wife|husband|"
+    r"spouse|partner|son|daughter|parent|child|sibling)[?.!]*", re.I
+)
+RELATION_ALIASES = {"mom": "mother", "mum": "mother", "dad": "father"}
 
 
 def identifiers(value):
@@ -56,6 +64,9 @@ def configure(state, apps):
     with tempfile.NamedTemporaryFile(mode="w", dir=state, delete=False) as out:
         json.dump(list(dict.fromkeys(apps)), out)
     Path(out.name).replace(state / "mac-context.json")
+    if (state / INDEX_NAME).exists():
+        from personal_index import sync
+        sync(state, Path.home() / "Library")
 
 
 def enabled(state):
@@ -65,15 +76,19 @@ def enabled(state):
         return set()
 
 
-def read(path, sql):
+def stream_rows(path, sql, parameters=()):
     with closing(
         sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=0.5)
     ) as db:
         db.execute("PRAGMA query_only=ON")
-        return db.execute(sql).fetchall()
+        yield from db.execute(sql, parameters)
 
 
-def read_messages(path, sql, parameters=(), *, timeout=0.5):
+def read(path, sql):
+    return list(stream_rows(path, sql))
+
+
+def stream_messages(path, sql, parameters=(), *, timeout=0.5):
     """Apply the visibility flags available in this Messages database to rows aliased m."""
     with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=timeout)) as db:
         db.execute("PRAGMA query_only=ON")
@@ -84,45 +99,49 @@ def read_messages(path, sql, parameters=(), *, timeout=0.5):
             visible.append("m.is_system_message=0")
         if "date_retracted" in columns:
             visible.append("coalesce(m.date_retracted,0)=0")
-        return db.execute(sql.format(visible=" AND ".join(visible)), parameters).fetchall()
+        yield from db.execute(sql.format(visible=" AND ".join(visible)), parameters)
 
 
-def contact_rows(path):
-    return read(
+def read_messages(path, sql, parameters=(), *, timeout=0.5):
+    return list(stream_messages(path, sql, parameters, timeout=timeout))
+
+
+def contact_rows(path, limit=5000):
+    return stream_rows(
         path,
         """SELECT r.Z_PK,trim(coalesce(r.ZFIRSTNAME,'')||' '||coalesce(r.ZLASTNAME,'')),
         coalesce(r.ZORGANIZATION,''),coalesce(r.ZNICKNAME,''),
         coalesce((SELECT group_concat(p.ZFULLNUMBER,';') FROM ZABCDPHONENUMBER p WHERE p.ZOWNER=r.Z_PK),''),
         coalesce((SELECT group_concat(e.ZADDRESS,';') FROM ZABCDEMAILADDRESS e WHERE e.ZOWNER=r.Z_PK),'')
-        FROM ZABCDRECORD r WHERE r.ZFIRSTNAME IS NOT NULL OR r.ZLASTNAME IS NOT NULL ORDER BY r.Z_PK LIMIT 5000""",
+        FROM ZABCDRECORD r WHERE r.ZFIRSTNAME IS NOT NULL OR r.ZLASTNAME IS NOT NULL ORDER BY r.Z_PK LIMIT ?""", (limit,),
     )
 
 
-def app_rows(app, path):
+def app_rows(app, path, limit=2000, text_limit=600):
     if app == "Messages":
-        return read_messages(
+        return stream_messages(
             path,
             """SELECT m.guid,coalesce(h.id,''),m.is_from_me,
             978307200+case when abs(m.date)>1000000000000 then m.date/1000000000 else m.date end,
-            substr(m.text,1,600) FROM message m LEFT JOIN handle h ON h.ROWID=m.handle_id
+            substr(m.text,1,coalesce(?,2147483647)) FROM message m LEFT JOIN handle h ON h.ROWID=m.handle_id
             WHERE {visible}
-            ORDER BY m.date DESC LIMIT 2000""",
+            ORDER BY m.date DESC LIMIT ?""", (text_limit, limit),
         )
     if app == "Mail":
-        return read(
+        return stream_rows(
             path,
             """SELECT m.ROWID,coalesce(a.comment,'')||' '||coalesce(a.address,''),NULL,m.date_sent,
-            substr(coalesce(s.subject,'')||' — '||coalesce(v.summary,''),1,600)
+            substr(coalesce(s.subject,'')||' — '||coalesce(v.summary,''),1,coalesce(?,2147483647))
             FROM messages m LEFT JOIN addresses a ON a.ROWID=m.sender
             LEFT JOIN subjects s ON s.ROWID=m.subject LEFT JOIN summaries v ON v.ROWID=m.summary
-            WHERE m.deleted=0 ORDER BY m.date_received DESC LIMIT 2000""",
+            WHERE m.deleted=0 ORDER BY m.date_received DESC LIMIT ?""", (text_limit, limit),
         )
-    return read(
+    return stream_rows(
         path,
         """SELECT m.Z_PK,coalesce(c.ZPARTNERNAME,'')||' '||coalesce(c.ZCONTACTJID,''),
-        m.ZISFROMME,978307200+m.ZMESSAGEDATE,substr(m.ZTEXT,1,600)
+        m.ZISFROMME,978307200+m.ZMESSAGEDATE,substr(m.ZTEXT,1,coalesce(?,2147483647))
         FROM ZWAMESSAGE m JOIN ZWACHATSESSION c ON c.Z_PK=m.ZCHATSESSION
-        WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGETYPE=0 ORDER BY m.ZMESSAGEDATE DESC LIMIT 2000""",
+        WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGETYPE=0 ORDER BY m.ZMESSAGEDATE DESC LIMIT ?""", (text_limit, limit),
     )
 
 
@@ -223,15 +242,17 @@ def family_message_lookup(role, selected, library, *, incoming_only=False):
     return result("\n".join(lines), matches)
 
 
-def lookup(query, apps, library, *, family=False, resolve_contacts=False):
-    terms = query.lower().strip(" ?.").split()
+def lookup(query, apps, library, *, family=False, resolve_contacts=False, relation=None):
+    terms = query.casefold().strip(" ?.").split()
     if not terms and not family:
         raise ValueError("Enter a name or search phrase.")
     paths = sources(library)
-    aliases = set()
+    contact_terms = {}
     hits = []
+    relatives = set()
     unavailable = set()
     checked = set()
+    capped = set()
     for app in APPS:
         if app not in apps and not (resolve_contacts and app == "Contacts"):
             continue
@@ -242,10 +263,13 @@ def lookup(query, apps, library, *, family=False, resolve_contacts=False):
                         path,
                         """SELECT r.ZFIRSTNAME,r.ZLASTNAME,n.ZLABEL,n.ZNAME,n.Z_PK
                         FROM ZABCDRELATEDNAME n JOIN ZABCDRECORD r ON r.Z_PK=n.ZOWNER
-                        WHERE r.ZCONTAINERWHERECONTACTISME IS NOT NULL AND n.ZNAME IS NOT NULL LIMIT 100""",
+                        WHERE r.ZCONTAINERWHERECONTACTISME IS NOT NULL AND n.ZNAME IS NOT NULL""",
                     )
                     for first, last, label, name, key in rows:
                         label = re.sub(r"[^\w -]", "", label or "").strip("_")
+                        if relation and RELATION_ALIASES.get(label.casefold(), label.casefold()) != relation:
+                            continue
+                        relatives.add(name.strip())
                         hits.append(
                             (
                                 0,
@@ -255,27 +279,29 @@ def lookup(query, apps, library, *, family=False, resolve_contacts=False):
                             )
                         )
                 elif app == "Contacts":
-                    for key, name, org, nickname, phones, emails in contact_rows(path):
-                        if all(
-                            t in f"{name} {nickname} {org} {phones} {emails}".casefold()
-                            for t in terms
-                        ):
-                            if app in apps:
-                                hits.append(
-                                    (
-                                        0,
-                                        app,
-                                        str(key),
-                                        name + (" · " + org if org else ""),
-                                    )
-                                )
-                            aliases.update(identifiers(phones + ";" + emails))
+                    for i, (key, name, org, nickname, phones, emails) in enumerate(contact_rows(path, 5001)):
+                        if i == 5000:
+                            capped.add(app)
+                            break
+                        fields = f"{name} {nickname} {org} {phones} {emails}".casefold()
+                        matched = {term for term in terms if term in fields}
+                        if not matched:
+                            continue
+                        if app in apps and matched.issuperset(terms):
+                            hits.append((0, app, str(key), name + (" · " + org if org else "")))
+                        for alias in identifiers(phones + ";" + emails):
+                            contact_terms.setdefault(alias, []).append(matched)
                 elif not family:
-                    for key, peer, outgoing, stamp, body in app_rows(app, path):
+                    for i, (key, peer, outgoing, stamp, body) in enumerate(app_rows(app, path, 2001)):
+                        if i == 2000:
+                            capped.add(app)
+                            break
                         fields = f"{peer} {body}".casefold()
-                        if not (
-                            all(t in fields for t in terms)
-                            or (aliases and not aliases.isdisjoint(identifiers(peer)))
+                        missing = {term for term in terms if term not in fields}
+                        if missing and not any(
+                            matched.issuperset(missing)
+                            for alias in identifiers(peer)
+                            for matched in contact_terms.get(alias, ())
                         ):
                             continue
                         date = (
@@ -305,22 +331,109 @@ def lookup(query, apps, library, *, family=False, resolve_contacts=False):
     lines = [f"{app} [{key}] {body}" for _, app, key, body in hits[:8]]
     if not lines:
         lines = [
-            "No explicit family relationships found on the Contacts Me card."
+            f"No {relation} relationship found on the Contacts Me card."
+            if relation else "No explicit family relationships found on the Contacts Me card."
             if family
             else "No matching records in the sources searched."
         ]
+    if len(hits) > 8:
+        lines.append(f"Showing 8 of {len(hits)} matching records.")
+    if capped:
+        lines.append("More records exist in " + ", ".join(sorted(capped)) +
+                     ". Use ‘Search my memory for …’ to search the full enabled history.")
     if unavailable:
         lines.append("Unavailable sources: " + ", ".join(sorted(unavailable)) + ".")
     return {
         "reply": "\n".join(lines),
         "private": True,
         "matches": len(hits),
+        **({"relatives": sorted(relatives)} if relation else {}),
         "checked": sorted(checked),
         "unavailable": sorted(unavailable),
     }
 
 
+def outgoing_to(person, apps, library):
+    """Resolve a full contact name before reading enabled direct conversations."""
+    if "Contacts" not in apps:
+        return
+    paths = sources(library)
+    identities = set()
+    for path in paths["Contacts"]:
+        try:
+            for _, name, _, _, phones, emails in contact_rows(path, -1):
+                if name.casefold() == person.strip().casefold():
+                    identities.add(frozenset(identifiers(phones + ";" + emails)))
+        except (OSError, sqlite3.Error):
+            continue
+    if len(identities) != 1:
+        return
+    aliases = identities.pop()
+    if "Messages" in apps:
+        for path in paths["Messages"]:
+            try:
+                rows = stream_rows(path, """SELECT m.guid,h.id,m.text FROM message m
+                    JOIN chat_message_join cm ON cm.message_id=m.ROWID
+                    JOIN chat_handle_join ch ON ch.chat_id=cm.chat_id
+                    JOIN handle h ON h.ROWID=ch.handle_id
+                    WHERE m.is_from_me=1 AND m.is_system_message=0 AND coalesce(m.date_retracted,0)=0
+                    AND m.text IS NOT NULL AND NOT EXISTS (
+                        SELECT 1 FROM chat_handle_join other WHERE other.chat_id=ch.chat_id
+                        AND other.handle_id<>ch.handle_id)
+                    ORDER BY m.date DESC""")
+                for key, peer, body in rows:
+                    if not aliases.isdisjoint(identifiers(peer)):
+                        yield body, f"Messages [{key}]", path
+            except (OSError, sqlite3.Error):
+                continue
+    if "WhatsApp" in apps:
+        for path in paths["WhatsApp"]:
+            try:
+                for key, peer, outgoing, _, body in app_rows("WhatsApp", path, -1):
+                    jid = peer.rsplit(" ", 1)[-1]
+                    number, _, domain = jid.partition("@")
+                    if outgoing == 1 and body and domain == "s.whatsapp.net" and number in aliases:
+                        yield body, f"WhatsApp [{key}]", path
+            except (OSError, sqlite3.Error):
+                continue
+
+
 def room_answer(text, state, voice, library=None):
+    feedback = re.fullmatch(r"(dismiss|restore) memory finding ([a-f0-9]{12}) for ([\w-]+)[?.!]?",
+                            text.strip(), re.I)
+    if feedback:
+        if voice:
+            return {"private": True, "reply": "Use the private message field to manage memory findings."}
+        from memory_review import feedback as update_finding
+        return {"private": True, "reply": update_finding(
+            state, feedback[3], feedback[2].casefold(), restore=feedback[1].casefold() == "restore"
+        )}
+
+    review = re.fullmatch(r"show (?:my )?memory review for ([\w-]+)[?.!]?", text.strip(), re.I)
+    if review:
+        if voice:
+            return {"private": True, "reply": "Use the private message field to search personal memory."}
+        from memory_review import answer
+        return {"private": True, "reply": answer(state, review[1])}
+
+    connections = re.fullmatch(r"show (?:my )?memory connections for ([\w-]+)[?.!]?", text.strip(), re.I)
+    if connections:
+        if voice:
+            return {"private": True, "reply": "Use the private message field to search personal memory."}
+        from memory_connections import answer
+        return {"private": True, "reply": answer(state, connections[1])}
+
+    from knowledge_sources import APPS as KNOWLEDGE_APPS
+
+    apps = {a.casefold(): a for a in (*APPS, "Files", *KNOWLEDGE_APPS)}
+    names = "|".join(map(re.escape, apps))
+    memory_query = re.fullmatch(rf"(?:search|look in) my (?:memory|(?P<app>{names}) memory) for\b(?P<query>.*)", text.strip(), re.I)
+    if memory_query:
+        if voice:
+            return {"private": True, "reply": "Use the private message field to search personal memory."}
+        from personal_index import search
+        app = apps.get((memory_query["app"] or "").casefold())
+        return search(state, library or Path.home() / "Library", memory_query["query"], app)
     match = PREFIX.fullmatch(text.strip())
     family = bool(FAMILY.fullmatch(text.strip()))
     family_messages = _FAMILY_MESSAGES.fullmatch(text.strip())

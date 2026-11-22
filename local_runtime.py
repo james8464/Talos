@@ -64,16 +64,17 @@ def request_ollama_json(
         connection.close()
 
 
-def check_ollama_model(model_name: str = OLLAMA_MODEL) -> None:
+def local_model_names() -> list[str]:
     models = request_ollama_json("GET", "/api/tags").get("models")
     if not isinstance(models, list) or any(not isinstance(model, dict) for model in models):
         raise RuntimeError("Local Ollama returned an invalid model list.")
+    return sorted({name for model in models if not (model.get("remote_model") or model.get("remote_host"))
+                   for key in ("name", "model") if isinstance(name := model.get(key), str) and name})
 
-    for model in models:
-        matches_model = model_name in (model.get("name"), model.get("model"))
-        is_remote = model.get("remote_model") or model.get("remote_host")
-        if matches_model and not is_remote:
-            return
+
+def check_ollama_model(model_name: str = OLLAMA_MODEL) -> None:
+    if model_name in local_model_names():
+        return
     raise RuntimeError(f"Missing local model {model_name!r}. Install a local Ollama model during setup.")
 
 

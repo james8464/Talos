@@ -7,7 +7,7 @@ from contextlib import closing, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from agent import MAX_LOOKUPS, chat, listen, parse_decision, process_event, watch
+from agent import FINAL_DECISION_SCHEMA, chat, listen, parse_decision, process_event, watch
 from agent_memory import decisions, open_memory, recent_context, record_decision, review_decision
 from local_actions import acknowledge, inbox_items
 from transcript_memory import remember, search_transcripts
@@ -79,7 +79,9 @@ class ToolsAndMemoryTests(unittest.TestCase):
             self.assertRaisesRegex(RuntimeError, "lookup limit"),
         ):
             process_event(self.database, EVENT, apply=True)
-        self.assertEqual(model.call_count, MAX_LOOKUPS + 1)
+        self.assertEqual(model.call_count, 3)
+        self.assertEqual(model.call_args.kwargs["schema"], FINAL_DECISION_SCHEMA)
+        self.assertEqual(json.loads(model.call_args.args[0][-1]["content"])["lookups_remaining"], 0)
         self.assertEqual(decisions(self.database), [])
         self.assertEqual(inbox_items(self.database), [])
 

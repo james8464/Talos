@@ -1,0 +1,26 @@
+# Runtime data and generated files
+/state/
+/models/
+/generated_images/
+/graphify-out/
+/.venv/
+/.codex/
+/.agents/
+node_modules/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+.build/
+
+# Local configuration and credentials
+.env
+.env.*
+*.key
+*.pem
+*.token
+*.sqlite*
+*.db
+*.orig
+
+# Vendored, minified calendar dependency
+/talos_core/scheduling/croner.mjs

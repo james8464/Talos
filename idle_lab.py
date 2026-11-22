@@ -16,8 +16,16 @@ import threading
 import time
 
 from agent_memory import open_memory
+import talos_activity
 from improve_talos import ROOT, SOURCE_PATTERNS
 from local_runtime import check_ollama_model, request_ollama_json
+
+
+def pending_stages(db, now):
+    return db.execute("""SELECT s.stage,s.occurrences,s.worst_ms FROM room_slow_stages s
+        WHERE s.occurrences>=2 AND NOT EXISTS(SELECT 1 FROM coding_trials t WHERE
+        t.stage=s.stage AND (t.occurrences>=s.occurrences OR t.started>?))
+        ORDER BY s.occurrences DESC,s.worst_ms DESC,s.stage""", (now - 86400,))
 
 
 def power_and_idle():
@@ -50,6 +58,7 @@ class IdleLab:
         self.trial_id = None
         self.review_job = None
         self.quiet_until = time.monotonic() + 300
+        self.next_feature_review = 0
         self.next_check = time.monotonic() + 300
 
     def pause(self):
@@ -84,9 +93,10 @@ class IdleLab:
                 text=True,
             )
         try:
-            output, _ = child.communicate(json.dumps([messages, options]), timeout=65)
-            if child.returncode:
-                raise IdleReviewDeferred()
+            with talos_activity.operation(self.db.parent, "Idle review", "Run idle model review"):
+                output, _ = child.communicate(json.dumps([messages, options]), timeout=65)
+                if child.returncode:
+                    raise IdleReviewDeferred()
             return output
         except subprocess.TimeoutExpired:
             child.kill()
@@ -114,14 +124,16 @@ class IdleLab:
             if self.next_check > now + 31:
                 return
             with closing(open_memory(self.db)) as db, db:
-                row = db.execute(
-                    """SELECT stage,occurrences,worst_ms FROM room_slow_stages
-                    WHERE occurrences>=2 AND NOT EXISTS(SELECT 1 FROM coding_trials WHERE
-                    stage=room_slow_stages.stage AND (occurrences>=room_slow_stages.occurrences OR started>?))
-                    ORDER BY occurrences DESC LIMIT 1""",
-                    (time.time() - 86400,),
-                ).fetchone()
+                row = pending_stages(db, time.time()).fetchone()
                 if not row:
+                    if now >= self.next_feature_review:
+                        self.next_feature_review = now + 3600
+                        self.trial_id = None
+                        self.job = subprocess.Popen(
+                            [sys.executable, str(ROOT / "feature_queue.py"), "--state",
+                             str(self.db.parent), "--model", self.model],
+                            start_new_session=True, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     return
                 cursor = db.execute(
                     "INSERT INTO coding_trials(stage,occurrences,started,status) VALUES(?,?,?,'started')",
@@ -141,6 +153,32 @@ class IdleLab:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
+
+
+def local_edit(stage, original, model):
+    check_ollama_model(model)
+    prompt = (
+        "Repeated slow "
+        + stage
+        + ". Improve latency while preserving behavior. Return JSON with before and after strings. "
+        "Before must be one exact contiguous excerpt of this Python file. After replaces only that excerpt. "
+        "If you cannot improve it, return empty strings. Source:\n"
+        + original
+    )
+    response = request_ollama_json(
+        "POST",
+        "/api/generate",
+        timeout=120,
+        payload={
+            "model": model,
+            "prompt": prompt,
+            "format": "json",
+            "stream": False,
+            "think": False,
+            "options": {"temperature": 0, "num_predict": 1200},
+        },
+    )
+    return json.loads(response.get("response", ""))
 
 
 def experiment(db_path, trial, model, *, reviewer=None):
@@ -163,37 +201,17 @@ def experiment(db_path, trial, model, *, reviewer=None):
                         if src.is_symlink() or not src.is_file():
                             continue
                         dest = work / src.relative_to(ROOT)
-                        dest.parent.mkdir(exist_ok=True)
+                        dest.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copyfile(src, dest)
                 original = (work / target).read_text()
                 if reviewer is not None:
                     # Only code from a fixed target and a non-personal stage go to the reviewer.
                     proposal = reviewer(stage, original)
                 else:
-                    check_ollama_model(model)
-                    prompt = (
-                        "Repeated slow "
-                        + stage
-                        + ". Improve latency while preserving behavior. Return JSON with before and after strings. "
-                        "Before must be one exact contiguous excerpt of this Python file. After replaces only that excerpt. "
-                        "If you cannot improve it, return empty strings. Source:\n"
-                        + original
-                    )
-                    response = request_ollama_json(
-                        "POST",
-                        "/api/generate",
-                        timeout=120,
-                        payload={
-                            "model": model,
-                            "prompt": prompt,
-                            "format": "json",
-                            "stream": False,
-                            "think": False,
-                            "options": {"temperature": 0, "num_predict": 1200},
-                        },
-                    )
-                    proposal = json.loads(response.get("response", ""))
+                    proposal = local_edit(stage, original, model)
                 before, after = proposal.get("before"), proposal.get("after")
+                if before == after == "":
+                    return
                 if (
                     not isinstance(before, str)
                     or not before.strip()
@@ -334,4 +352,6 @@ if __name__ == "__main__":
         check_ollama_model(sys.argv[2])
         print(model_text(messages, model=sys.argv[2], **options))
     else:
-        experiment(Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3])
+        db_path = Path(sys.argv[1])
+        with talos_activity.operation(db_path.parent, "Idle lab", "Evaluate a code change"):
+            experiment(db_path, int(sys.argv[2]), sys.argv[3])

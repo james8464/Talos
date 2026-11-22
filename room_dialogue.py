@@ -150,8 +150,8 @@ def corrected_recollection(text, history):
         if phrase and re.match(r"^I ", prev):
             modifier, noun = phrase.groups()
             target = re.compile(r"\b(the|my|a|an) ([^\W_]+) (" + re.escape(noun) + r")\b", re.I)
-            if len(list(target.finditer(prev))) == 1:
-                amended = target.sub(lambda m: f"{m[1]} {modifier} {m[3]}", prev)
+            amended, replacements = target.subn(r"\g<1> " + modifier + r" \g<3>", prev, count=2)
+            if replacements == 1:
                 reported = re.sub(r"\bmy\b", "your", amended[2:].rstrip(".!?"), flags=re.I)
                 if not re.search(r"\b(?:I|me|mine|myself|am|was)\b", reported, re.I):
                     return f"You said you {reported}."

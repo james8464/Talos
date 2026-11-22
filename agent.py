@@ -1,19 +1,25 @@
 """Talos's local event planner, tool runner, and text interface."""
 
 import argparse
+import html
 import json
 import os
 import re
 import sqlite3
 import sys
+import subprocess
+import tomllib
 import tempfile
 import time
-from contextlib import closing
+from contextlib import closing, nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TextIO
 from uuid import uuid4
 
+from talos_core import session_titles
+import talos_activity
+import background_work
 import session_goals
 from conversation import visible_model_text
 
@@ -21,11 +27,46 @@ from agent_memory import (
     STATE_PATH, decisions, open_memory, recent_context, record_decision, review_decision,
 )
 from local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES, acknowledge, inbox_items
-from local_runtime import OLLAMA_MODEL, check_ollama_model, request_ollama_json, runtime_checks
+from local_runtime import OLLAMA_MODEL, check_ollama_model, local_model_names, request_ollama_json, runtime_checks
 from room_dialogue import compact_decision
 from talos_identity import PERSONALITY, SPOKEN_STYLE, capability_context
 from transcript_memory import (
-    TEXT_SESSION, fork_session, recall_prompt, recent_messages, remember, search_transcripts, session_rows, transcript_excerpts,
+    TEXT_SESSION, fork_session, last_reply, recall_prompt, recent_messages, insert_transcripts, search_transcripts, session_rows, transcript_excerpts,
+)
+
+MODEL_CONTEXT_TOKENS = 8192
+CONSOLE_COMMANDS = (
+    ("/activity, /agents", "Show running workers, active operations and recent receipts."),
+    ("/models, /model [list|status|NAME]", "List installed local models or select one for this console."),
+    ("/clear", "Clear the screen and start a new session."),
+    ("/redraw", "Repaint the console with recent dialogue."),
+    ("/copy", "Copy the last assistant reply to the Mac clipboard."),
+    ("/version, /v", "Show the installed Talos project version."),
+    ("/status", "Show session mode, model and runtime prerequisites."),
+    ("/parity [OpenClaw|Hermes]", "Show pinned command name coverage and missing commands."),
+    ("/context, /ctx [QUESTION]", "Inspect prompt size and measured usage in this session."),
+    ("/usage [all]", "Show measured console token totals by model for this or all sessions."),
+    ("/tools [list]", "List planner lookups and actions."),
+    ("/whoami", "Show local user ID, session and action mode."),
+    ("/bg REQUEST", "Queue a durable local work order for the room worker."),
+    ("/jobs [cancel ID]", "Inspect recent work orders or cancel a pending order."),
+    ("/goal [OBJECTIVE|queue OBJECTIVE|status|pause|resume|clear]", "Manage a standing goal."),
+    ("/subgoal CRITERION", "Add a criterion to the current goal."),
+    ("/new, /reset [NAME]", "Create a text session."),
+    ("/branch, /fork [NAME]", "Start a session from the current history."),
+    ("/title [TITLE]", "Read or change the session title."),
+    ("/sessions", "List available console sessions."),
+    ("/resume NAME_OR_TITLE", "Open a saved session."),
+    ("/history", "Read recent messages."),
+    ("/save FILE.jsonl", "Save the current conversation as JSONL."),
+    ("/export-session, /export [FILE.html]", "Export an owner-only HTML transcript."),
+    ("/search QUERY", "Search this session's history."),
+    ("/recall QUERY", "Find matching archived turns."),
+    ("/task REQUEST", "Plan a local task using the current action mode."),
+    ("/inbox", "Read local inbox items."),
+    ("/commands [PAGE]", "Browse console commands."),
+    ("/help", "List all console commands."),
+    ("/quit, /exit", "Leave the console."),
 )
 
 LOOKUP_TOOLS = ("search_memory", "list_inbox", "review_decisions", "current_time")
@@ -93,14 +134,14 @@ available evidence and respond with the decision only.
 """
 
 
-def parse_event(line: str) -> dict[str, str]:
+def parse_event(line: str, *, summary_limit: int = 800) -> dict[str, str]:
     try:
         event = json.loads(line)
     except ValueError as error:
         raise ValueError("Provide one JSON event per line.") from error
     if not isinstance(event, dict) or event.keys() != {"kind", "summary"}:
         raise ValueError("An event requires exactly two fields: kind and summary.")
-    for field, limit in (("kind", 64), ("summary", 800)):
+    for field, limit in (("kind", 64), ("summary", summary_limit)):
         value = event[field]
         if not isinstance(value, str) or not 1 <= len(value.strip()) <= limit:
             raise ValueError(f"{field} must be text between 1 and {limit} characters.")
@@ -146,24 +187,41 @@ def parse_decision(content: str) -> dict:
 
 def model_text(
     messages: list[dict], *, model: str = OLLAMA_MODEL, schema: dict | None = None,
-    max_tokens: int = 512,
+    max_tokens: int = 512, metrics: dict | None = None,
 ) -> str:
     payload = {
         "model": model, "stream": False, "messages": messages, "think": False,
         "keep_alive": -1 if "TALOS_OLLAMA_PORT" in os.environ else "30m",
-        "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": max_tokens},
+        "options": {"temperature": 0.2, "num_ctx": MODEL_CONTEXT_TOKENS, "num_predict": max_tokens},
     }
     if schema is not None:
         payload["format"] = schema
+    state = talos_activity.CURRENT_STATE.get()
+    if state is not None:
+        talos_activity.record(state, "Model", "Requesting a local model response")
     response = request_ollama_json("POST", "/api/chat", timeout=60, payload=payload)
     message = response.get("message")
     if response.get("done") is not True or response.get("done_reason") == "length":
         raise RuntimeError("The local model did not finish its response.")
     content = message.get("content") if isinstance(message, dict) else None
-    return visible_model_text(content)
+    result = visible_model_text(content)
+    if metrics is not None:
+        for key in ("prompt_eval_count", "eval_count", "eval_duration"):
+            if type(response.get(key)) is int and response[key] >= 0:
+                metrics[key] = response[key]
+    if state is not None:
+        usage = [f"{response[key]} {label} tokens" for key, label in
+                 (("prompt_eval_count", "input"), ("eval_count", "output"))
+                 if type(response.get(key)) is int]
+        talos_activity.record(state, "Model", "Local response received" + (" · " + ", ".join(usage) if usage else ""))
+    return result
 
 
 def read_tool(database: sqlite3.Connection, tool: str, detail: str):
+    if tool in LOOKUP_TOOLS:
+        location = database.execute("PRAGMA database_list").fetchone()[2]
+        if location:
+            talos_activity.record(Path(location).parent, "Planner", f"Read-only lookup · {tool}")
     match tool:
         case "search_memory":
             return transcript_excerpts(search_transcripts(database, detail))
@@ -191,13 +249,15 @@ def plan(
     if room_context is not None:
         context.update(room_context)
     tool_results = []
+    last_observations = {}
+    stalled = False
     for _ in range(max_lookups + 1):
         context["lookup_results"] = tool_results
-        context["lookups_remaining"] = max_lookups - len(tool_results)
-        schema = DECISION_SCHEMA if len(tool_results) < max_lookups else FINAL_DECISION_SCHEMA
+        context["lookups_remaining"] = 0 if stalled else max_lookups - len(tool_results)
+        schema = DECISION_SCHEMA if context["lookups_remaining"] else FINAL_DECISION_SCHEMA
         if room_context and room_context.get("conversational_turn"):
             lookups = list(LOOKUP_TOOLS if private_context else ("current_time",))
-            if len(tool_results) >= max_lookups:
+            if not context["lookups_remaining"]:
                 lookups = []
             instructions = (
                 "Answer the latest turn in one or two short sentences. Put only words for the "
@@ -233,15 +293,61 @@ def plan(
             if tool_results:
                 proposal["tools_used"] = [entry["tool"] for entry in tool_results]
             return proposal
-        if len(tool_results) == max_lookups:
+        if not context["lookups_remaining"]:
             break
         tool, detail = proposal["tool"], proposal["detail"]
         if private_context or tool == "current_time":
             result = read_tool(database, tool, detail)
         else:
             result = {"available": False, "reason": "Private context is disabled in this session."}
+        # OpenClaw's no-progress detector compares both the call arguments and its outcome.
+        # Talos uses a short read-only loop, so a repeated unchanged observation ends lookups.
+        key = (tool, detail.strip().casefold() if tool == "search_memory" else "")
+        observation = json.dumps(result, sort_keys=True, ensure_ascii=False)
+        stalled = last_observations.get(key) == observation
+        last_observations[key] = observation
         tool_results.append({"tool": tool, "result": result})
     raise RuntimeError("The local model reached its lookup limit without making a decision.")
+
+
+def console_prompt(database, message, session):
+    if len(message) > 4000:
+        raise ValueError("Use at most 4,000 characters for a console turn.")
+    records = (search_transcripts(database, message, include_named_text=False) if session == TEXT_SESSION
+               else search_transcripts(database, message, in_session=session)) if message else []
+    instructions = PERSONALITY + "\n" + capability_context("text")
+    recalled = recall_prompt(records)
+    history = recent_messages(database, session)
+    messages = [{"role": "system", "content": instructions + recalled}, *history]
+    if message:
+        messages.append({"role": "user", "content": message})
+    sizes = {"instructions": len(instructions), "retrieved memory": len(recalled),
+             "recent dialogue": sum(len(m["content"]) for m in history), "current request": len(message)}
+    return messages, sizes
+
+
+def console_context(database, session, request, model):
+    _, sizes = console_prompt(database, request, session)
+    lines = [f"Session {session} · model {model} · configured window {MODEL_CONTEXT_TOKENS:,} tokens",
+             "Prompt preview (content characters) · " + ", ".join(f"{k} {v:,}" for k, v in sizes.items()),
+             "History policy · up to six recent messages and three retrieved excerpts"]
+    if database.execute("SELECT 1 FROM sqlite_master WHERE name='console_model_usage'").fetchone():
+        last = database.execute("""SELECT model,window,input_tokens,output_tokens,eval_ns
+                                   FROM console_model_usage WHERE session=?""", (session,)).fetchone()
+        if last:
+            prior_model, window, inputs, outputs, duration = last
+            parts = [f"Last completed reply · {prior_model}"]
+            if inputs is not None:
+                parts.append(f"{inputs:,}/{window:,} input tokens ({100 * inputs / window:.1f}%)")
+            if outputs is not None:
+                parts.append(f"{outputs:,} output tokens")
+                if duration:
+                    parts.append(f"{outputs * 1e9 / duration:.1f} output tokens/s")
+            if inputs is None and outputs is None:
+                parts.append("provider token counts unavailable")
+            lines.append(" · ".join(parts))
+            return "\n".join(lines)
+    return "\n".join([*lines, "No measured model turn in this session yet."])
 
 
 def chat(database: sqlite3.Connection, message: str, *, model: str = OLLAMA_MODEL,
@@ -250,18 +356,40 @@ def chat(database: sqlite3.Connection, message: str, *, model: str = OLLAMA_MODE
     if not 1 <= len(message) <= 4000:
         raise ValueError("A chat message must contain 1 to 4,000 characters.")
     check_ollama_model(model)
-    records = (search_transcripts(database, message, include_named_text=False) if session == TEXT_SESSION
-               else search_transcripts(database, message, in_session=session))
-    system = (
-        PERSONALITY + "\n" + capability_context("text")
-        + recall_prompt(records)
-    )
-    turn = {"role": "user", "content": message}
-    reply = model_text(
-        [{"role": "system", "content": system}, *recent_messages(database, session), turn], model=model
-    )
-    remember(database, session, [turn, {"role": "assistant", "content": reply}])
+    messages, _ = console_prompt(database, message, session)
+    metrics = {}
+    reply = model_text(messages, model=model, metrics=metrics)
+    with database:
+        insert_transcripts(database, session, [messages[-1], {"role": "assistant", "content": reply}])
+        database.execute("""CREATE TABLE IF NOT EXISTS console_model_usage(
+            session TEXT PRIMARY KEY, model TEXT, window INTEGER, input_tokens INTEGER,
+            output_tokens INTEGER, eval_ns INTEGER)""")
+        database.execute("INSERT OR REPLACE INTO console_model_usage VALUES(?,?,?,?,?,?)",
+                         (session, model, MODEL_CONTEXT_TOKENS, metrics.get("prompt_eval_count"),
+                          metrics.get("eval_count"), metrics.get("eval_duration")))
+        database.execute("""CREATE TABLE IF NOT EXISTS console_usage_totals(
+            session TEXT, model TEXT, turns INTEGER, measured INTEGER, inputs INTEGER, outputs INTEGER,
+            PRIMARY KEY(session,model))""")
+        complete = "prompt_eval_count" in metrics and "eval_count" in metrics
+        database.execute("""INSERT INTO console_usage_totals VALUES(?,?,1,?,?,?)
+            ON CONFLICT(session,model) DO UPDATE SET turns=turns+1, measured=measured+excluded.measured,
+            inputs=inputs+excluded.inputs, outputs=outputs+excluded.outputs""",
+            (session, model, int(complete), metrics["prompt_eval_count"] if complete else 0,
+             metrics["eval_count"] if complete else 0))
     return reply
+
+
+def console_usage(database, session):
+    lines = ["Recorded console chat usage · " + ("all sessions" if session is None else session)]
+    if database.execute("SELECT 1 FROM sqlite_master WHERE name='console_usage_totals'").fetchone():
+        for model, turns, measured, inputs, outputs in database.execute(
+                """SELECT model,sum(turns),sum(measured),sum(inputs),sum(outputs) FROM console_usage_totals
+                   WHERE (? IS NULL OR session=?) GROUP BY model ORDER BY model""", (session, session)):
+            total = f"{inputs:,} input and {outputs:,} output tokens" if measured else "token counts unavailable"
+            lines.append(f"{model} · {measured}/{turns} replies measured · {total}")
+    if len(lines) == 1:
+        lines.append("No console replies recorded since usage tracking began.")
+    return "\n".join(lines)
 
 
 def process_event(
@@ -340,19 +468,40 @@ def owner_task(database: sqlite3.Connection, request: str, *, apply: bool, model
 
 def export_session(database: sqlite3.Connection, session: str, path: Path) -> int:
     """Publish a complete, private JSONL file without replacing another export."""
+    return publish_transcript(database, session, path, as_html=False, auto_name=False)[0]
+
+
+def publish_transcript(database, session, path, *, as_html, auto_name):
     count = 0
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
         temporary = Path(stream.name)
         try:
+            if as_html:
+                stream.write('<!doctype html><meta charset="utf-8"><title>Talos conversation</title>\n'
+                             '<style>body{max-width:54rem;margin:2rem auto;font:1rem system-ui}'
+                             'p{white-space:pre-wrap;overflow-wrap:anywhere}</style>\n'
+                             '<main><h1>Talos conversation</h1>\n')
             for row in session_rows(database, session):
-                stream.write(json.dumps(dict(row), ensure_ascii=False) + "\n")
+                if as_html:
+                    role, stamp, text = (html.escape(row[key]) for key in ("role", "recorded_at", "text"))
+                    stream.write(f"<article><h2>{role}</h2><time>{stamp}</time><p>{text}</p></article>\n")
+                else:
+                    stream.write(json.dumps(dict(row), ensure_ascii=False) + "\n")
                 count += 1
+            if as_html:
+                stream.write("</main>\n")
             stream.flush()
             os.fsync(stream.fileno())
-            os.link(temporary, path)
+            for number in range(1, 101):
+                candidate = path if number == 1 else path.with_stem(f"{path.stem}-{number}")
+                try:
+                    os.link(temporary, candidate)
+                    return count, candidate
+                except FileExistsError:
+                    if not auto_name or number == 100:
+                        raise
         finally:
             temporary.unlink(missing_ok=True)
-    return count
 
 
 def interactive_chat(
@@ -360,6 +509,10 @@ def interactive_chat(
     apply: bool, model: str,
 ) -> int:
     session = TEXT_SESSION
+    location = database.execute("PRAGMA database_list").fetchone()[2] if isinstance(database, sqlite3.Connection) else ""
+    def activity(label):
+        return talos_activity.operation(Path(location).parent, "Console", label) if location else nullcontext()
+
     mode = "local actions enabled" if apply else "shadow tasks"
     print(f"Talos text console ({mode}). /help lists commands.", file=output, flush=True)
     while True:
@@ -376,26 +529,118 @@ def interactive_chat(
             match command:
                 case "/quit" | "/exit":
                     return 0
-                case "/help":
-                    print("/status  /goal [OBJECTIVE|queue OBJECTIVE|status|pause|resume|clear]  /subgoal CRITERION  /new [NAME]  /branch [NAME]  /sessions  /resume NAME  /history  /save FILE.jsonl  /search QUERY  /recall QUERY  /task REQUEST  /inbox  /quit", file=output, flush=True)
+                case "/help" | "/commands":
+                    entries = CONSOLE_COMMANDS
+                    if command == "/commands":
+                        pages = (len(entries) + 7) // 8
+                        if request and not re.fullmatch(r"[0-9]{1,3}", request.strip()):
+                            raise ValueError("Usage: /commands [PAGE]")
+                        page = int(request or 1)
+                        if not 1 <= page <= pages:
+                            raise ValueError(f"Choose a command page from 1 to {pages}.")
+                        entries = entries[(page - 1) * 8:page * 8]
+                        print(f"Console commands · page {page}/{pages}", file=output)
+                    print("\n".join(f"{usage}  {description}" for usage, description in entries),
+                          file=output, flush=True)
+                case "/whoami":
+                    print(f"Local console · user ID {os.geteuid()} · session {session} · {mode}",
+                          file=output, flush=True)
+                case "/version" | "/v":
+                    with Path(__file__).with_name("pyproject.toml").open("rb") as config:
+                        version = tomllib.load(config)["project"]["version"]
+                    print(f"Talos {version}", file=output, flush=True)
+                case "/models" | "/model":
+                    option = request.strip()
+                    if (command == "/models" and not option) or option == "list":
+                        print("Local models · " + (", ".join(local_model_names()) or "none installed"),
+                              file=output, flush=True)
+                    elif command == "/models":
+                        raise ValueError("Usage: /models")
+                    elif option in ("", "status"):
+                        print(f"Current console model · {model}", file=output, flush=True)
+                    else:
+                        check_ollama_model(option)
+                        model = option
+                        print(f"Current console model · {model}", file=output, flush=True)
+                case "/copy":
+                    last = last_reply(database, session)
+                    if last is None:
+                        raise ValueError("No assistant reply to copy.")
+                    if subprocess.run(["/usr/bin/pbcopy"], input=last, text=True, check=False).returncode:
+                        raise RuntimeError("The clipboard is unavailable.")
+                    print("Copied the last reply.", file=output, flush=True)
+                case "/context" | "/ctx":
+                    print(console_context(database, session, request, model), file=output, flush=True)
+                case "/usage":
+                    if request.strip().lower() not in ("", "all"):
+                        raise ValueError("Usage: /usage [all]")
+                    print(console_usage(database, None if request.strip() else session), file=output, flush=True)
+                case "/activity" | "/agents":
+                    filename = database.execute("PRAGMA database_list").fetchone()[2]
+                    if not filename:
+                        raise ValueError("This session has no on-disk runtime state.")
+                    talos_activity.display(Path(filename).parent, once=True, output=output, database=Path(filename))
+                case "/parity":
+                    from upstream_review import ROOT, parity_status
+                    if request.strip().lower() not in ("", "openclaw", "hermes"):
+                        raise ValueError("Usage: /parity [OpenClaw|Hermes]")
+                    print(parity_status(ROOT, ROOT / "state", request.strip()), file=output, flush=True)
+                case "/tools":
+                    if request.strip().lower() not in ("", "list"):
+                        raise ValueError("Usage: /tools list")
+                    print("Planner lookups · " + ", ".join(LOOKUP_TOOLS), file=output)
+                    print(f"Planner actions ({mode}) · " + ", ".join(PERMITTED_TOOLS["act"]),
+                          file=output, flush=True)
+                case "/bg" | "/jobs":
+                    if command == "/bg":
+                        if not request.strip():
+                            raise ValueError("Usage: /bg REQUEST")
+                        task = f"queue this work: {request}"
+                    elif not request.strip():
+                        task = "list my background jobs"
+                    elif cancel := re.fullmatch(r"cancel #?(\d{1,17})", request.strip(), re.I):
+                        task = f"cancel background job {cancel[1]}"
+                    else:
+                        raise ValueError("Usage: /jobs [cancel ID]")
+                    work = background_work.handle(database, task, voice=False, apply=apply, request_id=None)
+                    print("\n".join(talos_activity.clean(line) for line in work["reply"].splitlines()),
+                          file=output, flush=True)
                 case "/goal" | "/subgoal":
                     result = session_goals.command(database, session, request, model=model, generate=model_text,
                                                    ready=check_ollama_model, subgoal=command == "/subgoal")
                     print(result, file=output, flush=True)
                 case "/status":
+                    print(f"Session {session} · {mode} · model {model}", file=output, flush=True)
                     show_status(model, output)
-                case "/new" | "/reset" | "/branch" | "/fork" | "/resume" | "/sessions":
+                case "/new" | "/reset" | "/clear" | "/branch" | "/fork" | "/resume" | "/sessions":
                     database.execute("CREATE TABLE IF NOT EXISTS console_sessions (name TEXT PRIMARY KEY)")
+                    session_titles.initialize(database)
                     name = request.strip()
                     if command == "/sessions":
-                        names = [TEXT_SESSION, *(row[0] for row in database.execute(
-                            "SELECT name FROM console_sessions ORDER BY name"))]
-                        for entry in names:
+                        sessions = database.execute("""SELECT s.name,t.title FROM (
+                            SELECT ? AS name, ? AS session, 0 AS priority UNION ALL
+                            SELECT name,'console/'||name,1 FROM console_sessions
+                            ) s LEFT JOIN console_titles t ON t.session=s.session ORDER BY s.priority,s.name""",
+                            (TEXT_SESSION, TEXT_SESSION))
+                        for entry, title in sessions:
                             marker = "*" if session in (entry, f"console/{entry}") else " "
-                            print(f"{marker} {entry}", file=output, flush=True)
+                            suffix = f" · {title}" if title else ""
+                            print(f"{marker} {entry}{suffix}", file=output, flush=True)
                         continue
+                    if command == "/clear":
+                        if name:
+                            raise ValueError("Usage: /clear")
+                        if output.isatty():
+                            print("\x1b[2J\x1b[H", end="", file=output)
                     if command != "/resume" and not name:
                         name = uuid4().hex[:12]
+                    if command == "/resume" and name != TEXT_SESSION and not database.execute(
+                        "SELECT 1 FROM console_sessions WHERE name=?", (name,)
+                    ).fetchone():
+                        titled = database.execute("SELECT session FROM console_titles WHERE title=?",
+                                                  (session_titles.sanitize_title(name),)).fetchone()
+                        if titled:
+                            name = titled[0].removeprefix("console/")
                     if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", name):
                         raise ValueError("Use a session name of 1–64 letters, digits, underscores or hyphens.")
                     if command == "/resume":
@@ -407,6 +652,8 @@ def interactive_chat(
                         if name == TEXT_SESSION:
                             raise ValueError("The default session already exists. Use /resume text.")
                         with database:
+                            if database.execute("SELECT 1 FROM console_titles WHERE title=?", (name,)).fetchone():
+                                raise ValueError("That name is already a session title.")
                             added = database.execute("INSERT OR IGNORE INTO console_sessions VALUES(?)", (name,))
                             if not added.rowcount:
                                 raise ValueError("Session already exists. Use /resume NAME.")
@@ -414,7 +661,18 @@ def interactive_chat(
                                 fork_session(database, session, f"console/{name}")
                     session = TEXT_SESSION if name == TEXT_SESSION else f"console/{name}"
                     print(f"Current session: {name}", file=output, flush=True)
-                case "/history":
+                case "/title":
+                    session_titles.initialize(database)
+                    if request.strip():
+                        title = session_titles.set_title(database, session, request)
+                    else:
+                        title = session_titles.display(database, session)
+                    print(title or "This session has no title.", file=output, flush=True)
+                case "/history" | "/redraw":
+                    if command == "/redraw":
+                        if output.isatty():
+                            print("\x1b[2J\x1b[H", end="", file=output)
+                        print(f"Talos text console · {session} · {model}", file=output)
                     rows = recent_messages(database, session)
                     for row in rows:
                         print(f"{row['role']}> {row['content']}", file=output, flush=True)
@@ -426,6 +684,14 @@ def interactive_chat(
                     path = Path(request.strip()).expanduser()
                     count = export_session(database, session, path)
                     print(f"Exported {count} messages to {path}.", file=output, flush=True)
+                case "/export-session" | "/export":
+                    workspace = Path.cwd()
+                    path = workspace / (request.strip() or f"talos-{session.split('/')[-1]}.html")
+                    if path.suffix.lower() != ".html" or not path.parent.resolve().is_relative_to(workspace):
+                        raise ValueError("Choose an HTML file inside the current workspace.")
+                    count, exported = publish_transcript(database, session, path, as_html=True,
+                                                         auto_name=not request.strip())
+                    print(f"Exported {count} messages to {exported}.", file=output, flush=True)
                 case "/recall" | "/search":
                     if not request.strip():
                         raise ValueError(f"Usage: {command} QUERY")
@@ -435,7 +701,10 @@ def interactive_chat(
                     if not matches:
                         print("No matching archived turns.", file=output, flush=True)
                 case "/task":
-                    result = owner_task(database, request, apply=apply, model=model)
+                    if source.isatty():
+                        print("Planning the requested task…", file=output, flush=True)
+                    with activity("Plan console task"):
+                        result = owner_task(database, request, apply=apply, model=model)
                     print(json.dumps(result, ensure_ascii=False), file=output, flush=True)
                 case "/inbox":
                     for item in inbox_items(database):
@@ -443,7 +712,10 @@ def interactive_chat(
                 case _:
                     if command.startswith("/"):
                         raise ValueError("Unknown console command. Type /help for options.")
-                    reply = chat(database, message, model=model, session=session)
+                    if source.isatty():
+                        print(f"Generating reply with {model}…", file=output, flush=True)
+                    with activity("Generate console reply"):
+                        reply = chat(database, message, model=model, session=session)
                     print(f"Talos> {reply}", file=output, flush=True)
         except (OSError, ValueError, RuntimeError, sqlite3.Error) as error:
             print(f"Talos: {error}", file=errors, flush=True)

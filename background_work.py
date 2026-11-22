@@ -76,7 +76,7 @@ def handle(db, text, *, voice, apply, request_id):
     return {"private": True, "reply": f"Background job #{row[0]} · {row[2]}."}
 
 
-def run_one(db, generate, model, *, ready):
+def run_one(db, generate, model, *, ready, notify=None):
     """Process one claim. Return true when the worker should check for more due jobs."""
     if not db.execute(
         "SELECT 1 FROM sqlite_master WHERE name='background_work'"
@@ -97,6 +97,11 @@ def run_one(db, generate, model, *, ready):
             "UPDATE background_work SET status='running',claim=?,available=? WHERE id=?",
             (claim, (now + timedelta(minutes=5)).isoformat(), row["id"]),
         )
+    def report(message):
+        if notify is not None:
+            notify(f"Work order #{row['id']} · {message}")
+
+    report("claimed")
     try:
         deterministic = work_order(row["task"])
         if deterministic and deterministic.get("steps"):
@@ -108,13 +113,16 @@ def run_one(db, generate, model, *, ready):
         ):
             steps, remaining = [step], ""
         elif (ready() if callable(ready) else ready):
+            report("planning with the local model")
             steps, remaining = propose_work(generate, model, row["task"])
         else:
             with db:
-                db.execute(
+                updated = db.execute(
                     "UPDATE background_work SET status='queued',claim=NULL,available=? WHERE claim=?",
                     ((now + timedelta(seconds=30)).isoformat(), claim),
                 )
+            if updated.rowcount:
+                report("waiting for model readiness; retry in 30s")
             return True
         with db:
             db.execute("BEGIN IMMEDIATE")
@@ -142,6 +150,7 @@ def run_one(db, generate, model, *, ready):
                 "UPDATE background_work SET status=?,result=?,claim=NULL WHERE claim=?",
                 (status, summary, claim),
             )
+        report(status)
     except (ValueError, RuntimeError, OSError) as error:
         # OpenClaw's bounded exponential retry policy, using a persisted deadline.
         attempts = row["attempts"] + 1
@@ -149,7 +158,7 @@ def run_one(db, generate, model, *, ready):
             seconds=min(600, 15 * 2 ** min(attempts - 1, 6))
         )
         with db:
-            db.execute(
+            updated = db.execute(
                 "UPDATE background_work SET status=?,attempts=?,result=?,available=?,claim=NULL WHERE claim=?",
                 (
                     "failed" if attempts >= 4 else "queued",
@@ -159,4 +168,6 @@ def run_one(db, generate, model, *, ready):
                     claim,
                 ),
             )
+        if updated.rowcount:
+            report(f"failed after {attempts} attempts" if attempts >= 4 else f"retry scheduled after attempt {attempts}")
     return True

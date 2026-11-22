@@ -34,8 +34,24 @@ class MaintenanceSchedule:
     def __init__(self):
         self.sources = self.code = None
         self.next_files = self.next_review = 0
+        self.next_memory_review = 0
         self.counts = {}
         self.outcome = "Awaiting first review"
+        self.memory_outcome = "Awaiting an idle review"
+
+    def poll_memory(self, state, *, run):
+        now = time.monotonic()
+        if now >= self.next_memory_review and not conversation_busy(state):
+            try:
+                result = run("memory_review")
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                self.memory_outcome = f"Review unavailable ({type(error).__name__})"
+                self.next_memory_review = now + 300
+            else:
+                if result is not None:
+                    self.memory_outcome = result
+                    self.next_memory_review = now + 120
+        return self.memory_outcome
 
     def poll(self, state, *, sources, code, run):
         """Return report lines after a check, or None when foreground activity defers it."""

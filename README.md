@@ -482,3 +482,9 @@ the brief and asks for a delay. Reply on the same input channel within two minut
 in hands-free mode, start the reply with “Hey Talos”. It sets the local timer once
 you give it a time. Calendar events and camera presence do not establish when you
 intend to leave.
+
+### Watch the Obsidian graph
+
+Open the existing vault in `state/Talos Memory` and navigate to **Talos maps → Talos memory map**. The publisher checks every two seconds while the room runs. Shared indexed evidence, current AI hypotheses, development proposals, and Python imports appear as linked Markdown notes. The code index shows actual file revisions, and **Recent source edits** lists the last 50 observed edits. A source save can change a note without adding an edge. Revoking a source removes its generated evidence on the next refresh.
+
+Run `./Start-Talos.command --memory-only --offline` to start the memory workers and their live terminal feed independently of the room, microphone, and model server. Ctrl-C stops workers started by that launcher. The console supports `/model status`, `/models`, `/model NAME`, `/clear`, `/redraw`, `/copy`, and `/version`.

@@ -99,6 +99,13 @@ def session_rows(database: sqlite3.Connection, session: str, *, recent=False):
                 WHERE session=? AND id<=? ORDER BY id""", (name, cutoff))
 
 
+def last_reply(database, session):
+    row = database.execute(lineage_query(database, session) + """
+        SELECT t.text FROM visible v JOIN transcripts t ON t.session=v.session AND t.id<=v.through_id
+        WHERE t.role='assistant' ORDER BY t.id DESC LIMIT 1""", (session,)).fetchone()
+    return row[0] if row else None
+
+
 def recent_messages(database: sqlite3.Connection, session: str = TEXT_SESSION) -> list[dict]:
     rows = list(session_rows(database, session, recent=True))
     return [{"role": row["role"], "content": row["text"][-800:]} for row in reversed(rows)]

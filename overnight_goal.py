@@ -2,18 +2,25 @@
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 import shutil
+import sqlite3
 import subprocess
+import sys
 import tempfile
 import time
 from contextlib import closing
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from agent_memory import open_memory
-from idle_lab import experiment, power_and_idle
+from idle_lab import experiment, local_edit, power_and_idle
+import goal_store
+import knowledge_map
+import recurring_reminders
+import background_work
 
 ROOT = Path(__file__).resolve().parent
 STATE = ROOT / "state"
@@ -93,6 +100,17 @@ def latest_quota(now):
 
 
 def free_edit(stage, original):
+    prompt = (
+        "Review this Talos Python source for "
+        + stage
+        + ". Offer one small correctness or speed improvement. "
+        "Return one JSON object with strings before and after. before must exactly match a unique excerpt. "
+        "Use empty strings if no useful improvement. No tools.\n" + original
+    )
+    return free_review(prompt, ("before", "after"))
+
+
+def free_review(prompt, fields):
     config = json.loads((Path.home() / ".openclaude/settings.json").read_text()).get(
         "env", {}
     )
@@ -103,13 +121,6 @@ def free_edit(stage, original):
     cli = shutil.which("openclaude")
     if not cli:
         raise RuntimeError("OpenClaude is unavailable")
-    prompt = (
-        "Review this Talos Python source for "
-        + stage
-        + ". Offer one small correctness or speed improvement. "
-        "Return one JSON object with strings before and after. before must exactly match a unique excerpt. "
-        "Use empty strings if no useful improvement. No tools.\n" + original
-    )
     with tempfile.TemporaryDirectory(prefix="talos-cloud-review-") as tmp:
         result = subprocess.run(
             [
@@ -117,7 +128,7 @@ def free_edit(stage, original):
                 "-p",
                 "--bare",
                 "--system-prompt",
-                "Review the supplied Python source. Return just the requested JSON object.",
+                "Review the supplied source. Return just the requested JSON object.",
                 "--model",
                 model,
                 "--tools",
@@ -131,11 +142,8 @@ def free_edit(stage, original):
                 json.dumps(
                     {
                         "type": "object",
-                        "properties": {
-                            "before": {"type": "string"},
-                            "after": {"type": "string"},
-                        },
-                        "required": ["before", "after"],
+                        "properties": {field: {"type": "string"} for field in fields},
+                        "required": list(fields),
                         "additionalProperties": False,
                     }
                 ),
@@ -172,20 +180,21 @@ def check(state, until, now=None, *, quota=_latest_windows):
 
 def monitor(state, until, *, now=None, quota=_latest_windows, watch=False):
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
-    with (state / "overnight.lock").open("a") as lock:
-        try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            return "another check is active"
-        while True:
-            checked = time.time() if now is None else now
-            outcome = check_locked(state, until, checked, quota)
-            if not watch:
-                return outcome
-            print(outcome, flush=True)
-            if checked >= until:
-                return outcome
-            time.sleep(min(300, max(0, until - time.time())))
+    while True:
+        checked = time.time() if now is None else now
+        with (state / "overnight.lock").open("a") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                outcome = "another check is active"
+            else:
+                outcome = check_locked(state, until, checked, quota)
+        if not watch:
+            return outcome
+        print(outcome, flush=True)
+        if checked >= until:
+            return outcome
+        time.sleep(min(300, max(0, until - time.time())))
 
 
 def check_locked(state, until, now, quota):
@@ -273,6 +282,143 @@ def check_locked(state, until, now, quota):
     return outcome
 
 
+def baseline(prior):
+    """Repeat the offline dialogue regression suite only after its inputs change."""
+    digest = hashlib.sha256()
+    for path in sorted([*ROOT.glob("*.py"), ROOT / "tests/test_room_dialogue.py"]):
+        digest.update(path.name.encode() + b"\0" + path.read_bytes())
+    version = digest.hexdigest()
+    if version == prior.get("source_version") and prior.get("baseline") == "passed":
+        return version, "passed"
+    result = subprocess.run(
+        [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_room_dialogue.py"],
+        cwd=ROOT, capture_output=True, timeout=90,
+    )
+    return version, "passed" if result.returncode == 0 else "failed"
+
+
+def offline_edit(stage, original):
+    """Use Ruff's safe performance fixes when inference is unavailable."""
+    result = subprocess.run(
+        ["ruff", "check", "--isolated", "--no-cache", "--fix-only", "--no-unsafe-fixes",
+         "--select", "PERF,SIM905", "--stdin-filename", "candidate.py", "-"],
+        input=original, capture_output=True, text=True, timeout=10, check=True,
+    )
+    if result.stdout == original or not result.stdout.strip():
+        return {"before": "", "after": ""}
+    return {"before": original, "after": result.stdout}
+
+
+def revisit_goals(state, now):
+    """Recheck the oldest due goals when the foreground room is absent or behind."""
+    database = state / "agent.sqlite3"
+    if not database.exists():
+        return 0
+    cutoff = (datetime.fromtimestamp(now, UTC) - timedelta(minutes=5)).isoformat()
+    with closing(open_memory(database)) as db:
+        background_work.run_one(db, None, "", ready=False)
+        recurring_reminders.advance(db, datetime.fromtimestamp(now, UTC))
+        due = db.execute(
+            "SELECT id FROM goals WHERE status='active' AND checked<? ORDER BY checked,id LIMIT 4",
+            (cutoff,),
+        ).fetchall()
+        for row in due:
+            goal_store.refresh_in_background(db, row["id"])
+    return len(due)
+
+
+def heartbeat(state, model, *, local_only=False):
+    """One bounded launchd tick. A process exit releases the lock even after a crash."""
+    state.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with (state / "heartbeat.lock").open("a") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return "another heartbeat is active"
+        path = state / "heartbeat.json"
+        status = json.loads(path.read_text()) if path.exists() else {}
+        status["checked_at"] = now = time.time()
+        try:
+            status["goals_checked"] = revisit_goals(state, now)
+        except (OSError, ValueError, sqlite3.Error) as error:
+            status["goals_checked"] = type(error).__name__
+        try:
+            knowledge_map.publish(state)
+            status["map"] = "published"
+        except (OSError, ValueError, sqlite3.Error) as error:
+            status["map"] = type(error).__name__
+        try:
+            status["source_version"], status["baseline"] = baseline(status)
+        except (OSError, subprocess.SubprocessError) as error:
+            status["baseline"] = type(error).__name__
+        idle = power_and_idle()
+        if now - status.get("last_attempt", 0) < 3600:
+            outcome = "next hourly review pending"
+        elif not idle and status.get("offline_version") == status.get("source_version"):
+            outcome = "waiting for AC power and five idle minutes"
+        else:
+            stages = ("conversation latency", "memory retrieval", "speech synthesis")
+            attempts = status.get("attempts", 0)
+            stage = stages[attempts % len(stages)]
+            if not idle:
+                stage = "conversation latency"
+                status["offline_version"] = status.get("source_version")
+
+            def reviewer(stage, source):
+                failures = []
+                if idle:
+                    try:
+                        status["reviewer"] = model
+                        return local_edit(stage, source, model)
+                    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                        failures.append(f"local: {type(error).__name__}")
+                        status["fallbacks"] = failures
+                    if not local_only:
+                        try:
+                            status["reviewer"] = "OpenClaude"
+                            return free_edit(stage, source)
+                        except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                            failures.append(f"OpenClaude: {type(error).__name__}")
+                status["reviewer"] = "Ruff"
+                status["fallbacks"] = failures
+                return offline_edit(stage, source)
+
+            database = state / "heartbeat-lab.sqlite"
+            with closing(open_memory(database)) as db, db:
+                trial = db.execute(
+                    "INSERT INTO coding_trials(stage,occurrences,started,status) VALUES(?,1,?,'started')",
+                    (stage, now),
+                ).lastrowid
+            if idle:
+                status.update(last_attempt=now, attempts=attempts + 1)
+            status.update(trial=trial, stage=stage,
+                          reviewer="selecting", fallbacks=[], last_result="started")
+            save_status(path, status)
+            experiment(database, trial, model, reviewer=reviewer)
+            with closing(open_memory(database)) as db:
+                outcome = db.execute("SELECT status FROM coding_trials WHERE id=?", (trial,)).fetchone()[0]
+            status["last_result"] = outcome
+        status["outcome"] = outcome
+        save_status(path, status)
+        knowledge_map.publish_heartbeat(state, status)
+        return outcome
+
+
+def watch_heartbeat(state, model, local_only):
+    state.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with (state / "heartbeat-watch.lock").open("a") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        while True:
+            try:
+                print(heartbeat(state, model, local_only=local_only), flush=True)
+            except (OSError, sqlite3.Error, ValueError, RuntimeError) as error:
+                print("Heartbeat retry in five minutes:", type(error).__name__, file=sys.stderr, flush=True)
+            time.sleep(300)
+
+
 def save_status(path, status):
     with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as tmp:
         json.dump(status, tmp)
@@ -281,9 +427,23 @@ def save_status(path, status):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--until", type=float, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--until", type=float)
+    mode.add_argument("--heartbeat", action="store_true")
+    parser.add_argument("--model", default="qwen3:4b")
     parser.add_argument("--watch", action="store_true")
+    parser.add_argument("--local-only", action="store_true")
     args = parser.parse_args()
+    if args.heartbeat:
+        os.environ.setdefault("TALOS_OLLAMA_PORT", "11435")
+        if args.watch:
+            try:
+                watch_heartbeat(STATE, args.model, args.local_only)
+            except KeyboardInterrupt:
+                pass
+        else:
+            print(heartbeat(STATE, args.model, local_only=args.local_only))
+        sys.exit(0)
     outcome = monitor(STATE, args.until, watch=args.watch)
     if not args.watch or outcome == "another check is active":
         print(outcome)
