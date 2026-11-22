@@ -4,6 +4,7 @@ import os
 import subprocess
 import tempfile
 import unittest
+from datetime import UTC, datetime, timedelta
 from contextlib import closing
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -200,6 +201,32 @@ class RoomDialogueTests(unittest.TestCase):
             self.assertIsNone(explicit_reminder(f"Remind me in {duration} to check the oven."))
         self.assertIsNone(explicit_reminder("She said remind me in 10 minutes to eat."))
         self.assertIsNone(explicit_reminder("Don't remind me in 10 minutes to eat."))
+
+    def test_family_promise_reminder_survives_restart_and_delivers(self):
+        promise = "I promised my sister I'd bring the book"
+        with patch("room_service.plan", side_effect=AssertionError("unexpected planner")):
+            receipt = self.turn(promise + ". Remind me about that in two minutes.")
+        self.assertEqual((receipt["action"], receipt["tool"]), ("applied", "set_reminder"))
+        self.room = Room(self.room.db_path, "local", online=False)
+        item, = self.room.route("GET", "/v1/inbox", {})[1]["items"]
+        self.assertEqual((item["id"], item["text"]), (receipt["id"], promise))
+        due = datetime.fromisoformat(item["due_at"])
+        self.assertAlmostEqual((due - datetime.now(UTC)).total_seconds(), 120, delta=3)
+        with self.assertRaises(ValueError):
+            self.room.route("POST", "/v1/speech/ack", {"id": item["id"]})
+        with patch("room_service.datetime", wraps=datetime) as clock:
+            clock.now.return_value = due + timedelta(seconds=1)
+            self.assertEqual(self.room.route("GET", "/v1/speech", {})[1]["item"], item)
+            for _ in range(2):
+                self.room.route("POST", "/v1/speech/ack", {"id": item["id"]})
+            self.assertIsNone(self.room.route("GET", "/v1/speech", {})[1]["item"])
+
+    def test_promise_requires_an_explicit_timed_request(self):
+        from room_dialogue import explicit_reminder
+        for text in ("I promised my sister I'd bring the book.",
+                     "I promised my sister I'd bring the book. Don't remind me in two minutes.",
+                     "I promised my sister I'd bring the book. Remind me in thirty-one days."):
+            self.assertIsNone(explicit_reminder(text))
 
     def test_exact_reminder_in_shadow_mode_leaves_inbox_untouched(self):
         self.room = Room(self.room.db_path, "local", apply=False)

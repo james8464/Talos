@@ -773,12 +773,15 @@ class Room:
                     item_id = body.get("id")
                     if type(item_id) is not int or not 1 <= item_id <= 2**63 - 1:
                         raise ValueError("A positive item ID is required.")
-                    row = db.execute(
-                        "SELECT kind FROM inbox WHERE id = ?", (item_id,),
-                    ).fetchone()
-                    if row is None or row["kind"] not in ("speech", "alert", "reminder"):
-                        raise ValueError("Unknown speech item.")
                     with db:
+                        db.execute("BEGIN IMMEDIATE")
+                        row = db.execute(
+                            "SELECT kind, due_at, acknowledged_at FROM inbox WHERE id = ?", (item_id,),
+                        ).fetchone()
+                        if row is None or row["kind"] not in ("speech", "alert", "reminder"):
+                            raise ValueError("Unknown speech item.")
+                        if row["acknowledged_at"] is None and datetime.fromisoformat(row["due_at"]) > datetime.now(UTC):
+                            raise ValueError("This item is not due yet.")
                         db.execute("""UPDATE inbox SET acknowledged_at = ?
                             WHERE id = ? AND acknowledged_at IS NULL""",
                             (datetime.now(UTC).isoformat(), item_id))
