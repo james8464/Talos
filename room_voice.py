@@ -97,7 +97,12 @@ class KokoroVoice:
             "You have a local Talos notification.",
             "Please give a whole number of minutes, hours, or days, up to 30 days.",
         )
+        if reusable:
+            cached = self.fixed_lines.get(text)
+            if cached is not None:
+                return cached
         with self.lock:
+            # Another request may have synthesized this line while we waited for the model.
             if reusable and text in self.fixed_lines:
                 return self.fixed_lines[text]
             samples, rate = self.model.create(text, voice=self.name, speed=1.06, lang=self.language)

@@ -119,6 +119,28 @@ class PrivateRoomTests(unittest.TestCase):
             mac_context.configure(self.state, [])
             self.assertIn("enabled", self.ask("Search my mail for cobalt")["reply"])
 
+    def test_messages_search_honors_each_available_visibility_flag(self):
+        path = self.fixture("Messages/chat.db", """
+            CREATE TABLE handle(id);
+            INSERT INTO handle VALUES('example@test.invalid');
+            CREATE TABLE message(guid,handle_id,is_from_me,date,text);
+            INSERT INTO message VALUES('a',1,0,700000000,'Fixture first'),('b',1,0,700000001,'Fixture second');
+        """)
+        mac_context.configure(self.state, ["Messages"])
+        def count():
+            result = self.ask("Search my messages for Fixture")
+            self.assertEqual(result["unavailable"], [])
+            return result["matches"]
+        self.assertEqual(count(), 2)
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("ALTER TABLE message ADD COLUMN date_retracted INTEGER")
+            db.execute("UPDATE message SET date_retracted=700000002 WHERE guid='a'")
+        self.assertEqual(count(), 1)
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("ALTER TABLE message ADD COLUMN is_system_message INTEGER DEFAULT 0")
+            db.execute("UPDATE message SET is_system_message=1 WHERE guid='b'")
+        self.assertEqual(count(), 0)
+
     def test_relationship_message_lookup_requires_unambiguous_contacts_evidence(self):
         book = self.fixture("Application Support/AddressBook/AddressBook-v22.abcddb", """
             CREATE TABLE ZABCDRECORD(Z_PK,ZFIRSTNAME,ZLASTNAME,ZORGANIZATION,ZNICKNAME,ZCONTAINERWHERECONTACTISME);
