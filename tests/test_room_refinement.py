@@ -128,6 +128,40 @@ class RefinementTests(unittest.TestCase):
             memory.refresh_one(db, time.time() + 301)
         self.assertNotIn("lamp", self.request("/v1/context/brief")["reply"])
 
+    def test_multiple_promises_in_one_message_keep_independent_deadlines(self):
+        self.source("promises.csv", "imessage",
+                    "date,sender,text\n"
+                    "2026-11-18T10:00:00+00:00,James,"
+                    "I'll bring the book Monday and I will mail the map Tuesday. "
+                    "I agreed to return the pen Wednesday. I'll bring the book Monday.\n"
+                    "2026-11-19T10:00:00+00:00,Maya,Friday is fine.\n", speak=True)
+        result = self.request("/v1/context/brief")
+        question, = result["questions"]
+        options = {option["text"]: option["id"] for option in question["options"]}
+        self.assertEqual(len(question["options"]), 3)
+        self.assertEqual(set(options), {"bring the book Monday", "mail the map Tuesday",
+                                       "return the pen Wednesday"})
+        self.request("/v1/context/resolve", {"revision": question["revision"],
+                                             "promise": options["mail the map Tuesday"]})
+        self.room = Room(self.path, "offline")
+        result = self.request("/v1/context/brief")
+        self.assertFalse(result["questions"])
+        self.assertIn("bring the book Monday. Current deadline: Monday", result["reply"])
+        self.assertIn("mail the map Tuesday. Current deadline: Friday", result["reply"])
+        self.assertIn("return the pen Wednesday. Current deadline: Wednesday", result["reply"])
+        self.assertEqual(sum(source["title"].endswith("row 2") for source in result["sources"]), 1)
+
+        # A source correction invalidates the chosen promise. Ask again before
+        # transferring the Friday deadline to any of the remaining promises.
+        path = self.path.parent / "promises.csv"
+        path.write_text(path.read_text().replace("mail the map Tuesday", "mail the plans Thursday"))
+        with closing(open_memory(self.path)) as db:
+            memory.refresh_one(db, time.time() + 301)
+        result = self.request("/v1/context/brief")
+        revised, = result["questions"]
+        self.assertTrue(any(o["text"] == "mail the plans Thursday" for o in revised["options"]))
+        self.assertIn("mail the plans Thursday. Current deadline: Thursday", result["reply"])
+
     def test_selected_messages_database_and_mailbox_filter(self):
         path = self.path.parent / "chat.db"
         with closing(sqlite3.connect(path)) as db, db:

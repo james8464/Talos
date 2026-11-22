@@ -19,8 +19,11 @@ from mac_context import read_messages
 
 KINDS = ("email", "imessage", "whatsapp", "document", "calendar")
 DAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|\d{4}-\d{2}-\d{2}"
-PROMISE = re.compile(
-    r"\bI(?:['’]ll| will| promise to| agreed to)\s+([^.!?\n]{2,220})", re.I
+_PROMISE_START = r"\bI(?:['’]ll| will| promise to| agreed to)\s+"
+PROMISE = re.compile(_PROMISE_START + r"([^.!?\n]{2,220})", re.I)
+_NEXT_PROMISE = re.compile(
+    r"(?:[,;][ \t]*(?:(?:and(?: then)?|then)[ \t]+)?|[ \t]+(?:and(?: then)?|then)[ \t]+)"
+    r"(?=" + _PROMISE_START + r")", re.I,
 )
 _REPORTED = re.compile(
     r"""
@@ -242,12 +245,21 @@ def evidence(src, raw, mtime):
         selected_chat(src) if raw is None else messages(src, raw)
     ):
         authored = authored_text(body)
-        if outgoing and (m := PROMISE.search(authored)):
+        if not outgoing:
+            if m := REVISED.search(authored):
+                yield stamp, "revision", m[0], m[1], pointer
+            continue
+        # Split explicit coordinated promises while retaining source offsets.
+        clauses = _NEXT_PROMISE.sub(lambda m: "\n" * len(m[0]), authored)
+        seen = set()
+        for m in PROMISE.finditer(clauses):
+            detail = body[m.start(1):m.end(1)].strip()
+            if detail in seen:
+                continue
+            seen.add(detail)
             due = DATE.search(m[1])
-            yield stamp, "promise", body[m.start(1):m.end(1)].strip(), due[0] if due else "", pointer
-        elif not outgoing and (m := REVISED.search(authored)):
-            yield stamp, "revision", m[0], m[1], pointer
-        elif outgoing and (m := DELIVERED.search(authored)):
+            yield stamp, "promise", detail, due[0] if due else "", pointer
+        if not seen and (m := DELIVERED.search(authored)):
             yield stamp, "delivery", body[m.start():m.end()][:180], "", pointer
 
 
@@ -349,7 +361,7 @@ def refresh(db, src, now):
                 raise ValueError("Select an export under 8 MB.")
             digest = hashlib.sha256(raw).hexdigest()
             if src["kind"] in ("email", "imessage", "whatsapp"):
-                digest = "authored-v2:" + digest
+                digest = "authored-v3:" + digest
             if digest != src["digest"]:
                 rows = list(evidence(src, raw, path.stat().st_mtime))
     except (
@@ -458,6 +470,7 @@ def brief(db, spoken=False, cutoff=None):
     lines, sources, questions = [], [], []
     for (person, topic), rows in groups.items():
         promises = [r for r in rows if r["kind"] == "promise"]
+        current_promises = {(r["source"], key(r)) for r in promises}
         totals = {}
         for revision in (r for r in rows if r["kind"] == "revision"):
             totals[revision["stamp"]] = db.execute(
@@ -484,7 +497,7 @@ def brief(db, spoken=False, cutoff=None):
                 ):
                     due = rev["due"]
                     refs.append(rev)
-                elif not chosen and not questions and not spoken:
+                elif not spoken and not questions and chosen not in current_promises:
                     options = [
                         {
                             "id": [str(r["source"]), str(r["seq"]), key(r)],
