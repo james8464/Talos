@@ -108,6 +108,44 @@ class TalosConsoleTests(unittest.TestCase):
             self.assertIn("Exported 10", out.getvalue())
             self.assertIn("File exists", err.getvalue())
 
+    def test_branch_snapshot_nested_resume_and_explicit_recall(self):
+        from transcript_memory import remember
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            db_path = root / "test.db"
+            def run(commands):
+                out, err = io.StringIO(), io.StringIO()
+                with closing(open_memory(db_path)) as db:
+                    interactive_chat(db, io.StringIO(commands), out, err, apply=False, model=OLLAMA_MODEL)
+                return out.getvalue(), err.getvalue()
+            with closing(open_memory(db_path)) as db:
+                remember(db, "text", [{"role": "user", "content": f"parent {i}"} for i in range(12)])
+            run("/branch first\n")
+            with closing(open_memory(db_path)) as db:
+                remember(db, "text", [{"role": "user", "content": "later parent"}])
+                remember(db, "console/first", [{"role": "user", "content": "cobalt alternative"}])
+            out, err = run("/resume first\n/fork nested\n/branch first\n/history\n")
+            self.assertIn("already exists", err)
+            self.assertIn("parent 7", out)
+            self.assertNotIn("parent 6", out)
+            self.assertNotIn("later parent", out)
+            with closing(open_memory(db_path)) as db:
+                remember(db, "console/first", [{"role": "user", "content": "later branch"}])
+                self.assertEqual(db.execute("SELECT count(*) FROM transcripts").fetchone()[0], 15)
+                self.assertEqual(db.execute("SELECT count(*) FROM console_lineage").fetchone()[0], 3)
+            path = root / "export.jsonl"
+            run(f"/resume nested\n/save {path}\n")
+            self.assertEqual([json.loads(line)["text"] for line in path.read_text().splitlines()],
+                             [*(f"parent {i}" for i in range(12)), "cobalt alternative"])
+            with patch("agent.check_ollama_model"), patch("agent.model_text", return_value="Answer") as model:
+                out, _ = run("Find cobalt\n/recall cobalt\n")
+                self.assertNotIn("cobalt alternative", model.call_args.args[0][0]["content"])
+                self.assertIn("cobalt alternative", out)
+                run("/resume nested\nContinue\n")
+                prompt = model.call_args.args[0]
+                self.assertEqual(prompt[-2]["content"], "cobalt alternative")
+                self.assertNotIn("later branch", str(prompt))
+
     def test_status_does_not_require_inference(self):
         output = io.StringIO()
         with (

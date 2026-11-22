@@ -5,7 +5,7 @@ conversation memory, and a background planner.
 
 ## Terminal sessions and Telegram
 
-In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Named sessions use their own recent turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.
+In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Use `/branch project-b` (or `/fork`) to continue from the current conversation. A branch inherits turns up to that point and writes its own subsequent turns. Branches share stored transcript rows. Named sessions use their own recent turns, including their inherited history. Automatic recall in the default console excludes named-session turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.
 
 For Telegram direct messages, configure a dedicated bot token in the local environment as `TALOS_TELEGRAM_TOKEN`, then run the gateway with your numeric Telegram user ID. When using the room launcher's local Ollama server:
 
