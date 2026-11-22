@@ -1,5 +1,7 @@
 """Build and start the local Talos room stack with a project-owned model store."""
 
+from talos_core.recovery import reconnect_delay, stable_connection
+
 import argparse
 import errno
 import time
@@ -77,6 +79,7 @@ class ProjectModel:
         self.lock = threading.Lock()
         self.children = set()
         self.ready_server = None
+        self.ready_since = None
         self.voice_verified = False
         self.worker = threading.Thread(target=self.run, name="talos-model", daemon=True)
 
@@ -153,6 +156,7 @@ class ProjectModel:
             with self.lock:
                 self.ready_server = server
                 self.voice_verified = True
+                self.ready_since = time.monotonic()
                 self.state = "ready"
             try:
                 server.wait()
@@ -164,20 +168,23 @@ class ProjectModel:
                 raise RuntimeError("Project Ollama exited.")
 
     def run(self):
-        retry = 2
+        attempt = 0
         while not self.stopping.is_set():
             try:
+                self.ready_since = None
                 self.state = "starting"
                 self.serve()
             except (OSError, RuntimeError) as error:
                 if self.stopping.is_set():
                     break
-                if self.state == "ready":
-                    retry = 2
+                if stable_connection(self.ready_since, time.monotonic()):
+                    attempt = 0
+                retry = reconnect_delay(attempt, base=2, cap=60)
                 self.state = "unavailable"
-                print(f"Talos model: {error} Retrying in {retry}s.", file=sys.stderr, flush=True)
+                talos_activity.record(STATE, "Model", f"Local model disconnected · attempt {attempt + 1} · retry in {retry:.1f}s")
+                print(f"Talos model: {error} Retrying in {retry:.1f}s.", file=sys.stderr, flush=True)
                 self.stopping.wait(retry)
-                retry = min(60, retry * 2)
+                attempt += 1
 
     def close(self):
         self.stopping.set()

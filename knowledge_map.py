@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 import mac_context
-from vault_graph import code_name, link, publish_connections, write_note
+from vault_graph import MARKER, code_name, link, publish_connections, write_note
 
 
 def publish_work(state, folder):
@@ -28,10 +28,11 @@ def publish_work(state, folder):
                 elif key in records and event["status"] == "done":
                     records[key]["verification"] = event.get("verification")
     groups = {}
+    migrated = []
     for key, event in records.items():
         source = Path(event.get("source", "")).name
         area = (
-            source if re.fullmatch(r"[A-Za-z0-9_]+[.](py|swift)", source) else "Other"
+            source if re.fullmatch(r"[A-Za-z0-9_-]+[.](py|swift|ts|mjs)", source) else "Other"
         )
         words = re.findall(r"[A-Za-z0-9]+", event["feature"])
         title = " ".join(words[:10])[:96].strip() + " " + key[:8]
@@ -50,11 +51,18 @@ def publish_work(state, folder):
                         "    " + " ".join(event[field].split()),
                     ]
                 )
+        if (event.get("origin") == "verified-upstream-port" and event.get("verification")
+                and event.get("upstream") in ("Hermes", "OpenClaw") and isinstance(event.get("reference"), str)):
+            migrated.append(f"- [[Talos Memory/Talos maps/Changes/{title}|{event['upstream']} · {' '.join(words)}]]")
+            lines.extend(("", "Upstream source", "", "    " + event["upstream"] + "/" + event["reference"]))
         module = code_name(event.get("source", ""))
         if re.fullmatch(r"[a-zA-Z0-9_. -]+", module) and (folder / "Code" / (module + ".md")).is_file():
             lines.extend(["", link("Code", module)])
         body = "\n".join(lines) + "\n"
         write_note(work / (title + ".md"), body)
+    if migrated:
+        write_note(state / "Talos migrations.md", MARKER + "\n# Verified upstream migrations\n\n"
+                   + "\n".join(migrated) + "\n", managed=True)
     links = []
     for area, keys in sorted(groups.items()):
         title = area.replace(".", " ") + " changes"

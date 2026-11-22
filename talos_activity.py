@@ -1,5 +1,7 @@
 """Local, read-only activity viewer and bounded operational event journal."""
 
+from talos_core.recovery import PollBackoff
+
 import argparse
 from contextlib import closing, contextmanager
 from contextvars import ContextVar
@@ -278,13 +280,20 @@ def display(state, port=None, *, once=False, output=None, database=None, stop=No
     previous = None
     cursor = None
     last_update = 0.
+    next_probe = 0.
+    cadence = PollBackoff()
     heading = "Talos activity"
     if not once:
         heading += " · live" if stop is not None else " · live · Ctrl-C closes this viewer"
     print(heading, file=output, flush=True)
     while True:
         now = time.monotonic()
-        status = snapshot(state, port, database=database)
+        rows = events(state, cursor)
+        if previous is None or rows or now >= next_probe:
+            status = snapshot(state, port, database=database)
+            next_probe = now + cadence.record("status", bool(rows) or previous != status, now)
+        else:
+            status = previous
         if previous != status or now - last_update >= 30:
             stamp = datetime.now().astimezone().strftime("%H:%M:%S %Z")
             if previous != status:
@@ -293,7 +302,6 @@ def display(state, port=None, *, once=False, output=None, database=None, stop=No
                 print(f"[{stamp}] Viewer active · service and worker status unchanged", file=output, flush=True)
             last_update = now
             previous = status
-        rows = events(state, cursor)
         if cursor is None:
             print("Recent activity" if rows else "No runtime events recorded yet.", file=output, flush=True)
             cursor = 0

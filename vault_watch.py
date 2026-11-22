@@ -11,8 +11,8 @@ import knowledge_map
 import mac_context
 from feature_targets import FILE
 from maintenance_schedule import stamp
-from talos_activity import record
-from vault_graph import ROOT, code_name, link, publish_code, source_files, write_note
+from talos_activity import JOURNAL, record
+from vault_graph import MARKER, ROOT, code_name, link, publish_code, source_files, write_note
 
 
 class VaultPublisher:
@@ -27,6 +27,32 @@ class VaultPublisher:
         self.previous = None
         self.source_stamps = None
         self.cache = {}
+        self.live_stamps = None
+
+    def publish_live(self):
+        journal = self.state / JOURNAL
+        stamps = tuple(stamp(p) for p in (journal, self.state / (JOURNAL + "-wal"), self.folder, self.state / "Talos migrations.md"))
+        if stamps == self.live_stamps:
+            return
+        lines = [MARKER, "# Talos live", ""]
+        for name in ("Talos memory map", "Project connections", "Code index", "Development history", "Recent source edits"):
+            if (self.folder / (name + ".md")).is_file():
+                lines.append(f"- [[Talos Memory/Talos maps/{name}|{name}]]")
+        if (self.state / "Talos migrations.md").is_file():
+            lines.append("- [[Talos migrations|Verified upstream migrations]]")
+        if journal.is_file():
+            from contextlib import closing
+            with closing(sqlite3.connect(journal.resolve().as_uri() + "?mode=ro", uri=True, timeout=.2)) as db:
+                if db.execute("SELECT 1 FROM sqlite_master WHERE name='events'").fetchone():
+                    rows = db.execute("""SELECT stamp,component,message FROM events
+                        WHERE component IN ('Respan','Model','Migration') ORDER BY id DESC LIMIT 8""").fetchall()
+                    if rows:
+                        lines.extend(("", "## Latest reviewer and model activity", ""))
+                    for timestamp, component, message in rows:
+                        clock = datetime.fromtimestamp(timestamp).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+                        lines.append(f"    {clock}  {component}  {' '.join(message.splitlines())}")
+        write_note(self.state / "Talos live.md", "\n".join(lines) + "\n", managed=True)
+        self.live_stamps = stamps
 
     def poll(self):
         stamps = {p: stamp(p) for p in source_files(self.root)}
@@ -61,6 +87,7 @@ class VaultPublisher:
                 changes.append("development proposals and verification refreshed")
         elif code_dirty:
             knowledge_map.publish_work(self.state, self.folder)
+        self.publish_live()
         self.previous, self.source_stamps = inputs, stamps
         if changes:
             result = " · ".join(changes)

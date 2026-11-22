@@ -96,3 +96,9 @@ OpenClaw's `src/auto-reply/heartbeat.ts` distinguishes a quiet heartbeat acknowl
 The reviewer compares bounded excerpts from both local reference trees with Talos implementation files. It verifies file hashes and quoted evidence, saves actionable proposals for review and resumes from its recorded byte position. Each tree and the knowledge review have independent ten-minute intervals after success and retry delays after failure. Knowledge review sends anonymous shared-record counts for candidate links or source-type counts to select a local investigation. Personal text and project names stay on the Mac. Accepted links are rechecked against enabled evidence when publishing the vault.
 
 The behavior replays are in `tests/test_proactive_review.py`. Set `TALOS_TEST_KOKORO=1` and `TALOS_TEST_SPOKEN_CHECKIN=1` with the project speech environments and models installed to run actual speech generation and recognition.
+
+## Retiring verified downloads
+
+The terminal uses the per-command polling schedule from OpenClaw's `src/agents/command-poll-backoff.ts`. Status probes slow down after quiet polls while journal events continue to appear every two seconds. The model supervisor uses full-jitter reconnect delays from Hermes's `apps/shared/src/reconnect-backoff.ts` and resets its retry ladder only after five seconds of readiness.
+
+Run `python3 tools/retire_upstream.py` to replay the integrated behaviors, check the pinned hashes and retire the six allowlisted files. Four are byte-identical scheduling helpers already shipped by Talos. Each original is recoverable at `state/.migrated-upstream/<project>/<sha256>/<original path>`. Downloaded trees are partial source references after retirement. To rebuild an intact upstream checkout, restore the archived files to their original paths or extract the pinned release again. No upstream remote repository is modified.

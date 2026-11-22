@@ -2,6 +2,7 @@
 import ast
 import hashlib
 import json
+import re
 import tempfile
 from pathlib import Path
 
@@ -95,9 +96,9 @@ def publish_connections(db, folder, enabled):
 
 
 def source_files(root):
-    for directory in (root, root / "tools", root / "mac", root / "talos_core"):
+    for directory in (root, root / "tools", root / "mac", root / "talos_core", root / "talos_core/scheduling"):
         for path in directory.glob("*"):
-            if path.suffix in (".py", ".swift") and path.is_file() and not path.is_symlink():
+            if path.suffix in (".py", ".swift", ".ts", ".mjs") and path.is_file() and not path.is_symlink():
                 yield path
 
 
@@ -105,7 +106,7 @@ def code_name(relative):
     return relative.replace("/", " ") + " source"
 
 
-def read_module(path):
+def read_module(path, root):
     raw = path.read_bytes()
     imports = set()
     if path.suffix == ".py":
@@ -119,6 +120,10 @@ def read_module(path):
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imports.add(node.module)
                 imports.update(node.module + "." + alias.name for alias in node.names)
+    elif path.suffix in (".ts", ".mjs"):
+        for name in re.findall(rb"""(?m)^import[^;]*?from\s+["']\./([\w-]+)\.(?:ts|mjs)["']""", raw):
+            key = path.parent.relative_to(root) / name.decode("ascii")
+            imports.add(".".join(key.parts))
     return hashlib.sha256(raw).hexdigest(), imports
 
 
@@ -127,7 +132,7 @@ def publish_code(root, folder, stamps, cache):
     notes = {}
     for path, signature in stamps.items():
         if path not in cache or cache[path][0] != signature:
-            cache[path] = (signature, *read_module(path))
+            cache[path] = (signature, *read_module(path, root))
         _, digest, imports = cache[path]
         relative = path.relative_to(root).as_posix()
         dependencies = sorted(code_name(modules[name].relative_to(root).as_posix()) for name in imports if name in modules)
