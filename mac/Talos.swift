@@ -385,6 +385,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         }
         return true
     }
+    private var lastActivityPulse = -Double.infinity
     private var firstCaptionAt: TimeInterval?
     private var facingOffer: String?
     private var facingContext: String?
@@ -611,9 +612,15 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         return
                     }
                 }
-                if self.firstCaptionAt == nil, let startOffset {
-                    Task { _ = try? await self.client?.request("room/activity", body: [:]) }
-                    self.firstCaptionAt = min(ProcessInfo.processInfo.systemUptime, recognitionStart + startOffset)
+                if let startOffset {
+                    let now = ProcessInfo.processInfo.systemUptime
+                    if self.firstCaptionAt == nil || now - self.lastActivityPulse >= 5 {
+                        self.lastActivityPulse = now
+                        Task { _ = try? await self.client?.request("room/activity", body: [:]) }
+                    }
+                    if self.firstCaptionAt == nil {
+                        self.firstCaptionAt = min(now, recognitionStart + startOffset)
+                    }
                 }
                 switch VoiceRecognitionUpdate(text: text, final: final, failed: error != nil) {
                 case .pending:

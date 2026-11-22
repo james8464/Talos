@@ -8,6 +8,7 @@ import message_drafts
 import personal_facts
 import room_vision
 import session_goals
+from conversation_activity import foreground
 from idle_lab import IdleLab, IdleReviewDeferred, power_and_idle
 import argparse
 import hmac
@@ -633,9 +634,14 @@ class Room:
 
     def route(self, method: str, path: str, body: dict) -> tuple[int, dict]:
         if method == "POST" and path in ("/v1/turn","/v1/voice","/v1/voice/facing","/v1/room/activity"):
-            self.lab.pause()
-            self.review_after = monotonic() + 10
-            if path == "/v1/room/activity": return 200, {"active": True}
+            with foreground(self.db_path.parent):
+                self.lab.pause()
+                self.review_after = monotonic() + 10
+                if path == "/v1/room/activity": return 200, {"active": True}
+                return self._route(method, path, body)
+        return self._route(method, path, body)
+
+    def _route(self, method, path, body):
         if method == "GET" and path == "/health":
             return 200, {"service": "talos"}
         if method == "POST" and path == "/v1/voice/endpoint":
