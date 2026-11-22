@@ -110,3 +110,23 @@ from transcript submission in one run. These timings exclude recognition and pla
 The vault follows [Obsidian’s Markdown storage](https://obsidian.md/help/data-storage)
 and [internal link format](https://obsidian.md/help/links). Source notes and user edits
 survive repeated exports. Visual templates remain in the local database.
+
+## November 22 voice and idle measurements
+
+The native Kokoro conversation replay used five interleaved turns per path, a controlled local generator and a silent Swift PCM sink. Median time from simulated end of speech to first voiced PCM was 1,449 ms with buffered replies and 901 ms with sentence streaming. Two interruption replays reached the player stop call in 4.57–4.73 ms. Physical speaker latency and battery discharge were outside these fixtures.
+
+Across 16 interleaved turns per path, reusing the supervisor’s verified model removed all 16 inventory requests. Median caption-to-text time was 1.58 ms before and 1.01 ms after with a scripted loopback model. Caption-to-full-WAV p95 varied from 476 to 518 ms. The model check alone showed no consistent full-WAV latency gain.
+
+The isolated CPU Ollama benchmark replayed an unfinished caption, a complete caption and a short spoken question four times under each policy. All 36 model outputs met those fixture checks. The warm columns exclude the first iteration. Resident memory is the sum of the test server and its direct runner processes.
+
+| Context policy | Median warm classifier | Classifier deadline misses | Median warm short reply | Median warm RSS |
+| --- | ---: | ---: | ---: | ---: |
+| Fixed 8,192 | 502 ms | 0 of 6 | 2,109 ms | 3,805 MiB |
+| Fixed 2,048 | 610 ms | 0 of 6 | 2,831 ms | 3,204 MiB |
+| 2,048 classifier and 8,192 reply | 2,615 ms | 3 of 6 | 7,195 ms | 3,430 MiB |
+
+Alternating sizes started eight distinct runners over four iterations. The first classifier after switching from a spoken reply took 4.66–5.22 s in the three warm iterations. Talos retains the shared 8,192-token setting. The repeatable comparisons are in `tests/measure_native_spoken.py` and `tests/measure_voice_context.py`.
+
+A 120-second synthetic empty-room replay scheduled 86 Vision requests, down from 168, while retaining six presence reports. In that replay, arrival confirmation went from 0.7 to 1.4 seconds. Three 20-second idle samples of the sensor-free room service used a median of 0.095% of one CPU core and 31.83 MiB peak RSS. These samples exclude the native UI and maintenance process.
+
+In three synthetic 30-minute maintenance schedules with 10,000 indexed messages, median aggregate process CPU was 157 ms before and 126 ms after. Full sync attempts fell from 30 to two and reviews from six to one. Reusing a sleeping child increased the workers’ combined steady physical memory footprint by about 11 MiB. A foreground interruption rolled back an unfinished SQLite write; retry committed the row once.
