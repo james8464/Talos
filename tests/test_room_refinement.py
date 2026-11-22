@@ -1,4 +1,5 @@
 import base64
+import hashlib
 from contextlib import closing
 import json
 import os
@@ -82,6 +83,84 @@ class RefinementTests(unittest.TestCase):
             while memory.refresh_one(db, time.time() + 400):
                 pass
         self.assertNotIn("forecast", brief()["reply"])
+
+    def test_reported_words_are_not_commitment_evidence(self):
+        from csv import writer
+        from io import StringIO
+        data = StringIO()
+        rows = writer(data)
+        rows.writerow(["date", "sender", "text"])
+        for day, who, text in (
+            (10, "James", 'Robin said “I will bring the chart Thursday.” I’ll bring the book Monday.'),
+            (11, "Maya", 'Robin said "Friday is fine".'),
+            (12, "James", "Robin said ‘I've sent the chart’."),
+            (13, "James", "> I will purchase a map.\nI will bring the ‘Sunday edition’ Tuesday."),
+            (14, "James", "Robin wrote 'I will bring the camera.'"),
+        ):
+            rows.writerow([f"2026-11-{day}T10:00:00+00:00", who, text])
+        self.source("conversation.csv", "imessage", data.getvalue(), speak=True)
+        for route, body in (("/v1/context/brief", None),
+                            ("/v1/turn", {"text": "What do I owe?", "source": "voice"})):
+            reply = self.request(route, body)["reply"]
+            self.assertIn("bring the book Monday", reply)
+            self.assertIn("bring the ‘Sunday edition’ Tuesday. Current deadline: Tuesday", reply)
+            for wrong in ("chart", "camera", "purchase a map", "Possible delivery", "deadline: Friday"):
+                self.assertNotIn(wrong, reply)
+
+    def test_email_inline_reply_keeps_authored_text_after_quotation(self):
+        self.source("inline.eml", "email",
+                    "From: James\nTo: Maya\nDate: Wed, 18 Nov 2026 10:00:00 +0000\n\n"
+                    "> I'll send the '80s poster.\n"
+                    "The print is 16\" wide and from the '80s. I'll send the frame Monday.")
+        reply = self.request("/v1/context/brief")["reply"]
+        self.assertIn("send the frame Monday", reply)
+        self.assertNotIn("poster", reply)
+
+    def test_unchanged_export_refresh_removes_old_quoted_promise(self):
+        content = "date,sender,text\n2026-11-18T10:00:00+00:00,James,Robin said “I will bring a lamp Friday.”\n"
+        source = self.source("old.csv", "imessage", content)
+        with closing(open_memory(self.path)) as db:
+            with db:
+                db.execute("UPDATE context_sources SET digest=? WHERE id=?",
+                           (hashlib.sha256(content.encode()).hexdigest(), source))
+                db.execute("INSERT INTO context_evidence VALUES(?,1,0,'promise','bring a lamp Friday','Friday','row 2')",
+                           (source,))
+            memory.refresh_one(db, time.time() + 301)
+        self.assertNotIn("lamp", self.request("/v1/context/brief")["reply"])
+
+    def test_multiple_promises_in_one_message_keep_independent_deadlines(self):
+        self.source("promises.csv", "imessage",
+                    "date,sender,text\n"
+                    "2026-11-18T10:00:00+00:00,James,"
+                    "I'll bring the book Monday and I will mail the map Tuesday. "
+                    "I agreed to return the pen Wednesday. I'll bring the book Monday.\n"
+                    "2026-11-19T10:00:00+00:00,Maya,Friday is fine.\n", speak=True)
+        result = self.request("/v1/context/brief")
+        question, = result["questions"]
+        options = {option["text"]: option["id"] for option in question["options"]}
+        self.assertEqual(len(question["options"]), 3)
+        self.assertEqual(set(options), {"bring the book Monday", "mail the map Tuesday",
+                                       "return the pen Wednesday"})
+        self.request("/v1/context/resolve", {"revision": question["revision"],
+                                             "promise": options["mail the map Tuesday"]})
+        self.room = Room(self.path, "offline")
+        result = self.request("/v1/context/brief")
+        self.assertFalse(result["questions"])
+        self.assertIn("bring the book Monday. Current deadline: Monday", result["reply"])
+        self.assertIn("mail the map Tuesday. Current deadline: Friday", result["reply"])
+        self.assertIn("return the pen Wednesday. Current deadline: Wednesday", result["reply"])
+        self.assertEqual(sum(source["title"].endswith("row 2") for source in result["sources"]), 1)
+
+        # A source correction invalidates the chosen promise. Ask again before
+        # transferring the Friday deadline to any of the remaining promises.
+        path = self.path.parent / "promises.csv"
+        path.write_text(path.read_text().replace("mail the map Tuesday", "mail the plans Thursday"))
+        with closing(open_memory(self.path)) as db:
+            memory.refresh_one(db, time.time() + 301)
+        result = self.request("/v1/context/brief")
+        revised, = result["questions"]
+        self.assertTrue(any(o["text"] == "mail the plans Thursday" for o in revised["options"]))
+        self.assertIn("mail the plans Thursday. Current deadline: Thursday", result["reply"])
 
     def test_selected_messages_database_and_mailbox_filter(self):
         path = self.path.parent / "chat.db"
@@ -199,7 +278,7 @@ class RefinementTests(unittest.TestCase):
         self.assertNotIn("draft.md", self.request("/v1/context/brief")["reply"])
 
     def test_find_project_file_reads_current_names_and_respects_speech_controls(self):
-        project = self.path.parent / "Selected project"
+        project = self.path.parent.resolve() / "Selected project"
         project.mkdir()
         exact = project / "Café notes.md"
         exact.write_text("private fixture contents")
