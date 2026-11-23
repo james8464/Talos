@@ -183,6 +183,9 @@ def _estimate(text: str, files: Iterable[str]) -> int:
     score += sum(1 for hint in COMPLEX_HINTS if hint in text) * 2
     score += 1 if len(text) > 180 else 0
     score += 1 if text.count(" and ") >= 2 else 0
+    score += 1 if text.count(",") >= 2 else 0
+    if text.count(",") >= 2 and " and " in text:
+        score += 1
     return min(10, score)
 
 
