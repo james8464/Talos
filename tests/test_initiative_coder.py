@@ -25,7 +25,7 @@ class InitiativeCoderTests(unittest.TestCase):
         plan_path = self.state / "plan.json"
         plan_path.write_text(json.dumps(plan))
         (self.state / "feature-requests.jsonl").write_text(json.dumps({
-            "status": "proposed", "id": "a" * 16, "origin": "initiative:test",
+            "status": "proposed", "id": "a" * 16, "origin": "initiative:operator-goal",
             "source": "talos_core/demo.py", "feature": "Change VALUE",
             "acceptance": "VALUE is 2", "time": 1, "plan_path": str(plan_path),
         }) + "\n")
@@ -55,6 +55,21 @@ class InitiativeCoderTests(unittest.TestCase):
         outcomes = [json.loads(line) for line in
                     (self.state / "feature-requests.jsonl").read_text().splitlines()]
         self.assertEqual(outcomes[-1]["status"], "done")
+
+    def test_older_conflicting_initiative_is_superseded(self):
+        old = json.loads((self.state / "feature-requests.jsonl").read_text())
+        old.update({"id": "b" * 16, "time": 0, "feature": "Set VALUE to 9",
+                    "plan_path": old["plan_path"]})
+        with (self.state / "feature-requests.jsonl").open("a") as stream:
+            stream.write(json.dumps(old) + "\n")
+        result = initiative_coder.run_once(self.state, self.root,
+                                           infer=lambda prompt: json.dumps(self.values()))
+        self.assertTrue(result["ok"])
+        outcomes = [json.loads(line) for line in
+                    (self.state / "feature-requests.jsonl").read_text().splitlines()]
+        self.assertEqual(outcomes[-2]["status"], "declined")
+        self.assertIn("superseded", outcomes[-2]["reason"])
+        self.assertFalse((self.root / f"tests/test_section_{'b'*16}.py").exists())
 
     def test_invalid_patch_is_declined_without_touching_source(self):
         result = initiative_coder.run_once(

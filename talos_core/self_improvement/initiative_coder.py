@@ -32,7 +32,10 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _load_proposals(state: Path) -> dict[str, dict]:
+AUTO_ORIGINS = ("initiative:operator-goal", "initiative:health", "initiative:model")
+
+
+def _load_proposals(state: Path, origins: tuple[str, ...] = AUTO_ORIGINS) -> dict[str, dict]:
     path = state / PROPOSALS_FILE
     if not path.is_file():
         return {}
@@ -40,7 +43,7 @@ def _load_proposals(state: Path) -> dict[str, dict]:
         fcntl.flock(stream, fcntl.LOCK_SH)
         proposed, finished = proposal_ledger(stream)
     return {key: item for key, item in proposed.items()
-            if key not in finished and str(item.get("origin", "")).startswith("initiative:")}
+            if key not in finished and str(item.get("origin", "")) in origins}
 
 
 def _append_outcome(state: Path, ident: str, status: str, detail: str) -> None:
@@ -116,6 +119,26 @@ def _format_regression(text: str) -> str:
     return completed.stdout if completed.returncode == 0 and completed.stdout.strip() else text
 
 
+def _supersede(state: Path, root: Path, proposals: dict[str, dict], applied: str,
+               target: str) -> None:
+    """Close other queued initiatives for the same target so they cannot regress it."""
+    for other, item in proposals.items():
+        if other == applied:
+            continue
+        plan_path = Path(str(item.get("plan_path") or ""))
+        leaf = _leaf(plan_path) if plan_path.is_file() else None
+        if leaf is None or leaf["files"][0] != target:
+            continue
+        _append_outcome(state, other, "declined",
+                        f"superseded by {applied}; re-plan against the new source")
+        generated = root / "tests" / f"test_section_{other}.py"
+        try:
+            if generated.is_file():
+                generated.unlink()
+        except OSError:
+            pass
+
+
 def _parse(raw) -> dict | None:
     if isinstance(raw, str):
         try:
@@ -131,7 +154,7 @@ def _parse(raw) -> dict | None:
 
 
 def run_once(state: Path | str, root: Path | str, *, infer, apply: bool = True,
-             limit: int = 1) -> dict:
+             limit: int = 1, origins: tuple[str, ...] = AUTO_ORIGINS) -> dict:
     """Draft and verify one initiative leaf. ``infer`` returns model JSON."""
     state, root = Path(state), Path(root)
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -140,7 +163,7 @@ def run_once(state: Path | str, root: Path | str, *, infer, apply: bool = True,
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             return {"ok": False, "reason": "initiative coder already active"}
-        proposals = _load_proposals(state)
+        proposals = _load_proposals(state, origins)
         if not proposals:
             return {"ok": False, "reason": "no queued initiative"}
         results = []
@@ -215,6 +238,7 @@ def run_once(state: Path | str, root: Path | str, *, infer, apply: bool = True,
                 })
             (folder / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
             if receipt.get("applied"):
+                _supersede(state, root, proposals, ident, leaf["files"][0])
                 _append_outcome(state, ident, "done",
                                 f"verified and applied {leaf['files'][0]} "
                                 f"({', '.join(receipt.get('tests_run', [])) or 'syntax only'})")

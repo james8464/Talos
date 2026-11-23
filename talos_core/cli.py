@@ -107,6 +107,20 @@ def _initiative(args) -> int:
     return 0
 
 
+def _code(args) -> int:
+    from talos_core.self_improvement import initiative_coder
+
+    origins = ("initiative:operator-goal", "initiative:health", "initiative:model",
+               "initiative:test", "initiative:graph", "initiative:gap:openclaw",
+               "initiative:gap:hermes") if args.all else initiative_coder.AUTO_ORIGINS
+    result = initiative_coder.run_once(
+        args.state, args.root, infer=initiative_coder.local_infer(args.model),
+        apply=not args.verify_only, limit=args.limit, origins=origins,
+    )
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0 if result.get("ok") else 1
+
+
 def _reflect(args) -> int:
     from talos_core.knowledge_reflection import reflect, summary
     from talos_core.memory.agent_memory import open_memory
@@ -241,6 +255,15 @@ def build_parser() -> argparse.ArgumentParser:
     initiative.add_argument("--model", help="Optional local model for one novel idea.")
     initiative.add_argument("--limit", type=int, default=3)
     initiative.set_defaults(func=_initiative)
+
+    code = commands.add_parser("code", help="Draft, verify and apply one planned initiative.")
+    code.add_argument("--state", type=Path, default=ROOT / "state")
+    code.add_argument("--root", type=Path, default=ROOT)
+    code.add_argument("--model", default="qwen3:4b")
+    code.add_argument("--limit", type=int, default=1)
+    code.add_argument("--verify-only", action="store_true")
+    code.add_argument("--all", action="store_true", help="Include upstream/graph gap plans.")
+    code.set_defaults(func=_code)
 
     reflect = commands.add_parser("reflect", help="Recompute related context from conversations and knowledge.")
     reflect.add_argument("--state", type=Path, default=ROOT / "state")
