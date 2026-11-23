@@ -24,3 +24,5 @@ __pycache__/
 
 # Vendored, minified calendar dependency
 /talos_core/scheduling/croner.mjs
+
+/dist/
