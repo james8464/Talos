@@ -22,7 +22,8 @@ def enable(at_login):
         Label=LABEL,
         ProgramArguments=[
             sys.executable,
-            str(ROOT / "overnight_goal.py"),
+            "-m",
+            "talos_core.self_improvement.overnight_goal",
             "--heartbeat",
         ],
         RunAtLoad=True,

@@ -4,12 +4,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import graph_review
-import mac_context
-import memory_connections
-import memory_review
-from maintenance_schedule import MaintenanceSchedule
-from personal_index import sync
+from talos_core.self_improvement import graph_review
+from talos_core.mac import mac_context
+from talos_core.memory import memory_connections
+from talos_core.memory import memory_review
+from talos_core.self_improvement.maintenance_schedule import MaintenanceSchedule
+from talos_core.memory.personal_index import sync
 
 
 class MemoryReviewTests(unittest.TestCase):
@@ -94,9 +94,9 @@ class MemoryReviewTests(unittest.TestCase):
     def test_review_schedule_defers_when_busy_and_retries_interrupted_work(self):
         scheduler = MaintenanceSchedule()
         job = Mock(side_effect=[None, "review complete"])
-        with patch("maintenance_schedule.conversation_busy", side_effect=[True, False, False, False]):
+        with patch("talos_core.self_improvement.maintenance_schedule.conversation_busy", side_effect=[True, False, False, False]):
             for now in (0, 1, 2, 3):
-                with patch("maintenance_schedule.time.monotonic", return_value=now):
+                with patch("talos_core.self_improvement.maintenance_schedule.time.monotonic", return_value=now):
                     scheduler.poll_memory(self.state, run=job)
         self.assertEqual([call.args for call in job.call_args_list], [("memory_review",)] * 2)
         self.assertEqual(scheduler.memory_outcome, "review complete")

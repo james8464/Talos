@@ -10,16 +10,16 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from room_service import Room
-from room_voice import STARTUP_LINE, prepare_assets, wav_base64
+from talos_core.room.room_service import Room
+from talos_core.room.room_voice import STARTUP_LINE, prepare_assets, wav_base64
 
 
 class RoomVoiceTests(unittest.TestCase):
     def test_voice_starts_without_prerender_and_only_reuses_standard_responses(self):
-        from room_voice import KokoroVoice
+        from talos_core.room.room_voice import KokoroVoice
         model = Mock()
         model.create.return_value = (object(), 24000)
-        with patch.dict(sys.modules, {"kokoro_onnx": SimpleNamespace(Kokoro=lambda *args: model)}), patch("room_voice.wav_base64", return_value="fixture"):
+        with patch.dict(sys.modules, {"kokoro_onnx": SimpleNamespace(Kokoro=lambda *args: model)}), patch("talos_core.room.room_voice.wav_base64", return_value="fixture"):
             voice = KokoroVoice(Path("."), "bm_george")
             model.create.assert_not_called()
             for _ in range(2):
@@ -29,7 +29,7 @@ class RoomVoiceTests(unittest.TestCase):
             self.assertNotIn("Synthetic private reply.", voice.fixed_lines)
 
     def test_cached_sensor_reply_is_available_during_other_synthesis(self):
-        from room_voice import KokoroVoice
+        from talos_core.room.room_voice import KokoroVoice
         started, release = threading.Event(), threading.Event()
         def synthesize(text, **options):
             if text == "Fixture private reply.":
@@ -41,7 +41,7 @@ class RoomVoiceTests(unittest.TestCase):
         model = Mock()
         model.create.side_effect = synthesize
         with patch.dict(sys.modules, {"kokoro_onnx": SimpleNamespace(Kokoro=lambda *args: model)}), patch(
-            "room_voice.wav_base64", return_value="fixture"
+            "talos_core.room.room_voice.wav_base64", return_value="fixture"
         ), ThreadPoolExecutor(max_workers=2) as workers:
             voice = KokoroVoice(Path("."), "bm_george")
             standard = "Yes, I can hear you."
@@ -84,7 +84,7 @@ class RoomVoiceTests(unittest.TestCase):
     def test_setup_rejects_corrupt_assets_without_leaving_partial_files(self):
         with (
             tempfile.TemporaryDirectory() as directory,
-            patch("room_voice.urllib.request.urlopen", return_value=io.BytesIO(b"corrupt")),
+            patch("talos_core.room.room_voice.urllib.request.urlopen", return_value=io.BytesIO(b"corrupt")),
         ):
             with self.assertRaisesRegex(RuntimeError, "checksum"):
                 prepare_assets(Path(directory), offline=False)

@@ -9,13 +9,13 @@ import tempfile
 import unittest
 
 import agent
-from agent_memory import open_memory
-import cognitive_engine
-from feature_targets import FILE as PROPOSALS_FILE
-import idle_lab
-import improve_talos
-import section_patches
-import self_diagnosis
+from talos_core.memory.agent_memory import open_memory
+from talos_core.cognition import cognitive_engine
+from talos_core.self_improvement.feature_targets import FILE as PROPOSALS_FILE
+from talos_core.self_improvement import idle_lab
+from talos_core.self_improvement import improve_talos
+from talos_core.self_improvement import section_patches
+from talos_core.self_improvement import self_diagnosis
 
 
 def _build_mini_repo(root: Path, state: Path) -> None:

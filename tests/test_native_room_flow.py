@@ -6,7 +6,7 @@ import tempfile
 import threading
 import unittest
 
-from room_service import Handler, Room, create_token
+from talos_core.room.room_service import Handler, Room, create_token
 
 
 @unittest.skipUnless(sys.platform == "darwin", "requires the native Mac app frameworks")

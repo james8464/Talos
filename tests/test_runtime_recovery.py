@@ -10,9 +10,9 @@ from unittest.mock import Mock, patch
 from tools.retire_upstream import Port, retire
 
 import run_talos
-import talos_activity
+from talos_core.runtime import talos_activity
 from talos_core.recovery import PollBackoff, reconnect_delay, stable_connection
-from vault_watch import VaultPublisher
+from talos_core.memory.vault_watch import VaultPublisher
 
 
 class RecoveryTests(unittest.TestCase):

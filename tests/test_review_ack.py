@@ -5,10 +5,10 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
-import respan_worker
-import talos_activity
+from talos_core.self_improvement import respan_worker
+from talos_core.runtime import talos_activity
 from talos_core.review_ack import review_content
-from upstream_review import inventory
+from talos_core.self_improvement.upstream_review import inventory
 
 
 class AcknowledgementTests(unittest.TestCase):
@@ -67,7 +67,8 @@ class AcknowledgementTests(unittest.TestCase):
             (state / "hermes-src/cron/missed_runs.py").write_text(
                 "def future_only(): pass"
             )
-            for file in ("respan_worker.py", "room_checkins.py"):
+            for file in ("talos_core/self_improvement/respan_worker.py", "talos_core/room/room_checkins.py"):
+                (root / file).parent.mkdir(parents=True, exist_ok=True)
                 (root / file).write_text("def existing_behavior(): pass")
             inventory(root, state)
 

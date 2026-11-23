@@ -8,9 +8,9 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-import mac_context
-import talos_activity
-from vault_watch import VaultPublisher
+from talos_core.mac import mac_context
+from talos_core.runtime import talos_activity
+from talos_core.memory.vault_watch import VaultPublisher
 
 
 class LiveReceiptTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class LiveReceiptTests(unittest.TestCase):
         self.state = self.root / "state"
         self.publisher = VaultPublisher(self.state, self.root)
         self.note = self.state / "Talos live.md"
-        self.enterContext(patch("talos_activity.probe", return_value="unknown (local connection blocked)"))
+        self.enterContext(patch("talos_core.runtime.talos_activity.probe", return_value="unknown (local connection blocked)"))
 
     def test_lock_transitions_refresh_the_note_without_file_writes_or_events(self):
         self.publisher.publish_live()
@@ -35,8 +35,8 @@ class LiveReceiptTests(unittest.TestCase):
         self.assertFalse((self.state / talos_activity.JOURNAL).exists())
 
     def test_pulse_only_rewrites_after_interval(self):
-        with patch("vault_watch.time.monotonic", side_effect=[10, 65, 70]), \
-             patch("vault_watch.time.time", side_effect=[10000, 10060]):
+        with patch("talos_core.memory.vault_watch.time.monotonic", side_effect=[10, 65, 70]), \
+             patch("talos_core.memory.vault_watch.time.time", side_effect=[10000, 10060]):
             self.publisher.publish_live()
             first = self.note.read_text()
             self.publisher.publish_live()
@@ -70,7 +70,7 @@ class LiveReceiptTests(unittest.TestCase):
     def test_local_model_inference_and_verdict_are_separate_from_cloud_success(self):
         talos_activity.record(self.state, "Model", "local Qwen completed inference in 1s · 20 output tokens")
         talos_activity.record(self.state, "Model", "Verified Hermes/test.py at byte 0 · no supported improvement")
-        from feature_queue import review
+        from talos_core.self_improvement.feature_queue import review
         with (self.state / "feature-requests.jsonl").open("w") as queue:
             queue.write(json.dumps({"status":"proposed", "id":"abc", "origin":"local-qwen-source-review",
                                     "feature":"Check-in cancellation"}) + "\n")
@@ -93,7 +93,7 @@ class LiveReceiptTests(unittest.TestCase):
                     fcntl.flock(lock, fcntl.LOCK_EX)
                 return self.calls >= 2
         out = io.StringIO()
-        with patch("talos_activity.time.monotonic",side_effect=[0,2]):
+        with patch("talos_core.runtime.talos_activity.time.monotonic",side_effect=[0,2]):
             talos_activity.display(self.state, output=out, stop=Stop())
         self.assertIn("Obsidian publisher · stopped", out.getvalue())
         self.assertIn("Obsidian publisher · running", out.getvalue())

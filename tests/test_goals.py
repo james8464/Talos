@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
-from room_service import Room
+from talos_core.room.room_service import Room
 
 
 class GoalFlow(unittest.TestCase):
@@ -99,7 +99,7 @@ class GoalFlow(unittest.TestCase):
         for state in ["missing", "confirmed"]:
             goal = self.post("goals/calendar", **event, state=state, revision=goal["revision"])
             self.assertEqual(any(i["kind"] == "reminder" for i in self.inbox()), state == "confirmed")
-        with patch("room_service.datetime", wraps=datetime) as clock:
+        with patch("talos_core.room.room_service.datetime", wraps=datetime) as clock:
             clock.now.return_value = self.deadline
             self.post("speech/ack", id=goal["reminder_id"])
         for state in ["missing", "confirmed"]:
@@ -163,8 +163,8 @@ class GoalFlow(unittest.TestCase):
 
     def test_heartbeat_revisits_stale_goal_and_skips_recent_refresh(self):
         from contextlib import closing
-        from agent_memory import open_memory
-        from overnight_goal import revisit_goals
+        from talos_core.memory.agent_memory import open_memory
+        from talos_core.self_improvement.overnight_goal import revisit_goals
         state = self.root / "state"
         state.mkdir()
         self.db = state / "agent.sqlite3"

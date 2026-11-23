@@ -12,9 +12,9 @@ from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from feature_queue import append, queue_entries
-from feature_targets import FILE
-from talos_activity import record
+from talos_core.self_improvement.feature_queue import append, queue_entries
+from talos_core.self_improvement.feature_targets import FILE
+from talos_core.runtime.talos_activity import record
 
 
 class Port(NamedTuple):
@@ -26,7 +26,7 @@ class Port(NamedTuple):
 
 
 PORTS = (
-    Port("OpenClaw", "src/agents/command-poll-backoff.ts", "4ac9c782011aac8be9a8220d03a29e96dab6ee2d12093f4757d4782b7bd952de", "talos_activity.py", "Slow quiet terminal status probes and refresh immediately on activity"),
+    Port("OpenClaw", "src/agents/command-poll-backoff.ts", "4ac9c782011aac8be9a8220d03a29e96dab6ee2d12093f4757d4782b7bd952de", "talos_core/runtime/talos_activity.py", "Slow quiet terminal status probes and refresh immediately on activity"),
     Port("Hermes", "apps/shared/src/reconnect-backoff.ts", "066a9efab5237e47b0b892ef72ec129485622a45ff8e1b964e278999c8466328", "run_talos.py", "Recover the local model with jitter and a stable connection threshold"),
 )
 for name, path, sha in (

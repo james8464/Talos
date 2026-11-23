@@ -6,10 +6,10 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from agent_memory import open_memory
-from room_dialogue import decision, immediate_recall
-from room_recollection import RECALL_MESSAGES
-from room_service import Room
+from talos_core.memory.agent_memory import open_memory
+from talos_core.room.room_dialogue import decision, immediate_recall
+from talos_core.room.room_recollection import RECALL_MESSAGES
+from talos_core.room.room_service import Room
 
 
 class SpokenRecallTests(unittest.TestCase):
@@ -43,11 +43,11 @@ class SpokenRecallTests(unittest.TestCase):
     def test_addressed_voice_recall_uses_its_own_window_and_expires(self):
         def say(words):
             return self.room.route("POST", "/v1/turn", {"source": "voice", "text": words})[1]["reply"]
-        with patch("room_service.plan", return_value=decision("reply", "Understood.")):
+        with patch("talos_core.room.room_service.plan", return_value=decision("reply", "Understood.")):
             say("I left my notebook near the door.")
             for i in range(5):
                 say(f"Now considering topic {i}.")
-        with patch("room_service.plan", side_effect=AssertionError("recall must be local")):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("recall must be local")):
             self.assertIn("near the door", say("What did I say about my notebook?"))
             self.room.voice_window_updated = float("-inf")
             self.assertIn("couldn’t find", say("What did I say about my notebook?"))
@@ -91,7 +91,7 @@ class SpokenRecallTests(unittest.TestCase):
 
     @unittest.skipUnless(os.getenv("TALOS_TEST_SPOKEN_RECALL") == "1", "requires installed Whisper, Kokoro and PyAV")
     def test_real_speech_replay_through_recognition_room_and_playback(self):
-        from telegram_voice import render_note, transcribe_note
+        from talos_core.interfaces.telegram_voice import render_note, transcribe_note
 
         spoken = transcribe_note(render_note("My red notebook is on the table."))
         question = transcribe_note(render_note("What did I say about the red notebook?"))

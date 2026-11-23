@@ -10,10 +10,10 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import section_workers as workers
-import talos_activity
+from talos_core.self_improvement import section_workers as workers
+from talos_core.runtime import talos_activity
 from tools import talos_service
-from upstream_review import inventory
+from talos_core.self_improvement.upstream_review import inventory
 
 
 class SectionReviews(unittest.TestCase):
@@ -23,8 +23,8 @@ class SectionReviews(unittest.TestCase):
         for path in [
             "state/openclaw-src/src/auto-reply/heartbeat.ts",
             "state/hermes-src/cron/missed_runs.py",
-            "respan_worker.py",
-            "room_checkins.py",
+            "talos_core/self_improvement/respan_worker.py",
+            "talos_core/room/room_checkins.py",
         ]:
             src = self.root / path
             src.parent.mkdir(parents=True, exist_ok=True)
@@ -131,13 +131,13 @@ print(json.dumps({'type':'text','part':{'text':'{"feature":"quiet"}'}}))
         cli.chmod(0o700)
         with (
             patch.dict(os.environ, {"PRIVATE_FIXTURE": "private"}),
-            patch("section_workers.shutil.which", return_value=str(cli)),
+            patch("talos_core.self_improvement.section_workers.shutil.which", return_value=str(cli)),
         ):
             self.assertEqual(
                 workers.opencode_review("only source"), {"feature": "quiet"}
             )
         with patch(
-            "section_workers.free_review", return_value={"feature": "quiet"}
+            "talos_core.self_improvement.section_workers.free_review", return_value={"feature": "quiet"}
         ) as routed:
             self.assertEqual(
                 json.loads(workers.cli_review("OpenClaude", "source excerpt")),

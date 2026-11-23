@@ -6,8 +6,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent import interactive_chat
-from agent_memory import open_memory
-from transcript_memory import fork_session, remember, search_transcripts
+from talos_core.memory.agent_memory import open_memory
+from talos_core.memory.transcript_memory import fork_session, remember, search_transcripts
 
 
 class BranchRecallTests(unittest.TestCase):

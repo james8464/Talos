@@ -7,10 +7,10 @@ import unittest
 from contextlib import closing
 from unittest.mock import patch
 
-import local_source_model as local
-from feature_targets import FILE
-from respan_worker import CONTENDED, LOCAL_READY, LOCK_RETRY, rearm_deferred_jobs, turn
-from upstream_review import inventory
+from talos_core.self_improvement import local_source_model as local
+from talos_core.self_improvement.feature_targets import FILE
+from talos_core.self_improvement.respan_worker import CONTENDED, LOCAL_READY, LOCK_RETRY, rearm_deferred_jobs, turn
+from talos_core.self_improvement.upstream_review import inventory
 
 
 class LocalReviewTests(unittest.TestCase):
@@ -23,10 +23,10 @@ class LocalReviewTests(unittest.TestCase):
         (self.state / "upstream-inventory.sqlite3").touch()
         with (
             patch.object(local, "installed", return_value=("exe", "model")),
-            patch("respan_worker.local_source_turn", return_value="source reviewed") as source,
-            patch("graph_review.review_local", return_value="knowledge reviewed") as knowledge,
-            patch("graph_review.review", side_effect=AssertionError("unexpected cloud review")),
-            patch("respan_worker.compare", side_effect=AssertionError("unexpected cloud comparison")),
+            patch("talos_core.self_improvement.respan_worker.local_source_turn", return_value="source reviewed") as source,
+            patch("talos_core.self_improvement.graph_review.review_local", return_value="knowledge reviewed") as knowledge,
+            patch("talos_core.self_improvement.graph_review.review", side_effect=AssertionError("unexpected cloud review")),
+            patch("talos_core.self_improvement.respan_worker.compare", side_effect=AssertionError("unexpected cloud comparison")),
         ):
             for job in ("OpenClaw", "Hermes", "Knowledge"):
                 result = turn(self.root, self.state, job=job, clock=lambda: 100, local_only=True)
@@ -76,7 +76,8 @@ class LocalReviewTests(unittest.TestCase):
     def test_local_fallback_writes_only_hash_checked_source_with_accurate_origin(self):
         for name in ("openclaw-src", "hermes-src"):
             (self.state / name).mkdir()
-        target = self.root / "respan_worker.py"
+        target = self.root / "talos_core/self_improvement/respan_worker.py"
+        target.parent.mkdir(parents=True)
         target.write_text("if status == 'ready':\n    return run_job()\n")
         upstream = self.state / "openclaw-src/src/auto-reply/heartbeat.ts"
         upstream.parent.mkdir(parents=True)
@@ -131,8 +132,8 @@ class LocalReviewTests(unittest.TestCase):
                 self.assertEqual(db.execute("SELECT due,outcome FROM jobs WHERE name='Hermes'").fetchone(),(100,LOCAL_READY))
                 self.assertEqual(dict(db.execute("SELECT name,due FROM jobs WHERE name!='Hermes'")),{"OpenClaw":900,"Knowledge":700})
             (self.state/"upstream-inventory.sqlite3").touch()
-            with patch("respan_worker.local_source_turn",return_value=CONTENDED), \
-                 patch("respan_worker.compare",side_effect=AssertionError("early cloud request")):
+            with patch("talos_core.self_improvement.respan_worker.local_source_turn",return_value=CONTENDED), \
+                 patch("talos_core.self_improvement.respan_worker.compare",side_effect=AssertionError("early cloud request")):
                 self.assertEqual(turn(self.root,self.state,job="Hermes",clock=clock),CONTENDED)
                 self.assertIsNone(turn(self.root,self.state,job="Hermes",clock=clock))
             with closing(sqlite3.connect(file)) as db:
@@ -144,8 +145,8 @@ class LocalReviewTests(unittest.TestCase):
             db.execute("CREATE TABLE jobs(name TEXT PRIMARY KEY,due REAL,failures INTEGER,outcome TEXT)")
             db.execute("INSERT INTO jobs VALUES('Knowledge',900,4,'Respan connection unavailable (gaierror).')")
         with patch.object(local, "installed", return_value=("exe","weights")), \
-             patch("respan_worker.graph_review.review_local", return_value="Evidence verified") as on_device, \
-             patch("respan_worker.graph_review.review", side_effect=AssertionError("early cloud request")):
+             patch("talos_core.self_improvement.respan_worker.graph_review.review_local", return_value="Evidence verified") as on_device, \
+             patch("talos_core.self_improvement.respan_worker.graph_review.review", side_effect=AssertionError("early cloud request")):
             self.assertEqual(rearm_deferred_jobs(self.root, self.state, clock=lambda:100),1)
             result = turn(self.root,self.state,job="Knowledge",clock=lambda:100)
             self.assertIn(local.MODEL,result)

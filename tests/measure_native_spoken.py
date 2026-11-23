@@ -11,9 +11,9 @@ import threading
 import time
 from unittest.mock import patch
 
-from room_service import Handler, Room
-from room_voice import KokoroVoice, DEFAULT_VOICE
-from spoken_stream import SpokenStream
+from talos_core.room.room_service import Handler, Room
+from talos_core.room.room_voice import KokoroVoice, DEFAULT_VOICE
+from talos_core.cognition.spoken_stream import SpokenStream
 
 
 def benchmark(models, samples):
@@ -36,8 +36,8 @@ def benchmark(models, samples):
             yield '["Spring follows winter."'
             time.sleep(0.5)
             yield ',"The seasons repeat each year."]'
-        context.enter_context(patch("room_service.model_text", side_effect=full))
-        context.enter_context(patch("room_service.check_ollama_model"))
+        context.enter_context(patch("talos_core.room.room_service.model_text", side_effect=full))
+        context.enter_context(patch("talos_core.room.room_service.check_ollama_model"))
         context.enter_context(patch.object(SpokenStream, "tokens", chunks))
         worker = threading.Thread(target=service.serve_forever, daemon=True)
         worker.start()

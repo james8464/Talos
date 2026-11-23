@@ -9,11 +9,11 @@ import time
 import unittest
 from unittest.mock import patch
 
-from agent_memory import open_memory
-import commitment_memory as memory
-from idle_lab import IdleLab, experiment
-from room_service import Room
-from room_vision import visual_question
+from talos_core.memory.agent_memory import open_memory
+from talos_core.memory import commitment_memory as memory
+from talos_core.self_improvement.idle_lab import IdleLab, experiment
+from talos_core.room.room_service import Room
+from talos_core.room.room_vision import visual_question
 from test_room_acceptance import RoomAcceptanceTests as _Acceptance
 
 
@@ -62,7 +62,7 @@ class RefinementTests(unittest.TestCase):
         self.request("/v1/speech/ack", ack, expected_error=400)
         due = datetime.fromisoformat(item["due_at"])
         self.assertAlmostEqual((due - datetime.now(UTC)).total_seconds(), 86400, delta=3700)
-        with patch("room_service.datetime", wraps=datetime) as clock:
+        with patch("talos_core.room.room_service.datetime", wraps=datetime) as clock:
             clock.now.return_value = due + timedelta(seconds=1)
             self.request("/v1/presence", {"occupied": False})
             self.assertIsNone(self.request("/v1/speech")["item"])
@@ -291,14 +291,14 @@ class RefinementTests(unittest.TestCase):
             )
             self.assertIn(phrase, result["reply"])
         self.assertFalse(visual_question("Search the web for what color is the sky"))
-        with patch("room_vision.check_ollama_model", side_effect=RuntimeError):
+        with patch("talos_core.room.room_vision.check_ollama_model", side_effect=RuntimeError):
             result = self.request(
                 "/v1/turn", {"text": "Describe my outfit.", "camera_jpeg": "/9j//9k="}
             )
             self.assertIn("couldn't inspect", result["reply"])
 
     def test_current_people_count_uses_only_the_requested_frame(self):
-        with patch("room_vision.check_ollama_model", side_effect=AssertionError("unexpected inference")):
+        with patch("talos_core.room.room_vision.check_ollama_model", side_effect=AssertionError("unexpected inference")):
             for route in ("/v1/turn", "/v1/voice/facing"):
                 body = {"text": "Hey Talos, how many people can you see?", "camera_available": True}
                 self.assertEqual(self.request(route, body), {"request_frame": True})
@@ -312,7 +312,7 @@ class RefinementTests(unittest.TestCase):
             self.assertFalse(visual_question(text))
 
     def test_person_specific_visual_questions_reject_ambiguous_frames(self):
-        with patch("room_vision.check_ollama_model", side_effect=AssertionError("unexpected inference")):
+        with patch("talos_core.room.room_vision.check_ollama_model", side_effect=AssertionError("unexpected inference")):
             for question in ("What's in my hand?", "What am I showing?", "What color is my jacket?"):
                 for count, phrase in ((0, "clearly enough"), (2, "more than one person")):
                     reply = self.request("/v1/turn", {"text": question, "camera_jpeg": "/9j//9k=",
@@ -362,29 +362,29 @@ class RefinementTests(unittest.TestCase):
             db.execute("INSERT INTO room_slow_stages VALUES('voice decision',2,3000)")
         lab = IdleLab(self.path, "fixture")
         with (
-            patch("idle_lab.power_and_idle", return_value=False),
-            patch("idle_lab.subprocess.Popen") as launch,
+            patch("talos_core.self_improvement.idle_lab.power_and_idle", return_value=False),
+            patch("talos_core.self_improvement.idle_lab.subprocess.Popen") as launch,
         ):
             lab.next_check = 0
             lab.tick()
             launch.assert_not_called()
         with (
-            patch("idle_lab.power_and_idle", return_value=True),
-            patch("idle_lab.subprocess.Popen") as launch,
+            patch("talos_core.self_improvement.idle_lab.power_and_idle", return_value=True),
+            patch("talos_core.self_improvement.idle_lab.subprocess.Popen") as launch,
         ):
             lab.next_check = 0
             lab.tick()
             launch.assert_called_once()
             lab.job.poll.return_value = None
-            with patch("idle_lab.os.killpg") as kill:
+            with patch("talos_core.self_improvement.idle_lab.os.killpg") as kill:
                 lab.pause()
                 kill.assert_called_once()
         with closing(open_memory(self.path)) as db:
             trial = db.execute("SELECT id FROM coding_trials").fetchone()[0]
         with (
-            patch("idle_lab.check_ollama_model"),
+            patch("talos_core.self_improvement.idle_lab.check_ollama_model"),
             patch(
-                "idle_lab.request_ollama_json",
+                "talos_core.self_improvement.idle_lab.request_ollama_json",
                 return_value={"response": "invalid patch"},
             ),
         ):
@@ -394,7 +394,8 @@ class RefinementTests(unittest.TestCase):
     def test_generated_proposal_can_be_checked_without_changing_source(self):
         root = self.path.parent / "source"
         root.mkdir()
-        source = root / "room_dialogue.py"
+        source = root / "talos_core/room/room_dialogue.py"
+        source.parent.mkdir(parents=True)
         source.write_text("answer = 1 + 1\n")
         with closing(open_memory(self.path)) as db, db:
             trial = db.execute(
@@ -402,9 +403,9 @@ class RefinementTests(unittest.TestCase):
             ).lastrowid
         response = {"response": json.dumps({"before": "1 + 1", "after": "2"})}
         with (
-            patch("idle_lab.ROOT", root.resolve()),
-            patch("idle_lab.check_ollama_model"),
-            patch("idle_lab.request_ollama_json", return_value=response),
+            patch("talos_core.self_improvement.idle_lab.ROOT", root.resolve()),
+            patch("talos_core.self_improvement.idle_lab.check_ollama_model"),
+            patch("talos_core.self_improvement.idle_lab.request_ollama_json", return_value=response),
         ):
             experiment(self.path, trial, "fixture")
         self.assertIn(

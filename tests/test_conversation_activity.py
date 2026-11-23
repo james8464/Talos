@@ -9,8 +9,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from contextlib import closing
-from conversation_activity import conversation_busy, foreground, QuietWorker
-from room_service import Room
+from talos_core.cognition.conversation_activity import conversation_busy, foreground, QuietWorker
+from talos_core.room.room_service import Room
 
 
 class ConversationActivityTests(unittest.TestCase):
@@ -31,7 +31,7 @@ class ConversationActivityTests(unittest.TestCase):
     def test_a_crashed_foreground_process_releases_the_signal(self):
         with tempfile.TemporaryDirectory() as folder:
             state = Path(folder)
-            code = ("from conversation_activity import foreground\n"
+            code = ("from talos_core.cognition.conversation_activity import foreground\n"
                     "from pathlib import Path\nimport sys\n"
                     "with foreground(Path(sys.argv[1])):\n"
                     " print('held', flush=True)\n sys.stdin.read()")

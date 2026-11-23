@@ -7,9 +7,9 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import session_goals
+from talos_core.cognition import session_goals
 from agent import interactive_chat, model_text
-from agent_memory import open_memory
+from talos_core.memory.agent_memory import open_memory
 
 
 def draft(text):
@@ -131,7 +131,7 @@ class StandingGoalTests(unittest.TestCase):
             thread.start()
             try:
                 worker = [sys.executable, "-c",
-                          "import agent,idle_lab; idle_lab.power_and_idle=lambda: True; raise SystemExit(agent.main())",
+                          "import agent; from talos_core.self_improvement import idle_lab; idle_lab.power_and_idle=lambda: True; raise SystemExit(agent.main())",
                           "--db", str(self.path), "--model", "fixture", "goal-worker"]
                 subprocess.run(worker, cwd=root, check=True, capture_output=True, timeout=10,
                                env={**os.environ, "TALOS_OLLAMA_PORT": str(server.server_port)})
@@ -157,19 +157,19 @@ class StandingGoalTests(unittest.TestCase):
             self.assertEqual(model_text([]), code)
 
     def test_running_room_reviews_queue_and_preserves_draft_when_interrupted(self):
-        from room_service import Room
-        from idle_lab import IdleReviewDeferred
+        from talos_core.room.room_service import Room
+        from talos_core.self_improvement.idle_lab import IdleReviewDeferred
         self.console("/goal queue Write a color card\n", Mock())
         room = Room(self.path, "fixture", model_state=lambda: "ready")
         room.lab.quiet_until = 0
-        with patch("room_service.power_and_idle", return_value=True), \
+        with patch("talos_core.room.room_service.power_and_idle", return_value=True), \
                 patch.object(room.lab, "infer", side_effect=[draft("blue first"), IdleReviewDeferred()]) as infer:
             self.assertTrue(room.review_session_goals())
             self.assertNotIn("model", infer.call_args.kwargs)
         with closing(open_memory(self.path)) as db:
             row = session_goals.current(db, "text")
             self.assertEqual((row["draft"], row["status"], row["lease_until"]), ("blue first", "queued", 0))
-        with patch("room_service.power_and_idle", return_value=True), \
+        with patch("talos_core.room.room_service.power_and_idle", return_value=True), \
                 patch.object(room.lab, "infer", side_effect=[draft("blue final"), verdict()]):
             self.assertTrue(room.review_session_goals())
         with closing(open_memory(self.path)) as db:
@@ -179,7 +179,7 @@ class StandingGoalTests(unittest.TestCase):
 @unittest.skipUnless(os.getenv("TALOS_TEST_OLLAMA") == "1", "requires an isolated local model")
 class LocalGoalReplay(unittest.TestCase):
     def test_queued_writer_and_reviewer_return_a_clean_deliverable(self):
-        from local_runtime import check_ollama_model
+        from talos_core.runtime.local_runtime import check_ollama_model
         with tempfile.TemporaryDirectory() as tmp, closing(open_memory(Path(tmp) / "goals.db")) as db:
             session_goals.command(db, "text", "queue Write one sentence containing both the words cobalt and notebook.",
                                   model="qwen3:4b", generate=model_text, ready=check_ollama_model)

@@ -7,8 +7,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent import OLLAMA_MODEL, chat, interactive_chat, show_status
-from agent_memory import open_memory
-from talos_identity import capability_context
+from talos_core.memory.agent_memory import open_memory
+from talos_core.cognition.talos_identity import capability_context
 
 
 class TalosConsoleTests(unittest.TestCase):
@@ -53,7 +53,7 @@ class TalosConsoleTests(unittest.TestCase):
         self.assertEqual(json.loads(output.getvalue().splitlines()[1]), receipt)
 
     def test_history_and_recall_read_local_turns_without_inference(self):
-        from transcript_memory import remember
+        from talos_core.memory.transcript_memory import remember
 
         commands = io.StringIO("/history\n/recall\n/recall violet\n/recall missing\n/quit\n")
         output, errors = io.StringIO(), io.StringIO()
@@ -94,7 +94,7 @@ class TalosConsoleTests(unittest.TestCase):
             self.assertNotIn("violet", model.call_args.args[0][0]["content"])
 
     def test_export_publishes_complete_private_session_and_preserves_existing_file(self):
-        from transcript_memory import remember
+        from talos_core.memory.transcript_memory import remember
         with tempfile.TemporaryDirectory() as folder, closing(open_memory(Path(folder) / "trial.db")) as db:
             path = Path(folder) / "my session.jsonl"
             words = ["δ" + str(i) for i in range(10)]
@@ -109,7 +109,7 @@ class TalosConsoleTests(unittest.TestCase):
             self.assertIn("File exists", err.getvalue())
 
     def test_branch_snapshot_nested_resume_and_explicit_recall(self):
-        from transcript_memory import remember
+        from talos_core.memory.transcript_memory import remember
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             db_path = root / "test.db"

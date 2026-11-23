@@ -5,12 +5,12 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
-import graph_review
-import mac_context
-import memory_connections
-import memory_review
-from personal_index import sync
-from upstream_comparison import discovery_candidate
+from talos_core.self_improvement import graph_review
+from talos_core.mac import mac_context
+from talos_core.memory import memory_connections
+from talos_core.memory import memory_review
+from talos_core.memory.personal_index import sync
+from talos_core.self_improvement.upstream_comparison import discovery_candidate
 
 
 class ProcessingTests(unittest.TestCase):

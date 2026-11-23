@@ -7,8 +7,8 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from room_service import Room
-import voice_recovery
+from talos_core.room.room_service import Room
+from talos_core.runtime import voice_recovery
 
 
 class VoiceRecoveryTests(unittest.TestCase):
@@ -81,7 +81,7 @@ class VoiceRecoveryTests(unittest.TestCase):
             )
             self.assertEqual(len(voice_recovery.recent(db)), 5)
         with patch(
-            "self_diagnosis.report", side_effect=sqlite3.OperationalError("busy")
+            "talos_core.self_improvement.self_diagnosis.report", side_effect=sqlite3.OperationalError("busy")
         ):
             self.assertEqual(
                 self.turn("Test your voice")["voice_recovery"], "test_output"

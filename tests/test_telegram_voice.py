@@ -6,8 +6,8 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import telegram_gateway as gateway
-import telegram_voice as voice
+from talos_core.interfaces import telegram_gateway as gateway
+from talos_core.interfaces import telegram_voice as voice
 
 
 class VoiceGatewayTests(unittest.TestCase):
@@ -140,7 +140,7 @@ class VoiceGatewayTests(unittest.TestCase):
 
     def test_upload_encodes_one_ogg_part_and_destination(self):
         import email
-        with patch("telegram_gateway.http.client.HTTPSConnection") as connection:
+        with patch("talos_core.interfaces.telegram_gateway.http.client.HTTPSConnection") as connection:
             response = connection.return_value.getresponse.return_value
             response.read.return_value = b'{"ok":true,"result":{"message_id":9}}'
             result = gateway.api_client("42:fixture")("sendVoice", chat_id=7, voice=b"OggS\x00data")

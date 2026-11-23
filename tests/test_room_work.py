@@ -8,11 +8,11 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
 
-from agent_memory import open_memory
-from local_actions import acknowledge
-from room_service import Room
-from room_work import propose_work
-from transcript_memory import remember
+from talos_core.memory.agent_memory import open_memory
+from talos_core.runtime.local_actions import acknowledge
+from talos_core.room.room_service import Room
+from talos_core.room.room_work import propose_work
+from talos_core.memory.transcript_memory import remember
 
 
 class RoomWorkTests(unittest.TestCase):
@@ -94,7 +94,7 @@ class RoomWorkTests(unittest.TestCase):
         request = "Email Alex the budget and save a note that the Atlas cap is 12000."
         raw = json.dumps({"steps": [{"clause": 1, "tool": "create_task", "detail": "Email Alex"},
                                     {"clause": 2, "tool": "save_note", "detail": "120000"}]})
-        with patch("room_service.model_text", return_value=raw):
+        with patch("talos_core.room.room_service.model_text", return_value=raw):
             draft = self.post("work/preview", text=request)
         self.assertIn("Email Alex", draft["remaining"])
         self.assertEqual(draft["steps"][0]["detail"], "the Atlas cap is 12000")

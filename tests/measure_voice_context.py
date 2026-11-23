@@ -19,10 +19,10 @@ import time
 from unittest.mock import patch
 
 import agent
-from idle_lab import power_and_idle
-from local_runtime import check_ollama_model, request_ollama_json
-from room_service import Room
-from turn_timing import classify
+from talos_core.self_improvement.idle_lab import power_and_idle
+from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
+from talos_core.room.room_service import Room
+from talos_core.cognition.turn_timing import classify
 
 
 def fixture_requests(model, directory):
@@ -33,10 +33,10 @@ def fixture_requests(model, directory):
         response = {"hold": True} if "hold" in payload["format"]["properties"] else {"talos_says": "Yellow."}
         return {"done": True, "message": {"content": json.dumps(response)}}
 
-    with patch("turn_timing.check_ollama_model"), patch("turn_timing.request_ollama_json", capture):
+    with patch("talos_core.cognition.turn_timing.check_ollama_model"), patch("talos_core.cognition.turn_timing.request_ollama_json", capture):
         classify("Please remind me to bring the", model)
         classify("Is the museum open on Sundays?", model)
-    with patch("room_service.check_ollama_model"), patch.object(agent, "request_ollama_json", capture):
+    with patch("talos_core.room.room_service.check_ollama_model"), patch.object(agent, "request_ollama_json", capture):
         room = Room(directory / "fixture.db", model, apply=False, speak=False, online=False)
         status, result = room.route("POST", "/v1/voice/facing", {"text": "What color is a ripe banana?"})
         if status != 200 or result.get("reply") != "Yellow." or len(requests) != 3:

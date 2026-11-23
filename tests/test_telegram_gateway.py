@@ -9,7 +9,7 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from telegram_gateway import ApiError, api_client, main, open_channel, owner_id, pair_owner, poll
+from talos_core.interfaces.telegram_gateway import ApiError, api_client, main, open_channel, owner_id, pair_owner, poll
 
 
 class TelegramGatewayTests(unittest.TestCase):
@@ -18,8 +18,8 @@ class TelegramGatewayTests(unittest.TestCase):
         self.updates = []
         self.sent = []
         self.offsets = []
-        self.model = self.enterContext(patch("telegram_gateway.model_text", return_value=json.dumps({"reply": "A local reply."})))
-        self.enterContext(patch("telegram_gateway.check_ollama_model"))
+        self.model = self.enterContext(patch("talos_core.interfaces.telegram_gateway.model_text", return_value=json.dumps({"reply": "A local reply."})))
+        self.enterContext(patch("talos_core.interfaces.telegram_gateway.check_ollama_model"))
 
     def add(self, n, text, sender=19, chat=19, kind="private", bot=False):
         self.updates.append({"update_id": n, "message": {"chat": {"type": kind, "id": chat},
@@ -180,10 +180,10 @@ class TelegramGatewayTests(unittest.TestCase):
 
     def test_setup_checks_identity_and_webhook_before_model_without_consuming_messages(self):
         state = self.path.parent / "unused"
-        argv = ["telegram_gateway.py", "--owner", "tg:19", "--check", "--state", str(state)]
+        argv = ["talos_core/interfaces/telegram_gateway.py", "--owner", "tg:19", "--check", "--state", str(state)]
         with patch.dict(os.environ, TALOS_TELEGRAM_TOKEN="42:fixture"), patch.object(sys, "argv", argv), patch(
-            "telegram_gateway.api_client"
-        ) as transport, patch("telegram_gateway.check_ollama_model") as check:
+            "talos_core.interfaces.telegram_gateway.api_client"
+        ) as transport, patch("talos_core.interfaces.telegram_gateway.check_ollama_model") as check:
             api = transport.return_value
             api.side_effect = [{"id": 42, "is_bot": True}, {"url": ""}]
             main()
@@ -202,7 +202,7 @@ class TelegramGatewayTests(unittest.TestCase):
     def test_http_client_targets_bot_api_and_reports_rate_limit_without_token(self):
         response = io.BytesIO(b'{"ok":false,"error_code":429,"parameters":{"retry_after":12}}')
         response.status = 429
-        with patch("telegram_gateway.http.client.HTTPSConnection") as factory:
+        with patch("talos_core.interfaces.telegram_gateway.http.client.HTTPSConnection") as factory:
             conn = factory.return_value
             conn.getresponse.return_value = response
             with self.assertRaises(ApiError) as caught:
@@ -230,7 +230,7 @@ class TelegramGatewayTests(unittest.TestCase):
         self.add(3, "/pair incorrect", sender=33, chat=33)
         self.add(4, "/pair fixture-code")
         self.add(5, "after pairing")
-        with closing(open_channel(self.path)) as db, patch("telegram_gateway.secrets.token_urlsafe", return_value="fixture-code"):
+        with closing(open_channel(self.path)) as db, patch("talos_core.interfaces.telegram_gateway.secrets.token_urlsafe", return_value="fixture-code"):
             self.assertEqual(pair_owner(db, self.api, 42), 19)
         with closing(open_channel(self.path)) as db:
             self.assertEqual(pair_owner(db, None, 42), 19)
@@ -241,8 +241,8 @@ class TelegramGatewayTests(unittest.TestCase):
 
     def test_expired_pairing_code_has_no_effect(self):
         self.add(1, "/pair fixture-code")
-        with closing(open_channel(self.path)) as db, patch("telegram_gateway.secrets.token_urlsafe", return_value="fixture-code"), patch(
-            "telegram_gateway.time.monotonic", side_effect=[0, 299, 301, 302]
+        with closing(open_channel(self.path)) as db, patch("talos_core.interfaces.telegram_gateway.secrets.token_urlsafe", return_value="fixture-code"), patch(
+            "talos_core.interfaces.telegram_gateway.time.monotonic", side_effect=[0, 299, 301, 302]
         ):
             with self.assertRaisesRegex(RuntimeError, "expired"):
                 pair_owner(db, self.api, 42)

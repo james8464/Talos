@@ -8,9 +8,9 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-import index_maintenance as maintenance
-import talos_activity
-from conversation_activity import foreground
+from talos_core.self_improvement import index_maintenance as maintenance
+from talos_core.runtime import talos_activity
+from talos_core.cognition.conversation_activity import foreground
 
 
 class IndexMaintenanceTests(unittest.TestCase):
@@ -121,7 +121,7 @@ class IndexMaintenanceTests(unittest.TestCase):
     def test_normal_maintenance_job_returns_verified_result(self):
         self.populate(7)
         result = subprocess.run(
-            [sys.executable, "maintenance.py", "--state", str(self.state), "--jobs"],
+            [sys.executable, "-m", "talos_core.runtime.maintenance", "--state", str(self.state), "--jobs"],
             cwd=Path(__file__).resolve().parents[1],
             input='{"kind":"index_maintenance"}\n',
             text=True,

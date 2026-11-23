@@ -41,14 +41,14 @@ class ProjectModelTests(unittest.TestCase):
 
     def test_supervised_voice_uses_startup_verification_and_rechecks_after_failure(self):
         from unittest.mock import Mock
-        from room_service import Room
+        from talos_core.room.room_service import Room
         model = ProjectModel("fixture", 11435, True)
         server = model.ready_server = Mock()
         server.poll.return_value = None
         model.voice_verified = True
         with tempfile.TemporaryDirectory() as root:
             room = Room(Path(root) / "room.db", "fixture", model_state=lambda: "ready", voice_generate=model.generate_voice)
-            with patch("room_service.check_ollama_model", side_effect=AssertionError), \
+            with patch("talos_core.room.room_service.check_ollama_model", side_effect=AssertionError), \
                     patch("run_talos.check_ollama_model") as probe, \
                     patch("run_talos.model_text", return_value='{"talos_says":"A compass would help."}') as generate:
                 def speak():

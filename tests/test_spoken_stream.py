@@ -16,9 +16,9 @@ from unittest.mock import patch
 from uuid import uuid4
 import wave
 
-from agent_memory import open_memory
-from room_service import Handler, Room
-from spoken_stream import SpokenStream
+from talos_core.memory.agent_memory import open_memory
+from talos_core.room.room_service import Handler, Room
+from talos_core.cognition.spoken_stream import SpokenStream
 
 
 def packet(content, done=False):
@@ -111,7 +111,7 @@ class SpokenStreamFlow(unittest.TestCase):
 
     def test_supervised_stream_defers_maintenance_without_an_inventory_call(self):
         from unittest.mock import Mock
-        from conversation_activity import conversation_busy
+        from talos_core.cognition.conversation_activity import conversation_busy
         from run_talos import ProjectModel
 
         supervised = ProjectModel("fixture", self.model.server_port, True)
@@ -120,7 +120,7 @@ class SpokenStreamFlow(unittest.TestCase):
         supervised.voice_verified = True
         self.room.room.voice_generate = supervised.generate_voice
         with patch("run_talos.check_ollama_model", side_effect=AssertionError), \
-                patch("room_service.check_ollama_model", side_effect=AssertionError):
+                patch("talos_core.room.room_service.check_ollama_model", side_effect=AssertionError):
             response = self.start()
             self.assertIn("started", json.loads(response.readline()))
             self.assertIn("sentence", json.loads(response.readline()))

@@ -8,10 +8,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
-import mac_context
-import overnight_goal
-from agent_memory import open_memory
-from room_service import Room
+from talos_core.mac import mac_context
+from talos_core.self_improvement import overnight_goal
+from talos_core.memory.agent_memory import open_memory
+from talos_core.room.room_service import Room
 
 
 class PrivateRoomTests(unittest.TestCase):
@@ -22,7 +22,7 @@ class PrivateRoomTests(unittest.TestCase):
         self.room = Room(
             self.state / "room.db", "offline", model_state=lambda: "warming"
         )
-        self.enterContext(patch("mac_context.Path.home", return_value=self.root))
+        self.enterContext(patch("talos_core.mac.mac_context.Path.home", return_value=self.root))
 
     def fixture(self, relative, sql):
         path = self.library / relative
@@ -122,7 +122,7 @@ class PrivateRoomTests(unittest.TestCase):
         self.assertIn("enabled", self.ask("Search my apps for cobalt")["reply"])
         mac_context.configure(self.state, mac_context.APPS)
         with patch(
-            "room_service.plan",
+            "talos_core.room.room_service.plan",
             side_effect=AssertionError("private search called planner"),
         ):
             result = self.ask("Search my apps for cobalt")
@@ -152,7 +152,7 @@ class PrivateRoomTests(unittest.TestCase):
             for query in ("Search my mail for", "Search my apps for " + "a" * 175):
                 self.assertTrue(self.ask(query)["private"])
             with patch(
-                "mac_context.lookup",
+                "talos_core.mac.mac_context.lookup",
                 side_effect=AssertionError("voice opened private source"),
             ):
                 self.assertIn(
@@ -214,7 +214,7 @@ class HandoffTests(unittest.TestCase):
     def test_log_reader_keeps_latest_fresh_observation_per_window(self):
         now = 1800000000
         home = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        self.enterContext(patch("overnight_goal.Path.home", return_value=home))
+        self.enterContext(patch("talos_core.self_improvement.overnight_goal.Path.home", return_value=home))
         day = home / ".codex/sessions/2027/01/15"
         day.mkdir(parents=True)
         def record(delta, **windows):
@@ -243,7 +243,7 @@ class HandoffTests(unittest.TestCase):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         def check(delta, windows):
             return overnight_goal.check(state, now + 9000, now + delta, quota=lambda _: windows)
-        with patch("overnight_goal.power_and_idle", return_value=False):
+        with patch("talos_core.self_improvement.overnight_goal.power_and_idle", return_value=False):
             self.assertIn("idle Mac", check(0, {"primary": (1, now + 600), "secondary": (2, now + 5000)}))
             self.assertIn("idle Mac", check(1, {"secondary": (50, now + 5000)}))
             self.assertEqual(check(601, []), "quota unavailable")
@@ -262,7 +262,8 @@ class HandoffTests(unittest.TestCase):
         root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
         state, source = root / "state", root / "source"
         source.mkdir()
-        target = source / "room_dialogue.py"
+        target = source / "talos_core/room/room_dialogue.py"
+        target.parent.mkdir(parents=True)
         target.write_text("result = 1 + 1\n")
         now, end = 1800000000, 1800010000
 
@@ -272,12 +273,12 @@ class HandoffTests(unittest.TestCase):
             )
 
         idle = self.enterContext(
-            patch("overnight_goal.power_and_idle", return_value=False)
+            patch("talos_core.self_improvement.overnight_goal.power_and_idle", return_value=False)
         )
         with (
-            patch("idle_lab.ROOT", source),
+            patch("talos_core.self_improvement.idle_lab.ROOT", source),
             patch(
-                "overnight_goal.free_edit",
+                "talos_core.self_improvement.overnight_goal.free_edit",
                 return_value={"before": "1 + 1", "after": "2"},
             ) as review,
         ):
@@ -304,12 +305,12 @@ class HeartbeatTests(unittest.TestCase):
         import json
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         with (
-            patch("overnight_goal.baseline", return_value=("version", "passed")),
-            patch("overnight_goal.power_and_idle", return_value=False) as idle,
-            patch("overnight_goal.local_edit", side_effect=RuntimeError("unavailable")) as local,
-            patch("overnight_goal.free_edit", side_effect=RuntimeError("provider down")) as cloud,
-            patch("overnight_goal.offline_edit", return_value={"before": "", "after": ""}) as offline,
-            patch("overnight_goal.latest_quota", side_effect=AssertionError("quota dependency")),
+            patch("talos_core.self_improvement.overnight_goal.baseline", return_value=("version", "passed")),
+            patch("talos_core.self_improvement.overnight_goal.power_and_idle", return_value=False) as idle,
+            patch("talos_core.self_improvement.overnight_goal.local_edit", side_effect=RuntimeError("unavailable")) as local,
+            patch("talos_core.self_improvement.overnight_goal.free_edit", side_effect=RuntimeError("provider down")) as cloud,
+            patch("talos_core.self_improvement.overnight_goal.offline_edit", return_value={"before": "", "after": ""}) as offline,
+            patch("talos_core.self_improvement.overnight_goal.latest_quota", side_effect=AssertionError("quota dependency")),
         ):
             self.assertEqual(overnight_goal.heartbeat(state, "test"), "no candidate")
             self.assertIn("waiting for AC", overnight_goal.heartbeat(state, "test"))
@@ -330,13 +331,13 @@ class HeartbeatTests(unittest.TestCase):
 
     def test_map_existing_notes_enabled_sources_and_verified_changes(self):
         import json
-        import knowledge_map
+        from talos_core.memory import knowledge_map
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         vault = state / "Talos Memory"
         vault.mkdir()
         (vault / "Conversation-12.md").write_text("An existing hand-edited note")
         mac_context.configure(state, ["Contacts"])
-        events = [{"id": "0123456789abcdef", "status": "proposed", "source": "room_voice.py",
+        events = [{"id": "0123456789abcdef", "status": "proposed", "source": "talos_core/room/room_voice.py",
                    "feature": "Improve voice playback", "acceptance": "Replay the fixture"},
                   {"id": "0123456789abcdef", "status": "done", "verification": "Fixture passed"}]
         (state / "feature-requests.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events) + "{")

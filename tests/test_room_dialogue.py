@@ -7,11 +7,11 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from agent_memory import open_memory
-from improve_talos import draft_patch
-from room_dialogue import EMPTY, HEARD, IDENTITY, TYPED, UNKNOWN, VISIBLE, decision
-from room_research import FREE_MODEL, FREE_MODELS, public_answer
-from room_service import Room
+from talos_core.memory.agent_memory import open_memory
+from talos_core.self_improvement.improve_talos import draft_patch
+from talos_core.room.room_dialogue import EMPTY, HEARD, IDENTITY, TYPED, UNKNOWN, VISIBLE, decision
+from talos_core.room.room_research import FREE_MODEL, FREE_MODELS, public_answer
+from talos_core.room.room_service import Room
 
 
 class RoomDialogueTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class RoomDialogueTests(unittest.TestCase):
 
     def test_screenshot_turns_and_camera_snapshot_skip_inference(self):
         self.room.route("POST", "/v1/presence", {"occupied": False})
-        with patch("room_service.plan", side_effect=AssertionError("unnecessary model call")):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("unnecessary model call")):
             self.assertEqual(self.turn("Can you hear me tell us?")["reply"], HEARD)
             self.assertEqual(self.turn("Can you hear me?", source="text")["reply"], TYPED)
             self.assertEqual(self.turn("Hello.")["reply"], "")
@@ -34,22 +34,22 @@ class RoomDialogueTests(unittest.TestCase):
             self.assertEqual(self.turn("Can you see me?")["reply"], EMPTY)
 
     def test_current_sensor_questions_use_the_input_channel_and_latest_observation(self):
-        with patch("room_service.plan", side_effect=AssertionError("unexpected planner call")):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("unexpected planner call")):
             for occupied, reply in ((True, VISIBLE), (False, EMPTY), (None, UNKNOWN)):
                 self.room.route("POST", "/v1/presence", {"occupied": occupied})
                 self.assertEqual(self.turn("Talos, can you see me right now?")["reply"], reply)
                 self.assertEqual(self.turn("Is there anyone in the room now?")["reply"], reply)
             self.assertEqual(self.turn("Can you hear me now, Talos?")["reply"], HEARD)
             self.assertEqual(self.turn("Can you hear me now?", source="text")["reply"], TYPED)
-        with patch("room_service.plan", return_value=decision("reply", "Which photo?")) as planner:
+        with patch("talos_core.room.room_service.plan", return_value=decision("reply", "Which photo?")) as planner:
             self.assertEqual(self.turn("Talos, can you see anyone in the photo right now?")["reply"],
                              "Which photo?")
             planner.assert_called_once()
 
     def test_conversational_audio_checks_stay_grounded_in_the_input_channel(self):
-        from room_dialogue import IDENTITY, sensor_answer
+        from talos_core.room.room_dialogue import IDENTITY, sensor_answer
 
-        with patch("room_service.plan", side_effect=AssertionError("unexpected planner call")):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("unexpected planner call")):
             for words in ("Talos, am I coming through?", "Can you hear my voice?",
                           "Is my voice coming through right now?"):
                 for source, expected in (("text", TYPED), ("voice", HEARD)):
@@ -60,7 +60,7 @@ class RoomDialogueTests(unittest.TestCase):
 
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
         for proposal in (decision("ignore", ""), decision("reply", "Hello.")):
-            with patch("room_service.plan", return_value=proposal):
+            with patch("talos_core.room.room_service.plan", return_value=proposal):
                 self.assertEqual(self.turn("I left the door open.")["reply"], "")
         self.assertEqual(self.room.voice_window, [])
 
@@ -98,21 +98,21 @@ class RoomDialogueTests(unittest.TestCase):
 
     def test_explicit_lookup_only_sends_query_and_surfaces_sources(self):
         sources = [{"title": "Example", "url": "https://example.org", "excerpt": "A statement."}]
-        with patch("room_service.search_web", return_value=sources) as search, patch(
-            "room_service.model_text", return_value="A statement."
+        with patch("talos_core.room.room_service.search_web", return_value=sources) as search, patch(
+            "talos_core.room.room_service.model_text", return_value="A statement."
         ):
             result = self.turn("Talos, search the web for lunar eclipses.")
             search.assert_called_once_with("lunar eclipses.")
             self.assertEqual(result["sources"], sources)
         self.room.online = False
-        with patch("room_service.public_answer") as remote:
+        with patch("talos_core.room.room_service.public_answer") as remote:
             self.assertIn("off", self.turn("Ask Respan what is ice?")["reply"])
             remote.assert_not_called()
 
     def test_planner_can_select_search_for_typed_question(self):
         with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
                 '{"action":"search_web","text":"public facts"}'), patch(
-                    "room_service.search_web", return_value=[]) as search:
+                    "talos_core.room.room_service.search_web", return_value=[]) as search:
             result = self.turn("Which comet is visible tonight?", source="text")
             search.assert_called_once_with("Which comet is visible tonight?")
             self.assertIn("find", result["reply"])
@@ -123,8 +123,8 @@ class RoomDialogueTests(unittest.TestCase):
         response.status = 200
         response.read.return_value = b'{"choices":[{"message":{"content":"Four."}}]}'
         with patch.dict(os.environ, RESPAN_API_KEY="test"), patch(
-            "room_research.http.client.HTTPSConnection", return_value=connection
-        ), patch("room_research._turns", iter([0, 1, 2])), patch("room_research._cooldown", {}):
+            "talos_core.room.room_research.http.client.HTTPSConnection", return_value=connection
+        ), patch("talos_core.room.room_research._turns", iter([0, 1, 2])), patch("talos_core.room.room_research._cooldown", {}):
             self.assertEqual(public_answer("Two plus two?"), "Four.")
             payload = json.loads(connection.request.call_args.kwargs["body"])
             self.assertEqual(payload["model"], FREE_MODEL)
@@ -155,16 +155,16 @@ class RoomDialogueTests(unittest.TestCase):
                     "--- a/example.py\n+++ b/example.py\n@@ -1 +1 @@\n-value = 1\n+value = 2\n")
                 return
             return real_run(command, **kwargs)
-        with patch("improve_talos.shutil.which", return_value="mock-codex"), patch(
-            "improve_talos.subprocess.run", side_effect=run
+        with patch("talos_core.self_improvement.improve_talos.shutil.which", return_value="mock-codex"), patch(
+            "talos_core.self_improvement.improve_talos.subprocess.run", side_effect=run
         ):
             patch_file = draft_patch("Fix the example.", root=self.root)
         self.assertTrue(patch_file.exists())
         self.assertEqual((self.root / "example.py").read_text(), "value = 1\n")
 
     def test_slow_stages_drive_code_issue_selection_without_transcripts(self):
-        from improve_talos import observed_issue
-        from room_service import record_slow_stage
+        from talos_core.self_improvement.improve_talos import observed_issue
+        from talos_core.room.room_service import record_slow_stage
 
         with closing(open_memory(self.room.db_path)) as db, db:
             record_slow_stage(db, "voice decision", 2100)
@@ -187,7 +187,7 @@ class RoomDialogueTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT count(*) FROM room_slow_stages").fetchone()[0], 0)
 
     def test_local_reminder_duration_and_boundaries(self):
-        from room_dialogue import explicit_reminder
+        from talos_core.room.room_dialogue import explicit_reminder
         for duration, minutes in [("twenty-five minutes", 25), ("an hour", 60), ("30 days", 43200)]:
             result = explicit_reminder(f"Hey Talos, please remind me in {duration} to check the oven.")
             self.assertEqual((result["remind_in_minutes"], result["detail"]), (minutes, "check the oven"))

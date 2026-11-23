@@ -7,10 +7,10 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import incident_investigation as investigate
-import local_source_model
-import self_diagnosis
-from conversation_activity import foreground
+from talos_core.self_improvement import incident_investigation as investigate
+from talos_core.self_improvement import local_source_model
+from talos_core.self_improvement import self_diagnosis
+from talos_core.cognition.conversation_activity import foreground
 
 
 class IncidentInvestigationTests(unittest.TestCase):
@@ -18,11 +18,15 @@ class IncidentInvestigationTests(unittest.TestCase):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
         self.state = self.root / "state"
         (self.root / "tests").mkdir()
-        self.source = self.root / "voice_recovery.py"
+        self.source = self.root / "talos_core/runtime/voice_recovery.py"
+        self.source.parent.mkdir(parents=True)
         self.source.write_text("def recent(receipts):\n    return receipts[:5]\n")
         test = self.root / "tests/test_voice_recovery.py"
+        (self.root / "talos_core/runtime").mkdir(parents=True, exist_ok=True)
+        (self.root / "talos_core/__init__.py").write_text("")
+        (self.root / "talos_core/runtime/__init__.py").write_text("")
         test.write_text(
-            "import unittest\nfrom voice_recovery import recent\n"
+            "import unittest\nfrom talos_core.runtime.voice_recovery import recent\n"
             "class VoiceRecoveryTests(unittest.TestCase):\n"
             "    def test_complaint_and_receipts_survive_restart(self):\n"
             "        receipts = ['older', 'newer']\n"
@@ -115,6 +119,6 @@ class IncidentInvestigationTests(unittest.TestCase):
         self.assertGreater(receipt["input_tokens"], 0)
         self.assertGreater(receipt["output_tokens"], 0)
         if receipt["status"] == "unverified hypothesis":
-            self.assertEqual(receipt["source"]["file"], "voice_recovery.py")
+            self.assertEqual(receipt["source"]["file"], "talos_core/runtime/voice_recovery.py")
             self.assertIn("regression", receipt)
         print("Isolated CPU incident audit:", json.dumps(receipt, sort_keys=True), flush=True)

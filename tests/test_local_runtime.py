@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import local_runtime
+from talos_core.runtime import local_runtime
 
 
 class LocalRuntimeTests(unittest.TestCase):
@@ -30,7 +30,7 @@ class LocalRuntimeTests(unittest.TestCase):
 
     @patch.dict("os.environ", TALOS_OLLAMA_PORT="11434")
     def test_checks_model_via_loopback(self):
-        with patch("local_runtime.http.client.HTTPConnection") as factory:
+        with patch("talos_core.runtime.local_runtime.http.client.HTTPConnection") as factory:
             connection = factory.return_value
             response = io.BytesIO(json.dumps({
                 "models": [{"name": local_runtime.OLLAMA_MODEL}]
@@ -44,7 +44,7 @@ class LocalRuntimeTests(unittest.TestCase):
             connection.close.assert_called_once_with()
 
     def test_rejects_remote_model_even_with_matching_name(self):
-        with patch("local_runtime.http.client.HTTPConnection") as factory:
+        with patch("talos_core.runtime.local_runtime.http.client.HTTPConnection") as factory:
             response = io.BytesIO(json.dumps({
                 "models": [{"name": local_runtime.OLLAMA_MODEL, "remote_model": "remote"}]
             }).encode())
@@ -54,7 +54,7 @@ class LocalRuntimeTests(unittest.TestCase):
                 local_runtime.check_ollama_model()
 
     def test_reports_unavailable_ollama_without_fallback(self):
-        with patch("local_runtime.http.client.HTTPConnection") as factory:
+        with patch("talos_core.runtime.local_runtime.http.client.HTTPConnection") as factory:
             connection = factory.return_value
             connection.request.side_effect = ConnectionRefusedError()
             with self.assertRaisesRegex(RuntimeError, "Start Ollama locally"):
@@ -63,10 +63,10 @@ class LocalRuntimeTests(unittest.TestCase):
 
     def test_diagnostics_report_multiple_failures_and_keep_checking(self):
         with (
-            patch("local_runtime.check_platform", side_effect=RuntimeError("wrong platform")),
-            patch("local_runtime.check_dependencies", return_value="installed"),
-            patch("local_runtime.check_model_files", side_effect=RuntimeError("missing files")),
-            patch("local_runtime.check_ollama_model") as ollama,
+            patch("talos_core.runtime.local_runtime.check_platform", side_effect=RuntimeError("wrong platform")),
+            patch("talos_core.runtime.local_runtime.check_dependencies", return_value="installed"),
+            patch("talos_core.runtime.local_runtime.check_model_files", side_effect=RuntimeError("missing files")),
+            patch("talos_core.runtime.local_runtime.check_ollama_model") as ollama,
         ):
             ollama.return_value = None
             self.assertEqual(local_runtime.runtime_checks(), [

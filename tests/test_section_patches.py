@@ -7,15 +7,17 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock
 
-from section_patches import draft_next
+from talos_core.self_improvement.section_patches import draft_next
 
 
 class SectionPatchTests(unittest.TestCase):
     def setUp(self):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
         self.state = self.root / "state"
-        self.target = self.root / "respan_worker.py"
+        self.target = self.root / "talos_core/self_improvement/respan_worker.py"
+        self.target.parent.mkdir(parents=True)
         self.target.write_text("def interval():\n    return 1\n")
+        self.rel_target = "talos_core/self_improvement/respan_worker.py"
         rel = "src/auto-reply/heartbeat.ts"
         reference = self.state / "openclaw-src" / rel
         reference.parent.mkdir(parents=True)
@@ -23,12 +25,12 @@ class SectionPatchTests(unittest.TestCase):
         sha = hashlib.sha256(reference.read_bytes()).hexdigest()
         target_sha = hashlib.sha256(self.target.read_bytes()).hexdigest()
         key = hashlib.sha256(
-            f"OpenClaw:{rel}:{sha}:0:{self.target.name}:{target_sha}".encode()
+            f"OpenClaw:{rel}:{sha}:0:{self.rel_target}:{target_sha}".encode()
         ).hexdigest()[:16]
         self.item = {
             "id": key,
             "status": "proposed",
-            "source": self.target.name,
+            "source": self.rel_target,
             "reference": rel,
             "origin": "OpenCode-section-review",
             "upstream": "OpenClaw",
@@ -45,7 +47,7 @@ class SectionPatchTests(unittest.TestCase):
         self.answer = {
             "before": "return 1",
             "after": "return 2",
-            "regression_test": "import unittest\nfrom respan_worker import interval\nclass IntervalTest(unittest.TestCase):\n"
+            "regression_test": "import unittest\nfrom talos_core.self_improvement.respan_worker import interval\nclass IntervalTest(unittest.TestCase):\n"
             "    def test_interval(self):\n        self.assertEqual(interval(),2)\n",
         }
         self.folder = self.state / "section-patches" / key

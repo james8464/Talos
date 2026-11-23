@@ -5,10 +5,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_memory import open_memory
-from memory_ranking import diverse, tokens
-from recurring_reminders import advance, next_due
-from room_service import Room
+from talos_core.memory.agent_memory import open_memory
+from talos_core.memory.memory_ranking import diverse, tokens
+from talos_core.cognition.recurring_reminders import advance, next_due
+from talos_core.room.room_service import Room
 
 
 class SourceAdaptationTests(unittest.TestCase):
@@ -23,13 +23,13 @@ class SourceAdaptationTests(unittest.TestCase):
         one = "Remind me every weekday at 09:00 in Europe/Paris to check notes"
         two = "Remind me every weekday at 09:00 in Europe/Paris to check drafts"
         first = self.ask(one, request_id="one")
-        with patch("recurring_reminders.next_due", side_effect=AssertionError("unnecessary calculation")):
+        with patch("talos_core.cognition.recurring_reminders.next_due", side_effect=AssertionError("unnecessary calculation")):
             self.assertEqual(self.ask(one, request_id="one"), first)
         self.ask(two, request_id="two")
         with closing(open_memory(self.path)) as db:
             with db:
                 db.execute("UPDATE recurring_reminders SET due='2000-01-01'")
-            with patch("recurring_reminders.next_due", wraps=next_due) as engine:
+            with patch("talos_core.cognition.recurring_reminders.next_due", wraps=next_due) as engine:
                 advance(db, datetime.now(UTC))
                 self.assertEqual(engine.call_count, 1)
             self.assertEqual(db.execute("SELECT count(DISTINCT receipt) FROM recurring_reminders").fetchone()[0], 2)
@@ -77,7 +77,7 @@ class SourceAdaptationTests(unittest.TestCase):
     def test_long_reviewed_dictation_keeps_voice_scope(self):
         text = "Can you help me think this through? " * 65
         answer = {"disposition":"reply", "tool":"none", "detail":"Let's start with your deadline."}
-        with patch("room_service.plan", return_value=answer) as planner:
+        with patch("talos_core.room.room_service.plan", return_value=answer) as planner:
             self.assertIn("deadline", self.ask(text, source="voice", reviewed_dictation=True))
             self.assertFalse(planner.call_args.kwargs["trusted_owner"])
             self.assertEqual(planner.call_args.args[1]["summary"], text.strip())
@@ -87,7 +87,7 @@ class SourceAdaptationTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT COUNT(*) FROM transcripts").fetchone()[0], 0)
 
     def test_idle_or_explicit_jobs_do_not_probe_the_model(self):
-        import background_work
+        from talos_core.runtime import background_work
         def unavailable():
             raise AssertionError("unnecessary model probe")
         with closing(open_memory(self.path)) as db:
@@ -99,7 +99,7 @@ class SourceAdaptationTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT status FROM background_work").fetchone()[0], "done")
 
     def test_model_warmup_does_not_delay_a_ready_explicit_order(self):
-        import background_work
+        from talos_core.runtime import background_work
         self.ask("Queue this work: Put checking the launch document on my list.")
         self.ask("Queue this work: Save a note that Cedar opens Tuesday.")
         with closing(open_memory(self.path)) as db:
@@ -111,7 +111,7 @@ class SourceAdaptationTests(unittest.TestCase):
 
     def test_background_order_resumes_once_without_model(self):
         from uuid import uuid4
-        import background_work
+        from talos_core.runtime import background_work
         text = "Queue this work: Save a note that Atlas launches Tuesday and add a task to review the launch."
         key = str(uuid4())
         self.assertEqual(self.ask(text, request_id=key), self.ask(text, request_id=key))
@@ -125,7 +125,7 @@ class SourceAdaptationTests(unittest.TestCase):
         self.assertNotIn("Atlas", self.ask("show my background jobs", source="voice"))
 
     def test_cancellation_during_planning_prevents_late_commit(self):
-        import background_work
+        from talos_core.runtime import background_work
         self.ask("Queue this work: Put checking the launch document on my list.")
         def cancel_while_planning(*args, **kwargs):
             self.assertIn("Cancelled", self.ask("Cancel background job #1"))

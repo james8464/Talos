@@ -10,11 +10,11 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-import talos_activity as activity
-import background_work
+from talos_core.runtime import talos_activity as activity
+from talos_core.runtime import background_work
 from agent import interactive_chat
-from agent_memory import open_memory
-from room_service import Handler, Room
+from talos_core.memory.agent_memory import open_memory
+from talos_core.room.room_service import Handler, Room
 
 
 class RuntimeActivityTests(unittest.TestCase):
@@ -23,7 +23,7 @@ class RuntimeActivityTests(unittest.TestCase):
         self.out = io.StringIO()
 
     def test_viewer_does_not_start_work_and_reports_real_locks(self):
-        with patch("talos_activity.probe", return_value="stopped (connection refused)"):
+        with patch("talos_core.runtime.talos_activity.probe", return_value="stopped (connection refused)"):
             activity.display(self.state, once=True, output=self.out)
             self.assertEqual(list(self.state.iterdir()), [])
             self.assertIn("Maintenance · stopped", self.out.getvalue())
@@ -43,7 +43,7 @@ class RuntimeActivityTests(unittest.TestCase):
                     "prompt_eval_count": 90, "eval_count": 8, "eval_duration": 500_000_000}
         with closing(open_memory(self.state / "test.sqlite")) as db, patch("agent.check_ollama_model"), \
              patch("agent.request_ollama_json", return_value=response) as api, \
-             patch("talos_activity.probe", return_value="unknown (local connection blocked)"):
+             patch("talos_core.runtime.talos_activity.probe", return_value="unknown (local connection blocked)"):
             inputs = io.StringIO("/context\nPrivate question\n/context Other question\n/activity\n/tools\n/quit\n")
             errors = io.StringIO()
             interactive_chat(db, inputs, self.out, errors, apply=False, model="fixture")

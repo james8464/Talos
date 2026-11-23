@@ -17,13 +17,13 @@ import threading
 from contextlib import contextmanager
 from pathlib import Path
 
-from agent_memory import STATE_PATH
+from talos_core.memory.agent_memory import STATE_PATH
 from agent import model_text
-from local_runtime import check_ollama_model, request_ollama_json
-from room_service import DEFAULT_PORT, Room, run
-from room_voice import DEFAULT_VOICE, KokoroVoice, prepare_assets, voice_python
-import talos_activity
-from worker_supervision import WorkerSupervisor
+from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
+from talos_core.room.room_service import DEFAULT_PORT, Room, run
+from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice, prepare_assets, voice_python
+from talos_core.runtime import talos_activity
+from talos_core.self_improvement.worker_supervision import WorkerSupervisor
 
 ROOT = Path(__file__).resolve().parent
 STATE = ROOT / "state"
@@ -259,17 +259,27 @@ def run_trial(args) -> None:
 
 
 def start_memory_workers(model, *, local_only, children, respan=False, room_owner=False, sections=False, stop=None):
-    heartbeat = ["overnight_goal.py", "--heartbeat", "--watch", "--model", model]
+    """Launch background workers as modules so they work from any directory."""
+    heartbeat = ["talos_core.self_improvement.overnight_goal", "--heartbeat", "--watch", "--model", model]
     if local_only:
         heartbeat.append("--local-only")
-    workers = [heartbeat, ["vault_watch.py"], ["maintenance.py", "--model", model], ["self_repair.py", "--watch"]]
-    workers.append(["respan_worker.py", *([] if respan else ["--local-only"]),
-                    *(["--room-owner"] if room_owner else [])])
+    workers = [
+        heartbeat,
+        ["talos_core.memory.vault_watch"],
+        ["talos_core.runtime.maintenance", "--model", model],
+        ["talos_core.self_improvement.self_repair", "--watch"],
+        ["talos_core.self_improvement.respan_worker",
+         *([] if respan else ["--local-only"]),
+         *(["--room-owner"] if room_owner else [])],
+    ]
     if sections:
-        workers.extend(["section_workers.py", "--engine", engine, *(["--room-owner"] if room_owner else [])]
-                       for engine in ("OpenCode", "OpenClaude"))
-    for script, *options in workers:
-        children.append(subprocess.Popen([sys.executable, str(ROOT / script), *options]))
+        workers.extend(
+            ["talos_core.self_improvement.section_workers", "--engine", engine,
+             *(["--room-owner"] if room_owner else [])]
+            for engine in ("OpenCode", "OpenClaude")
+        )
+    for module, *options in workers:
+        children.append(subprocess.Popen([sys.executable, "-m", module, *options], cwd=ROOT))
     if stop is not None:
         supervisor = threading.Thread(target=WorkerSupervisor(STATE, children).watch, args=(stop,),
                                       name="Talos worker supervisor", daemon=True)

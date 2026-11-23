@@ -18,20 +18,20 @@ from typing import TextIO
 from uuid import uuid4
 
 from talos_core import session_titles
-import cognitive_engine
-import talos_activity
-import background_work
-import session_goals
-from conversation import visible_model_text
+from talos_core.cognition import cognitive_engine
+from talos_core.runtime import talos_activity
+from talos_core.runtime import background_work
+from talos_core.cognition import session_goals
+from talos_core.cognition.conversation import visible_model_text
 
-from agent_memory import (
+from talos_core.memory.agent_memory import (
     STATE_PATH, decisions, open_memory, recent_context, record_decision, review_decision,
 )
-from local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES, acknowledge, inbox_items
-from local_runtime import OLLAMA_MODEL, check_ollama_model, local_model_names, request_ollama_json, runtime_checks
-from room_dialogue import compact_decision
-from talos_identity import PERSONALITY, SPOKEN_STYLE, capability_context
-from transcript_memory import (
+from talos_core.runtime.local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES, acknowledge, inbox_items
+from talos_core.runtime.local_runtime import OLLAMA_MODEL, check_ollama_model, local_model_names, request_ollama_json, runtime_checks
+from talos_core.room.room_dialogue import compact_decision
+from talos_core.cognition.talos_identity import PERSONALITY, SPOKEN_STYLE, capability_context
+from talos_core.memory.transcript_memory import (
     TEXT_SESSION, fork_session, last_reply, recall_prompt, recent_messages, insert_transcripts, search_transcripts, session_rows, transcript_excerpts,
 )
 
@@ -608,7 +608,7 @@ def interactive_chat(
                         raise ValueError("This session has no on-disk runtime state.")
                     talos_activity.display(Path(filename).parent, once=True, output=output, database=Path(filename))
                 case "/parity":
-                    from upstream_review import ROOT, parity_status
+                    from talos_core.self_improvement.upstream_review import ROOT, parity_status
                     if request.strip().lower() not in ("", "openclaw", "hermes"):
                         raise ValueError("Usage: /parity [OpenClaw|Hermes]")
                     print(parity_status(ROOT, ROOT / "state", request.strip()), file=output, flush=True)
@@ -657,7 +657,7 @@ def interactive_chat(
                                                    ready=check_ollama_model, subgoal=command == "/subgoal")
                     print(result, file=output, flush=True)
                 case "/repair" | "/repairs":
-                    import self_diagnosis
+                    from talos_core.self_improvement import self_diagnosis
                     if not location:
                         raise ValueError("Incident tracking requires a file-backed console database.")
                     state = Path(location).parent
@@ -823,7 +823,7 @@ def main() -> int:
         with closing(open_memory(args.db)) as database:
             match args.command:
                 case "goal-worker":
-                    from idle_lab import power_and_idle
+                    from talos_core.self_improvement.idle_lab import power_and_idle
                     while True:
                         try:
                             worked = session_goals.work_once(database, args.model, model_text, check_ollama_model,

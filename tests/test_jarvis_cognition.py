@@ -11,15 +11,15 @@ import unittest
 from unittest.mock import patch
 
 import agent
-from agent_memory import open_memory
-import background_work
-import cognitive_engine
-import commitment_memory
-import goal_store
-import maintenance
-import overnight_goal
-from room_service import Room
-import transcript_memory
+from talos_core.memory.agent_memory import open_memory
+from talos_core.runtime import background_work
+from talos_core.cognition import cognitive_engine
+from talos_core.memory import commitment_memory
+from talos_core.cognition import goal_store
+from talos_core.runtime import maintenance
+from talos_core.self_improvement import overnight_goal
+from talos_core.room.room_service import Room
+from talos_core.memory import transcript_memory
 
 
 def _seed_personal_index(state: Path) -> None:
@@ -366,7 +366,7 @@ class JarvisCognitionTests(unittest.TestCase):
                 },
             )
         now_ts = datetime.now(UTC).timestamp()
-        with patch("goal_store.refresh_in_background"):
+        with patch("talos_core.cognition.goal_store.refresh_in_background"):
             overnight_goal.revisit_goals(self.state, now_ts)
         self.assertTrue((self.state / "jarvis-brief.json").exists())
 

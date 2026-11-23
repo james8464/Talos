@@ -9,10 +9,10 @@ import threading
 import time
 from contextlib import closing
 
-from agent_memory import open_memory
-from commitment_memory import refresh_one, select
-from room_service import Room
-from room_voice import DEFAULT_VOICE, KokoroVoice
+from talos_core.memory.agent_memory import open_memory
+from talos_core.memory.commitment_memory import refresh_one, select
+from talos_core.room.room_service import Room
+from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice
 
 
 def main():

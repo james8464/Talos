@@ -9,12 +9,12 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
 
-import goal_store
-import visitor_memory
-from agent_memory import open_memory
-from room_service import Room
-from room_dialogue import spoken_reply
-from transcript_memory import search_transcripts
+from talos_core.cognition import goal_store
+from talos_core.memory import visitor_memory
+from talos_core.memory.agent_memory import open_memory
+from talos_core.room.room_service import Room
+from talos_core.room.room_dialogue import spoken_reply
+from talos_core.memory.transcript_memory import search_transcripts
 
 
 class VisitorMemoryTests(unittest.TestCase):
@@ -111,7 +111,7 @@ class VisitorMemoryTests(unittest.TestCase):
             seen.append([m["content"] for m in messages])
             return '{"talos_says":"That sounds worth the effort."}'
 
-        with patch("room_service.check_ollama_model"), patch("room_service.model_text", side_effect=reply):
+        with patch("talos_core.room.room_service.check_ollama_model"), patch("talos_core.room.room_service.model_text", side_effect=reply):
             token = self.facing("Long day, but I got the kiln going.")["context"]
             token = self.facing("It took all afternoon.", context=token)["context"]
             self.facing("Can you tell me more?", context=token)
@@ -160,7 +160,7 @@ class VisitorMemoryTests(unittest.TestCase):
         self.facing("cancel", offer=other["offer"])
         self.facing("confirm", offer=other["offer"])
         third = self.facing("Save a note that the sample is blue.")
-        with patch("room_service.monotonic", return_value=float("inf")):
+        with patch("talos_core.room.room_service.monotonic", return_value=float("inf")):
             self.facing("confirm", offer=third["offer"])
         self.assertEqual(len(inbox()), 1)
 

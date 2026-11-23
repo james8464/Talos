@@ -14,7 +14,7 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from local_source_model import WEIGHT, file_id, model_path
+from talos_core.self_improvement.local_source_model import WEIGHT, file_id, model_path
 
 RUNTIME = Path("/Applications/Docker.app/Contents/Resources/model-runner")
 REV = "ac4cddeb0dbd778f650bf568f6f08344a06abe3a"

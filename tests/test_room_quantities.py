@@ -4,10 +4,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from room_dialogue import spoken_reply
-from room_quantities import quantity_answer
-from room_service import Room
-from spoken_stream import SpokenStream
+from talos_core.room.room_dialogue import spoken_reply
+from talos_core.room.room_quantities import quantity_answer
+from talos_core.room.room_service import Room
+from talos_core.cognition.spoken_stream import SpokenStream
 
 
 class SpokenReasoningTests(unittest.TestCase):
@@ -21,7 +21,7 @@ class SpokenReasoningTests(unittest.TestCase):
         return result
 
     def test_dictated_questions_and_chained_answers_during_model_outage(self):
-        with patch("room_service.plan", side_effect=AssertionError("Unexpected inference")):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("Unexpected inference")):
             first = self.ask("/v1/turn", "What's eighteen percent of 240?")
             self.assertEqual(first["reply"], "18 percent of 240 is 43.2.")
             second = self.ask("/v1/turn", "Split that between three people.", follow_up=True)
@@ -66,7 +66,7 @@ class SpokenReasoningTests(unittest.TestCase):
     def test_stream_wire_payload_keeps_roles_and_the_current_question(self):
         messages = [{"role":"system","content":"You are Talos."},{"role":"user","content":"Consider both routes."},
                     {"role":"assistant","content":"One is shorter."},{"role":"user","content":"Which is flatter?"}]
-        with patch("spoken_stream.http.client.HTTPConnection") as connection:
+        with patch("talos_core.cognition.spoken_stream.http.client.HTTPConnection") as connection:
             conn = connection.return_value
             response = conn.getresponse.return_value.__enter__.return_value
             response.status = 200

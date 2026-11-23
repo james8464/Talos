@@ -18,8 +18,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
-from room_service import Handler, Room
-from room_voice import DEFAULT_VOICE, KokoroVoice
+from talos_core.room.room_service import Handler, Room
+from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice
 
 
 class RoomAcceptanceTests(unittest.TestCase):

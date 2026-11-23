@@ -8,10 +8,10 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-import mac_context
+from talos_core.mac import mac_context
 from agent import interactive_chat
-from agent_memory import open_memory
-from vault_watch import VaultPublisher
+from talos_core.memory.agent_memory import open_memory
+from talos_core.memory.vault_watch import VaultPublisher
 
 
 class VaultWatchTests(unittest.TestCase):

@@ -7,10 +7,10 @@ import tempfile
 import unittest
 
 from agent import interactive_chat
-from agent_memory import open_memory
-from transcript_memory import remember
-from upstream_review import inventory, parity_status, propose
-from upstream_comparison import compare
+from talos_core.memory.agent_memory import open_memory
+from talos_core.memory.transcript_memory import remember
+from talos_core.self_improvement.upstream_review import inventory, parity_status, propose
+from talos_core.self_improvement.upstream_comparison import compare
 
 
 class UpstreamPortsTests(unittest.TestCase):
@@ -74,7 +74,8 @@ class UpstreamPortsTests(unittest.TestCase):
         remote.mkdir(parents=True)
         (state / "openclaw-src").mkdir()
         (remote / "history.py").write_text("def upstream_history(): pass")
-        (self.root / "transcript_memory.py").write_text("def talos_history(): pass")
+        (self.root / "talos_core/memory/transcript_memory.py").parent.mkdir(parents=True)
+        (self.root / "talos_core/memory/transcript_memory.py").write_text("def talos_history(): pass")
         inventory(self.root, state)
         idea = dict(upstream_quote="upstream_history", talos_quote="talos_history",
                     feature="Compare local history retention", acceptance="Replay an isolated session")
@@ -84,7 +85,7 @@ class UpstreamPortsTests(unittest.TestCase):
         self.assertIn("No pending excerpts", compare(self.root, state, "test", infer=lambda *_: self.fail()))
         proposal = json.loads((state / "feature-requests.jsonl").read_text())
         self.assertEqual(proposal["origin"], "local-upstream-review")
-        (self.root / "transcript_memory.py").write_text("def talos_history(): return []")
+        (self.root / "talos_core/memory/transcript_memory.py").write_text("def talos_history(): return []")
         abstain = lambda *_: json.dumps(dict.fromkeys(idea, ""))
         self.assertIn("Compared Hermes", compare(self.root, state, "test", infer=abstain))
 
@@ -95,10 +96,11 @@ class UpstreamPortsTests(unittest.TestCase):
         (state / "hermes-src").mkdir()
         (new_area / "delivery.ts").write_text("export function deliver() {}")
         (self.root / "agent.py").write_text("def start(): pass")
-        (self.root / "telegram_gateway.py").write_text("def deliver(): pass")
+        (self.root / "talos_core/interfaces").mkdir(parents=True)
+        (self.root / "talos_core/interfaces/telegram_gateway.py").write_text("def deliver(): pass")
         inventory(self.root, state)
         def abstain(prompt, model):
-            self.assertEqual(json.loads(prompt)["talos_path"], "telegram_gateway.py")
+            self.assertEqual(json.loads(prompt)["talos_path"], "talos_core/interfaces/telegram_gateway.py")
             return json.dumps(dict.fromkeys(("upstream_quote", "talos_quote", "feature", "acceptance"), ""))
         self.assertIn("Compared OpenClaw extensions/telegram/delivery.ts", compare(self.root, state, "test", infer=abstain))
         self.assertIn("No pending excerpts", compare(self.root, state, "test", infer=lambda *_: self.fail()))

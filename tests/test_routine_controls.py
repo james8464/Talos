@@ -8,9 +8,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-import recurring_reminders
-from agent_memory import open_memory
-from room_service import Room
+from talos_core.cognition import recurring_reminders
+from talos_core.memory.agent_memory import open_memory
+from talos_core.room.room_service import Room
 
 
 class RoutineControlsTests(unittest.TestCase):

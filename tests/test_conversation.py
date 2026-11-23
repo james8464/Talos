@@ -1,6 +1,6 @@
 import unittest
 
-from conversation import MAX_HISTORY_CHARS, MAX_MESSAGE_CHARS, RECENT_MESSAGES, limit_history
+from talos_core.cognition.conversation import MAX_HISTORY_CHARS, MAX_MESSAGE_CHARS, RECENT_MESSAGES, limit_history
 
 
 class ConversationHistoryTests(unittest.TestCase):

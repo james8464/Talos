@@ -5,7 +5,7 @@ from collections import Counter
 from pathlib import Path
 from unittest.mock import patch, Mock
 
-import maintenance
+from talos_core.runtime import maintenance
 
 
 class StopClock(Exception):

@@ -8,12 +8,12 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-import self_repair
-from repair_contracts import CONTRACTS, digest, replay
+from talos_core.self_improvement import self_repair
+from talos_core.self_improvement.repair_contracts import CONTRACTS, digest, replay
 
 ROOT = Path(__file__).resolve().parents[1]
 RECOVERY = "talos_core/recovery.py"
-RANK = "memory_ranking.py"
+RANK = "talos_core/memory/memory_ranking.py"
 
 
 class SelfRepairTests(unittest.TestCase):
@@ -182,10 +182,10 @@ class SelfRepairTests(unittest.TestCase):
         test = self.root / CONTRACTS[RANK].tests
         test.write_text(
             test.read_text().replace(
-                "        from memory_ranking import tokens",
+                "        from talos_core.memory.memory_ranking import tokens",
                 "        "
                 + poison.splitlines()[1]
-                + "\n        from memory_ranking import tokens",
+                + "\n        from talos_core.memory.memory_ranking import tokens",
             )
         )
         self.assertIn("deferred", self.tick())

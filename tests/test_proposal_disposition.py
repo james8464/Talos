@@ -3,10 +3,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import feature_queue
-import knowledge_map
-from maintenance import queue_summary
-from section_patches import proposals
+from talos_core.self_improvement import feature_queue
+from talos_core.memory import knowledge_map
+from talos_core.runtime.maintenance import queue_summary
+from talos_core.self_improvement.section_patches import proposals
 
 
 class DispositionTests(unittest.TestCase):

@@ -7,7 +7,7 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from telegram_gateway import MAX_PHOTO_BYTES, jpeg_pixels, download_photo, open_channel, poll
+from talos_core.interfaces.telegram_gateway import MAX_PHOTO_BYTES, jpeg_pixels, download_photo, open_channel, poll
 
 
 class TelegramPhotoTests(unittest.TestCase):
@@ -46,7 +46,7 @@ class TelegramPhotoTests(unittest.TestCase):
         self.photo(2, kind="group")
         self.photo(3, bot=True)
         self.photo(4)
-        with patch("telegram_gateway.describe_image", return_value="A dark shirt.") as vision:
+        with patch("talos_core.interfaces.telegram_gateway.describe_image", return_value="A dark shirt.") as vision:
             self.poll()
             self.poll()
         vision.assert_called_once_with("Which garment is visible?", base64.b64encode(self.image).decode())
@@ -66,7 +66,7 @@ class TelegramPhotoTests(unittest.TestCase):
             if path == "/api/show":
                 return {"capabilities": ["vision"]}
             return {"message": {"content": "A shirt."}}
-        with patch("room_vision.check_ollama_model") as check, patch("room_vision.request_ollama_json", side_effect=ollama):
+        with patch("talos_core.room.room_vision.check_ollama_model") as check, patch("talos_core.room.room_vision.request_ollama_json", side_effect=ollama):
             self.poll()
         check.assert_called_once()
         self.assertEqual([path for _, path, _ in calls], ["/api/show", "/api/chat"])
@@ -83,7 +83,7 @@ class TelegramPhotoTests(unittest.TestCase):
         del message["photo"]
         message["document"] = {"mime_type": "image/jpeg", "file_name": "../untrusted.jpg", "file_id": "original"}
         self.updates.append({"update_id": 2, "message": {**message, "document": {"mime_type": "application/pdf"}}})
-        with patch("telegram_gateway.describe_image", return_value="A shirt."):
+        with patch("talos_core.interfaces.telegram_gateway.describe_image", return_value="A shirt."):
             self.poll()
         self.assertEqual(self.files, ["original"])
         self.assertEqual(self.sent, ["A shirt."])
@@ -96,7 +96,7 @@ class TelegramPhotoTests(unittest.TestCase):
             "from": {"id": 7}, "chat": {"id": 7, "type": "private"},
             "reply_to_message": parent, "text": text}}
             for i, text in enumerate(("What color is it?", "/new"), 5)]
-        with patch("telegram_gateway.describe_image", return_value="Dark blue.") as vision:
+        with patch("talos_core.interfaces.telegram_gateway.describe_image", return_value="Dark blue.") as vision:
             self.poll()
         self.assertEqual(vision.call_args.args[0], "What color is it?")
         self.assertEqual(self.files, ["small"])
@@ -107,7 +107,7 @@ class TelegramPhotoTests(unittest.TestCase):
         parent = self.updates.pop()["message"]
         self.updates = [{"update_id": 2, "message": {"from": {"id": 7}, "chat": {"id": 7, "type": "private"},
                          "reply_to_message": parent, "text": "Hello"}}]
-        with patch("telegram_gateway.reply_to", return_value="Hello.") as reply:
+        with patch("talos_core.interfaces.telegram_gateway.reply_to", return_value="Hello.") as reply:
             self.poll()
         self.assertEqual(self.files, [])
         self.assertEqual(reply.call_args.args[3], "Hello")
@@ -115,7 +115,7 @@ class TelegramPhotoTests(unittest.TestCase):
     def test_retries_a_read_and_falls_back_to_smaller_size(self):
         self.photo(1)
         self.download.side_effect = [TimeoutError(), b"x" * (MAX_PHOTO_BYTES + 1), self.image]
-        with patch("telegram_gateway.describe_image", return_value="A shirt."):
+        with patch("talos_core.interfaces.telegram_gateway.describe_image", return_value="A shirt."):
             self.poll()
         self.assertEqual(self.files, ["small", "small", "tiny"])
         self.assertEqual(self.sent, ["A shirt."])
@@ -125,7 +125,7 @@ class TelegramPhotoTests(unittest.TestCase):
         huge = b"\xff\xd8\xff\xc0\x00\x0b\x08\xff\xff\xff\xff\x01\x01\x11\x00\xff\xd9"
         self.photo(1)
         self.download.return_value = huge
-        with patch("telegram_gateway.describe_image") as vision:
+        with patch("talos_core.interfaces.telegram_gateway.describe_image") as vision:
             self.poll()
         vision.assert_not_called()
         self.assertIn("too large", self.sent[0])
@@ -135,7 +135,7 @@ class TelegramPhotoTests(unittest.TestCase):
     def test_invalid_photo_and_oversized_photo_do_not_reach_model(self):
         self.photo(1)
         self.download.return_value = b"not jpeg"
-        with patch("telegram_gateway.describe_image") as vision:
+        with patch("talos_core.interfaces.telegram_gateway.describe_image") as vision:
             self.poll()
             self.photo(2)
             self.download.return_value = b"x" * (MAX_PHOTO_BYTES + 1)
@@ -145,7 +145,7 @@ class TelegramPhotoTests(unittest.TestCase):
         self.assertIn("too large", self.sent[1])
 
     def test_http_reader_bounds_body_and_refuses_redirects_and_absolute_paths(self):
-        with patch("telegram_gateway.http.client.HTTPSConnection") as factory:
+        with patch("talos_core.interfaces.telegram_gateway.http.client.HTTPSConnection") as factory:
             for bad in ("https://example.test/a.jpg", "../a.jpg", "photos/%2e%2e/a.jpg"):
                 with self.assertRaises(ValueError):
                     download_photo("42:fixture", bad)

@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from conversation_activity import foreground
-from maintenance_schedule import MaintenanceSchedule, source_versions, stamp
+from talos_core.cognition.conversation_activity import foreground
+from talos_core.self_improvement.maintenance_schedule import MaintenanceSchedule, source_versions, stamp
 
 
 class MaintenanceScheduleTests(unittest.TestCase):
@@ -26,7 +26,7 @@ class MaintenanceScheduleTests(unittest.TestCase):
         return {"rows": 1} if kind == "sync" else "done"
 
     def check(self, now, run=None):
-        with patch("maintenance_schedule.time.monotonic", return_value=now):
+        with patch("talos_core.self_improvement.maintenance_schedule.time.monotonic", return_value=now):
             return self.scheduler.poll(self.state, sources=self.sources, code=self.code, run=run or self.run_job)
 
     def test_unchanged_sources_reconcile_and_changed_sources_trigger_early_work(self):

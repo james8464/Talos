@@ -6,10 +6,10 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-import feature_queue
-import mac_context
-from maintenance import queue_summary
-from personal_index import sync
+from talos_core.self_improvement import feature_queue
+from talos_core.mac import mac_context
+from talos_core.runtime.maintenance import queue_summary
+from talos_core.memory.personal_index import sync
 
 
 class SelfImprovementTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class SelfImprovementTests(unittest.TestCase):
 
     def test_model_proposal_survives_restart_and_completion(self):
         idea = json.dumps({"feature": "Find a matching passage", "acceptance": "Search hits include the term"})
-        with patch("feature_queue.model_text", return_value=idea) as infer, patch("feature_queue.check_ollama_model"):
+        with patch("talos_core.self_improvement.feature_queue.model_text", return_value=idea) as infer, patch("talos_core.self_improvement.feature_queue.check_ollama_model"):
             self.assertEqual(feature_queue.review(self.state, "local"), "proposal queued")
             self.assertIn("def sync(", infer.call_args.args[0][0]["content"])
             self.assertEqual(feature_queue.review(self.state, "local"), "duplicate proposal")
@@ -53,7 +53,7 @@ class SelfImprovementTests(unittest.TestCase):
         self.assertEqual(queue_summary(path), ["1 requests pending · 1 completed", "Last verified change · verified"])
 
     def test_offline_review_records_source_of_idea(self):
-        with patch("feature_queue.check_ollama_model", side_effect=RuntimeError("offline")), patch("feature_queue.system_idea", return_value=None):
+        with patch("talos_core.self_improvement.feature_queue.check_ollama_model", side_effect=RuntimeError("offline")), patch("talos_core.self_improvement.feature_queue.system_idea", return_value=None):
             self.assertEqual(feature_queue.review(self.state, "local"), "proposal queued")
         record = json.loads((self.state / feature_queue.FILE).read_text())
         self.assertEqual(record["origin"], "offline-source-check")

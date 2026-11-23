@@ -16,16 +16,16 @@ from unittest.mock import patch
 
 import run_talos
 from tools import talos_service
-import graph_review
-import mac_context
-import respan_worker
-import room_checkins
-import talos_activity
-from agent_memory import open_memory
-from room_service import Room
-from room_voice import DEFAULT_VOICE, KokoroVoice
-from upstream_review import inventory
-from vault_graph import publish_connections
+from talos_core.self_improvement import graph_review
+from talos_core.mac import mac_context
+from talos_core.self_improvement import respan_worker
+from talos_core.room import room_checkins
+from talos_core.runtime import talos_activity
+from talos_core.memory.agent_memory import open_memory
+from talos_core.room.room_service import Room
+from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice
+from talos_core.self_improvement.upstream_review import inventory
+from talos_core.memory.vault_graph import publish_connections
 
 
 class CheckInTests(unittest.TestCase):
@@ -208,7 +208,8 @@ class ReviewTests(unittest.TestCase):
         h.mkdir(parents=True)
         (a/"heartbeat.ts").write_text("export const acknowledgement = 'quiet';")
         (h/"missed_runs.py").write_text("def expire_once(): return True")
-        for p in ("respan_worker.py","room_checkins.py"):
+        for p in ("talos_core/self_improvement/respan_worker.py","talos_core/room/room_checkins.py"):
+            (self.root/p).parent.mkdir(parents=True, exist_ok=True)
             (self.root/p).write_text("def current_behavior(): return True")
         inventory(self.root,self.state)
 
@@ -269,7 +270,7 @@ class ReviewTests(unittest.TestCase):
             launch.assert_called_once()
         with patch.object(run_talos.subprocess,"Popen") as spawn:
             run_talos.start_memory_workers("fixture",local_only=True,children=[])
-            self.assertTrue(any(argv[0][0][1].endswith("respan_worker.py")
+            self.assertTrue(any(argv[0][0][2] == "talos_core.self_improvement.respan_worker"
                                 and "--local-only" in argv[0][0] for argv in spawn.call_args_list))
             run_talos.start_memory_workers("fixture",local_only=True,children=[],respan=True,room_owner=True)
             self.assertIn("--room-owner",spawn.call_args.args[0])

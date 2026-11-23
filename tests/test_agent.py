@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent import OLLAMA_MODEL, listen, parse_decision
-from agent_memory import decisions, open_memory, recent_context, record_decision, review_decision
+from talos_core.memory.agent_memory import decisions, open_memory, recent_context, record_decision, review_decision
 
 EVENT = {"kind": "synthetic", "summary": "The window is still open and rain has started."}
 PROPOSAL = {

@@ -8,16 +8,17 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from talos_activity import events
-from worker_supervision import WorkerSupervisor
+from talos_core.runtime.talos_activity import events
+from talos_core.self_improvement.worker_supervision import WorkerSupervisor
 
 
 class WorkerSupervisionTests(unittest.TestCase):
     def setUp(self):
         self.state = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        self.script = self.state / 'maintenance.py'
+        self.script = self.state / 'talos_core/runtime/maintenance.py'
+        self.script.parent.mkdir(parents=True)
         self.script.write_text("""import fcntl, pathlib, sys, time
-root = pathlib.Path(__file__).parent
+root = pathlib.Path(__file__).resolve().parents[2]
 if not (root/'enabled').exists():
     sys.exit(19)
 with (root/'maintenance.lock').open('a') as lock:
@@ -53,7 +54,7 @@ with (root/'maintenance.lock').open('a') as lock:
         self.assertIsNone(self.children[0].poll())
 
     def test_another_live_owner_and_shutdown_do_not_spawn(self):
-        with (self.state/'maintenance.lock').open('a') as owner, patch("worker_supervision.subprocess.Popen") as spawn:
+        with (self.state/'maintenance.lock').open('a') as owner, patch("talos_core.self_improvement.worker_supervision.subprocess.Popen") as spawn:
             fcntl.flock(owner, fcntl.LOCK_EX)
             self.supervisor.tick(0)
             self.supervisor.tick(10)
@@ -65,7 +66,7 @@ with (root/'maintenance.lock').open('a') as lock:
 
     def test_repeated_launch_failure_increases_the_delay(self):
         self.supervisor.tick(0)
-        with patch("worker_supervision.subprocess.Popen", side_effect=OSError()) as spawn:
+        with patch("talos_core.self_improvement.worker_supervision.subprocess.Popen", side_effect=OSError()) as spawn:
             for now in range(14):
                 self.supervisor.tick(now)
         self.assertEqual(spawn.call_count, 2)

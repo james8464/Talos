@@ -8,9 +8,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent import FINAL_DECISION_SCHEMA, chat, listen, parse_decision, process_event, watch
-from agent_memory import decisions, open_memory, recent_context, record_decision, review_decision
-from local_actions import acknowledge, inbox_items
-from transcript_memory import remember, search_transcripts
+from talos_core.memory.agent_memory import decisions, open_memory, recent_context, record_decision, review_decision
+from talos_core.runtime.local_actions import acknowledge, inbox_items
+from talos_core.memory.transcript_memory import remember, search_transcripts
 
 EVENT = {"kind": "room", "summary": "I need to find the spare bike key."}
 LOOKUP = {
@@ -149,7 +149,7 @@ class ToolsAndMemoryTests(unittest.TestCase):
         self.assertTrue(all(row["session"] == "text" for row in without_voice))
 
     def test_recall_returns_distinct_evidence_before_repeated_equal_rank_hits(self):
-        from memory_ranking import tokens
+        from talos_core.memory.memory_ranking import tokens
         with tempfile.TemporaryDirectory() as directory, closing(open_memory(Path(directory) / "trial.db")) as db:
             items = ["violet bicycle", *["violet keys"] * 8]
             remember(db, "text", [{"role": "user", "content": text} for text in items])
