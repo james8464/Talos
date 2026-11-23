@@ -494,7 +494,9 @@ def _cli() -> int:
     else:
         payload = computer.menu(args.app, *args.items).to_dict()
     print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
-    return 0 if (payload.ok if isinstance(payload, dict) and "ok" in payload else True) else 1
+    if isinstance(payload, dict) and "ok" in payload:
+        return 0 if payload["ok"] else 1
+    return 0
 
 
 if __name__ == "__main__":
