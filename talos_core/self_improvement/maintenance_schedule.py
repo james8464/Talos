@@ -39,6 +39,7 @@ class MaintenanceSchedule:
         self.next_reflection = 0
         self.next_initiative = 0
         self.next_capabilities = 0
+        self.next_coder = 0
         self.counts = {}
         self.outcome = "Awaiting first review"
         self.memory_outcome = "Awaiting an idle review"
@@ -46,6 +47,7 @@ class MaintenanceSchedule:
         self.reflection_outcome = "Awaiting reflection"
         self.initiative_outcome = "Awaiting initiative"
         self.capabilities_outcome = "Awaiting capability audit"
+        self.coder_outcome = "Awaiting planned initiative"
 
     def poll_memory(self, state, *, run):
         now = time.monotonic()
@@ -75,6 +77,21 @@ class MaintenanceSchedule:
                     self.reflection_outcome = str(result)
                     self.next_reflection = now + 600
         return self.reflection_outcome
+
+    def poll_coder(self, state, *, run):
+        """Draft and verify one queued initiative leaf every thirty minutes."""
+        now = time.monotonic()
+        if now >= self.next_coder and not conversation_busy(state):
+            try:
+                result = run("initiative_code")
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                self.coder_outcome = f"Coder unavailable ({type(error).__name__})"
+                self.next_coder = now + 1800
+            else:
+                if result is not None:
+                    self.coder_outcome = str(result)
+                    self.next_coder = now + 1800
+        return self.coder_outcome
 
     def poll_capabilities(self, state, *, run):
         """Compare the tool surface with pinned upstream projects every 12 hours."""

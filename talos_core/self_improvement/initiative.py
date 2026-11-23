@@ -25,7 +25,7 @@ from talos_core.self_improvement import decomposition
 from talos_core.self_improvement.feature_targets import FILE as PROPOSALS_FILE
 
 INITIATIVES = "initiatives.jsonl"
-MAX_IDEAS = 3
+MAX_IDEAS = 6
 
 
 @dataclass
