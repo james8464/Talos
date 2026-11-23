@@ -1,3 +1,4 @@
+import base64
 import io
 import json
 import os
@@ -6,26 +7,23 @@ import subprocess
 import tempfile
 import unittest
 import wave
-import base64
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import patch
 from uuid import uuid4
 
-from unittest.mock import patch
-
 import run_talos
-from tools import talos_service
-from talos_core.self_improvement import graph_review
 from talos_core.mac import mac_context
-from talos_core.self_improvement import respan_worker
-from talos_core.room import room_checkins
-from talos_core.runtime import talos_activity
 from talos_core.memory.agent_memory import open_memory
+from talos_core.memory.vault_graph import publish_connections
+from talos_core.room import room_checkins
 from talos_core.room.room_service import Room
 from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice
+from talos_core.runtime import talos_activity
+from talos_core.self_improvement import graph_review, respan_worker
 from talos_core.self_improvement.upstream_review import inventory
-from talos_core.memory.vault_graph import publish_connections
+from tools import talos_service
 
 
 class CheckInTests(unittest.TestCase):
@@ -235,7 +233,7 @@ class ReviewTests(unittest.TestCase):
         def fail(*args,**kwargs):
             raise RuntimeError("Respan returned HTTP 429.")
         for now, due in ((100,160),(160,280)):
-            self.assertIn("429",respan_worker.turn(self.root,self.state,job="Hermes",clock=lambda:now,call=fail))
+            self.assertIn("429",respan_worker.turn(self.root,self.state,job="Hermes",clock=lambda now=now: now,call=fail))
             with closing(sqlite3.connect(self.state/respan_worker.DB)) as db:
                 self.assertEqual(db.execute("SELECT due FROM jobs WHERE name='Hermes'").fetchone()[0],due)
         with closing(sqlite3.connect(self.state/"upstream-inventory.sqlite3")) as db:

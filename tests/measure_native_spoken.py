@@ -1,19 +1,19 @@
 """Compare full/streaming voice on controlled model timing and real Kokoro, without live devices."""
 
 import argparse
-from contextlib import ExitStack
-from http.server import ThreadingHTTPServer
 import json
-from pathlib import Path
 import subprocess
 import tempfile
 import threading
 import time
+from contextlib import ExitStack
+from http.server import ThreadingHTTPServer
+from pathlib import Path
 from unittest.mock import patch
 
-from talos_core.room.room_service import Handler, Room
-from talos_core.room.room_voice import KokoroVoice, DEFAULT_VOICE
 from talos_core.cognition.spoken_stream import SpokenStream
+from talos_core.room.room_service import Handler, Room
+from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice
 
 
 def benchmark(models, samples):

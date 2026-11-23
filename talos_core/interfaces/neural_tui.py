@@ -1,23 +1,17 @@
-import os
-import sys
-import json
 import asyncio
+from contextlib import closing
 from pathlib import Path
-from typing import List, Tuple, Optional
+
+from prompt_toolkit import PromptSession
+from rich.console import Console
+from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
-from rich.layout import Layout
-from rich.console import Console
-from rich.text import Text
 from rich.table import Table
-from prompt_toolkit import PromptSession
-from prompt_toolkit.patch_stdout import patch_stdout
-from prompt_toolkit.input import create_input
+from rich.text import Text
 
-from talos_core.memory.agent_memory import open_memory
-from contextlib import closing
 from talos_core.cognition import cognitive_engine
-import agent
+from talos_core.memory.agent_memory import open_memory
 
 # Configuration
 DB_PATH = Path("/Users/james/Developer/Talos/state/agent.sqlite3")
@@ -27,7 +21,7 @@ class NeuralTUI:
     def __init__(self):
         self.console = Console()
         self.session = PromptSession()
-        self.synapse_log: List[Tuple[str, str]] = []
+        self.synapse_log: list[tuple[str, str]] = []
         self.focus_node = "Core"
         self.running = True
         self.current_input = ""
@@ -41,7 +35,6 @@ class NeuralTUI:
         t = asyncio.get_event_loop().time()
 
         # Pulse and rotation states
-        pulse_val = (t % 1.0)
         pulse = " ( ) " if int(t * 2) % 2 == 0 else " (   ) "
 
         # Cognitive Load Simulation - we can vary this based on the last log entry
@@ -72,7 +65,7 @@ class NeuralTUI:
                   '---'
         """
         return Panel(
-            Text(brain_t_art := brain_art, style="bold cyan"),
+            Text(brain_art, style="bold cyan"),
             title="[bold cyan]TALOS NEURAL CORE[/]",
             border_style="cyan",
             subtitle=f"Cognitive Load: {load_bar} | Focus: {self.focus_node}"
@@ -113,7 +106,7 @@ class NeuralTUI:
     async def run_interactive(self):
         layout = self.make_layout()
 
-        with Live(layout, refresh_per_second=4, screen=True) as live:
+        with Live(layout, refresh_per_second=4, screen=True):
             while self.running:
                 # Update TUI components
                 layout["brain"].update(self.render_brain())

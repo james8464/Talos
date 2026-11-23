@@ -10,10 +10,10 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from talos_core.self_improvement import section_workers as workers
 from talos_core.runtime import talos_activity
-from tools import talos_service
+from talos_core.self_improvement import section_workers as workers
 from talos_core.self_improvement.upstream_review import inventory
+from tools import talos_service
 
 
 class SectionReviews(unittest.TestCase):
@@ -92,7 +92,7 @@ class SectionReviews(unittest.TestCase):
             (160, Mock(return_value='{"x":1}')),
         ]:
             result = workers.turn(
-                self.root, self.state, "OpenCode", review=reply, clock=lambda: now
+                self.root, self.state, "OpenCode", review=reply, clock=lambda now=now: now
             )
             self.assertIn("deferred", result)
             self.assertNotIn("private error", result)

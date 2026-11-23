@@ -15,9 +15,9 @@ from contextlib import ExitStack, closing
 from datetime import datetime
 from pathlib import Path
 
+from talos_core.runtime.talos_activity import lock_state, record
 from talos_core.self_improvement.overnight_goal import FREE_MODEL, free_review
 from talos_core.self_improvement.section_patches import draft_next
-from talos_core.runtime.talos_activity import lock_state, record
 from talos_core.self_improvement.upstream_comparison import AREAS, compare
 from talos_core.self_improvement.upstream_review import inventory
 

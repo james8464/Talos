@@ -1,21 +1,18 @@
 """Tests for closed-loop self-improvement: incident promotion, policy tuning/rollback, and sandboxed patches."""
 
-from contextlib import closing
 import json
 import os
-from pathlib import Path
 import stat
 import tempfile
 import unittest
+from contextlib import closing
+from pathlib import Path
 
 import agent
-from talos_core.memory.agent_memory import open_memory
 from talos_core.cognition import cognitive_engine
+from talos_core.memory.agent_memory import open_memory
+from talos_core.self_improvement import idle_lab, improve_talos, section_patches, self_diagnosis
 from talos_core.self_improvement.feature_targets import FILE as PROPOSALS_FILE
-from talos_core.self_improvement import idle_lab
-from talos_core.self_improvement import improve_talos
-from talos_core.self_improvement import section_patches
-from talos_core.self_improvement import self_diagnosis
 
 
 def _build_mini_repo(root: Path, state: Path) -> None:
@@ -263,6 +260,9 @@ class SelfImprovementLoopTests(unittest.TestCase):
         self.assertTrue(report["candidates_verified"][0]["applied"])
         self.assertIn("min(100, max(0, value))", (self.root / "sample_calc.py").read_text(encoding="utf-8"))
         self.assertTrue((self.state / "improvement-cycle.json").is_file())
+        self.assertTrue(list((self.state / "plans").glob("*.json")))
+        self.assertEqual(len(report["plans"]), 2)
+        self.assertTrue(all(plan["leaves"] >= 1 for plan in report["plans"]))
 
 
 if __name__ == "__main__":

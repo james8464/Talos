@@ -1,54 +1,66 @@
 """Loopback HTTP endpoint and background room-event worker."""
 
-from talos_core.room.room_quantities import quantity_answer
-from talos_core.runtime import voice_recovery
-from talos_core.room import room_checkins
-from talos_core.runtime import background_work
-from talos_core.memory import commitment_memory
-from talos_core.mac import mac_context
-from talos_core.cognition import recurring_reminders
-from talos_core.memory import personal_facts
-from talos_core.room import room_vision
-from talos_core.cognition import session_goals
-from talos_core.cognition import cognitive_engine
-from talos_core.cognition.conversation_activity import foreground
-from talos_core.cognition.spoken_stream import SpokenStream
-from http.client import HTTPException
-from talos_core.room.room_dialogue import spoken_problem
-from talos_core.self_improvement.idle_lab import IdleLab, IdleReviewDeferred, power_and_idle, pending_stages
 import argparse
 import hmac
 import json
 import math
-import statistics
 import os
 import re
 import secrets
 import sqlite3
+import statistics
 import threading
-from time import monotonic
+from collections.abc import Callable
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
+from http.client import HTTPException
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Callable
+from time import monotonic
 from uuid import uuid4
 
 from agent import model_text, parse_event, plan
-from talos_core.room.room_recollection import RECALL_MESSAGES
-from talos_core.room.room_dialogue import decision, explicit_reminder, explicit_task, reminder_subject, sensor_answer, spoken_reply, immediate_recall, conversational_correction, corrected_recollection, compact_decision
-from talos_core.cognition import goal_store
-from talos_core.memory import visitor_memory
-from talos_core.cognition.turn_timing import classify
-from talos_core.runtime import talos_activity
-from talos_core.runtime.local_runtime import check_ollama_model
+from talos_core.cognition import cognitive_engine, goal_store, recurring_reminders, session_goals
+from talos_core.cognition.conversation_activity import foreground
+from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.cognition.talos_identity import SPOKEN_STYLE
-from talos_core.room.room_work import clauses, apply_order, note_request, project_brief, propose_work, saved_brief, work_order
-from talos_core.room.room_research import external_request, public_answer, search_web
+from talos_core.cognition.turn_timing import classify
+from talos_core.mac import mac_context
+from talos_core.memory import commitment_memory, personal_facts, visitor_memory
 from talos_core.memory.agent_memory import STATE_PATH, insert_decision, open_memory
-from talos_core.runtime.local_actions import close_named_item, inbox_items, next_reminder, reminder_list
-from talos_core.room.room_queue import enqueue, next_event, observe_presence, presence, retry_event
 from talos_core.memory.transcript_memory import TEXT_SESSION, insert_transcripts, recent_messages
+from talos_core.room import room_checkins, room_vision
+from talos_core.room.room_dialogue import (
+    compact_decision,
+    conversational_correction,
+    corrected_recollection,
+    decision,
+    explicit_reminder,
+    explicit_task,
+    immediate_recall,
+    reminder_subject,
+    sensor_answer,
+    spoken_problem,
+    spoken_reply,
+)
+from talos_core.room.room_quantities import quantity_answer
+from talos_core.room.room_queue import enqueue, next_event, observe_presence, presence, retry_event
+from talos_core.room.room_recollection import RECALL_MESSAGES
+from talos_core.room.room_research import external_request, public_answer, search_web
+from talos_core.room.room_work import (
+    apply_order,
+    clauses,
+    note_request,
+    project_brief,
+    propose_work,
+    saved_brief,
+    work_order,
+)
+from talos_core.runtime import background_work, talos_activity, voice_recovery
+from talos_core.runtime.local_actions import close_named_item, inbox_items, next_reminder, reminder_list
+from talos_core.runtime.local_runtime import check_ollama_model
+from talos_core.self_improvement.idle_lab import IdleLab, IdleReviewDeferred, pending_stages, power_and_idle
+
 
 class ModelUnavailable(RuntimeError):
     pass
@@ -403,9 +415,10 @@ class Room:
                 if proposal["disposition"] == "research":
                     answer, sources = ("Say Hey Talos to start a public search.", []) if follow_up else self.public_lookup(("web", text))
                     proposal = decision("reply", answer)
-                if source == "voice" and re.fullmatch(r"(hello|hi|hey)[.!, ]*", proposal["detail"], re.I):
-                    if not re.fullmatch(r"(hello|hi|hey)( talos)?[.!, ]*", text, re.I):
-                        proposal = decision("ignore", "")
+                if (source == "voice"
+                        and re.fullmatch(r"(hello|hi|hey)[.!, ]*", proposal["detail"], re.I)
+                        and not re.fullmatch(r"(hello|hi|hey)( talos)?[.!, ]*", text, re.I)):
+                    proposal = decision("ignore", "")
             if follow_up and (proposal.get("steps") or proposal["disposition"] == "act") and not (
                 local and local.get("answers_pending_reminder") and local["tool"] == "set_reminder"
             ):

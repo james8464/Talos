@@ -15,8 +15,8 @@ import time
 from contextlib import closing
 from pathlib import Path
 
-from talos_core.self_improvement.feature_targets import FILE, proposal_ledger
 from talos_core.runtime.talos_activity import record
+from talos_core.self_improvement.feature_targets import FILE, proposal_ledger
 from talos_core.self_improvement.upstream_comparison import AREAS, CHUNK, read_snapshot
 
 PATCH_FIELDS = ("before", "after", "regression_test")
@@ -64,7 +64,7 @@ def context(root, state, item):
         item["target_sha256"],
         item["byte_offset"],
     )
-    if type(offset) != int or offset < 0:
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
         raise ValueError("Invalid receipt")
     expected = hashlib.sha256(
         f"{tree}:{path}:{sha}:{offset}:{target}:{target_sha}".encode()
@@ -156,8 +156,8 @@ def checked_patch(root, item, original, excerpt, values):
         raise ValueError("Missing unittest case")
     if not any(
         isinstance(node, ast.Assert)
-        or isinstance(node, ast.Attribute)
-        and node.attr.startswith("assert")
+        or (isinstance(node, ast.Attribute)
+        and node.attr.startswith("assert"))
         for node in ast.walk(tree)
     ):
         raise ValueError("Missing regression assertion")
@@ -237,7 +237,7 @@ def draft_next(root, state, engine, project, model, request, *, clock=time.time)
         eligible = [
             k
             for k in pending
-            if k not in tracked or tracked[k][0] == "retry" and tracked[k][2] <= now
+            if k not in tracked or (tracked[k][0] == "retry" and tracked[k][2] <= now)
         ]
         if not eligible:
             return None

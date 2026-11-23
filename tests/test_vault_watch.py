@@ -8,8 +8,8 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from talos_core.mac import mac_context
 from agent import interactive_chat
+from talos_core.mac import mac_context
 from talos_core.memory.agent_memory import open_memory
 from talos_core.memory.vault_watch import VaultPublisher
 

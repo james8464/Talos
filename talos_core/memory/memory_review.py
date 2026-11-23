@@ -7,8 +7,8 @@ import time
 from contextlib import closing
 from itertools import zip_longest
 
-from talos_core.mac import mac_context
 from talos_core.cognition.conversation_activity import conversation_busy
+from talos_core.mac import mac_context
 from talos_core.memory.memory_connections import PROJECT, SOURCES
 
 KINDS = ("alias", "relationship", "recurring pattern", "changed plan")

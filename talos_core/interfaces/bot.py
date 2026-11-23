@@ -8,20 +8,18 @@ import sys
 from contextlib import closing
 from uuid import uuid4
 
-from talos_core.memory.agent_memory import STATE_PATH, open_memory
 from talos_core.cognition.conversation import limit_history
+from talos_core.cognition.talos_identity import PERSONALITY, capability_context
+from talos_core.memory.agent_memory import STATE_PATH, open_memory
+from talos_core.memory.transcript_memory import recall_prompt, remember, search_transcripts
 from talos_core.runtime.local_runtime import (
     KOKORO_MODEL,
     KOKORO_VOICES,
     MODELS_DIR,
     OLLAMA_HOST,
-    OLLAMA_MODEL,
-    OLLAMA_PORT,
     WHISPER_MODEL,
     runtime_checks,
 )
-from talos_core.cognition.talos_identity import PERSONALITY, capability_context
-from talos_core.memory.transcript_memory import recall_prompt, remember, search_transcripts
 
 
 async def bot(runner_args):
@@ -36,11 +34,11 @@ async def bot(runner_args):
     from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
     from pipecat.runner.utils import create_transport
     from pipecat.services.kokoro.tts import KokoroTTSService
-    from pipecat.services.ollama.llm import OLLamaLLMService
     from pipecat.services.whisper.stt import WhisperSTTServiceMLX
-    from talos_core.runtime.respan_llm_service import RespanLLMService
     from pipecat.transports.base_transport import TransportParams
     from pipecat.workers.runner import WorkerRunner
+
+    from talos_core.runtime.respan_llm_service import RespanLLMService
 
     voice_session = f"voice:{uuid4().hex}" if os.environ.get("TALOS_REMEMBER_VOICE") == "1" else ""
 
@@ -91,7 +89,7 @@ async def bot(runner_args):
             model="zai/glm-4.7-flash",  # Best model for fine-grained task decomposition
             temperature=0.7,
             max_tokens=4096,
-            respan_key=open("/Users/james/Developer/Talos/state/respan.key").read().strip(),
+            respan_key=(STATE_PATH.parent / "respan.key").read_text().strip(),
         )
     )
     tts = KokoroTTSService(

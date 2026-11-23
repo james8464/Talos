@@ -3,9 +3,9 @@
 import json
 import re
 import sqlite3
+from datetime import UTC, datetime
 
 from talos_core.memory.memory_ranking import diverse
-from datetime import UTC, datetime
 
 TEXT_SESSION = "text"
 _LINEAGE = """WITH RECURSIVE visible(session, through_id, depth) AS (
@@ -14,9 +14,7 @@ _LINEAGE = """WITH RECURSIVE visible(session, through_id, depth) AS (
     FROM visible v JOIN console_forks f ON f.child=v.session
 )"""
 _STOP_WORDS = frozenset(
-    "a about again and are as at be can could did do does for from had has have how i in is it "
-    "me my of on or please say tell that the this to was we were what when where which who "
-    "will with would you your".split()
+    ["a", "about", "again", "and", "are", "as", "at", "be", "can", "could", "did", "do", "does", "for", "from", "had", "has", "have", "how", "i", "in", "is", "it", "me", "my", "of", "on", "or", "please", "say", "tell", "that", "the", "this", "to", "was", "we", "were", "what", "when", "where", "which", "who", "will", "with", "would", "you", "your"]
 )
 
 
@@ -142,7 +140,10 @@ def search_transcripts(
               AND (? OR transcripts.session NOT LIKE 'console/%')
         ORDER BY rank, transcripts.id DESC LIMIT 24
     """, (*args, match, exclude_session, include_named_text))
-    return [{k: row[k] for k in row.keys() if k != "fts_rank"} for row in diverse(rows.fetchall(), 5)]
+    return [
+        {k: row[k] for k in row.keys() if k != "fts_rank"}  # noqa: SIM118 - sqlite3.Row
+        for row in diverse(rows.fetchall(), 5)
+    ]
 
 
 def transcript_excerpts(records: list[dict]) -> list[dict]:

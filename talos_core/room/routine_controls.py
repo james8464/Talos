@@ -13,7 +13,7 @@ CONTROL = re.compile(
     r"\s+(?:(?:to|for|called|named)\s+)?(.+?)[.!?]*$",
     re.I,
 )
-HOURS = "zero one two three four five six seven eight nine ten eleven twelve".split()
+HOURS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]
 CLOCK = re.compile(
     r"^(?P<lead>(?:remind me every|brief me on .+? every) \w+ at )"
     r"(?P<hour>\d{1,2}|[a-z]+)(?::(?P<minute>\d{2})| (?P<spoken>fifteen|thirty|forty[- ]five))?"

@@ -5,11 +5,11 @@ import tempfile
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from contextlib import closing
-from talos_core.cognition.conversation_activity import conversation_busy, foreground, QuietWorker
+from talos_core.cognition.conversation_activity import QuietWorker, conversation_busy, foreground
 from talos_core.room.room_service import Room
 
 

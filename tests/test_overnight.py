@@ -9,9 +9,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from talos_core.mac import mac_context
-from talos_core.self_improvement import overnight_goal
 from talos_core.memory.agent_memory import open_memory
 from talos_core.room.room_service import Room
+from talos_core.self_improvement import overnight_goal
 
 
 class PrivateRoomTests(unittest.TestCase):
@@ -242,7 +242,7 @@ class HandoffTests(unittest.TestCase):
         now = 1800000000
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         def check(delta, windows):
-            return overnight_goal.check(state, now + 9000, now + delta, quota=lambda _: windows)
+            return overnight_goal.check(state, now + 9000, now + delta, quota=lambda _, windows=windows: windows)
         with patch("talos_core.self_improvement.overnight_goal.power_and_idle", return_value=False):
             self.assertIn("idle Mac", check(0, {"primary": (1, now + 600), "secondary": (2, now + 5000)}))
             self.assertIn("idle Mac", check(1, {"secondary": (50, now + 5000)}))
@@ -256,7 +256,7 @@ class HandoffTests(unittest.TestCase):
         healthy = (70, now + 1000)
         for windows, outcome in (({"primary": healthy}, "free reviewer on standby"),
                                  ({"primary": healthy, "secondary": healthy}, "Codex budget available")):
-            self.assertEqual(overnight_goal.check(state, now + 9000, now, quota=lambda _: windows), outcome)
+            self.assertEqual(overnight_goal.check(state, now + 9000, now, quota=lambda _, windows=windows: windows), outcome)
 
     def test_handoff_threshold_reset_deduplication_and_patch(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
@@ -331,6 +331,7 @@ class HeartbeatTests(unittest.TestCase):
 
     def test_map_existing_notes_enabled_sources_and_verified_changes(self):
         import json
+
         from talos_core.memory import knowledge_map
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         vault = state / "Talos Memory"

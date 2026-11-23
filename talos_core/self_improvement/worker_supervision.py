@@ -1,11 +1,11 @@
 """Recover exited Talos workers without competing with a healthy owner."""
-from dataclasses import dataclass
-from pathlib import Path
 import subprocess
 import time
+from dataclasses import dataclass
+from pathlib import Path
 
-from talos_core.runtime.talos_activity import lock_state, record
 from talos_core.recovery import reconnect_delay
+from talos_core.runtime.talos_activity import lock_state, record
 
 
 @dataclass

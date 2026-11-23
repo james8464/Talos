@@ -9,8 +9,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from talos_core.mac import mac_context
-from talos_core.runtime import talos_activity
 from talos_core.memory.vault_watch import VaultPublisher
+from talos_core.runtime import talos_activity
 
 
 class LiveReceiptTests(unittest.TestCase):

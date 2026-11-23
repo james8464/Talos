@@ -5,11 +5,11 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from talos_core.self_improvement import self_diagnosis as diag
 from agent import interactive_chat
 from talos_core.memory.agent_memory import open_memory
 from talos_core.room.room_service import Room
 from talos_core.runtime.talos_activity import record
+from talos_core.self_improvement import self_diagnosis as diag
 
 
 class IncidentTests(unittest.TestCase):

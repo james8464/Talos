@@ -50,8 +50,8 @@ def install(plist, domain, *, respan=False, sections=False):
         return
     if not loaded:
         sys.path.insert(0, str(ROOT))
-        from talos_core.room.room_service import DEFAULT_PORT
         from run_talos import check_bind
+        from talos_core.room.room_service import DEFAULT_PORT
 
         try:
             check_bind(DEFAULT_PORT)

@@ -4,10 +4,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.room.room_dialogue import spoken_reply
 from talos_core.room.room_quantities import quantity_answer
 from talos_core.room.room_service import Room
-from talos_core.cognition.spoken_stream import SpokenStream
 
 
 class SpokenReasoningTests(unittest.TestCase):

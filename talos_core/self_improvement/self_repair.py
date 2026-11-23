@@ -17,6 +17,7 @@ import tokenize
 from contextlib import closing
 from pathlib import Path
 
+from talos_core.runtime.talos_activity import lock_state, record
 from talos_core.self_improvement.repair_contracts import (
     CONTRACTS,
     alternatives,
@@ -25,7 +26,6 @@ from talos_core.self_improvement.repair_contracts import (
     read_regular,
     replay,
 )
-from talos_core.runtime.talos_activity import lock_state, record
 
 ROOT = Path(__file__).resolve().parents[2]
 INTERVAL = 600

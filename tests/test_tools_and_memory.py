@@ -8,9 +8,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent import FINAL_DECISION_SCHEMA, chat, listen, parse_decision, process_event, watch
-from talos_core.memory.agent_memory import decisions, open_memory, recent_context, record_decision, review_decision
-from talos_core.runtime.local_actions import acknowledge, inbox_items
+from talos_core.memory.agent_memory import (
+    decisions,
+    open_memory,
+    recent_context,
+    record_decision,
+    review_decision,
+)
 from talos_core.memory.transcript_memory import remember, search_transcripts
+from talos_core.runtime.local_actions import acknowledge, inbox_items
 
 EVENT = {"kind": "room", "summary": "I need to find the spare bike key."}
 LOOKUP = {
@@ -168,18 +174,17 @@ class ToolsAndMemoryTests(unittest.TestCase):
 
     def test_opens_original_shadow_database_without_losing_feedback(self):
         old_path = self.path.parent / "old.sqlite3"
-        with closing(sqlite3.connect(old_path)) as old:
-            with old:
-                old.execute("""
+        with closing(sqlite3.connect(old_path)) as old, old:
+            old.execute("""
                     CREATE TABLE decisions (
                         id INTEGER PRIMARY KEY, recorded_at TEXT NOT NULL, event TEXT NOT NULL,
                         proposal TEXT NOT NULL, feedback TEXT, reviewed_at TEXT
                     )
                 """)
-                old.execute(
-                    "INSERT INTO decisions VALUES (1, ?, ?, ?, ?, ?)",
-                    ("2026-01-01", json.dumps(EVENT), json.dumps(NOTE), "Keep this", "2026-01-01"),
-                )
+            old.execute(
+                "INSERT INTO decisions VALUES (1, ?, ?, ?, ?, ?)",
+                ("2026-01-01", json.dumps(EVENT), json.dumps(NOTE), "Keep this", "2026-01-01"),
+            )
         with closing(open_memory(old_path)) as migrated:
             row = decisions(migrated)[0]
             self.assertEqual(row["feedback"], "Keep this")

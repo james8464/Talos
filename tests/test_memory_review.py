@@ -4,12 +4,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from talos_core.self_improvement import graph_review
 from talos_core.mac import mac_context
-from talos_core.memory import memory_connections
-from talos_core.memory import memory_review
-from talos_core.self_improvement.maintenance_schedule import MaintenanceSchedule
+from talos_core.memory import memory_connections, memory_review
 from talos_core.memory.personal_index import sync
+from talos_core.self_improvement import graph_review
+from talos_core.self_improvement.maintenance_schedule import MaintenanceSchedule
 
 
 class MemoryReviewTests(unittest.TestCase):

@@ -1,9 +1,9 @@
 import tempfile
 import unittest
-from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import patch
 from uuid import uuid4
 
 from talos_core.room.room_service import Room
@@ -163,6 +163,7 @@ class GoalFlow(unittest.TestCase):
 
     def test_heartbeat_revisits_stale_goal_and_skips_recent_refresh(self):
         from contextlib import closing
+
         from talos_core.memory.agent_memory import open_memory
         from talos_core.self_improvement.overnight_goal import revisit_goals
         state = self.root / "state"

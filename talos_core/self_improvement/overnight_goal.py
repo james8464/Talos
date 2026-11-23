@@ -14,13 +14,11 @@ from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from talos_core.memory.agent_memory import open_memory
-from talos_core.self_improvement.idle_lab import experiment, local_edit, power_and_idle
-from talos_core.cognition import goal_store
+from talos_core.cognition import cognitive_engine, goal_store, recurring_reminders
 from talos_core.memory import knowledge_map
-from talos_core.cognition import recurring_reminders
+from talos_core.memory.agent_memory import open_memory
 from talos_core.runtime import background_work
-from talos_core.cognition import cognitive_engine
+from talos_core.self_improvement.idle_lab import experiment, local_edit, power_and_idle
 
 ROOT = Path(__file__).resolve().parents[2]
 STATE = ROOT / "state"

@@ -8,9 +8,9 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from talos_core.self_improvement import index_maintenance as maintenance
-from talos_core.runtime import talos_activity
 from talos_core.cognition.conversation_activity import foreground
+from talos_core.runtime import talos_activity
+from talos_core.self_improvement import index_maintenance as maintenance
 
 
 class IndexMaintenanceTests(unittest.TestCase):

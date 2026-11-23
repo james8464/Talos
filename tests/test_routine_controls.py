@@ -104,9 +104,8 @@ class RoutineControlsTests(unittest.TestCase):
         )
         with patch.object(
             recurring_reminders, "next_due", side_effect=ValueError("Invalid calendar")
-        ):
-            with self.assertRaisesRegex(ValueError, "Invalid calendar"):
-                self.say("Resume routine number 1")
+        ), self.assertRaisesRegex(ValueError, "Invalid calendar"):
+            self.say("Resume routine number 1")
         self.assertEqual(
             self.db.execute(
                 "SELECT active FROM recurring_reminders WHERE id=1"

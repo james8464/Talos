@@ -33,7 +33,7 @@ class Contract:
 CONTRACTS = {
     "talos_core/recovery.py": Contract(
         "ac0fe3109464ae26804bbeef8f92f5154fa86685c0d159f139ff099a98293b72",
-        tuple("5 10 30 60 1 0 1 1 > 3600 >= 5 .3 15 2 32 0".split()),
+        tuple(["5", "10", "30", "60", "1", "0", "1", "1", ">", "3600", ">=", "5", ".3", "15", "2", "32", "0"]),
         "tests/test_runtime_recovery.py",
         {
             "test_poll_ladder_reset_independence_and_expiry": "6bd9b389bc91339556de70026386139e98592f2efb56298e877e6a0c2e5e76c1",
@@ -43,7 +43,7 @@ CONTRACTS = {
     ),
     "talos_core/memory/memory_ranking.py": Contract(
         "2612a115a345b5177a3445fc7ccf7626ab7cc52e1cc625ea105f2c1573797822",
-        tuple("2 1 0.70 != 1 0.0 < 1 ==".split()),
+        tuple(["2", "1", "0.70", "!=", "1", "0.0", "<", "1", "=="]),
         "tests/test_tools_and_memory.py",
         {
             "test_recall_returns_distinct_evidence_before_repeated_equal_rank_hits": "e2c59bbd4f03418db58b16a550e3acdce1f6bcc09e93d5ffc152833a48d914d4"
@@ -61,7 +61,7 @@ def open_memory(path):
         (
             (
                 "talos_core/memory/transcript_memory.py",
-                "19dae6853ff0c4dd92317f745ceb79bd4f02da15d2839c843c522c01e465fb6d",
+                "ce355871cf645cdf440b14663e2d51a015afb5326765161800d950abb4ee9088",
             ),
         ),
     ),

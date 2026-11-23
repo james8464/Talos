@@ -2,16 +2,16 @@
 
 import argparse
 import ast
-from collections import Counter
-from contextlib import closing
 import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import sqlite3
 import time
+from collections import Counter
+from contextlib import closing
+from pathlib import Path
 
 from talos_core.self_improvement.feature_queue import append, queue_entries
 from talos_core.self_improvement.feature_targets import FILE

@@ -1,15 +1,21 @@
 import json
 import os
-from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
 from contextlib import closing
+from pathlib import Path
 from unittest.mock import patch
 
 from talos_core.self_improvement import local_source_model as local
 from talos_core.self_improvement.feature_targets import FILE
-from talos_core.self_improvement.respan_worker import CONTENDED, LOCAL_READY, LOCK_RETRY, rearm_deferred_jobs, turn
+from talos_core.self_improvement.respan_worker import (
+    CONTENDED,
+    LOCAL_READY,
+    LOCK_RETRY,
+    rearm_deferred_jobs,
+    turn,
+)
 from talos_core.self_improvement.upstream_review import inventory
 
 
@@ -226,9 +232,8 @@ class LocalReviewTests(unittest.TestCase):
                 1,
                 1,
             ),
-        ):
-            with self.assertRaisesRegex(ValueError, "citations"):
-                local.review(data, (), self.state, lambda _: None)
+        ), self.assertRaisesRegex(ValueError, "citations"):
+            local.review(data, (), self.state, lambda _: None)
         with patch.object(local, "run_cpu", return_value=("quiet", 12, 1)):
             self.assertFalse(
                 any(

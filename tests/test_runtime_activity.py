@@ -1,20 +1,20 @@
-from contextlib import closing
 import fcntl
 import io
 import os
-from pathlib import Path
 import socket
 import tempfile
 import threading
-from types import SimpleNamespace
 import unittest
+from contextlib import closing
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
-from talos_core.runtime import talos_activity as activity
-from talos_core.runtime import background_work
 from agent import interactive_chat
 from talos_core.memory.agent_memory import open_memory
 from talos_core.room.room_service import Handler, Room
+from talos_core.runtime import background_work
+from talos_core.runtime import talos_activity as activity
 
 
 class RuntimeActivityTests(unittest.TestCase):

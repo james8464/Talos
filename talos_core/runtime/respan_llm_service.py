@@ -2,14 +2,15 @@
 
 import http.client
 import json
+import logging
 import os
 import sys
-
 from dataclasses import dataclass
-from typing import Any
 
 from pipecat.services.openai.base_llm import BaseOpenAILLMService
 from pipecat.services.openai.llm import OpenAILLMService
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -95,9 +96,9 @@ class RespanLLMService(OpenAILLMService):
             await super().process_frame(frame, direction)
         elif isinstance(frame, self.FrameType):
             # Frame is coming upstream, send to LLM
-            await self._send_to_respan(frame)
+            await self._send_to_respan(frame, direction)
 
-    async def _send_to_respan(self, frame):
+    async def _send_to_respan(self, frame, direction):
         """Send messages to Respan API with task decomposition focus."""
         if not self._api_key:
             logger.error("Cannot send to Respan: no API key configured")
@@ -113,6 +114,7 @@ class RespanLLMService(OpenAILLMService):
             *messages
         ]
 
+        connection = None
         try:
             connection = http.client.HTTPSConnection(
                 "api.respan.ai",
@@ -141,7 +143,7 @@ class RespanLLMService(OpenAILLMService):
             data = response.read(65537)
 
             if response.status != 200:
-                raise Exception(f"Respan API error: HTTP {response.status}")
+                raise RuntimeError(f"Respan API error: HTTP {response.status}")
 
             result = json.loads(data)
             content = result["choices"][0]["message"]["content"]
@@ -154,4 +156,5 @@ class RespanLLMService(OpenAILLMService):
             # Fallback to base class behavior
             await super().process_frame(frame, direction)
         finally:
-            connection.close()
+            if connection is not None:
+                connection.close()

@@ -231,7 +231,7 @@ def ingest(db, state):
             "SELECT id,stamp,component,message FROM events WHERE id>? ORDER BY id LIMIT 64",
             (after if last >= after else 0,),
         ).fetchall()
-    for ident, stamp, component, detail in rows:
+    for _ident, stamp, component, detail in rows:
         observe(db, component, detail, stamp)
     if rows:
         db.execute("INSERT OR REPLACE INTO journal_cursor VALUES(1,?,?)", (generation, rows[-1][0]))
@@ -452,6 +452,14 @@ def _append_proposal_if_new(state: Path, *, seed: str, origin: str, target: str,
                 "acceptance": acceptance[:240],
                 "time": time.time(),
             }
+            try:
+                from talos_core.self_improvement.decomposition import plan_task
+                plan = plan_task(state, feature[:160], seed, acceptance=acceptance[:240],
+                                 files=(target,))
+                entry["plan"] = plan["root"]
+                entry["plan_path"] = plan["path"]
+            except (OSError, ValueError):
+                pass
             stream.seek(0, os.SEEK_END)
             stream.write(json.dumps(entry) + "\n")
             stream.flush()

@@ -4,9 +4,9 @@ import json
 import os
 import re
 import subprocess
+import time
 import tokenize
 from io import StringIO
-import time
 from pathlib import Path
 
 from talos_core.cognition.conversation_activity import conversation_busy
@@ -123,11 +123,11 @@ def run_cpu(runtime, state, prompt, *, timeout=90, grammar=GRAMMAR):
                     if conversation_busy(state):
                         raise RuntimeError(
                             "Local review yielded to a foreground conversation."
-                        )
+                        ) from None
                     if time.monotonic() >= deadline:
                         raise RuntimeError(
                             "Local source review exceeded its time budget."
-                        )
+                        ) from None
         finally:
             if child.poll() is None:
                 child.kill()

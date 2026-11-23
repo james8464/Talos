@@ -9,20 +9,20 @@ import argparse
 import ctypes
 import json
 import os
-from pathlib import Path
 import signal
 import socket
 import subprocess
 import tempfile
 import threading
 import time
+from pathlib import Path
 from unittest.mock import patch
 
 import agent
-from talos_core.self_improvement.idle_lab import power_and_idle
-from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
-from talos_core.room.room_service import Room
 from talos_core.cognition.turn_timing import classify
+from talos_core.room.room_service import Room
+from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
+from talos_core.self_improvement.idle_lab import power_and_idle
 
 
 def fixture_requests(model, directory):

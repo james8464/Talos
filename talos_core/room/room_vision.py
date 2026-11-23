@@ -3,8 +3,8 @@
 import base64
 import os
 import re
-from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
 
+from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
 
 _PEOPLE_COUNT = re.compile(
     r"how many (?:people|persons) (?:can you see|do you see|are (?:in (?:the room|the frame)|here))"

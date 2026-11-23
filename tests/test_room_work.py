@@ -9,10 +9,10 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from talos_core.memory.agent_memory import open_memory
-from talos_core.runtime.local_actions import acknowledge
+from talos_core.memory.transcript_memory import remember
 from talos_core.room.room_service import Room
 from talos_core.room.room_work import propose_work
-from talos_core.memory.transcript_memory import remember
+from talos_core.runtime.local_actions import acknowledge
 
 
 class RoomWorkTests(unittest.TestCase):

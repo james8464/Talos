@@ -3,8 +3,8 @@
 import argparse
 import json
 import os
-import shutil
 import re
+import shutil
 import sqlite3
 import subprocess
 import tempfile
@@ -13,9 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from talos_core.mac import mac_context
-from talos_core.memory import memory_connections
-from talos_core.memory import personal_files
-from talos_core.memory import knowledge_sources
+from talos_core.memory import knowledge_sources, memory_connections, personal_files
 
 
 def records(app, path):

@@ -4,16 +4,16 @@ import ast
 import fcntl
 import hashlib
 import json
-from pathlib import Path
 import re
 import time
+from pathlib import Path
 
+from talos_core.cognition.conversation_activity import conversation_busy
+from talos_core.runtime.talos_activity import record
 from talos_core.self_improvement import local_source_model as model
 from talos_core.self_improvement import self_diagnosis
-from talos_core.cognition.conversation_activity import conversation_busy
 from talos_core.self_improvement.repair_contracts import read_regular
 from talos_core.self_improvement.self_repair import load, save
-from talos_core.runtime.talos_activity import record
 
 ROOT = Path(__file__).resolve().parents[2]
 WINDOW = 600

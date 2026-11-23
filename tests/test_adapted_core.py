@@ -5,9 +5,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from talos_core.cognition.recurring_reminders import advance, next_due
 from talos_core.memory.agent_memory import open_memory
 from talos_core.memory.memory_ranking import diverse, tokens
-from talos_core.cognition.recurring_reminders import advance, next_due
 from talos_core.room.room_service import Room
 
 
@@ -111,6 +111,7 @@ class SourceAdaptationTests(unittest.TestCase):
 
     def test_background_order_resumes_once_without_model(self):
         from uuid import uuid4
+
         from talos_core.runtime import background_work
         text = "Queue this work: Save a note that Atlas launches Tuesday and add a task to review the launch."
         key = str(uuid4())

@@ -7,8 +7,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent import OLLAMA_MODEL, chat, interactive_chat, show_status
-from talos_core.memory.agent_memory import open_memory
 from talos_core.cognition.talos_identity import capability_context
+from talos_core.memory.agent_memory import open_memory
 
 
 class TalosConsoleTests(unittest.TestCase):

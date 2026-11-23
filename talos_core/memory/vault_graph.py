@@ -6,9 +6,9 @@ import re
 import tempfile
 from pathlib import Path
 
-from talos_core.self_improvement.graph_review import source_groups
 from talos_core.memory.memory_connections import PROJECT, SOURCES
 from talos_core.memory.memory_review import current_findings
+from talos_core.self_improvement.graph_review import source_groups
 
 MARKER = "<!-- talos-generated-graph -->"
 ROOT = Path(__file__).resolve().parents[2]

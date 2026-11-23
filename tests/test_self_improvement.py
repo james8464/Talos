@@ -6,10 +6,10 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from talos_core.self_improvement import feature_queue
 from talos_core.mac import mac_context
-from talos_core.runtime.maintenance import queue_summary
 from talos_core.memory.personal_index import sync
+from talos_core.runtime.maintenance import queue_summary
+from talos_core.self_improvement import feature_queue
 
 
 class SelfImprovementTests(unittest.TestCase):

@@ -1,7 +1,21 @@
 # Talos
 
-Talos is a local room assistant with a native Mac app, a local HTTP endpoint, searchable
-conversation memory, and a background planner.
+Talos is a local, self-improving Mac assistant. It listens or chats, remembers evidence,
+plans actions, controls the Mac through native accessibility and screen capture, and
+improves its own source when the operator is away.
+
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the package layout, the self-improvement
+loop, and the computer-use API. Common commands:
+
+```sh
+python3 run_talos.py                                  # native room app
+python3 agent.py chat                                  # terminal console
+python3 -m talos_core.cli status                       # health, permissions, graph
+python3 -m talos_core.cli doctor                       # imports, syntax, lint, tests
+python3 -m talos_core.cli decompose "TASK" --file PATH # routable task plan
+python3 -m talos_core.self_improvement.improve_talos --cycle
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
 
 ## Terminal sessions and Telegram
 
@@ -12,12 +26,12 @@ The Talos terminal supports standing writing goals. Use `/goal draft OBJECTIVE` 
 For Telegram direct messages, configure a dedicated bot token in the local environment as `TALOS_TELEGRAM_TOKEN`, then run the gateway with your numeric Telegram user ID. When using the room launcher's local Ollama server:
 
 ```sh
-TALOS_OLLAMA_PORT=11435 python3 telegram_gateway.py --owner YOUR_NUMERIC_ID
+TALOS_OLLAMA_PORT=11435 python3 -m talos_core.interfaces.telegram_gateway --owner YOUR_NUMERIC_ID
 ```
 
 Alternatively, run with `--pair` in place of `--owner YOUR_NUMERIC_ID`. Send the one-time code shown in the terminal to the bot in a private message. Future launches use the saved pairing. Add `--check` to verify the bot identity, webhook configuration and local model without polling or sending a message. The gateway polls while the process runs. A reply to an earlier text carries its selected quotation into that turn, even after a gateway restart. The owner can send direct text messages or JPEG photos, including JPEG file attachments, with a question in the caption. Reply directly to your earlier photo to ask a follow-up about that image. Photos use the installed local vision model (default `qwen2.5vl:3b`, configurable with `TALOS_VISION_MODEL`). Talos selects the largest available size within 180,000 bytes and four megapixels, reads it in memory, and keeps the image and caption out of conversation history. Telegram transports the chat. A text reply uses the current request, an explicit reply quotation when present, and up to four prior exchanges from the same bot and owner. A photo question uses one supplied image and its question. Its channel database lives under `state/telegram`. Send `/new` to clear that local context. The gateway has no access path to Mac actions or family recall. If a send times out, delivery is uncertain and Talos skips automatic retransmission.
 
-Telegram voice notes use local CPU transcription. In a dedicated Python 3.12 environment install `faster-whisper==1.2.1`, then run `python telegram_gateway.py --setup-voice` once with that interpreter. The setup command verifies a pinned multilingual Tiny model before publishing it. To use an existing CTranslate2 Whisper model, set `TALOS_TELEGRAM_WHISPER_MODEL` to its directory. Start the gateway with the same interpreter. It accepts owner Ogg/Opus notes up to 90 seconds and 2 MB. Transcribed words share the bounded text-chat history. Audio is processed in memory.
+Telegram voice notes use local CPU transcription. In a dedicated Python 3.12 environment install `faster-whisper==1.2.1`, then run `python -m talos_core.interfaces.telegram_gateway --setup-voice` once with that interpreter. The setup command verifies a pinned multilingual Tiny model before publishing it. To use an existing CTranslate2 Whisper model, set `TALOS_TELEGRAM_WHISPER_MODEL` to its directory. Start the gateway with the same interpreter. It accepts owner Ogg/Opus notes up to 90 seconds and 2 MB. Transcribed words share the bounded text-chat history. Audio is processed in memory.
 
 For spoken replies, also install `kokoro-onnx==0.6.0` in that environment and use the Kokoro assets prepared by the room launcher. Send `/voice voice_only` to hear replies to voice notes, `/voice all` to hear short conversational replies, or `/voice off` for text. Long replies and replies without a working local synthesizer arrive as text.
 
@@ -152,7 +166,7 @@ Ask “What did I just say?” to repeat a recent turn even during model startup
 
 After five minutes without room requests and keyboard/mouse input, while on AC power, the room can investigate repeated slow decisions or synthesis with the local model. It copies source and tests to a temporary directory, asks for an edit, checks its scope, applies it to the copy and parses the Python. Sandbox-supported runs execute the same stage-specific regression suite against the baseline and candidate. Trial status lives in the local `coding_trials` table. Checked patches appear in `state/proposals` for review. A foreground turn cancels the experiment. Applying a proposal to the running assistant requires a separate deployment.
 
-An overnight run can monitor local Codex usage with `python3 overnight_goal.py --watch --until UNIX_TIMESTAMP`. A recent Codex usage record below 3% in either active window enables at most one source-only review per hour through the configured OpenClaude Respan GLM-4.5-Flash route. The worker keeps checked patches and trial results in the state directory. An absent measurement cannot start a handoff. The worker exits at the specified deadline.
+An overnight run can monitor local Codex usage with `python3 -m talos_core.self_improvement.overnight_goal --watch --until UNIX_TIMESTAMP`. A recent Codex usage record below 3% in either active window enables at most one source-only review per hour through the configured OpenClaude Respan GLM-4.5-Flash route. The worker keeps checked patches and trial results in the state directory. An absent measurement cannot start a handoff. The worker exits at the specified deadline.
 
 For comparison on the target Mac, `PYTHONPATH=. state/kokoro-env/bin/python tests/measure_idle_voice.py` times synthetic reminders from service submission through complete synthesized WAV with and without an indexing batch. The app's first-playback metric covers a different interval.
 
@@ -256,8 +270,8 @@ Talos counts slow voice decisions (at least two seconds) and slow synthesis requ
 second terminal while the room launcher is running, use the installed Codex CLI through:
 
 ```sh
-python3 improve_talos.py
-python3 improve_talos.py "Long replies start playing too slowly"
+python3 -m talos_core.self_improvement.improve_talos
+python3 -m talos_core.self_improvement.improve_talos "Long replies start playing too slowly"
 ```
 
 With no argument, the command selects the most frequent slow stage seen at least twice.
@@ -339,8 +353,8 @@ Back in the project terminal, download the baseline model once, then start Talos
 
 ```sh
 ollama pull qwen2.5:1.5b
-uv run --no-sync python bot.py --check
-uv run --no-sync python bot.py
+uv run --no-sync python -m talos_core.interfaces.bot --check
+uv run --no-sync python -m talos_core.interfaces.bot
 ```
 
 Open [the local Pipecat test client](http://127.0.0.1:7860), connect, and allow microphone access. Disconnect or close the page to end the session. Before each reply, Talos trims the in-memory history to up to 12 messages and 6,000 characters, plus its system instructions. By default the voice session is ephemeral. Use `--remember` to archive its text turns and
@@ -403,7 +417,7 @@ python3 agent.py transcript
 ```
 
 Completed text exchanges are saved locally. To save and recall active browser voice sessions,
-start the voice client with `uv run --no-sync python bot.py --remember`. Enable this for a voice
+start the voice client with `uv run --no-sync python -m talos_core.interfaces.bot --remember`. Enable this for a voice
 session whose participants know it is being transcribed. The archive contains text turns, and
 Talos retrieves relevant excerpts for the model. Earlier sessions that were never saved are
 unavailable for recall. The `transcript` command prints the full saved archive as JSON lines.
@@ -454,7 +468,7 @@ while the listener waits for input.
 
 ## Verify and benchmark
 
-Use `bot.py --check` to diagnose Python, Pipecat installation, speech model files, and the local Ollama model without starting audio. Run the unit tests without models or third-party dependencies using `python3 -m unittest discover -s tests -v`.
+Use `python -m talos_core.interfaces.bot --check` to diagnose Python, Pipecat installation, speech model files, and the local Ollama model without starting audio. Run the unit tests without models or third-party dependencies using `python3 -m unittest discover -s tests -v`.
 
 During a conversation, the terminal reports server-side turn timing from Pipecat. Use its transcription, model, and synthesis breakdown to see where time goes. For audible response latency and interruption time, measure at the speaker. The server cannot measure browser buffering or when sound reaches the listener.
 
@@ -500,7 +514,7 @@ intend to leave.
 
 A normal Talos launch now starts a five-minute heartbeat alongside memory maintenance. Practice and shadow rooms skip it. Each tick revisits up to four due, active goals using their saved evidence and notification preferences, refreshes the Obsidian map and records its outcome in `state/heartbeat.json`. A changed source fingerprint triggers the offline dialogue regression suite. While the Mac is in use, changed code gets a lightweight Ruff review of the dialogue module. After five idle minutes on AC, up to one coding trial per hour rotates among dialogue, recall and speech. It tries the project Ollama model, then the configured source-only OpenClaude route, then Ruff. Offline launches omit OpenClaude. The older deadline-based quota watcher remains available for explicit handoffs.
 
-To run the heartbeat independently of the room, use `state/kokoro-env/bin/python overnight_goal.py --heartbeat --watch`. Add `--local-only` for offline work. To register it at login on this Mac, run `state/kokoro-env/bin/python tools/enable_heartbeat.py --at-login`. The LaunchAgent runs once per interval during a logged-in, awake session. A shared lock and persisted review times prevent overlapping trials across entry points. To remove login registration, boot out `gui/$(id -u)/local.talos.heartbeat` with launchctl and remove its plist from ~/Library/LaunchAgents.
+To run the heartbeat independently of the room, use `state/kokoro-env/bin/python -m talos_core.self_improvement.overnight_goal --heartbeat --watch`. Add `--local-only` for offline work. To register it at login on this Mac, run `state/kokoro-env/bin/python tools/enable_heartbeat.py --at-login`. The LaunchAgent runs once per interval during a logged-in, awake session. A shared lock and persisted review times prevent overlapping trials across entry points. To remove login registration, boot out `gui/$(id -u)/local.talos.heartbeat` with launchctl and remove its plist from ~/Library/LaunchAgents.
 
 In the vault open **Talos maps → Talos memory map**. The conversation index links previously exported exchanges to their existing speaker and topic notes. The source branch shows record coverage for enabled apps. The development branch links source files to actual proposals, acceptance criteria and recorded verification. The heartbeat note distinguishes an attempted review, a candidate patch and its replay result. The worker can generate the views offline. Existing private conversations and user-authored notes stay in place.
 
@@ -546,13 +560,13 @@ Use **Talk to Talos** (⌘⇧D) for a conversation. To continue an unfinished ad
 
 Try “What did we say about my notebook?”, “Pause my routine to water the plants”, or “What’s eighteen percent of 240?” followed by “Split that between three people.” Topic recall uses the current conversation. Arithmetic, conversions and routine controls run locally.
 
-Use `python3 section_workers.py --sections` for the upstream assignments. `./Start-Talos.command --memory-only --offline --respan-reviews --section-reviews` starts the live terminal and both external section reviewers without a room listener. Each reviewer compares bounded source excerpts, verifies cited quotes and can draft an implementation and regression for its finding. Inspect `state/section-patches/<id>/change.diff`, `regression.py` and `receipt.json` to review a draft. Checks cover applying the diff and parsing the code. Running its behavioral regression and approving the live change are separate steps.
+Use `python3 -m talos_core.self_improvement.section_workers --sections` for the upstream assignments. `./Start-Talos.command --memory-only --offline --respan-reviews --section-reviews` starts the live terminal and both external section reviewers without a room listener. Each reviewer compares bounded source excerpts, verifies cited quotes and can draft an implementation and regression for its finding. Inspect `state/section-patches/<id>/change.diff`, `regression.py` and `receipt.json` to review a draft. Checks cover applying the diff and parsing the code. Running its behavioral regression and approving the live change are separate steps.
 
 The **Talos live** note in the `state` vault reports when its sample was taken, worker locks, provider replies and retry deadlines. Local index maintenance records its completed merge, document count and search checks. Developer-verified changes have a separate label.
 
 ### On-device source reviews
 
-When the Respan source reviewer is unavailable, Talos can compare OpenClaw or Hermes excerpts using the project’s existing Qwen3 4B Q4_K_M weights. On Apple Silicon, run `python3 tools/setup_local_reviewer.py` once with Docker Desktop’s bundled llama.cpp build `ac4cdde` installed. The installer verifies the model digest, fetches the [pinned upstream C headers](https://github.com/ggml-org/llama.cpp/tree/ac4cddeb0dbd778f650bf568f6f08344a06abe3a) and builds a CPU-only helper. For an offline installation, pass `--headers PATH` with those same seven headers. Run `python3 respan_worker.py --local-source Hermes` for one immediate comparison.
+When the Respan source reviewer is unavailable, Talos can compare OpenClaw or Hermes excerpts using the project’s existing Qwen3 4B Q4_K_M weights. On Apple Silicon, run `python3 tools/setup_local_reviewer.py` once with Docker Desktop’s bundled llama.cpp build `ac4cdde` installed. The installer verifies the model digest, fetches the [pinned upstream C headers](https://github.com/ggml-org/llama.cpp/tree/ac4cddeb0dbd778f650bf568f6f08344a06abe3a) and builds a CPU-only helper. For an offline installation, pass `--headers PATH` with those same seven headers. Run `python3 -m talos_core.self_improvement.respan_worker --local-source Hermes` for one immediate comparison.
 
 Inference reads bounded source excerpts in a local child process and yields to foreground conversation. The activity feed records the model, actual token counts, elapsed time and source comparison outcome. A model proposal enters the development queue after its cited source lines are checked. Reviewing the proposal’s meaning, replaying the behavior and implementing the change are separate steps.
 

@@ -1,11 +1,11 @@
 import base64
 import io
+import sys
 import tempfile
 import threading
-from concurrent.futures import ThreadPoolExecutor
-import sys
 import unittest
 import wave
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch

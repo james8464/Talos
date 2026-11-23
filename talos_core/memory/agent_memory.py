@@ -6,9 +6,9 @@ import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from talos_core.runtime.local_actions import apply_local_action, initialize_actions
-from talos_core.room.room_queue import initialize_room_queue
 from talos_core.memory.transcript_memory import fts_query, initialize_transcripts
+from talos_core.room.room_queue import initialize_room_queue
+from talos_core.runtime.local_actions import apply_local_action, initialize_actions
 
 STATE_PATH = Path(__file__).resolve().parents[2] / "state" / "agent.sqlite3"
 

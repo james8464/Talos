@@ -82,7 +82,7 @@ def check_platform() -> str:
     if (platform.system(), platform.machine()) != ("Darwin", "arm64"):
         raise RuntimeError("Use an Apple Silicon Mac with a native arm64 Python.")
     if sys.version_info[:2] != (3, 12):
-        raise RuntimeError("Use Python 3.12. Run `uv run --no-sync python bot.py --check`.")
+        raise RuntimeError("Use Python 3.12. Run `uv run --no-sync python -m talos_core.interfaces.bot --check`.")
     return f"Apple Silicon, Python {platform.python_version()}"
 
 

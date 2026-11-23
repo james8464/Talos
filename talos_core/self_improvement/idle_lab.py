@@ -1,11 +1,9 @@
 """Low-priority, local coding trials based on repeated room timing failures."""
 
-import difflib
 import ast
-from contextlib import closing
+import difflib
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import signal
@@ -14,11 +12,13 @@ import sys
 import tempfile
 import threading
 import time
+from contextlib import closing
+from pathlib import Path
 
 from talos_core.memory.agent_memory import open_memory
 from talos_core.runtime import talos_activity
-from talos_core.self_improvement.improve_talos import ROOT, SOURCE_PATTERNS
 from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
+from talos_core.self_improvement.improve_talos import ROOT, SOURCE_PATTERNS
 
 
 def pending_stages(db, now):
@@ -101,7 +101,7 @@ class IdleLab:
         except subprocess.TimeoutExpired:
             child.kill()
             child.wait()
-            raise IdleReviewDeferred()
+            raise IdleReviewDeferred() from None
         finally:
             with self.lock:
                 self.review_job = None

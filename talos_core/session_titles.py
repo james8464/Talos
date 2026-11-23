@@ -1,7 +1,6 @@
 """Session titles adapted from Nous Research Hermes Agent. See LICENSE-Hermes."""
 
 import re
-from typing import Optional
 
 MAX_TITLE_LENGTH = 100
 _TITLE_SURROGATE_RE = re.compile(r"[\ud800-\udfff]")
@@ -9,7 +8,7 @@ _TITLE_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _TITLE_INVISIBLE_RE = re.compile(r"[\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff\ufffc\ufff9-\ufffb]")
 
 
-def sanitize_title(title: Optional[str]) -> Optional[str]:
+def sanitize_title(title: str | None) -> str | None:
     """The stored form of a title, or ``None`` when nothing printable remains.
 
     Lone surrogates become U+FFFD; ASCII controls (except tab, newline, return) and zero-width, bidi, object-replacement and interlinear code points are removed; whitespace runs collapse and the ends strip. A cleaned title longer than :data:`MAX_TITLE_LENGTH` raises ``ValueError``.

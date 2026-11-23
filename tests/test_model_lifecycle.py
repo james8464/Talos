@@ -41,6 +41,7 @@ class ProjectModelTests(unittest.TestCase):
 
     def test_supervised_voice_uses_startup_verification_and_rechecks_after_failure(self):
         from unittest.mock import Mock
+
         from talos_core.room.room_service import Room
         model = ProjectModel("fixture", 11435, True)
         server = model.ready_server = Mock()

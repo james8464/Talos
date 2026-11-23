@@ -1,11 +1,12 @@
 import json
+from contextlib import closing
 from pathlib import Path
-from typing import List, Dict, Any
+
+import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-import uvicorn
+
 from talos_core.memory.agent_memory import open_memory
-from contextlib import closing
 
 app = FastAPI(title="Talos Neural Atlas API")
 
@@ -30,8 +31,8 @@ class Link(BaseModel):
     label: str = ""
 
 class GraphData(BaseModel):
-    nodes: List[Node]
-    links: List[Link]
+    nodes: list[Node]
+    links: list[Link]
 
 def fetch_graph_data(db_path: Path) -> GraphData:
     nodes = []

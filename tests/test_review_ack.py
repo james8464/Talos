@@ -5,9 +5,9 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
-from talos_core.self_improvement import respan_worker
-from talos_core.runtime import talos_activity
 from talos_core.review_ack import review_content
+from talos_core.runtime import talos_activity
+from talos_core.self_improvement import respan_worker
 from talos_core.self_improvement.upstream_review import inventory
 
 

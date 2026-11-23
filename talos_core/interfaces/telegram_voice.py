@@ -136,8 +136,9 @@ def local_voice():
 
 def render_note(text):
     """Encode the existing local Talos voice as an in-memory Telegram voice message."""
-    import av
     import base64
+
+    import av
     wav = base64.b64decode(local_voice().speak(text))
     buf = io.BytesIO()
     with av.open(io.BytesIO(wav), format="wav") as source, av.open(buf, "w", format="ogg") as target:

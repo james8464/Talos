@@ -6,8 +6,8 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
-from talos_core.room import routine_controls
 from talos_core.cognition.goal_store import _inbox
+from talos_core.room import routine_controls
 from talos_core.room.room_work import saved_brief, topic_terms
 
 ENGINE = Path(__file__).resolve().parents[2] / "talos_core/scheduling/next.mjs"
@@ -17,7 +17,7 @@ CREATE = re.compile(
 )
 DAYS = dict(
     zip(
-        "sunday monday tuesday wednesday thursday friday saturday".split(),
+        ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"],
         map(str, range(7)),
     )
 )

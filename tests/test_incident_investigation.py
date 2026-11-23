@@ -1,16 +1,15 @@
 """Source-grounded incident diagnosis, including an optional real CPU inference."""
-from contextlib import closing
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from contextlib import closing
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from talos_core.self_improvement import incident_investigation as investigate
-from talos_core.self_improvement import local_source_model
-from talos_core.self_improvement import self_diagnosis
 from talos_core.cognition.conversation_activity import foreground
+from talos_core.self_improvement import incident_investigation as investigate
+from talos_core.self_improvement import local_source_model, self_diagnosis
 
 
 class IncidentInvestigationTests(unittest.TestCase):

@@ -2,8 +2,8 @@
 
 import argparse
 import os
-import sqlite3
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -98,9 +98,8 @@ def run_improvement_cycle(state=None, *, root=ROOT, apply_patches=False):
     """Run one closed-loop self-improvement pass: incident promotion, policy tuning, and sandbox patch verification."""
     import json
     import time
-    from talos_core.self_improvement import idle_lab
-    from talos_core.self_improvement import section_patches
-    from talos_core.self_improvement import self_diagnosis
+
+    from talos_core.self_improvement import idle_lab, section_patches, self_diagnosis
 
     state_dir = Path(state) if state is not None else STATE_PATH.parent
     state_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -157,9 +156,25 @@ def run_improvement_cycle(state=None, *, root=ROOT, apply_patches=False):
                 }
             )
 
+    from talos_core.self_improvement.decomposition import plan_task
+    plans = []
+    for proposal in promoted:
+        try:
+            plan = plan_task(
+                state_dir,
+                proposal["feature"],
+                proposal.get("acceptance", ""),
+                acceptance=proposal.get("acceptance", ""),
+                files=(proposal.get("source", ""),) if proposal.get("source") else (),
+            )
+        except (OSError, ValueError, KeyError):
+            continue
+        plans.append({"proposal": proposal["id"], "root": plan["root"],
+                      "leaves": len(plan["leaves"]), "path": plan["path"]})
     summary = {
         "checked_at": time.time(),
         "proposals_promoted": [item["id"] for item in promoted],
+        "plans": plans,
         "policy_action": policy_outcome.get("action", "none"),
         "candidates_verified": verified_candidates,
     }

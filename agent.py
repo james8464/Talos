@@ -5,12 +5,13 @@ import html
 import json
 import os
 import re
+import shlex
 import sqlite3
-import sys
 import subprocess
-import tomllib
+import sys
 import tempfile
 import time
+import tomllib
 from contextlib import closing, nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,21 +19,37 @@ from typing import TextIO
 from uuid import uuid4
 
 from talos_core import session_titles
-from talos_core.cognition import cognitive_engine
-from talos_core.runtime import talos_activity
-from talos_core.runtime import background_work
-from talos_core.cognition import session_goals
+from talos_core.cognition import cognitive_engine, session_goals
 from talos_core.cognition.conversation import visible_model_text
-
-from talos_core.memory.agent_memory import (
-    STATE_PATH, decisions, open_memory, recent_context, record_decision, review_decision,
-)
-from talos_core.runtime.local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES, acknowledge, inbox_items
-from talos_core.runtime.local_runtime import OLLAMA_MODEL, check_ollama_model, local_model_names, request_ollama_json, runtime_checks
-from talos_core.room.room_dialogue import compact_decision
 from talos_core.cognition.talos_identity import PERSONALITY, SPOKEN_STYLE, capability_context
+from talos_core.memory.agent_memory import (
+    STATE_PATH,
+    decisions,
+    open_memory,
+    recent_context,
+    record_decision,
+    review_decision,
+)
 from talos_core.memory.transcript_memory import (
-    TEXT_SESSION, fork_session, last_reply, recall_prompt, recent_messages, insert_transcripts, search_transcripts, session_rows, transcript_excerpts,
+    TEXT_SESSION,
+    fork_session,
+    insert_transcripts,
+    last_reply,
+    recall_prompt,
+    recent_messages,
+    search_transcripts,
+    session_rows,
+    transcript_excerpts,
+)
+from talos_core.room.room_dialogue import compact_decision
+from talos_core.runtime import background_work, talos_activity
+from talos_core.runtime.local_actions import LOCAL_WRITES, MAX_REMINDER_MINUTES, acknowledge, inbox_items
+from talos_core.runtime.local_runtime import (
+    OLLAMA_MODEL,
+    check_ollama_model,
+    local_model_names,
+    request_ollama_json,
+    runtime_checks,
 )
 
 MODEL_CONTEXT_TOKENS = 8192
@@ -44,6 +61,8 @@ CONSOLE_COMMANDS = (
     ("/copy", "Copy the last assistant reply to the Mac clipboard."),
     ("/version, /v", "Show the installed Talos project version."),
     ("/repair DESCRIPTION", "Report a problem to local diagnostics."),
+    ("/computer ACTION [ARGS]", "Inspect or control the Mac (permissions, apps, shot, click, type, key)."),
+    ("/decompose TASK", "Split an improvement task until each leaf is small enough for one model."),
     ("/repairs [ID]", "Show open incidents or inspect one private local report."),
     ("/status", "Show session mode, model and runtime prerequisites."),
     ("/parity [OpenClaw|Hermes]", "Show pinned command name coverage and missing commands."),
@@ -671,6 +690,70 @@ def interactive_chat(
                         print(f"Recorded problem {ident} for local diagnosis.", file=output, flush=True)
                     else:
                         print("Problem report is in preview mode.", file=output, flush=True)
+                case "/computer":
+                    from talos_core.mac import computer_use
+                    if not location:
+                        raise ValueError("Mac control requires a file-backed state directory.")
+                    parts = shlex.split(request)
+                    if not parts:
+                        raise ValueError("Usage: /computer permissions|apps|frontmost|windows|shot|open|activate|type|key|click|menu")
+                    action, *args = parts
+                    computer = computer_use.ComputerUse(Path(location).parent)
+                    if action == "permissions":
+                        result = computer_use.permissions()
+                    elif action == "apps":
+                        result = computer.apps()
+                    elif action == "frontmost":
+                        result = computer.frontmost()
+                    elif action == "windows":
+                        result = computer.windows(args[0] if args else None)
+                    elif action == "shot":
+                        if not apply:
+                            result = {"preview": "capture the screen to " + (args[0] if args else "state/screens")}
+                        else:
+                            result = computer.screenshot(path=Path(args[0]) if args else None).to_dict()
+                    elif action == "open":
+                        if not args:
+                            raise ValueError("Usage: /computer open APP_OR_PATH")
+                        target = Path(args[0]).expanduser()
+                        if not apply:
+                            result = {"preview": f"open {args[0]}"}
+                        elif target.exists():
+                            result = computer.open_path(str(target)).to_dict()
+                        else:
+                            result = computer.activate(args[0]).to_dict()
+                    elif action == "activate":
+                        if not args:
+                            raise ValueError("Usage: /computer activate APP")
+                        result = {"preview": f"activate {args[0]}"} if not apply else computer.activate(args[0]).to_dict()
+                    elif action == "type":
+                        if not args:
+                            raise ValueError("Usage: /computer type TEXT")
+                        result = {"preview": f"type {len(request.split(' ', 2)[2])} characters"} if not apply else computer.type_text(request.split(" ", 2)[2]).to_dict()
+                    elif action == "key":
+                        if not args:
+                            raise ValueError("Usage: /computer key COMBO [confirm]")
+                        confirm = "confirm" in args[1:]
+                        result = computer.press(args[0], confirm=confirm).to_dict()
+                    elif action == "click":
+                        if len(args) != 2:
+                            raise ValueError("Usage: /computer click X Y")
+                        result = {"preview": f"click {args[0]},{args[1]}"} if not apply else computer.click(int(args[0]), int(args[1])).to_dict()
+                    elif action == "menu":
+                        if len(args) < 3:
+                            raise ValueError("Usage: /computer menu APP MENU ITEM")
+                        result = computer.menu(args[0], *args[1:]).to_dict()
+                    else:
+                        raise ValueError("Unknown computer action.")
+                    print(json.dumps(result, ensure_ascii=False, default=str), file=output, flush=True)
+                case "/decompose":
+                    if not request.strip():
+                        raise ValueError("Usage: /decompose TASK")
+                    from talos_core.self_improvement import decomposition
+                    plan = decomposition.plan_task(Path(location).parent if location else STATE_PATH.parent,
+                                                   request.strip())
+                    print(decomposition.render(plan), file=output, flush=True)
+                    print(f"Plan saved to {plan['path']}", file=output, flush=True)
                 case "/status":
                     print(f"Session {session} · {mode} · model {model}", file=output, flush=True)
                     show_status(model, output)

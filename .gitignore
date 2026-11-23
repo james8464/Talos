@@ -18,3 +18,6 @@ generated_images/
 *.patch
 
 venv/
+dist/
+
+.DS_Store

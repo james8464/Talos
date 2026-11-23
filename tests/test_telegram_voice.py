@@ -199,7 +199,7 @@ class SpokenConversationReplay(unittest.TestCase):
             path = Path(tmp) / "channel.db"
             for number in range(len(notes) + 1):
                 media = {"voice": {"file_id": "sample", "duration": 5}} if number else {"text": "/voice voice_only"}
-                def call(method, **params):
+                def call(method, number=number, media=media, **params):
                     if method == "getUpdates":
                         return [{"update_id": number + 1, "message": {"chat": {"id": 7, "type": "private"},
                                  "from": {"id": 7}, **media}}]
@@ -209,7 +209,7 @@ class SpokenConversationReplay(unittest.TestCase):
                         sent.append(params["voice"])
                     return {"message_id": number + 10}
                 with closing(gateway.open_channel(path)) as db:
-                    gateway.poll(db, call, 42, 7, "qwen3:4b", download_voice=lambda _: notes[number - 1])
+                    gateway.poll(db, call, 42, 7, "qwen3:4b", download_voice=lambda _, number=number: notes[number - 1])
             with closing(gateway.open_channel(path)) as db:
                 last = db.execute("SELECT answer FROM turns ORDER BY seq DESC LIMIT 1").fetchone()[0]
             self.assertEqual(len(sent), 3)

@@ -1,17 +1,17 @@
 """Ask the reviewer to prioritize real shared evidence, using anonymous counts."""
-import json
 import hashlib
+import json
 import sqlite3
 import time
+from contextlib import closing
 from dataclasses import dataclass
 from itertools import groupby, islice
-from contextlib import closing
 
-from talos_core.self_improvement import local_source_model
-from talos_core.mac import mac_context
 from talos_core.cognition.conversation_activity import conversation_busy
+from talos_core.mac import mac_context
 from talos_core.memory.memory_connections import PROJECT, SOURCES
 from talos_core.room.room_research import FREE_MODEL
+from talos_core.self_improvement import local_source_model
 
 
 def candidates(db, allowed, *, limit=12):

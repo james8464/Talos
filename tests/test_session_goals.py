@@ -1,14 +1,14 @@
 import io
-import os
 import json
+import os
 import tempfile
 import unittest
 from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from talos_core.cognition import session_goals
 from agent import interactive_chat, model_text
+from talos_core.cognition import session_goals
 from talos_core.memory.agent_memory import open_memory
 
 
@@ -96,10 +96,10 @@ class StandingGoalTests(unittest.TestCase):
         self.assertIn("Done goal after 1 step", out)
 
     def test_worker_command_processes_console_queue_through_loopback_api(self):
-        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
         import subprocess
         import sys
         import threading
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
         calls = []
 
         class Model(BaseHTTPRequestHandler):

@@ -8,11 +8,10 @@ from contextlib import ExitStack, closing
 from datetime import datetime
 from pathlib import Path
 
-from talos_core.self_improvement import graph_review
-from talos_core.self_improvement import local_source_model
+from talos_core.review_ack import review_content
 from talos_core.room.room_research import respan_completion
 from talos_core.runtime.talos_activity import lock_state, record
-from talos_core.review_ack import review_content
+from talos_core.self_improvement import graph_review, local_source_model
 from talos_core.self_improvement.upstream_comparison import compare
 from talos_core.self_improvement.upstream_review import inventory
 

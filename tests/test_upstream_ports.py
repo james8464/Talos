@@ -1,16 +1,16 @@
 import io
 import json
 import os
-from contextlib import chdir, closing
-from pathlib import Path
 import tempfile
 import unittest
+from contextlib import chdir, closing
+from pathlib import Path
 
 from agent import interactive_chat
 from talos_core.memory.agent_memory import open_memory
 from talos_core.memory.transcript_memory import remember
-from talos_core.self_improvement.upstream_review import inventory, parity_status, propose
 from talos_core.self_improvement.upstream_comparison import compare
+from talos_core.self_improvement.upstream_review import inventory, parity_status, propose
 
 
 class UpstreamPortsTests(unittest.TestCase):

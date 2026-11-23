@@ -35,9 +35,11 @@ class MaintenanceSchedule:
         self.sources = self.code = None
         self.next_files = self.next_review = 0
         self.next_memory_review = 0
+        self.next_health = 0
         self.counts = {}
         self.outcome = "Awaiting first review"
         self.memory_outcome = "Awaiting an idle review"
+        self.health_outcome = "Awaiting self-check"
 
     def poll_memory(self, state, *, run):
         now = time.monotonic()
@@ -52,6 +54,21 @@ class MaintenanceSchedule:
                     self.memory_outcome = result
                     self.next_memory_review = now + 120
         return self.memory_outcome
+
+    def poll_health(self, state, *, run):
+        """Run a full self-check every six hours, deferred during conversation."""
+        now = time.monotonic()
+        if now >= self.next_health and not conversation_busy(state):
+            try:
+                result = run("health")
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                self.health_outcome = f"Self-check unavailable ({type(error).__name__})"
+                self.next_health = now + 600
+            else:
+                if result is not None:
+                    self.health_outcome = str(result)
+                    self.next_health = now + 6 * 3600
+        return self.health_outcome
 
     def poll(self, state, *, sources, code, run):
         """Return report lines after a check, or None when foreground activity defers it."""

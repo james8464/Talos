@@ -2,7 +2,6 @@
 
 import json
 
-
 TARGETS = ("talos_core/memory/personal_index.py", "talos_core/mac/mac_context.py", "mac/VisitorMemory.swift", "talos_core/room/room_dialogue.py",
            "talos_core/memory/commitment_memory.py", "mac/VoiceEndpoint.swift", "talos_core/self_improvement/idle_lab.py", "talos_core/room/room_work.py")
 FILE = "feature-requests.jsonl"

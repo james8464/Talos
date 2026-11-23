@@ -1,24 +1,24 @@
-from contextlib import closing, ExitStack
-from http.client import HTTPConnection
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import base64
 import io
 import json
 import os
-from pathlib import Path
 import socket
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
+import wave
+from contextlib import ExitStack, closing
+from http.client import HTTPConnection
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
-import wave
 
+from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.memory.agent_memory import open_memory
 from talos_core.room.room_service import Handler, Room
-from talos_core.cognition.spoken_stream import SpokenStream
 
 
 def packet(content, done=False):
@@ -111,8 +111,9 @@ class SpokenStreamFlow(unittest.TestCase):
 
     def test_supervised_stream_defers_maintenance_without_an_inventory_call(self):
         from unittest.mock import Mock
-        from talos_core.cognition.conversation_activity import conversation_busy
+
         from run_talos import ProjectModel
+        from talos_core.cognition.conversation_activity import conversation_busy
 
         supervised = ProjectModel("fixture", self.model.server_port, True)
         supervised.ready_server = Mock()

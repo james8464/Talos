@@ -2,12 +2,12 @@
 
 import json
 import math
-from pathlib import Path
-from statistics import median
 import tempfile
 import threading
 import time
 from contextlib import closing
+from pathlib import Path
+from statistics import median
 
 from talos_core.memory.agent_memory import open_memory
 from talos_core.memory.commitment_memory import refresh_one, select
@@ -44,7 +44,7 @@ def main():
             stop = threading.Event()
             ready = threading.Event()
 
-            def index():
+            def index(ready=ready, stop=stop):
                 with closing(open_memory(room.db_path)) as db:
                     with db:
                         db.execute("UPDATE context_sources SET checked=0,digest=''")

@@ -12,9 +12,9 @@ from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from talos_core.runtime.talos_activity import record
 from talos_core.self_improvement.feature_queue import append, queue_entries
 from talos_core.self_improvement.feature_targets import FILE
-from talos_core.runtime.talos_activity import record
 
 
 class Port(NamedTuple):

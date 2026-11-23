@@ -7,12 +7,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from tools.retire_upstream import Port, retire
-
 import run_talos
-from talos_core.runtime import talos_activity
-from talos_core.recovery import PollBackoff, reconnect_delay, stable_connection
 from talos_core.memory.vault_watch import VaultPublisher
+from talos_core.recovery import PollBackoff, reconnect_delay, stable_connection
+from talos_core.runtime import talos_activity
+from tools.retire_upstream import Port, retire
 
 
 class RecoveryTests(unittest.TestCase):
@@ -106,7 +105,7 @@ class RecoveryTests(unittest.TestCase):
             files[1].write_text("Hermes")
             retire(root,state,ports)
             retire(root,state,ports)
-            for file, port in zip(files,ports):
+            for file, port in zip(files, ports):
                 self.assertFalse(file.exists())
                 backup = state/".migrated-upstream"/port.project/port.sha/port.path
                 self.assertEqual(backup.read_text(),port.project)

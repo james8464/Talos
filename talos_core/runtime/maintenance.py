@@ -8,16 +8,16 @@ import sqlite3
 import subprocess
 import sys
 import time
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
-from contextlib import closing
 from talos_core.cognition import cognitive_engine
 from talos_core.cognition.conversation_activity import QuietWorker
-from talos_core.self_improvement.maintenance_schedule import MaintenanceSchedule, source_versions, stamp
 from talos_core.mac import mac_context
-from talos_core.self_improvement.feature_targets import FILE, TARGETS, proposal_ledger
 from talos_core.runtime.talos_activity import active_phase, lock_state, record
+from talos_core.self_improvement.feature_targets import FILE, TARGETS, proposal_ledger
+from talos_core.self_improvement.maintenance_schedule import MaintenanceSchedule, source_versions, stamp
 
 STATE = Path(__file__).resolve().parents[2] / "state"
 REPORT = Path("Talos Memory") / "Talos activity.md"
@@ -64,6 +64,7 @@ def enabled_versions(state, home):
 
 def job_loop(state, model, home):
     # Only the child imports the extractors and feature reviewer.
+    report_root = Path(__file__).resolve().parents[2]
     from talos_core.memory import knowledge_sources
     from talos_core.memory.personal_index import sync
     for line in sys.stdin:
@@ -93,6 +94,15 @@ def job_loop(state, model, home):
             elif kind == "memory_review":
                 from talos_core.memory import memory_review
                 result = memory_review.review(state, model)
+            elif kind == "health":
+                from talos_core.self_improvement.health import failures, health, report_failures
+                report = health(report_root, state, quick=False, lint=True, tests=True)
+                if report["ok"]:
+                    result = "healthy"
+                else:
+                    issues = list(failures(report))
+                    report_failures(report, state)
+                    result = f"attention needed · {issues[0] if issues else 'check failed'}"
             elif kind == "cognitive":
                 from talos_core.memory.agent_memory import open_memory
                 db_path = state / "agent.sqlite3"
@@ -126,7 +136,8 @@ def watch(state, model):
 
         def observed_job(kind, **options):
             labels = {"sync": "Refresh enabled memory sources", "review": "Compare code and review proposals",
-                      "memory_review": "Check project evidence for AI memory review"}
+                      "memory_review": "Check project evidence for AI memory review",
+                      "health": "Self-check Talos source and tests"}
             label = labels[kind]
             record(state, "Maintenance", label + " · started")
             started = time.monotonic()
@@ -167,6 +178,7 @@ def watch(state, model):
                             next_index_check = time.monotonic() + result["retry_in"]
                 lines.append("Search index maintenance · " + index_outcome)
                 lines.append("Latest AI memory review · " + schedule.poll_memory(state, run=observed_job))
+            lines.append("Self-check · " + schedule.poll_health(state, run=observed_job))
             cycle += 1
             label = datetime.now().astimezone().isoformat(timespec="seconds")
             lines.insert(0, f"Memory check {cycle} · {label}")

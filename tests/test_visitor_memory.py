@@ -12,9 +12,9 @@ from uuid import uuid4
 from talos_core.cognition import goal_store
 from talos_core.memory import visitor_memory
 from talos_core.memory.agent_memory import open_memory
-from talos_core.room.room_service import Room
-from talos_core.room.room_dialogue import spoken_reply
 from talos_core.memory.transcript_memory import search_transcripts
+from talos_core.room.room_dialogue import spoken_reply
+from talos_core.room.room_service import Room
 
 
 class VisitorMemoryTests(unittest.TestCase):

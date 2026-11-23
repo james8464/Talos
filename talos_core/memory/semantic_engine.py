@@ -28,8 +28,8 @@ class SemanticEngine:
 
     def _load(self) -> None:
         try:
-            import lancedb  # noqa: PLC0415 - optional dependency, loaded on demand
-            from clip import load as load_clip  # noqa: PLC0415 - optional dependency
+            import lancedb
+            from clip import load as load_clip
         except ImportError as error:
             LOGGER.info("Semantic search disabled: %s", error)
             return
@@ -58,7 +58,7 @@ class SemanticEngine:
         if not self.available or self.model is None:
             raise RuntimeError("Semantic search not available - CLIP is not installed")
 
-        import torch  # noqa: PLC0415 - optional dependency, loaded on demand
+        import torch
 
         with torch.no_grad():
             tokens = self.model.tokenize([text])[0]

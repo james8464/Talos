@@ -5,11 +5,10 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
-from talos_core.self_improvement import graph_review
 from talos_core.mac import mac_context
-from talos_core.memory import memory_connections
-from talos_core.memory import memory_review
+from talos_core.memory import memory_connections, memory_review
 from talos_core.memory.personal_index import sync
+from talos_core.self_improvement import graph_review
 from talos_core.self_improvement.upstream_comparison import discovery_candidate
 
 

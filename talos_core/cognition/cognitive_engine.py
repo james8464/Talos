@@ -12,12 +12,11 @@ from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from talos_core.runtime import background_work
-from talos_core.memory import commitment_memory
-from talos_core.mac import mac_context
-from talos_core.memory.transcript_memory import TEXT_SESSION, search_transcripts
-from talos_core.memory import semantic_engine
 from talos_core.cognition import talos_identity
+from talos_core.mac import mac_context
+from talos_core.memory import commitment_memory, semantic_engine
+from talos_core.memory.transcript_memory import TEXT_SESSION, search_transcripts
+from talos_core.runtime import background_work
 
 BRIEF_FILE = "jarvis-brief.json"
 POLICY_OVERRIDES_FILE = "policy-overrides.json"

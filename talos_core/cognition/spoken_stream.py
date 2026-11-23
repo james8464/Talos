@@ -1,14 +1,13 @@
 """Interruptible Ollama generation for the read-only room conversation path."""
 
 import http.client
-from talos_core.room.room_dialogue import with_spoken_instructions
-
 import json
 import os
 import re
 import socket
 import threading
 
+from talos_core.room.room_dialogue import with_spoken_instructions
 from talos_core.runtime.local_runtime import OLLAMA_HOST, OLLAMA_PORT
 
 

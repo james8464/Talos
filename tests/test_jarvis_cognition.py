@@ -1,25 +1,22 @@
 """End-to-end tests for Jarvis unified knowledge database access & self-thinking loops."""
 
-from contextlib import closing
-from datetime import UTC, datetime, timedelta
 import io
 import json
-from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from unittest.mock import patch
 
 import agent
+from talos_core.cognition import cognitive_engine, goal_store
+from talos_core.memory import commitment_memory, transcript_memory
 from talos_core.memory.agent_memory import open_memory
-from talos_core.runtime import background_work
-from talos_core.cognition import cognitive_engine
-from talos_core.memory import commitment_memory
-from talos_core.cognition import goal_store
-from talos_core.runtime import maintenance
-from talos_core.self_improvement import overnight_goal
 from talos_core.room.room_service import Room
-from talos_core.memory import transcript_memory
+from talos_core.runtime import background_work, maintenance
+from talos_core.self_improvement import overnight_goal
 
 
 def _seed_personal_index(state: Path) -> None:

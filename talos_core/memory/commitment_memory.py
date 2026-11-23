@@ -3,16 +3,16 @@
 import argparse
 import csv
 import email
-from email import policy
-from email.utils import getaddresses, parsedate_to_datetime
 import hashlib
 import io
 import json
-from pathlib import Path
 import re
 import sqlite3
 from contextlib import closing
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
+from email import policy
+from email.utils import getaddresses, parsedate_to_datetime
+from pathlib import Path
 
 KINDS = ("email", "imessage", "whatsapp", "document", "calendar")
 DAYS = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|\d{4}-\d{2}-\d{2}"
@@ -386,7 +386,7 @@ def due_date(value, stamp):
             return date.fromisoformat(value)
         except ValueError:
             return None
-    weekdays = "monday tuesday wednesday thursday friday saturday sunday".split()
+    weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
     day = datetime.fromtimestamp(stamp).date()
     return day + timedelta(days=(weekdays.index(value.lower()) - day.weekday()) % 7)
 
@@ -544,7 +544,7 @@ def main():
             print(json.dumps(brief(db), indent=2, ensure_ascii=False))
         else:
             for row in db.execute("SELECT * FROM context_sources").fetchall():
-                refresh(db, row, datetime.now(timezone.utc).timestamp())
+                refresh(db, row, datetime.now(UTC).timestamp())
 
 
 if __name__ == "__main__":

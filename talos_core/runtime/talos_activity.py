@@ -1,22 +1,22 @@
 """Local, read-only activity viewer and bounded operational event journal."""
 
-from talos_core.recovery import PollBackoff
-
 import argparse
-from contextlib import closing, contextmanager
-from contextvars import ContextVar
-from datetime import datetime
 import fcntl
-from functools import lru_cache
 import http.client
 import json
 import os
-from pathlib import Path
 import sqlite3
 import subprocess
 import sys
 import time
 import unicodedata
+from contextlib import closing, contextmanager
+from contextvars import ContextVar
+from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
+
+from talos_core.recovery import PollBackoff
 
 STATE = Path(__file__).resolve().parents[2] / "state"
 PORT = 8765
@@ -310,8 +310,8 @@ def repair_evidence(state):
 def snapshot(state, port, *, database=None):
     lines = service_snapshot(state, runtime_locks(state, port))
     if sys.platform == "darwin" and state.resolve() == STATE:
-        from tools.talos_service import LABEL as room_label
         from tools.enable_heartbeat import LABEL as heartbeat_label
+        from tools.talos_service import LABEL as room_label
         interval = int(time.monotonic() // 30)
         lines.extend((f"Room login service · {launchd_status(room_label, interval)}",
                       f"Scheduled heartbeat · {launchd_status(heartbeat_label, interval)}"))

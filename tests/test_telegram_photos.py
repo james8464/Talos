@@ -7,7 +7,13 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from talos_core.interfaces.telegram_gateway import MAX_PHOTO_BYTES, jpeg_pixels, download_photo, open_channel, poll
+from talos_core.interfaces.telegram_gateway import (
+    MAX_PHOTO_BYTES,
+    download_photo,
+    jpeg_pixels,
+    open_channel,
+    poll,
+)
 
 
 class TelegramPhotoTests(unittest.TestCase):

@@ -9,7 +9,15 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from talos_core.interfaces.telegram_gateway import ApiError, api_client, main, open_channel, owner_id, pair_owner, poll
+from talos_core.interfaces.telegram_gateway import (
+    ApiError,
+    api_client,
+    main,
+    open_channel,
+    owner_id,
+    pair_owner,
+    poll,
+)
 
 
 class TelegramGatewayTests(unittest.TestCase):
@@ -126,7 +134,7 @@ class TelegramGatewayTests(unittest.TestCase):
     def test_uncertain_delivery_is_not_repeated_and_rate_limit_can_retry(self):
         self.add(12, "One")
         for error in (ApiError(429, 2), ConnectionResetError()):
-            def fail(method, **args):
+            def fail(method, error=error, **args):
                 if method == "sendMessage":
                     raise error
                 return self.api(method, **args)
@@ -258,7 +266,7 @@ class TelegramConversationReplay(unittest.TestCase):
         replies = []
         with tempfile.TemporaryDirectory() as folder:
             for number, text in enumerate(lines, 1):
-                def api(method, **body):
+                def api(method, number=number, text=text, **body):
                     if method == "getUpdates":
                         return [{"update_id": number, "message": {"chat": {"id": 8, "type": "private"},
                                 "from": {"id": 8}, "text": text}}]

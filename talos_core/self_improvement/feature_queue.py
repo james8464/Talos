@@ -14,9 +14,9 @@ import time
 from contextlib import ExitStack
 from pathlib import Path
 
-from talos_core.self_improvement.feature_targets import FILE, TARGETS, proposal_ledger
 from agent import model_text
 from talos_core.runtime.local_runtime import check_ollama_model
+from talos_core.self_improvement.feature_targets import FILE, TARGETS, proposal_ledger
 from talos_core.self_improvement.overnight_goal import free_review
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -169,6 +169,12 @@ def review(state, model, *, infer=None, complete=None, decline=None, cloud=False
             return "duplicate proposal"
         append(stream, dict(status="proposed", id=ident, origin=origin, source=target, feature=title,
                             acceptance=result["acceptance"].strip(), time=time.time()))
+        try:
+            from talos_core.self_improvement.decomposition import plan_task
+            plan_task(state, title, target, acceptance=result["acceptance"].strip(),
+                      files=(target,))
+        except (OSError, ValueError):
+            pass
         return "proposal queued"
 
 

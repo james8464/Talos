@@ -8,10 +8,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from talos_core.memory.agent_memory import open_memory
-from talos_core.self_improvement.improve_talos import draft_patch
 from talos_core.room.room_dialogue import EMPTY, HEARD, IDENTITY, TYPED, UNKNOWN, VISIBLE, decision
 from talos_core.room.room_research import FREE_MODEL, FREE_MODELS, public_answer
 from talos_core.room.room_service import Room
+from talos_core.self_improvement.improve_talos import draft_patch
 
 
 class RoomDialogueTests(unittest.TestCase):
@@ -163,8 +163,8 @@ class RoomDialogueTests(unittest.TestCase):
         self.assertEqual((self.root / "example.py").read_text(), "value = 1\n")
 
     def test_slow_stages_drive_code_issue_selection_without_transcripts(self):
-        from talos_core.self_improvement.improve_talos import observed_issue
         from talos_core.room.room_service import record_slow_stage
+        from talos_core.self_improvement.improve_talos import observed_issue
 
         with closing(open_memory(self.room.db_path)) as db, db:
             record_slow_stage(db, "voice decision", 2100)

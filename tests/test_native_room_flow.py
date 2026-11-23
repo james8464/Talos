@@ -1,10 +1,10 @@
-from http.server import ThreadingHTTPServer
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
+from http.server import ThreadingHTTPServer
+from pathlib import Path
 
 from talos_core.room.room_service import Handler, Room, create_token
 

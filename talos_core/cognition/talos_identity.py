@@ -1,9 +1,8 @@
 import sqlite3
-import json
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Set
 from contextlib import closing
-from talos_core.memory.agent_memory import open_memory
+from pathlib import Path
+from typing import Any
+
 
 class IdentityResolver:
     """
@@ -98,14 +97,14 @@ class IdentityResolver:
             except (sqlite3.Error, OSError):
                 continue
 
-    def _get_contact_paths(self) -> List[Path]:
+    def _get_contact_paths(self) -> list[Path]:
         # Simplified logic mirroring mac_context.py
         library = Path.home() / "Library"
         book = library / "Application Support/AddressBook"
         if not book.exists(): return []
         return list(book.glob("AddressBook-v*.abcddb"))
 
-    def resolve_identity(self, query: str) -> Dict[str, Any]:
+    def resolve_identity(self, query: str) -> dict[str, Any]:
         """
         Returns the resolved identity context for the current user.
         Used to answer "Who am I?" or "Where do I live?".
@@ -135,7 +134,7 @@ class IdentityResolver:
                 }
         return {}
 
-    def get_unified_profile(self) -> Dict[str, Any]:
+    def get_unified_profile(self) -> dict[str, Any]:
         return {
             "full_name": self.user_profile["full_name"],
             "emails": list(self.user_profile["emails"]),

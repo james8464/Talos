@@ -17,9 +17,17 @@ from pathlib import Path
 
 from agent import model_text
 from talos_core.cognition.conversation import limit_history
-from talos_core.runtime.local_runtime import check_ollama_model
+from talos_core.interfaces.telegram_voice import (
+    MAX_VOICE_BYTES,
+    MAX_VOICE_SECONDS,
+    VoiceUnavailable,
+    model_directory,
+    render_note,
+    setup_voice,
+    transcribe_note,
+)
 from talos_core.room.room_vision import describe_image
-from talos_core.interfaces.telegram_voice import MAX_VOICE_BYTES, MAX_VOICE_SECONDS, VoiceUnavailable, model_directory, render_note, setup_voice, transcribe_note
+from talos_core.runtime.local_runtime import check_ollama_model
 
 MAX_PHOTO_BYTES = 180_000
 MAX_PHOTO_PIXELS = 4_000_000

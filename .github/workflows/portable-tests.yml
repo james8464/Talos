@@ -30,6 +30,23 @@ jobs:
           TALOS_TEST_REAL_MINUTE: '1'
         run: python -m unittest discover -s tests -v
 
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Install Ruff
+        run: python -m pip install 'ruff>=0.9'
+      - name: Lint and self-check
+        run: |
+          ruff check .
+          python -m talos_core.cli doctor --quick --no-lint
+
   native-room:
     runs-on: macos-26
     timeout-minutes: 10

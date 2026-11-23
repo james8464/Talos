@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from talos_core.self_improvement import feature_queue
 from talos_core.memory import knowledge_map
 from talos_core.runtime.maintenance import queue_summary
+from talos_core.self_improvement import feature_queue
 from talos_core.self_improvement.section_patches import proposals
 
 

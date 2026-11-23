@@ -5,9 +5,9 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from talos_core.self_improvement import graph_review
 from talos_core.mac import mac_context
 from talos_core.memory.vault_graph import publish_connections
+from talos_core.self_improvement import graph_review
 
 
 class LocalKnowledgeTests(unittest.TestCase):

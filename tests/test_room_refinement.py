@@ -1,20 +1,21 @@
 import base64
-from contextlib import closing
-from datetime import UTC, datetime, timedelta
 import json
 import os
-from pathlib import Path
 import sqlite3
 import time
 import unittest
+from contextlib import closing
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from unittest.mock import patch
 
-from talos_core.memory.agent_memory import open_memory
+from test_room_acceptance import RoomAcceptanceTests as _Acceptance
+
 from talos_core.memory import commitment_memory as memory
-from talos_core.self_improvement.idle_lab import IdleLab, experiment
+from talos_core.memory.agent_memory import open_memory
 from talos_core.room.room_service import Room
 from talos_core.room.room_vision import visual_question
-from test_room_acceptance import RoomAcceptanceTests as _Acceptance
+from talos_core.self_improvement.idle_lab import IdleLab, experiment
 
 
 class RefinementTests(unittest.TestCase):

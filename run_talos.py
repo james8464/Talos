@@ -1,12 +1,8 @@
 """Build and start the local Talos room stack with a project-owned model store."""
 
-from talos_core.recovery import reconnect_delay, stable_connection
-
 import argparse
 import errno
-import time
 import os
-from http.client import HTTPException
 import shutil
 import signal
 import socket
@@ -14,15 +10,18 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from contextlib import contextmanager
+from http.client import HTTPException
 from pathlib import Path
 
-from talos_core.memory.agent_memory import STATE_PATH
 from agent import model_text
-from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
+from talos_core.memory.agent_memory import STATE_PATH
+from talos_core.recovery import reconnect_delay, stable_connection
 from talos_core.room.room_service import DEFAULT_PORT, Room, run
 from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice, prepare_assets, voice_python
 from talos_core.runtime import talos_activity
+from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
 from talos_core.self_improvement.worker_supervision import WorkerSupervisor
 
 ROOT = Path(__file__).resolve().parent
@@ -150,7 +149,7 @@ class ProjectModel:
                 self.state = "preparing model"
                 with self.child([ollama, "pull", self.model], env) as pull:
                     if pull.wait() != 0:
-                        raise RuntimeError("The local model download failed.")
+                        raise RuntimeError("The local model download failed.") from None
                 check_ollama_model(self.model)
             self.state = "warming up"
             warm_model(self.model)

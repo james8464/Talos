@@ -1,15 +1,15 @@
 """Publish navigable views of the local index without copying raw Mac records."""
 
-from talos_core.self_improvement.feature_targets import proposal_ledger
+import fcntl
 import re
 import sqlite3
-import fcntl
 from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
 from talos_core.mac import mac_context
 from talos_core.memory.vault_graph import MARKER, code_name, link, publish_connections, write_note
+from talos_core.self_improvement.feature_targets import proposal_ledger
 
 
 def publish_work(state, folder):

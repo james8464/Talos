@@ -4,16 +4,32 @@ import fcntl
 import sqlite3
 import sys
 import time
-from pathlib import Path
-from datetime import datetime
 from contextlib import closing
+from datetime import datetime
+from pathlib import Path
 
-from talos_core.memory import knowledge_map
 from talos_core.mac import mac_context
+from talos_core.memory import knowledge_map
+from talos_core.memory.vault_graph import (
+    MARKER,
+    ROOT,
+    code_name,
+    link,
+    publish_code,
+    source_files,
+    write_note,
+)
+from talos_core.runtime.talos_activity import (
+    JOURNAL,
+    checked_time,
+    record,
+    repair_evidence,
+    runtime_evidence,
+    runtime_locks,
+    service_snapshot,
+)
 from talos_core.self_improvement.feature_targets import FILE
 from talos_core.self_improvement.maintenance_schedule import stamp
-from talos_core.runtime.talos_activity import JOURNAL, checked_time, record, repair_evidence, runtime_evidence, runtime_locks, service_snapshot
-from talos_core.memory.vault_graph import MARKER, ROOT, code_name, link, publish_code, source_files, write_note
 
 
 class VaultPublisher:

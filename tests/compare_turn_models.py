@@ -8,8 +8,8 @@ import time
 import wave
 from pathlib import Path
 
-from talos_core.runtime.local_runtime import request_ollama_json
 from talos_core.cognition.turn_timing import classify
+from talos_core.runtime.local_runtime import request_ollama_json
 
 # All captions are synthetic. Test at a silence long enough for the baseline timer to fire.
 CAPTIONS = [
