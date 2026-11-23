@@ -125,6 +125,27 @@ class ComputerUseTests(unittest.TestCase):
         self.assertNotIn("secret-value", log)
         self.assertIn('"characters": 12', log)
 
+    def test_scroll_hover_drag_and_window_management_use_the_kit(self):
+        from unittest.mock import patch
+
+        from talos_core.mac import perception
+
+        with patch.object(perception, "run", return_value={"ok": True}) as run, \
+             patch.object(self.computer, "_show_cursor"):
+            self.assertTrue(self.computer.scroll(5, app="TextEdit", x=10, y=20)["ok"])
+            self.assertTrue(self.computer.hover(10, 20, app="TextEdit")["ok"])
+            self.assertTrue(self.computer.drag(10, 20, 30, 40, app="TextEdit")["ok"])
+            self.assertTrue(self.computer.window("resize", app="TextEdit", width=800, height=600)["ok"])
+        commands = [" ".join(call.args) for call in run.call_args_list]
+        self.assertTrue(any("input scroll" in command and "--amount 5" in command for command in commands))
+        self.assertTrue(any("input hover" in command and "--x 10" in command for command in commands))
+        self.assertTrue(any("input drag" in command and "--to-x 30" in command for command in commands))
+        self.assertTrue(any("window resize" in command and "--width 800" in command for command in commands))
+
+    def test_closing_a_window_requires_confirmation(self):
+        with self.assertRaises(cu.PolicyError):
+            self.computer.window("close", app="TextEdit")
+
     def test_background_accessibility_uses_the_harness_when_present(self):
         from types import SimpleNamespace
         from unittest.mock import patch

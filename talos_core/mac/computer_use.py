@@ -273,10 +273,11 @@ class ComputerUse:
         from talos_core.mac import perception
         return perception
 
-    def see(self, app: str, *, annotate: bool = False) -> dict:
+    def see(self, app: str, *, annotate: bool = False,
+            interactive: bool = True) -> dict:
         """Snapshots the app's controls and optionally a set-of-mark screenshot."""
         perception = self.perception()
-        state = perception.snapshot(app)
+        state = perception.snapshot(app, interactive=interactive)
         marked = None
         if annotate:
             marked = perception.annotate(app)
@@ -309,6 +310,81 @@ class ComputerUse:
         self.audit(Receipt("type_ref", True, _now(), f"{len(text)} characters",
                            metadata={"app": app, "ref": ref,
                                      "sha256": hashlib.sha256(text.encode()).hexdigest()}))
+        return result
+
+    def scroll(self, amount: int, *, dx: int = 0, app: str | None = None,
+               x: int | None = None, y: int | None = None, unit: str = "line") -> dict:
+        """Scroll a target app without moving the physical pointer."""
+        perception = self.perception()
+        args = ["input", "scroll", "--amount", str(int(amount)), "--dx", str(int(dx)),
+                "--unit", unit]
+        if app:
+            args += ["--app", _validate_app(app)]
+        if x is not None and y is not None:
+            _validate_point(x, y)
+            args += ["--x", str(int(x)), "--y", str(int(y))]
+        args.append("--show")
+        result = perception.run(*args)
+        self._show_cursor(int(x if x is not None else 200), int(y if y is not None else 200),
+                          f"scroll · {app or 'front'}")
+        self.audit(Receipt("scroll", True, _now(), str(result)[:200],
+                           metadata={"app": app, "amount": amount, "dx": dx}))
+        return result
+
+    def hover(self, x: int, y: int, *, app: str | None = None) -> dict:
+        x, y = _validate_point(x, y)
+        perception = self.perception()
+        args = ["input", "hover", "--x", str(x), "--y", str(y), "--show"]
+        if app:
+            args += ["--app", _validate_app(app)]
+        result = perception.run(*args)
+        self._show_cursor(x, y, f"hover · {app or 'front'}")
+        self.audit(Receipt("hover", True, _now(), str(result)[:200],
+                           metadata={"app": app, "x": x, "y": y}))
+        return result
+
+    def drag(self, from_x: int, from_y: int, to_x: int, to_y: int, *,
+             app: str | None = None, steps: int = 12, button: str = "left",
+             mode: str = "pid") -> dict:
+        for x, y in ((from_x, from_y), (to_x, to_y)):
+            _validate_point(x, y)
+        if button not in ("left", "right", "middle"):
+            raise ValueError("button must be left, right or middle")
+        if mode not in ("pid", "hid"):
+            raise ValueError("mode must be pid (background) or hid (real pointer)")
+        perception = self.perception()
+        args = ["input", "drag", "--x", str(int(from_x)), "--y", str(int(from_y)),
+                "--to-x", str(int(to_x)), "--to-y", str(int(to_y)),
+                "--steps", str(max(1, min(int(steps), 60))), "--button", button,
+                "--mode", mode, "--show"]
+        if app:
+            args += ["--app", _validate_app(app)]
+        result = perception.run(*args)
+        self._show_cursor(int(to_x), int(to_y), f"drag · {app or 'front'}")
+        self.audit(Receipt("drag", True, _now(), str(result)[:200],
+                           metadata={"app": app, "from": [from_x, from_y],
+                                     "to": [to_x, to_y]}))
+        return result
+
+    def window(self, action: str, *, app: str | None = None,
+               confirm: bool = False, **options) -> dict:
+        """List, move, resize, minimize, restore, raise, close or fullscreen a window."""
+        allowed = {"list", "move", "resize", "minimize", "restore", "raise",
+                   "focus", "close", "fullscreen"}
+        if action not in allowed:
+            raise ValueError(f"Unknown window action: {action}")
+        if action == "close" and not confirm:
+            raise PolicyError("Closing a window needs confirm=True.")
+        args = ["window", action]
+        if app:
+            args += ["--app", _validate_app(app)]
+        for key in ("title", "index", "x", "y", "width", "height"):
+            if options.get(key) is not None:
+                args += [f"--{key}", str(options[key])]
+        result = self.perception().run(*args)
+        self.audit(Receipt(f"window_{action}", True, _now(), str(result)[:240],
+                           metadata={"app": app, **{k: v for k, v in options.items()
+                                                    if v is not None}}))
         return result
 
     def choose(self, app: str, goal: str, decider=None, model: str | None = None) -> dict:
@@ -801,6 +877,7 @@ def _cli() -> int:
     see = commands.add_parser("see", help="Read an app's visible controls and clickable refs.")
     see.add_argument("app")
     see.add_argument("--annotate", action="store_true")
+    see.add_argument("--all", action="store_true", help="include non-interactive text")
     choose = commands.add_parser("choose", help="Find a control by intent, optionally with a vision model.")
     choose.add_argument("app")
     choose.add_argument("goal")
@@ -815,6 +892,34 @@ def _cli() -> int:
     click_ref = commands.add_parser("click-ref", help="Click an accessibility ref.")
     click_ref.add_argument("app")
     click_ref.add_argument("ref")
+    scroll = commands.add_parser("scroll", help="Background scroll a target app.")
+    scroll.add_argument("amount", type=int)
+    scroll.add_argument("--app")
+    scroll.add_argument("--dx", type=int, default=0)
+    scroll.add_argument("--x", type=int)
+    scroll.add_argument("--y", type=int)
+    hover = commands.add_parser("hover", help="Hover a screen point in a target app.")
+    hover.add_argument("x", type=int)
+    hover.add_argument("y", type=int)
+    hover.add_argument("--app")
+    drag = commands.add_parser("drag", help="Background drag between screen points.")
+    drag.add_argument("x", type=int)
+    drag.add_argument("y", type=int)
+    drag.add_argument("to_x", type=int)
+    drag.add_argument("to_y", type=int)
+    drag.add_argument("--app")
+    drag.add_argument("--mode", choices=["pid", "hid"], default="pid")
+    window = commands.add_parser("window", help="List or manage app windows.")
+    window.add_argument("action", choices=["list", "move", "resize", "minimize", "restore",
+                                            "raise", "focus", "close", "fullscreen"])
+    window.add_argument("--app")
+    window.add_argument("--title")
+    window.add_argument("--index", type=int)
+    window.add_argument("--x", type=int)
+    window.add_argument("--y", type=int)
+    window.add_argument("--width", type=int)
+    window.add_argument("--height", type=int)
+    window.add_argument("--confirm", action="store_true")
     type_ref = commands.add_parser("type-ref", help="Set/type into an accessibility field.")
     type_ref.add_argument("app")
     type_ref.add_argument("ref")
@@ -841,7 +946,7 @@ def _cli() -> int:
     elif args.command == "click":
         payload = computer.click(args.x, args.y).to_dict()
     elif args.command == "see":
-        payload = computer.see(args.app, annotate=args.annotate)
+        payload = computer.see(args.app, annotate=args.annotate, interactive=not args.all)
     elif args.command == "choose":
         payload = (computer.click_goal(args.app, args.goal, model=args.model)
                    if args.click else computer.choose(args.app, args.goal, model=args.model))
@@ -853,6 +958,18 @@ def _cli() -> int:
         payload = computer.click_ref(args.app, args.ref)
     elif args.command == "type-ref":
         payload = computer.type_ref(args.app, args.ref, args.text)
+    elif args.command == "scroll":
+        payload = computer.scroll(args.amount, dx=args.dx, app=args.app,
+                                  x=args.x, y=args.y)
+    elif args.command == "hover":
+        payload = computer.hover(args.x, args.y, app=args.app)
+    elif args.command == "drag":
+        payload = computer.drag(args.x, args.y, args.to_x, args.to_y, app=args.app, mode=args.mode)
+    elif args.command == "window":
+        payload = computer.window(args.action, app=args.app, title=args.title,
+                                  index=args.index, x=args.x, y=args.y,
+                                  width=args.width, height=args.height,
+                                  confirm=args.confirm)
     else:
         payload = computer.menu(args.app, *args.items).to_dict()
     print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))

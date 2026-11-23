@@ -89,7 +89,12 @@ hash-guarded install with rollback and receipts
 | Menus | `menu(app, "File", "New Window")` |
 | Discover unseen apps | `see(app)`, `find_controls(app, query)`, `ocr(app)` |
 | Click a discovered control | `click_ref(app, ref)` |
+| Click by intent | `click_goal(app, "Save")` |
 | Fill a discovered field | `type_ref(app, ref, text)` |
+| Scroll | `scroll(amount, app=...)` |
+| Hover | `hover(x, y, app=...)` |
+| Drag | `drag(x1, y1, x2, y2, mode="pid"\|"hid")` |
+| Windows | `window("move\|resize\|minimize\|restore\|close", app=...)` |
 | Clipboard | `clipboard()`, `set_clipboard(text)` |
 
 Typing and key chords with an ``app`` argument are posted with
@@ -101,6 +106,10 @@ on-device OCR and verified AX actions. `see(app)` returns a compact list of
 visible controls; `find_controls` ranks them; `click_ref`/`type_ref` act on the
 chosen ref. This is how a never-seen app becomes usable: observe its labels and
 geometry, choose a control, act, and re-observe.
+
+Window title-bar drags need `mode="hid"` (WindowServer only moves windows for
+system-level events); content drags, hovers and scrolls stay on the background
+PID path. Window move/resize/minimize/restore use AX and never steal focus.
 
 The Talos cursor overlay is a click-through accessory window (`tools/native/
 cursor_overlay.swift`). It never moves the physical pointer and fades after an
@@ -123,6 +132,22 @@ python3 -m talos_core.mac.computer_use screenshot --path /tmp/shot.png
 
 From the console, use `/computer ...`; shadow mode prints a preview and
 `agent.py chat --apply` executes. `/decompose TASK` prints a routable plan.
+
+## Terminal fallback and dictation
+
+`talos_core/interfaces/brain_ui.py` is a dependency-free animated ASCII brain
+with a scrolling thought log and a typed prompt for when speech is unavailable
+(`talos console`). `talos_core/cognition/dictation.py` is a deterministic
+attention state machine: idle, listening, user speaking, agent speaking,
+thinking and interrupted. It distinguishes direct address ("Hey Talos...")
+from third-person or background speech, supports barge-in, and combines text
+with camera attention (one facing person vs a crowd/away). The native room still
+owns the microphone and playback; the module decides when a turn is for Talos
+and when playback should stop.
+
+`talos vision FILE QUESTION` asks the local vision model about a camera frame,
+and the room's `/v1/voice/facing` path already sends one transient camera JPEG
+for visual questions. Frames are validated and never logged.
 
 ## Knowledge graph
 

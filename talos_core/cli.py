@@ -59,6 +59,46 @@ def _decompose(args) -> int:
     return 0
 
 
+def _console(args) -> int:
+    from agent import chat
+    from talos_core.interfaces.brain_ui import BrainUI
+    from talos_core.memory.agent_memory import STATE_PATH, open_memory
+
+    path = args.db or STATE_PATH
+    with open_memory(path) as database:
+        def responder(text: str) -> str:
+            try:
+                return chat(database, text, model=args.model, session="text")
+            except (OSError, RuntimeError, ValueError) as error:
+                return f"error: {error}"
+
+        ui = BrainUI(responder=responder, model=args.model)
+        if args.script:
+            return ui.run_script(args.script)
+        return ui.run_interactive()
+
+
+def _audit(args) -> int:
+    from tools.knowledge_audit import main as audit_main
+
+    argv = ["--query", args.query]
+    if args.graph:
+        argv += ["--graph", str(args.graph)]
+    return audit_main(argv)
+
+
+def _vision(args) -> int:
+    import base64
+
+    from talos_core.room.room_vision import describe_image
+
+    data = base64.b64encode(Path(args.file).read_bytes()).decode()
+    print(json.dumps({"question": args.question,
+                      "answer": describe_image(args.question, data)},
+                     ensure_ascii=False))
+    return 0
+
+
 def _graph(args) -> int:
     from talos_core.knowledge_graph import graph
 
@@ -137,6 +177,22 @@ def build_parser() -> argparse.ArgumentParser:
     decompose.add_argument("--model", help="Use a local model as the engineering manager.")
     decompose.add_argument("--json", action="store_true")
     decompose.set_defaults(func=_decompose)
+
+    console = commands.add_parser("console", help="Animated ASCII brain and typed fallback console.")
+    console.add_argument("--db", type=Path)
+    console.add_argument("--model", default="qwen2.5:1.5b")
+    console.add_argument("--script", nargs="*", help="Run fixed input lines instead of an interactive loop.")
+    console.set_defaults(func=_console)
+
+    audit = commands.add_parser("audit", help="Audit personal context, transcripts and the code graph.")
+    audit.add_argument("--query", default="decomposition manager")
+    audit.add_argument("--graph", type=Path)
+    audit.set_defaults(func=_audit)
+
+    vision = commands.add_parser("vision", help="Ask the local vision model about a camera/image frame.")
+    vision.add_argument("file")
+    vision.add_argument("question")
+    vision.set_defaults(func=_vision)
 
     knowledge = commands.add_parser("graph", help="Query the full Graphify source graph.")
     knowledge.add_argument("query", nargs="*")

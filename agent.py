@@ -154,6 +154,9 @@ Return one structured decision:
   "type TEXT", "key COMBO", "open APP_OR_PATH", "activate APP", or "menu APP ITEM...".
   To address a background app directly, use "type --app APP TEXT", "key --app APP COMBO",
   or "click --app APP X Y". The app keeps running even when another app has focus.
+  Read unfamiliar controls with inspect_app, then use "click-ref APP REF" or
+  "click-goal APP GOAL". Also available: "scroll APP AMOUNT", "hover APP X Y",
+  "drag APP X Y TO_X TO_Y", and "window APP move|resize|minimize|restore".
   The runtime decides what it can apply.
 - wait: describe the evidence still needed. Use tool none.
 - ask: write a brief clarifying question. Use tool none.
@@ -203,12 +206,34 @@ def parse_decision(content: str) -> dict:
         decision[field] = value.strip()
 
     minutes = decision.get("remind_in_minutes", 0)
-    if type(minutes) is not int:
-        raise RuntimeError("The local model returned a non-integer reminder interval.")
-    if tool == "set_reminder" and not 1 <= minutes <= MAX_REMINDER_MINUTES:
+    if (isinstance(minutes, str) and re.fullmatch(r"\s*\d+\s*", minutes)) or (isinstance(minutes, float) and minutes.is_integer()):
+        minutes = int(minutes)
+    if tool != "set_reminder":
+        minutes = 0
+    elif not (type(minutes) is int and 1 <= minutes <= MAX_REMINDER_MINUTES):
+        # Small models sometimes put the interval in prose instead of the field.
+        spoken = re.search(r"(\d{1,5})\s*(minute|min|hour|day)s?\b",
+                           f"{decision.get('goal', '')} {decision.get('detail', '')}", re.I)
+        if spoken:
+            amount = int(spoken[1])
+            unit = spoken[2].lower()
+            minutes = amount * (60 if unit == "hour" else 1440 if unit == "day" else 1)
+    if tool == "set_reminder" and not (type(minutes) is int and 1 <= minutes <= MAX_REMINDER_MINUTES):
         raise RuntimeError("The local model returned an invalid reminder interval.")
-    if tool != "set_reminder" and minutes != 0:
-        raise RuntimeError("Only reminder decisions can include a nonzero interval.")
+    if tool == "set_reminder":
+        decision["detail"] = re.sub(
+            r"^(?:the\s+)?owner(?:\s+to)?\s+|^me\s+to\s+", "",
+            decision["detail"], flags=re.I,
+        ).strip() or decision["detail"]
+    if tool == "set_reminder" and re.fullmatch(r"remind_in_minutes\s*:\s*\d+", decision["detail"], re.I):
+        text = re.sub(r"^(?:remind|reminder)(?: the owner)?(?: to)?\s+", "",
+                      decision["goal"], flags=re.I)
+        text = re.sub(r"\s+in\s+\d+\s*(?:minutes?|mins?|hours?|days?).*$", "", text, flags=re.I)
+        decision["detail"] = text.strip() or decision["goal"] or "Reminder"
+    if tool == "set_reminder":
+        decision["remind_in_minutes"] = minutes
+    else:
+        decision.pop("remind_in_minutes", None)
     if not decision["reason"]:
         raise RuntimeError("The local model did not explain its decision.")
     if disposition == "ignore":
@@ -332,10 +357,22 @@ def plan(
         else:
             policy_hint = cognitive_engine.active_policy_hint(cognitive_engine._infer_state(database))
             system_text = PERSONALITY + "\n" + CHARTER + ("\n" + policy_hint if policy_hint else "")
-            proposal = parse_decision(model_text([
-                {"role": "system", "content": system_text},
-                {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
-            ], model=model, schema=schema, max_tokens=max_tokens))
+            request = {"role": "user", "content": json.dumps(context, ensure_ascii=False)}
+            try:
+                proposal = parse_decision(model_text([
+                    {"role": "system", "content": system_text}, request,
+                ], model=model, schema=schema, max_tokens=max_tokens))
+            except (RuntimeError, ValueError) as error:
+                # Retry only malformed JSON/shape, not a semantic refusal or a
+                # deliberately invalid tool in a fixture.
+                if "JSON" not in str(error) and "fields" not in str(error):
+                    raise
+                proposal = parse_decision(model_text([
+                    {"role": "system", "content": system_text
+                     + "\nYour previous reply was rejected: " + str(error)[:160]
+                     + " Return exactly one valid JSON object with every required field."},
+                    request,
+                ], model=model, schema=schema, max_tokens=max_tokens))
         if proposal["disposition"] != "look_up":
             if tool_results:
                 proposal["tools_used"] = [entry["tool"] for entry in tool_results]
@@ -522,6 +559,29 @@ def desktop_action(detail: str, state: Path, *, confirm: bool = False) -> str:
             return json.dumps(computer.type_ref(args[0], args[1],
                                                 detail.split(None, 3)[3]),
                               ensure_ascii=False)
+        elif verb == "scroll":
+            if not args:
+                raise ValueError("Use scroll [--app APP] AMOUNT.")
+            return json.dumps(computer.scroll(int(args[0]), app=app), ensure_ascii=False)
+        elif verb == "hover":
+            if len(args) != 2:
+                raise ValueError("Use hover [--app APP] X Y.")
+            return json.dumps(computer.hover(int(args[0]), int(args[1]), app=app),
+                              ensure_ascii=False)
+        elif verb == "drag":
+            if len(args) != 4:
+                raise ValueError("Use drag [--app APP] X Y TO_X TO_Y.")
+            return json.dumps(computer.drag(*(int(v) for v in args), app=app),
+                              ensure_ascii=False)
+        elif verb == "window":
+            if len(args) < 2:
+                raise ValueError("Use window APP ACTION [X Y WIDTH HEIGHT].")
+            action = args[1]
+            values = [int(v) for v in args[2:6]]
+            options = dict(zip(("x", "y", "width", "height"), values))
+            confirmed = "confirm" in args[6:]
+            return json.dumps(computer.window(action, app=args[0], confirm=confirmed,
+                                              **options), ensure_ascii=False)
         elif verb == "menu":
             if len(args) < 3:
                 raise ValueError("Use menu APP MENU ITEM.")
@@ -888,6 +948,31 @@ def interactive_chat(
                             raise ValueError("Usage: /computer type-ref APP REF TEXT")
                         result = computer.type_ref(args[0], args[1],
                                                    request.split(None, 3)[3])
+                    elif action == "scroll":
+                        if not args:
+                            raise ValueError("Usage: /computer scroll AMOUNT [--app APP]")
+                        target = args[args.index("--app") + 1] if "--app" in args else None
+                        result = computer.scroll(int(args[0]), app=target)
+                    elif action == "hover":
+                        if len(args) < 2:
+                            raise ValueError("Usage: /computer hover X Y [--app APP]")
+                        target = args[args.index("--app") + 1] if "--app" in args else None
+                        result = computer.hover(int(args[0]), int(args[1]), app=target)
+                    elif action == "drag":
+                        if len(args) < 4:
+                            raise ValueError("Usage: /computer drag X Y TO_X TO_Y [--app APP]")
+                        target = args[args.index("--app") + 1] if "--app" in args else None
+                        result = computer.drag(int(args[0]), int(args[1]), int(args[2]), int(args[3]),
+                                               app=target)
+                    elif action == "window":
+                        if len(args) < 2:
+                            raise ValueError("Usage: /computer window APP ACTION [X Y W H]")
+                        result = computer.window(args[1], app=args[0],
+                                                 confirm="confirm" in args,
+                                                 x=int(args[2]) if len(args) > 2 else None,
+                                                 y=int(args[3]) if len(args) > 3 else None,
+                                                 width=int(args[4]) if len(args) > 4 else None,
+                                                 height=int(args[5]) if len(args) > 5 else None)
                     elif action == "menu":
                         if len(args) < 3:
                             raise ValueError("Usage: /computer menu APP MENU ITEM")

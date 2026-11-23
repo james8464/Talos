@@ -15,7 +15,19 @@ python3 -m talos_core.cli doctor                       # imports, syntax, lint, 
 python3 -m talos_core.cli decompose "TASK" --file PATH # routable task plan
 python3 -m talos_core.cli computer frontmost            # native Mac control
 python3 -m talos_core.cli computer see TextEdit          # discover visible controls
+python3 -m talos_core.cli computer choose Calculator 7 --click
+python3 -m talos_core.cli computer window resize --app TextEdit --width 800 --height 600
+python3 -m talos_core.cli computer scroll 5 --app TextEdit
 python3 -m talos_core.cli graph decomposition manager    # source knowledge graph
+python3 -m talos_core.cli console                        # ASCII brain + typed fallback
+python3 -m talos_core.cli vision frame.jpg "What do you see?"
+python3 -m tools.app_scenarios calculator          # multi-step real app check
+python3 -m tools.app_scenarios safari
+python3 -m tools.knowledge_audit                    # 14-store personal context audit
+
+# One-time native control extra (Accessibility + Screen Recording granted):
+python3 -m pip install -e '.[control]'
+
 python3 -m talos_core.self_improvement.improve_talos --cycle
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```

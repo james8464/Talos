@@ -21,6 +21,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "tools" / "native" / "cursor_overlay.swift"
+if not SOURCE.is_file():
+    SOURCE = Path(__file__).resolve().parent / "native" / "cursor_overlay.swift"
 HIDE_AFTER = 2.5
 
 

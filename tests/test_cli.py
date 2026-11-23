@@ -38,6 +38,16 @@ class CliTests(unittest.TestCase):
         self.assertIn("leaves", output.getvalue())
         self.assertEqual(len(list((state / "plans").glob("*.json"))), 1)
 
+    def test_console_renders_brain_without_speech(self):
+        database = Path(self.enterContext(tempfile.TemporaryDirectory())) / "console.sqlite"
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["console", "--db", str(database), "--script", "/status", "/quit"])
+        self.assertEqual(code, 0)
+        text = output.getvalue()
+        self.assertIn(".-~~~~-.", text)
+        self.assertIn("model: qwen2.5:1.5b", text)
+
     def test_graph_query_reports_nodes_and_sources(self):
         output = io.StringIO()
         with redirect_stdout(output):
