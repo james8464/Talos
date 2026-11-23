@@ -87,7 +87,24 @@ hash-guarded install with rollback and receipts
 | Click | `click(x, y, count=1)` |
 | Type / shortcut | `type_text(text)`, `press("cmd+shift+4")` |
 | Menus | `menu(app, "File", "New Window")` |
+| Discover unseen apps | `see(app)`, `find_controls(app, query)`, `ocr(app)` |
+| Click a discovered control | `click_ref(app, ref)` |
+| Fill a discovered field | `type_ref(app, ref, text)` |
 | Clipboard | `clipboard()`, `set_clipboard(text)` |
+
+Typing and key chords with an ``app`` argument are posted with
+``CGEventPostToPid``: they reach that app even while the user's foreground app
+keeps focus and never type into whatever happens to be frontmost. The optional
+``control`` extra adds `computer-harness` for Accessibility snapshots and
+`macos-computer-use-kit` for stable element refs, set-of-mark screenshots,
+on-device OCR and verified AX actions. `see(app)` returns a compact list of
+visible controls; `find_controls` ranks them; `click_ref`/`type_ref` act on the
+chosen ref. This is how a never-seen app becomes usable: observe its labels and
+geometry, choose a control, act, and re-observe.
+
+The Talos cursor overlay is a click-through accessory window (`tools/native/
+cursor_overlay.swift`). It never moves the physical pointer and fades after an
+action; the user can see Talos's target while keeping their own cursor.
 
 `ComputerUseLoop` runs the bounded observe → decide → act cycle. The decider is
 injected, so a local vision model, a cloud model or a deterministic policy can
@@ -106,6 +123,20 @@ python3 -m talos_core.mac.computer_use screenshot --path /tmp/shot.png
 
 From the console, use `/computer ...`; shadow mode prints a preview and
 `agent.py chat --apply` executes. `/decompose TASK` prints a routable plan.
+
+## Knowledge graph
+
+`talos_core/knowledge_graph.py` loads the complete Graphify graph
+(``graphify-out/graph.json``) and exposes search, node lookup, neighbours and
+shortest paths. `cognitive_engine.query_knowledge` includes code-graph hits for
+code-oriented questions, and the console has `/graph QUERY|stats`. The CLI:
+
+```sh
+talos graph decomposition manager
+talos graph --node ComputerUse --depth 2
+talos graph --path decomposition ComputerUse
+talos graph --neighbours SemanticEngine
+```
 
 ## Token efficiency
 

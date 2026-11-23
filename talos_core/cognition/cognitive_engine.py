@@ -580,11 +580,21 @@ def query_knowledge(
     agent_hits = _search_agent_db(
         db, clean_query, tokens, private_ok=private_ok, limit=capped
     )
+    graph_hits = []
+    code_terms = {"code", "source", "function", "class", "module", "symbol",
+                  "implementation", "component", "graph", "graphify", "refactor",
+                  "bug", "traceback", "call", "path", "decomposition", "computer"}
+    if set(tokens) & code_terms or re.search(r"[._/]{1}[a-z]", clean_query):
+        try:
+            from talos_core.knowledge_graph import graph as code_graph
+            graph_hits = code_graph.search(clean_query, limit=min(4, capped))
+        except (OSError, ValueError, ImportError):
+            graph_hits = []
 
     combined: list[dict] = []
     seen: set[tuple[str, str, str]] = set()
 
-    for item in (*semantic_hits, *personal_hits, *vault_hits, *agent_hits):
+    for item in (*semantic_hits, *personal_hits, *vault_hits, *agent_hits, *graph_hits):
         sig = (item["store"], item["title"], item["snippet"][:80])
         if sig in seen:
             continue
@@ -598,7 +608,7 @@ def query_knowledge(
         if len(combined) >= capped:
             break
 
-    stores_searched = ["goals", "inbox"]
+    stores_searched = ["goals", "inbox", "code_graph"]
     if private_ok:
         stores_searched.extend(["personal_facts", "commitments", "context_evidence", "transcripts"])
         if index_meta["personal_index_available"] and index_meta["mac_context_enabled"]:
@@ -615,6 +625,14 @@ def query_knowledge(
         "results": combined,
         "items": combined,
     }
+
+
+def _graph_stats() -> dict:
+    try:
+        from talos_core.knowledge_graph import graph as code_graph
+        return code_graph.stats()
+    except (OSError, ValueError, ImportError):
+        return {}
 
 
 def knowledge_status(db: sqlite3.Connection, state: Path | str | None = None) -> dict:
@@ -667,6 +685,10 @@ def knowledge_status(db: sqlite3.Connection, state: Path | str | None = None) ->
         "vault": {
             "available": vault_available,
             "count": vault_notes,
+        },
+        "code_graph": {
+            "available": _graph_stats().get("available", False),
+            "count": _graph_stats().get("nodes", 0),
         },
         **{
             table: {"available": True, "count": count}

@@ -59,11 +59,11 @@ class DesktopActionTests(unittest.TestCase):
                         open_path=Mock(return_value=receipt), menu=Mock(return_value=receipt))
         with patch("talos_core.mac.computer_use.ComputerUse", return_value=computer):
             agent.desktop_action("click 12 34", self.state)
-            computer.click.assert_called_once_with(12, 34, count=1)
+            computer.click.assert_called_once_with(12, 34, count=1, app=None)
             agent.desktop_action("type hello world", self.state)
-            computer.type_text.assert_called_once_with("hello world")
+            computer.type_text.assert_called_once_with("hello world", app=None)
             agent.desktop_action("key cmd+shift+4", self.state)
-            computer.press.assert_called_once_with("cmd+shift+4", confirm=False)
+            computer.press.assert_called_once_with("cmd+shift+4", confirm=False, app=None)
             agent.desktop_action('menu Safari File "New Window"', self.state)
             computer.menu.assert_called_once_with("Safari", "File", "New Window")
 

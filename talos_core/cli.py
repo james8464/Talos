@@ -59,6 +59,26 @@ def _decompose(args) -> int:
     return 0
 
 
+def _graph(args) -> int:
+    from talos_core.knowledge_graph import graph
+
+    if args.path:
+        if len(args.path) != 2:
+            raise SystemExit("--path needs exactly two symbols")
+        payload = {"path": graph.shortest_path(args.path[0], args.path[1])}
+    elif args.neighbours:
+        payload = {"neighbours": graph.neighbours(args.neighbours, depth=args.depth)}
+    elif args.node:
+        payload = {"node": graph.node(args.node),
+                   "neighbours": graph.neighbours(args.node, depth=args.depth)}
+    else:
+        payload = {"stats": graph.stats(),
+                   "matches": graph.search(" ".join(args.query), limit=args.limit)
+                   if args.query else []}
+    print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+    return 0 if payload.get("stats", {}).get("available", True) else 1
+
+
 def _status(args) -> int:
     from talos_core.mac import computer_use
     from talos_core.self_improvement import health
@@ -117,6 +137,15 @@ def build_parser() -> argparse.ArgumentParser:
     decompose.add_argument("--model", help="Use a local model as the engineering manager.")
     decompose.add_argument("--json", action="store_true")
     decompose.set_defaults(func=_decompose)
+
+    knowledge = commands.add_parser("graph", help="Query the full Graphify source graph.")
+    knowledge.add_argument("query", nargs="*")
+    knowledge.add_argument("--node")
+    knowledge.add_argument("--neighbours")
+    knowledge.add_argument("--path", nargs=2, metavar=("START", "END"))
+    knowledge.add_argument("--depth", type=int, default=1)
+    knowledge.add_argument("--limit", type=int, default=8)
+    knowledge.set_defaults(func=_graph)
 
     status = commands.add_parser("status", help="Show health, Mac permissions and graph state.")
     status.add_argument("--state", type=Path)

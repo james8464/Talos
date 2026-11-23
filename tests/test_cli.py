@@ -38,6 +38,15 @@ class CliTests(unittest.TestCase):
         self.assertIn("leaves", output.getvalue())
         self.assertEqual(len(list((state / "plans").glob("*.json"))), 1)
 
+    def test_graph_query_reports_nodes_and_sources(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["graph", "decomposition", "manager", "--limit", "2"])
+        self.assertEqual(code, 0)
+        payload = output.getvalue()
+        self.assertIn("code_graph", payload)
+        self.assertIn("decomposition.py", payload)
+
     def test_status_surfaces_permissions_and_health(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         output = io.StringIO()

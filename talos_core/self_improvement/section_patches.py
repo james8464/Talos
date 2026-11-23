@@ -388,16 +388,21 @@ def _copy_source_tree(root: Path, sandbox: Path) -> None:
         for item in tests_src.glob("*.py"):
             if item.is_file() and not item.is_symlink():
                 shutil.copy2(item, tests_dst / item.name)
-    sched_src = root / "talos_core" / "scheduling"
-    if sched_src.is_dir():
-        sched_dst = sandbox / "talos_core" / "scheduling"
-        sched_dst.mkdir(parents=True, exist_ok=True)
-        for item in sched_src.iterdir():
-            if item.is_file() and not item.is_symlink() and item.suffix in (".py", ".mjs", ".ts", ".json"):
-                shutil.copy2(item, sched_dst / item.name)
-        init_py = root / "talos_core" / "__init__.py"
-        if init_py.is_file():
-            shutil.copy2(init_py, sandbox / "talos_core" / "__init__.py")
+    # Copy the whole package tree so patches can target any moved module and
+    # the regression sandbox can import the real call path.
+    for item in (root / "talos_core").rglob("*"):
+        if not item.is_file() or item.is_symlink() or "__pycache__" in item.parts:
+            continue
+        if item.suffix not in (".py", ".mjs", ".ts", ".json", ".md"):
+            continue
+        destination = sandbox / item.relative_to(root)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, destination)
+    for item in (root / "mac").rglob("*"):
+        if item.is_file() and not item.is_symlink() and item.suffix in (".swift", ".plist"):
+            destination = sandbox / item.relative_to(root)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(item, destination)
 
 
 def _infer_test_modules(sandbox: Path, touched: list[str], explicit: list[str] | tuple[str, ...] | None) -> list[str]:

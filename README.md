@@ -14,6 +14,8 @@ python3 -m talos_core.cli status                       # health, permissions, gr
 python3 -m talos_core.cli doctor                       # imports, syntax, lint, tests
 python3 -m talos_core.cli decompose "TASK" --file PATH # routable task plan
 python3 -m talos_core.cli computer frontmost            # native Mac control
+python3 -m talos_core.cli computer see TextEdit          # discover visible controls
+python3 -m talos_core.cli graph decomposition manager    # source knowledge graph
 python3 -m talos_core.self_improvement.improve_talos --cycle
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```

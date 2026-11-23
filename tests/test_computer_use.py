@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from talos_core.mac import computer_use as cu
 
@@ -26,7 +27,7 @@ class ComputerUseTests(unittest.TestCase):
     def setUp(self):
         self.state = Path(self.enterContext(tempfile.TemporaryDirectory())) / "state"
         self.runner = FakeRunner(stdout="Safari")
-        self.computer = cu.ComputerUse(self.state, runner=self.runner)
+        self.computer = cu.ComputerUse(self.state, runner=self.runner, cursor=False)
 
     def receipts(self):
         path = self.state / "computer-use.jsonl"
@@ -51,10 +52,45 @@ class ComputerUseTests(unittest.TestCase):
         self.assertNotIn("hello", (self.state / "computer-use.jsonl").read_text())
         self.assertEqual(receipt.metadata["sha256"], hashlib.sha256(text.encode()).hexdigest())
 
+    def test_typing_with_an_app_targets_that_pid_without_stealing_focus(self):
+        from unittest.mock import patch
+
+        with (
+            patch.object(self.computer, "app_pid", return_value=4321),
+            patch.object(self.computer, "window_bounds", return_value=(10, 20, 500, 300)),
+            patch.object(self.computer, "_post_unicode_to_pid") as post,
+            patch.object(self.computer, "_show_cursor") as cursor,
+        ):
+            receipt = self.computer.type_text("direct text", app="TextEdit")
+        post.assert_called_once_with(4321, "direct text")
+        cursor.assert_called_once()
+        self.assertEqual(receipt.action, "type_text_to_pid")
+        self.assertEqual(receipt.metadata["pid"], 4321)
+        self.assertNotIn("direct text", (self.state / "computer-use.jsonl").read_text())
+
+    def test_shortcut_can_target_a_background_app(self):
+        from unittest.mock import patch
+
+        with (
+            patch.object(self.computer, "app_pid", return_value=99),
+            patch.object(self.computer, "window_bounds", return_value=(0, 0, 200, 100)),
+            patch.object(self.computer, "_post_key_to_pid") as post,
+        ):
+            receipt = self.computer.press("cmd+n", app="TextEdit")
+        post.assert_called_once()
+        self.assertEqual(post.call_args.args[0], 99)
+        self.assertEqual(receipt.action, "press_keys_to_pid")
+
     def test_multiline_typing_presses_return_between_lines(self):
         self.computer.type_text("one\ntwo")
         script = self.runner.calls[-1][0][2]
         self.assertEqual(script.count("key code 36"), 1)
+
+    def test_window_bounds_parse_position_and_size(self):
+        runner = FakeRunner(stdout="100, 200, 800, 600")
+        computer = cu.ComputerUse(self.state, runner=runner, cursor=False)
+        self.assertEqual(computer.window_bounds("TextEdit"), (100, 200, 800, 600))
+        self.assertIn('process "TextEdit"', runner.calls[-1][0][2])
 
     def test_destructive_shortcut_requires_explicit_confirmation(self):
         with self.assertRaises(cu.PolicyError):
@@ -77,7 +113,7 @@ class ComputerUseTests(unittest.TestCase):
 
     def test_osascript_permission_failure_is_explained(self):
         runner = FakeRunner(returncode=1, stderr="execution error: Not allowed assistive access. (-1719)")
-        computer = cu.ComputerUse(self.state, runner=runner)
+        computer = cu.ComputerUse(self.state, runner=runner, cursor=False)
         result = computer.frontmost()
         self.assertFalse(result["receipt"]["ok"])
         self.assertIn("Accessibility permission", result["receipt"]["detail"])
@@ -88,6 +124,42 @@ class ComputerUseTests(unittest.TestCase):
         log = (self.state / "computer-use.jsonl").read_text()
         self.assertNotIn("secret-value", log)
         self.assertIn('"characters": 12', log)
+
+    def test_background_accessibility_uses_the_harness_when_present(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+
+        state = {"pid": 77, "window_bounds": {"x": 10, "y": 20, "w": 300, "h": 200},
+                 "elements": [{"index": 0}], "text": "[0] AXTextArea"}
+        engine = SimpleNamespace(
+            get_app_state=Mock(return_value=state),
+            click_element=Mock(return_value={"clicked": 0, "via": "AXPress"}),
+            set_element_value=Mock(return_value={"set_value": 0, "chars": 5}),
+        )
+        with patch.object(self.computer, "_harness", return_value=engine), \
+             patch.object(self.computer, "_show_cursor"):
+            self.assertEqual(self.computer.app_state("TextEdit")["pid"], 77)
+            self.computer.click_element("TextEdit", 0)
+            self.computer.set_element_value("TextEdit", 0, "hello")
+        engine.click_element.assert_called_once_with(77, state["elements"], 0, method="ax")
+        engine.set_element_value.assert_called_once_with(77, state["elements"], 0, "hello")
+        self.assertNotIn("hello", (self.state / "computer-use.jsonl").read_text())
+
+    def test_missing_control_extra_reports_a_clear_error(self):
+        from unittest.mock import patch
+
+        with patch.object(self.computer, "_harness", return_value=None):
+            with self.assertRaises(cu.ComputerUseError):
+                self.computer.app_state("TextEdit")
+
+    def test_click_goal_selects_then_clicks_a_discovered_control(self):
+        from unittest.mock import patch
+
+        with patch.object(self.computer, "choose", return_value={"ref": "abc", "center": [10, 20]}), \
+             patch.object(self.computer, "click_ref", return_value={"ok": True}) as click:
+            result = self.computer.click_goal("Notes", "new note")
+        click.assert_called_once_with("Notes", "abc")
+        self.assertTrue(result["click"]["ok"])
 
     def test_permission_probe_is_safe_on_this_platform(self):
         result = cu.permissions()

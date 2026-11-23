@@ -63,6 +63,7 @@ CONSOLE_COMMANDS = (
     ("/repair DESCRIPTION", "Report a problem to local diagnostics."),
     ("/computer ACTION [ARGS]", "Inspect or control the Mac (permissions, apps, shot, click, type, key)."),
     ("/decompose TASK", "Split an improvement task until each leaf is small enough for one model."),
+    ("/graph QUERY|stats", "Search the full Graphify source graph, or show its size."),
     ("/repairs [ID]", "Show open incidents or inspect one private local report."),
     ("/status", "Show session mode, model and runtime prerequisites."),
     ("/parity [OpenClaw|Hermes]", "Show pinned command name coverage and missing commands."),
@@ -93,7 +94,8 @@ CONSOLE_COMMANDS = (
     ("/quit, /exit", "Leave the console."),
 )
 
-LOOKUP_TOOLS = ("search_memory", "search_knowledge", "list_inbox", "review_decisions", "current_time")
+LOOKUP_TOOLS = ("search_memory", "search_knowledge", "search_code_graph", "inspect_app",
+                "list_inbox", "review_decisions", "current_time")
 MAX_LOOKUPS = 3
 PERMITTED_TOOLS = {
     "act": ("speak", "desktop_action", *LOCAL_WRITES),
@@ -141,14 +143,17 @@ Owner feedback guides preferences within this charter. Earlier decisions marked 
 are simulations. Only applied effects actually occurred.
 Return one structured decision:
 - look_up: gather context first. Use search_memory with keywords in detail, search_knowledge
-  for unified personal index, vault notes, facts and commitments, list_inbox for
-  existing tasks, notes and reminders, review_decisions for past actions and feedback, or
-  current_time for UTC time. Explain what evidence you need. Respect lookups_remaining.
+  for unified personal index, vault notes, facts and commitments, search_code_graph for
+  Talos source symbols and call paths, inspect_app with an app name to read its visible
+  controls, labels and clickable refs, list_inbox for existing tasks, notes and reminders,
+  review_decisions for past actions and feedback, or current_time for UTC time. Explain what evidence you need. Respect lookups_remaining.
 - act: propose one action. Use log_alert for a private local alert, set_reminder for a
   future reminder, create_task for a task to track, save_note for a useful local note,
   speak for a brief, considerate in-room message, or desktop_action to control this Mac.
   For desktop_action put one command in detail: "click X Y", "double-click X Y",
   "type TEXT", "key COMBO", "open APP_OR_PATH", "activate APP", or "menu APP ITEM...".
+  To address a background app directly, use "type --app APP TEXT", "key --app APP COMBO",
+  or "click --app APP X Y". The app keeps running even when another app has focus.
   The runtime decides what it can apply.
 - wait: describe the evidence still needed. Use tool none.
 - ask: write a brief clarifying question. Use tool none.
@@ -255,6 +260,13 @@ def read_tool(database: sqlite3.Connection, tool: str, detail: str, *, private_c
             return transcript_excerpts(search_transcripts(database, detail))
         case "search_knowledge":
             return cognitive_engine.query_knowledge(database, detail, private_ok=private_context)
+        case "search_code_graph":
+            from talos_core.knowledge_graph import graph as code_graph
+            return {"query": detail, "matches": code_graph.search(detail, limit=8),
+                    "stats": code_graph.stats()}
+        case "inspect_app":
+            from talos_core.mac.computer_use import ComputerUse
+            return ComputerUse(_state_for(database)).see(detail.strip())
         case "list_inbox":
             return inbox_items(database, limit=6)
         case "review_decisions":
@@ -450,25 +462,66 @@ def desktop_action(detail: str, state: Path, *, confirm: bool = False) -> str:
         raise ValueError("Empty desktop action.")
     computer = ComputerUse(state)
     verb, *args = parts
+    app = None
+    if args[:1] == ["--app"]:
+        if len(args) < 2:
+            raise ValueError("Use --app APP before the target.")
+        app, args = args[1], args[2:]
     try:
         if verb in ("click", "double-click", "double_click"):
             if len(args) != 2:
                 raise ValueError("Use click X Y.")
             receipt = computer.click(int(args[0]), int(args[1]),
-                                     count=2 if verb != "click" else 1)
+                                     count=2 if verb != "click" else 1, app=app)
         elif verb == "type":
-            text = detail.split(None, 1)[1] if len(parts) > 1 else ""
-            receipt = computer.type_text(text)
+            text = detail.split("--app", 1)[-1] if app else detail
+            if app:
+                text = text.split(None, 2)[2] if len(text.split(None, 2)) > 2 else ""
+            else:
+                text = detail.split(None, 1)[1] if len(parts) > 1 else ""
+            receipt = computer.type_text(text, app=app)
         elif verb == "key":
             if not args:
                 raise ValueError("Use key COMBO.")
-            receipt = computer.press(args[0], confirm=confirm or "confirm" in args[1:])
+            receipt = computer.press(args[0], confirm=confirm or "confirm" in args[1:],
+                                     app=app)
         elif verb in ("open", "activate"):
             if not args:
                 raise ValueError(f"Use {verb} APP_OR_PATH.")
             target = Path(args[0]).expanduser()
             receipt = (computer.open_path(str(target)) if target.exists()
                        else computer.activate(args[0]))
+        elif verb == "see":
+            if not args:
+                raise ValueError("Use see APP.")
+            view = computer.see(args[0])
+            return view["text"] or "No visible controls."
+        elif verb == "find":
+            if len(args) < 2:
+                raise ValueError("Use find APP QUERY.")
+            return json.dumps(computer.find_controls(args[0], " ".join(args[1:])),
+                              ensure_ascii=False)
+        elif verb == "click-goal":
+            if len(args) < 2:
+                raise ValueError("Use click-goal APP GOAL.")
+            return json.dumps(computer.click_goal(args[0], " ".join(args[1:])),
+                              ensure_ascii=False)
+        elif verb == "ocr":
+            if not args:
+                raise ValueError("Use ocr APP [QUERY].")
+            return json.dumps(computer.ocr(args[0], " ".join(args[1:]) or None),
+                              ensure_ascii=False)
+        elif verb == "click-ref":
+            if len(args) != 2:
+                raise ValueError("Use click-ref APP REF.")
+            result = computer.click_ref(args[0], args[1])
+            return json.dumps(result, ensure_ascii=False)
+        elif verb == "type-ref":
+            if len(args) < 3:
+                raise ValueError("Use type-ref APP REF TEXT.")
+            return json.dumps(computer.type_ref(args[0], args[1],
+                                                detail.split(None, 3)[3]),
+                              ensure_ascii=False)
         elif verb == "menu":
             if len(args) < 3:
                 raise ValueError("Use menu APP MENU ITEM.")
@@ -806,6 +859,35 @@ def interactive_chat(
                         if len(args) != 2:
                             raise ValueError("Usage: /computer click X Y")
                         result = {"preview": f"click {args[0]},{args[1]}"} if not apply else computer.click(int(args[0]), int(args[1])).to_dict()
+                    elif action == "see":
+                        if not args:
+                            raise ValueError("Usage: /computer see APP")
+                        result = computer.see(args[0], annotate="--annotate" in args[1:])
+                    elif action == "find":
+                        if len(args) < 2:
+                            raise ValueError("Usage: /computer find APP QUERY")
+                        result = computer.find_controls(args[0], " ".join(args[1:]))
+                    elif action == "ocr":
+                        if not args:
+                            raise ValueError("Usage: /computer ocr APP [QUERY]")
+                        result = computer.ocr(args[0], " ".join(args[1:]) or None)
+                    elif action == "click-ref":
+                        if len(args) != 2:
+                            raise ValueError("Usage: /computer click-ref APP REF")
+                        result = computer.click_ref(args[0], args[1])
+                    elif action == "choose":
+                        if len(args) < 2:
+                            raise ValueError("Usage: /computer choose APP GOAL")
+                        result = computer.choose(args[0], " ".join(args[1:]))
+                    elif action == "click-goal":
+                        if len(args) < 2:
+                            raise ValueError("Usage: /computer click-goal APP GOAL")
+                        result = computer.click_goal(args[0], " ".join(args[1:]))
+                    elif action == "type-ref":
+                        if len(args) < 3:
+                            raise ValueError("Usage: /computer type-ref APP REF TEXT")
+                        result = computer.type_ref(args[0], args[1],
+                                                   request.split(None, 3)[3])
                     elif action == "menu":
                         if len(args) < 3:
                             raise ValueError("Usage: /computer menu APP MENU ITEM")
@@ -814,6 +896,14 @@ def interactive_chat(
                     else:
                         raise ValueError("Unknown computer action.")
                     print(json.dumps(result, ensure_ascii=False, default=str), file=output, flush=True)
+                case "/graph":
+                    from talos_core.knowledge_graph import graph as code_graph
+                    if not request.strip() or request.strip() == "stats":
+                        result = code_graph.stats()
+                    else:
+                        result = {"matches": code_graph.search(request.strip(), limit=8),
+                                  "stats": code_graph.stats()}
+                    print(json.dumps(result, indent=2, ensure_ascii=False), file=output, flush=True)
                 case "/decompose":
                     if not request.strip():
                         raise ValueError("Usage: /decompose TASK")
