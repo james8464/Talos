@@ -64,6 +64,7 @@ CONSOLE_COMMANDS = (
     ("/computer ACTION [ARGS]", "Inspect or control the Mac (permissions, apps, shot, click, type, key)."),
     ("/decompose TASK", "Split an improvement task until each leaf is small enough for one model."),
     ("/graph QUERY|stats", "Search the full Graphify source graph, or show its size."),
+    ("/capabilities [queue]", "Audit current tools and upstream OpenClaw/Hermes gaps."),
     ("/repairs [ID]", "Show open incidents or inspect one private local report."),
     ("/status", "Show session mode, model and runtime prerequisites."),
     ("/parity [OpenClaw|Hermes]", "Show pinned command name coverage and missing commands."),
@@ -981,6 +982,17 @@ def interactive_chat(
                     else:
                         raise ValueError("Unknown computer action.")
                     print(json.dumps(result, ensure_ascii=False, default=str), file=output, flush=True)
+                case "/capabilities":
+                    from talos_core.self_improvement import capability_audit
+                    if "queue" in request.split():
+                        result = {"queued": capability_audit.queue_gaps(
+                            Path.cwd(), Path(location).parent if location else STATE_PATH.parent, limit=2)}
+                    else:
+                        result = capability_audit.report(
+                            Path.cwd(), Path(location).parent if location else STATE_PATH.parent)
+                        result["untested"] = [item["name"] for item in result["capabilities"]
+                                              if not item["tested"]]
+                    print(json.dumps(result, indent=2, ensure_ascii=False), file=output, flush=True)
                 case "/graph":
                     from talos_core.knowledge_graph import graph as code_graph
                     if not request.strip() or request.strip() == "stats":

@@ -94,6 +94,10 @@ def job_loop(state, model, home):
             elif kind == "memory_review":
                 from talos_core.memory import memory_review
                 result = memory_review.review(state, model)
+            elif kind == "capabilities":
+                from talos_core.self_improvement import capability_audit
+                queued = capability_audit.queue_gaps(report_root, state, limit=2)
+                result = f"{len(capability_audit.report(report_root, state)['gaps'])} gap(s); {len(queued)} queued"
             elif kind == "initiative":
                 from talos_core.self_improvement import initiative
                 report = initiative.cycle(state, report_root, limit=2)
@@ -160,7 +164,8 @@ def watch(state, model):
                       "memory_review": "Check project evidence for AI memory review",
                       "health": "Self-check Talos source and tests",
                       "initiative": "Propose and decompose new capabilities",
-                      "reflection": "Reflect on related knowledge and conversations"}
+                      "reflection": "Reflect on related knowledge and conversations",
+                      "capabilities": "Audit tools against OpenClaw and Hermes"}
             label = labels[kind]
             record(state, "Maintenance", label + " · started")
             started = time.monotonic()
@@ -204,6 +209,7 @@ def watch(state, model):
             lines.append("Self-check · " + schedule.poll_health(state, run=observed_job))
             lines.append("Knowledge reflection · " + schedule.poll_reflection(state, run=observed_job))
             lines.append("Initiative · " + schedule.poll_initiative(state, run=observed_job))
+            lines.append("Capability audit · " + schedule.poll_capabilities(state, run=observed_job))
             cycle += 1
             label = datetime.now().astimezone().isoformat(timespec="seconds")
             lines.insert(0, f"Memory check {cycle} · {label}")

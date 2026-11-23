@@ -39,7 +39,7 @@ class MaintenanceCoordinationTests(unittest.TestCase):
 
     def test_unchanged_sources_and_code_do_not_repeat_heavy_jobs(self):
         counts, calls = self.drive()
-        self.assertEqual(counts, {"review": 1, "sync": 1, "health": 1, "reflection": 1, "initiative": 1})
+        self.assertEqual(counts, {"review": 1, "sync": 1, "health": 1, "reflection": 1, "initiative": 1, "capabilities": 1})
         self.assertTrue(calls[0][-1])
 
     def test_changed_export_appearing_and_being_deleted_both_refresh(self):
@@ -55,7 +55,7 @@ class MaintenanceCoordinationTests(unittest.TestCase):
 
     def test_preemption_preserves_pending_sync_and_review(self):
         counts, calls = self.drive(interrupted=True)
-        self.assertEqual(counts, {"sync": 2, "review": 2, "health": 2, "reflection": 2, "initiative": 2})
+        self.assertEqual(counts, {"sync": 2, "review": 2, "health": 2, "reflection": 2, "initiative": 2, "capabilities": 2})
         self.assertEqual([time for time, kind, _, _ in calls if kind in ("sync", "review")], [0, 5, 5, 10])
 
     def test_sqlite_wal_and_consent_are_detected(self):

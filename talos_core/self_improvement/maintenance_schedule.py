@@ -38,12 +38,14 @@ class MaintenanceSchedule:
         self.next_health = 0
         self.next_reflection = 0
         self.next_initiative = 0
+        self.next_capabilities = 0
         self.counts = {}
         self.outcome = "Awaiting first review"
         self.memory_outcome = "Awaiting an idle review"
         self.health_outcome = "Awaiting self-check"
         self.reflection_outcome = "Awaiting reflection"
         self.initiative_outcome = "Awaiting initiative"
+        self.capabilities_outcome = "Awaiting capability audit"
 
     def poll_memory(self, state, *, run):
         now = time.monotonic()
@@ -73,6 +75,21 @@ class MaintenanceSchedule:
                     self.reflection_outcome = str(result)
                     self.next_reflection = now + 600
         return self.reflection_outcome
+
+    def poll_capabilities(self, state, *, run):
+        """Compare the tool surface with pinned upstream projects every 12 hours."""
+        now = time.monotonic()
+        if now >= self.next_capabilities and not conversation_busy(state):
+            try:
+                result = run("capabilities")
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                self.capabilities_outcome = f"Capability audit unavailable ({type(error).__name__})"
+                self.next_capabilities = now + 1800
+            else:
+                if result is not None:
+                    self.capabilities_outcome = str(result)
+                    self.next_capabilities = now + 12 * 3600
+        return self.capabilities_outcome
 
     def poll_initiative(self, state, *, run):
         """Think of and queue new capabilities four times a day."""

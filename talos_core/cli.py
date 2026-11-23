@@ -78,6 +78,19 @@ def _console(args) -> int:
         return ui.run_interactive()
 
 
+def _capabilities(args) -> int:
+    from talos_core.self_improvement import capability_audit
+
+    if args.queue:
+        payload = {"queued": capability_audit.queue_gaps(args.root, args.state, limit=args.limit)}
+    else:
+        payload = capability_audit.report(args.root, args.state)
+        payload["untested"] = [item["name"] for item in payload["capabilities"]
+                               if not item["tested"]]
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
 def _initiative(args) -> int:
     from agent import model_text
     from talos_core.runtime.local_runtime import check_ollama_model
@@ -214,6 +227,13 @@ def build_parser() -> argparse.ArgumentParser:
     console.add_argument("--model", default="qwen2.5:1.5b")
     console.add_argument("--script", nargs="*", help="Run fixed input lines instead of an interactive loop.")
     console.set_defaults(func=_console)
+
+    capabilities = commands.add_parser("capabilities", help="Inventory tools and upstream feature gaps.")
+    capabilities.add_argument("--root", type=Path, default=ROOT)
+    capabilities.add_argument("--state", type=Path, default=ROOT / "state")
+    capabilities.add_argument("--queue", action="store_true")
+    capabilities.add_argument("--limit", type=int, default=2)
+    capabilities.set_defaults(func=_capabilities)
 
     initiative = commands.add_parser("initiative", help="Think of and decompose new capabilities.")
     initiative.add_argument("--state", type=Path, default=ROOT / "state")
