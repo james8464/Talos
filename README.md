@@ -20,6 +20,8 @@ python3 -m talos_core.cli computer window resize --app TextEdit --width 800 --he
 python3 -m talos_core.cli computer scroll 5 --app TextEdit
 python3 -m talos_core.cli graph decomposition manager    # source knowledge graph
 python3 -m talos_core.cli console                        # dense ASCII brain + typed fallback
+python3 -m talos_core.cli capabilities                   # tools, tests and upstream gaps
+python3 -m talos_core.cli capabilities --queue           # queue top gaps for coding
 python3 -m talos_core.cli initiative                     # think of and queue new capabilities
 python3 -m talos_core.cli reflect                        # recompute related knowledge
 python3 -m talos_core.cli vision frame.jpg "What do you see?"

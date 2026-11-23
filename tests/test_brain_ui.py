@@ -115,7 +115,7 @@ class NonTTYTests(unittest.TestCase):
             sleep=sleeps.append,
         )
         self.assertEqual(ui.run_interactive(), 0)
-        self.assertEqual(len(sleeps), len(BRAIN_FRAMES))
+        self.assertGreaterEqual(len(sleeps), len(BRAIN_FRAMES))
         self.assertGreater(sleeps[0], 0)
 
 

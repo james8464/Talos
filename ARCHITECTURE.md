@@ -69,6 +69,11 @@ hash-guarded install with rollback and receipts
   runs focused and existing tests, then installs only the verified target.
   `self_repair` keeps pinned contracts for two pure algorithms and swaps files
   atomically, retaining the displaced inode for rollback.
+- **Capability audit.** `capability_audit.py` inventories the planner tools,
+  computer-use primitives, CLI commands, room endpoints and maintenance jobs,
+  checks which have a regression test, inventories the pinned OpenClaw and
+  Hermes tool surfaces, and writes `state/capability-audit.json`. The best gaps
+  are queued through decomposition and the verified patch loop every 12 hours.
 - **Initiative.** `talos_core/self_improvement/initiative.py` inspects health
   failures, empty knowledge stores and Graphify communities without tests,
   optionally asks a model for one new capability, decomposes each accepted idea,

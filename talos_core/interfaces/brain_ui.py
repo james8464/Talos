@@ -24,7 +24,7 @@ from typing import TextIO
 
 DEFAULT_WIDTH = 100
 DEFAULT_HEIGHT = 22
-DEFAULT_FPS = 2.0
+DEFAULT_FPS = 8.0
 FRAME_COUNT = 4
 MAX_LOG_LINES = 4
 MAX_THOUGHTS = 200
@@ -229,7 +229,7 @@ class BrainUI:
         view = self._state(state)
         spinner = _SPINNER[int(self._now() * 4) % len(_SPINNER)]
         status = f"[{spinner}] model: {view.model}  |  state: {view.status}"
-        art = brain_frame(self.width, self.height, self.frame_index() * 0.7)
+        art = brain_frame(self.width, self.height, self._now() * self.fps * 0.35)
         lines: list[str] = [self._fit(line) for line in art]
         lines.append(self._fit(""))
         lines.append(self._fit(status))
@@ -323,7 +323,8 @@ class BrainUI:
         if not self.is_tty():
             self.render()
             return 0
-        for _ in self.frames:
+        # A short wake-up animation before accepting input; every input redraws.
+        for _ in range(max(len(self.frames), 16)):
             self.render()
             self.sleep(1.0 / self.fps)
         self._running = True
