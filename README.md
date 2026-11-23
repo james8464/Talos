@@ -22,6 +22,7 @@ python3 -m talos_core.cli graph decomposition manager    # source knowledge grap
 python3 -m talos_core.cli console                        # dense ASCII brain + typed fallback
 python3 -m talos_core.cli capabilities                   # tools, tests and upstream gaps
 python3 -m talos_core.cli capabilities --queue           # queue top gaps for coding
+python3 -m talos_core.cli code --model qwen3:4b          # draft/verify/apply one plan
 python3 -m talos_core.cli initiative                     # think of and queue new capabilities
 python3 -m talos_core.cli reflect                        # recompute related knowledge
 python3 -m talos_core.cli vision frame.jpg "What do you see?"

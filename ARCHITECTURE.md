@@ -69,6 +69,11 @@ hash-guarded install with rollback and receipts
   runs focused and existing tests, then installs only the verified target.
   `self_repair` keeps pinned contracts for two pure algorithms and swaps files
   atomically, retaining the displaced inode for rollback.
+- **Autonomous coding.** `initiative_coder.py` consumes safe initiative plans,
+  asks a local model for a minimal before/after plus regression, reuses the
+  checked-patch builder, verifies in the sandbox and applies with before/after
+  hash receipts. A successful patch supersedes conflicting queued plans for the
+  same target so an older intent cannot silently revert it.
 - **Capability audit.** `capability_audit.py` inventories the planner tools,
   computer-use primitives, CLI commands, room endpoints and maintenance jobs,
   checks which have a regression test, inventories the pinned OpenClaw and
