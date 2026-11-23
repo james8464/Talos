@@ -70,8 +70,10 @@ hash-guarded install with rollback and receipts
   `self_repair` keeps pinned contracts for two pure algorithms and swaps files
   atomically, retaining the displaced inode for rollback.
 - **Cadence.** `run_talos.py` supervises the maintenance, vault, heartbeat,
-  review and repair workers. Maintenance runs self-checks, source review and
-  cognitive briefs; all workers yield to foreground conversation.
+  review and repair workers. Maintenance runs a full self-check every six
+  hours; a failed check becomes diagnosis incidents and immediately triggers
+  the verified-patch improvement cycle with rollback backups. All workers yield
+  to foreground conversation.
 
 ## Mac control
 
