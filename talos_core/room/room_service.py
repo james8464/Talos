@@ -21,7 +21,13 @@ from time import monotonic
 from uuid import uuid4
 
 from agent import model_text, parse_event, plan
-from talos_core.cognition import cognitive_engine, goal_store, recurring_reminders, session_goals
+from talos_core.cognition import (
+    cognitive_engine,
+    goal_store,
+    personal_instructions,
+    recurring_reminders,
+    session_goals,
+)
 from talos_core.cognition import dictation as dictation_layer
 from talos_core.cognition.conversation_activity import foreground
 from talos_core.cognition.spoken_stream import SpokenStream
@@ -409,6 +415,9 @@ class Room:
                 context = self.context(db, conversational_turn=True, input_channel=source,
                                        recent_dialogue=dialogue, voice_archiving=remember_voice,
                                        public_web_available=self.online and source == "text")
+                personal = personal_instructions.context(self.db_path.parent)
+                if personal:
+                    context["personal_instructions"] = personal
                 context["room"]["person_detection"] = (
                     "unknown" if current is None else "occupied" if current else "empty"
                 )

@@ -107,6 +107,17 @@ def _initiative(args) -> int:
     return 0
 
 
+def _instructions(args) -> int:
+    from talos_core.cognition import personal_instructions
+
+    if args.set_text is not None:
+        value = personal_instructions.save(args.state, " ".join(args.set_text))
+        print(json.dumps({"saved": len(value), "instructions": value}))
+    else:
+        print(json.dumps({"instructions": personal_instructions.load(args.state)}))
+    return 0
+
+
 def _code(args) -> int:
     from talos_core.self_improvement import initiative_coder
 
@@ -255,6 +266,11 @@ def build_parser() -> argparse.ArgumentParser:
     initiative.add_argument("--model", help="Optional local model for one novel idea.")
     initiative.add_argument("--limit", type=int, default=3)
     initiative.set_defaults(func=_initiative)
+
+    instructions = commands.add_parser("instructions", help="Read or set local personal instructions.")
+    instructions.add_argument("--state", type=Path, default=ROOT / "state")
+    instructions.add_argument("--set", dest="set_text", nargs="+")
+    instructions.set_defaults(func=_instructions)
 
     code = commands.add_parser("code", help="Draft, verify and apply one planned initiative.")
     code.add_argument("--state", type=Path, default=ROOT / "state")

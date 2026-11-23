@@ -24,9 +24,9 @@ class SectionPatchTests(unittest.TestCase):
         reference.write_text("export const interval = 2;")
         sha = hashlib.sha256(reference.read_bytes()).hexdigest()
         target_sha = hashlib.sha256(self.target.read_bytes()).hexdigest()
-        key = hashlib.sha256(
-            f"OpenClaw:{rel}:{sha}:0:{self.rel_target}:{target_sha}".encode()
-        ).hexdigest()[:16]
+        key = hashlib.sha256(f"OpenClaw:{rel}:{sha}:0:{self.rel_target}:{target_sha}".encode()).hexdigest()[
+            :16
+        ]
         self.item = {
             "id": key,
             "status": "proposed",
@@ -73,9 +73,7 @@ class SectionPatchTests(unittest.TestCase):
         self.assertEqual(receipt["diff_sha256"], hashlib.sha256(diff).hexdigest())
         self.assertFalse(receipt["regression_executed"])
         self.assertFalse(receipt["applied"])
-        self.assertEqual(
-            (self.folder / "regression.py").read_text(), self.answer["regression_test"]
-        )
+        self.assertEqual((self.folder / "regression.py").read_text(), self.answer["regression_test"])
         self.assertIn(b"b/tests/test_section_", diff)
         self.assertFalse(self.draft(call, 1000))
         # Replay publication after a crash between rename and database acknowledgement.
@@ -106,9 +104,7 @@ class SectionPatchTests(unittest.TestCase):
         self.assertIsNone(self.draft(Mock(side_effect=AssertionError), 200))
         self.assertIn(
             "retry",
-            self.draft(
-                Mock(return_value={**self.answer, "regression_test": "invalid("}), 701
-            ),
+            self.draft(Mock(return_value={**self.answer, "regression_test": "invalid("}), 701),
         )
         self.assertFalse(self.folder.exists())
         self.assertIn("ready", self.draft(Mock(return_value=self.answer), 2200))
@@ -126,11 +122,7 @@ class SectionPatchTests(unittest.TestCase):
         self.assertTrue((self.folder / "change.diff").is_file())
 
     def test_abstention_and_unrelated_queue_entry_never_create_artifacts(self):
-        self.assertIn(
-            "abstained", self.draft(Mock(return_value=dict.fromkeys(self.answer, "")))
-        )
+        self.assertIn("abstained", self.draft(Mock(return_value=dict.fromkeys(self.answer, ""))))
         self.assertFalse(self.folder.exists())
-        self.queue.write_text(
-            json.dumps({**self.item, "id": "e" * 16, "origin": "other-origin"}) + "\n"
-        )
+        self.queue.write_text(json.dumps({**self.item, "id": "e" * 16, "origin": "other-origin"}) + "\n")
         self.assertIsNone(self.draft(Mock(side_effect=AssertionError), 1000))

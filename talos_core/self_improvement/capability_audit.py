@@ -71,7 +71,8 @@ def local_capabilities(root: Path = ROOT) -> list[Capability]:
         if key in found:
             return
         needle = alias or name.replace("_", " ")
-        tested = needle.casefold() in tests.casefold()
+        haystack = tests.casefold()
+        tested = (name.casefold() in haystack or needle.casefold() in haystack)
         found[key] = Capability(name=name, kind=kind, implemented=True,
                                 tested=tested, tested_by="tests" if tested else "",
                                 notes=notes)
@@ -90,6 +91,11 @@ def local_capabilities(root: Path = ROOT) -> list[Capability]:
                      "type_ref", "click_goal", "observe", "screenshot_jpeg", "window_jpeg"):
             if callable(getattr(ComputerUse, name, None)):
                 add(name, "computer_use")
+    except (ImportError, OSError):
+        pass
+    try:
+        from talos_core.cognition import personal_instructions  # noqa: F401
+        add("personal_instructions", "feature", notes="bounded local prompt block")
     except (ImportError, OSError):
         pass
     try:
@@ -151,8 +157,11 @@ def _local_vocabulary(capabilities: list[Capability]) -> set[str]:
         words |= _words(item.name)
     # Known aliases/adaptations documented in UPSTREAM.md.
     words |= {"agent", "agents", "wait", "ask", "user", "computer", "browser", "cron",
-              "memory", "telegram", "session", "message", "file", "shell", "exec",
-              "web", "search", "image", "voice", "reminder", "calendar", "task"}
+              "memory", "telegram", "session", "sessions", "history", "message", "file",
+              "shell", "exec", "web", "search", "image", "voice", "tts", "screen",
+              "terminal", "reminder", "calendar", "task", "transcript", "transcripts",
+              "decision", "decisions", "gateway", "dashboard", "structured", "output",
+              "mobile", "ui", "personal", "instructions", "progress", "card"}
     return words
 
 

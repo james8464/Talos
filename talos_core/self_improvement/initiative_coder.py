@@ -98,8 +98,8 @@ def _prompt(item: dict, leaf: dict, excerpt: str) -> str:
         section_patches.PATCH_INSTRUCTION
         + f"\nFEATURE: {item.get('feature', '')}\nACCEPTANCE: {leaf.get('acceptance') or item.get('acceptance', '')}\n"
         + f"\nTARGET: {leaf['files'][0]}\n"
-        + "The regression_test must import any changed symbol with its full module path, "
-        + "e.g. `from talos_core.self_improvement.initiative import MAX_IDEAS`.\n"
+        + "The regression_test must import every changed symbol from its real module path "
+        + f"`{leaf['files'][0][:-3].replace('/', '.')}` (for `agent.py`, the module is `agent`).\n"
         + f"\nSOURCE EXCERPT:\n{excerpt[:9000]}"
     )
 

@@ -19,7 +19,7 @@ from typing import TextIO
 from uuid import uuid4
 
 from talos_core import session_titles
-from talos_core.cognition import cognitive_engine, session_goals
+from talos_core.cognition import cognitive_engine, personal_instructions, session_goals
 from talos_core.cognition.conversation import visible_model_text
 from talos_core.cognition.talos_identity import PERSONALITY, SPOKEN_STYLE, capability_context
 from talos_core.memory.agent_memory import (
@@ -97,7 +97,7 @@ CONSOLE_COMMANDS = (
 
 LOOKUP_TOOLS = ("search_memory", "search_knowledge", "search_code_graph", "inspect_app",
                 "list_inbox", "review_decisions", "current_time")
-MAX_LOOKUPS = 3
+MAX_LOOKUPS = 4
 PERMITTED_TOOLS = {
     "act": ("speak", "desktop_action", *LOCAL_WRITES),
     "look_up": LOOKUP_TOOLS,
@@ -401,6 +401,9 @@ def console_prompt(database, message, session):
     records = (search_transcripts(database, message, include_named_text=False) if session == TEXT_SESSION
                else search_transcripts(database, message, in_session=session)) if message else []
     instructions = PERSONALITY + "\n" + capability_context("text")
+    personal = personal_instructions.context(_state_for(database))
+    if personal:
+        instructions += "\n" + personal
     policy_hint = cognitive_engine.active_policy_hint(cognitive_engine._infer_state(database))
     if policy_hint:
         instructions += "\n" + policy_hint

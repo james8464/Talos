@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Protocol
 
 MAX_DEPTH = 5
-MAX_NODES = 64
+MAX_NODES = 96
 MAX_TOKENS = 12_000
 SIMPLE_SCORE = 3
 

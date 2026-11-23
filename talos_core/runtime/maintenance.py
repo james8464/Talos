@@ -102,7 +102,7 @@ def job_loop(state, model, home):
                 from talos_core.self_improvement import initiative_coder
                 try:
                     inference = initiative_coder.local_infer(model)
-                    report = initiative_coder.run_once(state, report_root, infer=inference, apply=True)
+                    report = initiative_coder.run_once(state, report_root, infer=inference, apply=True, limit=3)
                     if report.get("ok"):
                         result = "applied " + ", ".join(
                             item.get("target", "") for item in report.get("results", ())
