@@ -102,7 +102,15 @@ def job_loop(state, model, home):
                 else:
                     issues = list(failures(report))
                     report_failures(report, state)
-                    result = f"attention needed · {issues[0] if issues else 'check failed'}"
+                    try:
+                        from talos_core.self_improvement.improve_talos import run_improvement_cycle
+                        cycle = run_improvement_cycle(state, root=report_root, apply_patches=True)
+                        applied = [item for item in cycle["candidates_verified"] if item.get("applied")]
+                        result = (f"attention needed · {issues[0] if issues else 'check failed'}"
+                                  f" · {len(applied)} patch(es) applied")
+                    except (OSError, ValueError, RuntimeError, sqlite3.Error) as error:
+                        result = (f"attention needed · {issues[0] if issues else 'check failed'}"
+                                  f" · repair deferred ({type(error).__name__})")
             elif kind == "cognitive":
                 from talos_core.memory.agent_memory import open_memory
                 db_path = state / "agent.sqlite3"

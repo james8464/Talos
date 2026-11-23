@@ -800,7 +800,8 @@ def interactive_chat(
                         if not args:
                             raise ValueError("Usage: /computer key COMBO [confirm]")
                         confirm = "confirm" in args[1:]
-                        result = computer.press(args[0], confirm=confirm).to_dict()
+                        result = ({"preview": f"press {args[0]}"} if not apply
+                                  else computer.press(args[0], confirm=confirm).to_dict())
                     elif action == "click":
                         if len(args) != 2:
                             raise ValueError("Usage: /computer click X Y")
@@ -808,7 +809,8 @@ def interactive_chat(
                     elif action == "menu":
                         if len(args) < 3:
                             raise ValueError("Usage: /computer menu APP MENU ITEM")
-                        result = computer.menu(args[0], *args[1:]).to_dict()
+                        result = ({"preview": f"menu {' '.join(args)}"} if not apply
+                                  else computer.menu(args[0], *args[1:]).to_dict())
                     else:
                         raise ValueError("Unknown computer action.")
                     print(json.dumps(result, ensure_ascii=False, default=str), file=output, flush=True)
