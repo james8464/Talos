@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key><string>Talos</string>
+    <key>CFBundleIdentifier</key><string>local.talos.room</string>
+    <key>CFBundleName</key><string>Talos</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>NSMicrophoneUsageDescription</key><string>Talos hears you while its microphone is enabled.</string>
+    <key>NSSpeechRecognitionUsageDescription</key><string>Talos uses on-device speech recognition.</string>
+    <key>NSCalendarsFullAccessUsageDescription</key><string>Talos reads events for meeting briefs and when you import Calendar into private memory.</string>
+    <key>NSRemindersFullAccessUsageDescription</key><string>Talos reads reminders when you import them into private memory.</string>
+    <key>NSCameraUsageDescription</key><string>Talos checks presence locally and uses one camera frame to answer visual questions on this Mac. With permission during an introduction, it can save a visual reference for future visits.</string>
+</dict>
+</plist>

@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "talos-room-assistant"
+version = "0.1.0"
+description = "Local voice runtime for Talos"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pipecat-ai[kokoro,mlx-whisper,ollama,runner,webrtc,whisper]==1.16.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["bot", "talos_core", "talos_identity", "agent_memory", "transcript_memory", "cognitive_engine", "goal_store", "room_research", "conversation", "local_runtime", "respan_llm_service"]
+

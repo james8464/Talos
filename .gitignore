@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+models/
+state/
+.DS_Store
+graphify-out/
+generated_images/
+.ruff_cache/
+
+# Local tooling and session data
+.openclaude/
+.remember/
+.ruff_cache/
+.pytest_cache/
+*.log
+*.orig
+*.bak
+*.patch
