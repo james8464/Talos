@@ -78,6 +78,37 @@ def _console(args) -> int:
         return ui.run_interactive()
 
 
+def _initiative(args) -> int:
+    from agent import model_text
+    from talos_core.runtime.local_runtime import check_ollama_model
+    from talos_core.self_improvement import initiative
+
+    infer = None
+    if args.model:
+        check_ollama_model(args.model)
+        def infer(prompt: str) -> str:
+            return model_text([{"role": "user", "content": prompt}],
+                              model=args.model, max_tokens=450)
+    report = initiative.cycle(args.state, args.root, infer=infer, limit=args.limit)
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return 0
+
+
+def _reflect(args) -> int:
+    from talos_core.knowledge_reflection import reflect, summary
+    from talos_core.memory.agent_memory import open_memory
+
+    path = args.db or (args.state / "agent.sqlite3")
+    if not path.is_file():
+        print(json.dumps({"ok": False, "error": "agent database unavailable"}))
+        return 1
+    with open_memory(path) as database:
+        found = reflect(database, args.state)
+        print(json.dumps({"found": len(found), "top": summary(database)},
+                         indent=2, ensure_ascii=False))
+    return 0
+
+
 def _audit(args) -> int:
     from tools.knowledge_audit import main as audit_main
 
@@ -183,6 +214,18 @@ def build_parser() -> argparse.ArgumentParser:
     console.add_argument("--model", default="qwen2.5:1.5b")
     console.add_argument("--script", nargs="*", help="Run fixed input lines instead of an interactive loop.")
     console.set_defaults(func=_console)
+
+    initiative = commands.add_parser("initiative", help="Think of and decompose new capabilities.")
+    initiative.add_argument("--state", type=Path, default=ROOT / "state")
+    initiative.add_argument("--root", type=Path, default=ROOT)
+    initiative.add_argument("--model", help="Optional local model for one novel idea.")
+    initiative.add_argument("--limit", type=int, default=3)
+    initiative.set_defaults(func=_initiative)
+
+    reflect = commands.add_parser("reflect", help="Recompute related context from conversations and knowledge.")
+    reflect.add_argument("--state", type=Path, default=ROOT / "state")
+    reflect.add_argument("--db", type=Path)
+    reflect.set_defaults(func=_reflect)
 
     audit = commands.add_parser("audit", help="Audit personal context, transcripts and the code graph.")
     audit.add_argument("--query", default="decomposition manager")

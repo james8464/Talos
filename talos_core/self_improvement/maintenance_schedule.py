@@ -36,10 +36,14 @@ class MaintenanceSchedule:
         self.next_files = self.next_review = 0
         self.next_memory_review = 0
         self.next_health = 0
+        self.next_reflection = 0
+        self.next_initiative = 0
         self.counts = {}
         self.outcome = "Awaiting first review"
         self.memory_outcome = "Awaiting an idle review"
         self.health_outcome = "Awaiting self-check"
+        self.reflection_outcome = "Awaiting reflection"
+        self.initiative_outcome = "Awaiting initiative"
 
     def poll_memory(self, state, *, run):
         now = time.monotonic()
@@ -54,6 +58,36 @@ class MaintenanceSchedule:
                     self.memory_outcome = result
                     self.next_memory_review = now + 120
         return self.memory_outcome
+
+    def poll_reflection(self, state, *, run):
+        """Recompute contextual relations every ten minutes."""
+        now = time.monotonic()
+        if now >= self.next_reflection and not conversation_busy(state):
+            try:
+                result = run("reflection")
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                self.reflection_outcome = f"Reflection unavailable ({type(error).__name__})"
+                self.next_reflection = now + 300
+            else:
+                if result is not None:
+                    self.reflection_outcome = str(result)
+                    self.next_reflection = now + 600
+        return self.reflection_outcome
+
+    def poll_initiative(self, state, *, run):
+        """Think of and queue new capabilities four times a day."""
+        now = time.monotonic()
+        if now >= self.next_initiative and not conversation_busy(state):
+            try:
+                result = run("initiative")
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                self.initiative_outcome = f"Initiative unavailable ({type(error).__name__})"
+                self.next_initiative = now + 1800
+            else:
+                if result is not None:
+                    self.initiative_outcome = str(result)
+                    self.next_initiative = now + 4 * 3600
+        return self.initiative_outcome
 
     def poll_health(self, state, *, run):
         """Run a full self-check every six hours, deferred during conversation."""

@@ -62,7 +62,7 @@ _REQUEST = re.compile(
     r"(?:can|could|would|will)\s+you\b"
     r"|please\b"
     r"|help\s+(?:me|us)\b"
-    r"|(?:set|start|stop|open|close|play|pause|remind|show|find|search|add|create|make|turn|take|check)\b"
+    r"|(?:wait|hold on|never mind|cancel|stop|set|start|open|close|play|pause|remind|show|find|search|add|create|make|turn|take|check)\b"
     r")"
 )
 
@@ -189,6 +189,11 @@ def vision_attention(people: int | Iterable, facing: bool | str | None = None) -
     if toward:
         return Decision(True, "one person facing the Mac", "camera", "single_facing")
     return Decision(False, "one person facing away from the Mac", "camera", "single_away")
+
+
+def is_other_speaker(speaker: str | None) -> bool:
+    """True for an explicitly labelled background/third-party speaker."""
+    return _speaker_key(speaker) in _OTHER_SPEAKERS
 
 
 def _speaker_key(speaker: str | None) -> str:

@@ -94,6 +94,19 @@ def job_loop(state, model, home):
             elif kind == "memory_review":
                 from talos_core.memory import memory_review
                 result = memory_review.review(state, model)
+            elif kind == "initiative":
+                from talos_core.self_improvement import initiative
+                report = initiative.cycle(state, report_root, limit=2)
+                result = f"{report['count']} new initiative(s); {len(report['accepted'])} queued"
+            elif kind == "reflection":
+                from talos_core.knowledge_reflection import reflect
+                from talos_core.memory.agent_memory import open_memory
+                db_path = state / "agent.sqlite3"
+                if db_path.is_file():
+                    with closing(open_memory(db_path)) as db:
+                        result = f"{len(reflect(db, state))} related-context edge(s)"
+                else:
+                    result = "agent database unavailable"
             elif kind == "health":
                 from talos_core.self_improvement.health import failures, health, report_failures
                 report = health(report_root, state, quick=False, lint=True, tests=True)
@@ -145,7 +158,9 @@ def watch(state, model):
         def observed_job(kind, **options):
             labels = {"sync": "Refresh enabled memory sources", "review": "Compare code and review proposals",
                       "memory_review": "Check project evidence for AI memory review",
-                      "health": "Self-check Talos source and tests"}
+                      "health": "Self-check Talos source and tests",
+                      "initiative": "Propose and decompose new capabilities",
+                      "reflection": "Reflect on related knowledge and conversations"}
             label = labels[kind]
             record(state, "Maintenance", label + " · started")
             started = time.monotonic()
@@ -187,6 +202,8 @@ def watch(state, model):
                 lines.append("Search index maintenance · " + index_outcome)
                 lines.append("Latest AI memory review · " + schedule.poll_memory(state, run=observed_job))
             lines.append("Self-check · " + schedule.poll_health(state, run=observed_job))
+            lines.append("Knowledge reflection · " + schedule.poll_reflection(state, run=observed_job))
+            lines.append("Initiative · " + schedule.poll_initiative(state, run=observed_job))
             cycle += 1
             label = datetime.now().astimezone().isoformat(timespec="seconds")
             lines.insert(0, f"Memory check {cycle} · {label}")

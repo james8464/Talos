@@ -19,7 +19,9 @@ python3 -m talos_core.cli computer choose Calculator 7 --click
 python3 -m talos_core.cli computer window resize --app TextEdit --width 800 --height 600
 python3 -m talos_core.cli computer scroll 5 --app TextEdit
 python3 -m talos_core.cli graph decomposition manager    # source knowledge graph
-python3 -m talos_core.cli console                        # ASCII brain + typed fallback
+python3 -m talos_core.cli console                        # dense ASCII brain + typed fallback
+python3 -m talos_core.cli initiative                     # think of and queue new capabilities
+python3 -m talos_core.cli reflect                        # recompute related knowledge
 python3 -m talos_core.cli vision frame.jpg "What do you see?"
 python3 -m tools.app_scenarios calculator          # multi-step real app check
 python3 -m tools.app_scenarios safari

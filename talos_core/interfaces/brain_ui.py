@@ -14,6 +14,7 @@ runtime's monotonic clock.
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 import textwrap
 import time
@@ -21,37 +22,66 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TextIO
 
-DEFAULT_WIDTH = 56
+DEFAULT_WIDTH = 100
+DEFAULT_HEIGHT = 22
 DEFAULT_FPS = 2.0
-MAX_LOG_LINES = 3
+FRAME_COUNT = 4
+MAX_LOG_LINES = 4
 MAX_THOUGHTS = 200
 
 _SPINNER = ("|", "/", "-", "\\")
+_GLYPHS = " .:-=+*#%@"
+_NEURON = "+*#@"
 
-# The brain is drawn once and the pulse glyph is substituted per frame.  The
-# glyph walks dot -> small circle -> big circle -> spark, which reads as a
-# slow heartbeat rather than a flicker.
-_ART_TEMPLATE = (
-    "      .-~~~~-.          .-~~~~-.",
-    "    .'  @@@@  '.      .'  @@@@  '.",
-    "   /  @@    @@  \\    /  @@    @@  \\",
-    "  |  @  @@@@  @  |  |  @  @@@@  @  |",
-    "  |  @  @  @  @  |  |  @  @  @  @  |",
-    "  |  @  @@@@  @  |  |  @  @@@@  @  |",
-    "   \\  @@    @@  /    \\  @@    @@  /",
-    "    '.  @@@@  .'      '.  @@@@  .'",
-    "      '~..~'            '~..~'",
+
+def brain_cell(nx: float, ny: float, phase: float) -> str:
+    """One glyph of a dense two-hemisphere brain.
+
+    The shape is two overlapping ellipses plus a stem. Cortex folds, travelling
+    waves and deterministic neuron sparks are layered on top, so nearly every
+    cell changes between frames while the silhouette stays readable.
+    """
+    left = ((nx + 0.40) / 0.58) ** 2 + (ny / 0.80) ** 2
+    right = ((nx - 0.40) / 0.58) ** 2 + (ny / 0.80) ** 2
+    inside = min(left, right)
+    stem = abs(nx) < 0.10 and 0.55 < ny < 1.05
+    if inside > 1.0 and not stem:
+        return " "
+    if stem:
+        inset = 1.0 - abs(nx) / 0.10
+        return _GLYPHS[min(len(_GLYPHS) - 1, max(0, int(2 + inset * 3)))]
+    edge = 1.0 - inside
+    folds = (
+        0.55
+        + 0.30 * math.sin(11.0 * nx + phase * 1.7)
+        * math.cos(9.0 * ny - phase * 1.3)
+        + 0.15 * math.sin(19.0 * (nx + ny) + phase * 2.1)
+    )
+    spark = math.sin((nx * 37.0 + ny * 61.0 + phase * 5.0) * 3.0)
+    if spark > 0.965:
+        return _NEURON[int((spark + phase) * 4) % len(_NEURON)]
+    level = int(max(0.0, min(1.0, edge * 0.65 + folds * 0.35)) * (len(_GLYPHS) - 1))
+    return _GLYPHS[level]
+
+
+def brain_frame(width: int, height: int, phase: float) -> tuple[str, ...]:
+    """Render the full-width brain at one animation phase."""
+    width = max(20, int(width))
+    height = max(10, int(height))
+    rows = []
+    for y in range(height):
+        ny = ((y + 0.5) / height) * 1.9 - 0.95
+        cells = []
+        for x in range(width):
+            nx = ((x + 0.5) / width) * 2.2 - 1.1
+            cells.append(brain_cell(nx, ny, float(phase)))
+        rows.append("".join(cells)[:width].ljust(width))
+    return tuple(rows)
+
+
+BRAIN_FRAMES: tuple[tuple[str, ...], ...] = tuple(
+    brain_frame(DEFAULT_WIDTH, DEFAULT_HEIGHT, index * 0.7) for index in range(FRAME_COUNT)
 )
-
-_PULSE_GLYPHS = (".", "o", "O", "*")
-
-
-def _build_frames() -> tuple[tuple[str, ...], ...]:
-    """Return the brain frames with the pulse glyph applied."""
-    return tuple(tuple(line.replace("@", glyph) for line in _ART_TEMPLATE) for glyph in _PULSE_GLYPHS)
-
-
-BRAIN_FRAMES: tuple[tuple[str, ...], ...] = _build_frames()
 
 __all__ = ["BRAIN_FRAMES", "BrainUI", "UIState", "main"]
 
@@ -101,6 +131,7 @@ class BrainUI:
         stream: TextIO | None = None,
         clock: Callable[[], float] | None = None,
         width: int = DEFAULT_WIDTH,
+        height: int = DEFAULT_HEIGHT,
         *,
         input_stream: TextIO | None = None,
         fps: float = DEFAULT_FPS,
@@ -110,8 +141,8 @@ class BrainUI:
         model: str = "local",
         status: str = "idle",
     ) -> None:
-        if width < 1:
-            raise ValueError("width must be positive")
+        if width < 1 or height < 1:
+            raise ValueError("width and height must be positive")
         if fps <= 0:
             raise ValueError("fps must be positive")
         self.stream = stream if stream is not None else sys.stdout
@@ -120,6 +151,7 @@ class BrainUI:
         self.sleep = sleep if sleep is not None else time.sleep
         self.responder = responder
         self.width = int(width)
+        self.height = int(height)
         self.fps = float(fps)
         self.log_lines = max(1, int(log_lines))
         self.frames = BRAIN_FRAMES
@@ -197,7 +229,8 @@ class BrainUI:
         view = self._state(state)
         spinner = _SPINNER[int(self._now() * 4) % len(_SPINNER)]
         status = f"[{spinner}] model: {view.model}  |  state: {view.status}"
-        lines: list[str] = [self._center(line) for line in self.frames[self.frame_index()]]
+        art = brain_frame(self.width, self.height, self.frame_index() * 0.7)
+        lines: list[str] = [self._fit(line) for line in art]
         lines.append(self._fit(""))
         lines.append(self._fit(status))
         lines.append(self._fit("-" * self.width))

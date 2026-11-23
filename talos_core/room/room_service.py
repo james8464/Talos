@@ -10,6 +10,7 @@ import secrets
 import sqlite3
 import statistics
 import threading
+import time as _time
 from collections.abc import Callable
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
@@ -21,6 +22,7 @@ from uuid import uuid4
 
 from agent import model_text, parse_event, plan
 from talos_core.cognition import cognitive_engine, goal_store, recurring_reminders, session_goals
+from talos_core.cognition import dictation as dictation_layer
 from talos_core.cognition.conversation_activity import foreground
 from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.cognition.talos_identity import SPOKEN_STYLE
@@ -104,6 +106,7 @@ class Room:
         self.voice = voice
         self.turn_lock = threading.Lock()
         self.speech_streams = {}
+        self.dictation = dictation_layer.DictationMachine()
         self.stream_lock = threading.Lock()
         self.worker_lock = threading.Lock()
         self.orders_ready = threading.Event()
@@ -709,6 +712,21 @@ class Room:
         return {"private": True, "reply": f"{result}: {row['detail']}.", "receipts": receipts,
                 "sources": [{"title": row["pointer"], "url": Path(row["path"]).as_uri()}]}
 
+    def observe_voice(self, body: dict):
+        """Record user speech, including barge-in, for the streaming voice path."""
+        event = self.dictation.speech_started(
+            _time.monotonic(),
+            text=body.get("text"),
+            speaker=body.get("speaker", "user"),
+            people=body.get("frame_people"),
+            facing=body.get("facing"),
+        )
+        if event.barged_in:
+            with self.stream_lock:
+                for active in list(self.speech_streams.values()):
+                    active.cancel()
+        return event
+
     def handle_room_turn(self, db, body, *, facing, stream=None):
         text = body.get("text")
         channel = body.get("source", "voice" if facing else "text")
@@ -718,6 +736,20 @@ class Room:
         if not isinstance(text, str) or not 1 <= len(text.strip()) <= limit:
             raise ValueError(f"Use between 1 and {limit} characters for the turn.")
         voice = facing or channel == "voice"
+        if voice and self.dictation.state != dictation_layer.AGENT_SPEAKING:
+            self.observe_voice(body)
+        if voice:
+            speaker = str(body.get("speaker") or "user")
+            people = body.get("frame_people")
+            facing_value = body.get("facing")
+            explicit = dictation_layer.addressed(text)
+            crowd = type(people) is int and people > 1 and not explicit.accepted
+            away = facing_value in ("away", "elsewhere", "not_facing", "none") and not explicit.accepted
+            other = dictation_layer.is_other_speaker(speaker)
+            if other or crowd or away:
+                reason = ("speaker is not the owner" if other else
+                          "multiple people in view" if crowd else "speaker is facing away")
+                return {"reply": "", "action": "ignored", "attention": reason}
         audio_check = voice_recovery.handle(db, text, apply=self.apply)
         if audio_check is not None:
             if audio_check.get("voice_recovery") == "test_output":
@@ -1129,6 +1161,10 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
 
         stream = SpokenStream(emit)
+        room.observe_voice(body)
+        if room.dictation.state == dictation_layer.USER_SPEAKING:
+            room.dictation.speech_ended(_time.monotonic())
+        room.dictation.response_started(_time.monotonic())
         with room.stream_lock:
             if ident in room.speech_streams:
                 self.reply(409, {"error": "Voice turn already running."})
@@ -1157,6 +1193,10 @@ class Handler(BaseHTTPRequestHandler):
         finally:
             with room.stream_lock:
                 room.speech_streams.pop(ident, None)
+            if stream.cancelled:
+                room.dictation.interrupt(_time.monotonic(), "voice stream cancelled")
+            else:
+                room.dictation.response_finished(_time.monotonic())
             stream.cancel()
 
     def reply(self, status: int, data: dict) -> None:

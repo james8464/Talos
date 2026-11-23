@@ -69,6 +69,10 @@ hash-guarded install with rollback and receipts
   runs focused and existing tests, then installs only the verified target.
   `self_repair` keeps pinned contracts for two pure algorithms and swaps files
   atomically, retaining the displaced inode for rollback.
+- **Initiative.** `talos_core/self_improvement/initiative.py` inspects health
+  failures, empty knowledge stores and Graphify communities without tests,
+  optionally asks a model for one new capability, decomposes each accepted idea,
+  and queues it for the existing verify/apply loop. It never edits source itself.
 - **Cadence.** `run_talos.py` supervises the maintenance, vault, heartbeat,
   review and repair workers. Maintenance runs a full self-check every six
   hours; a failed check becomes diagnosis incidents and immediately triggers
@@ -133,17 +137,31 @@ python3 -m talos_core.mac.computer_use screenshot --path /tmp/shot.png
 From the console, use `/computer ...`; shadow mode prints a preview and
 `agent.py chat --apply` executes. `/decompose TASK` prints a routable plan.
 
+## Knowledge reflection
+
+`talos_core/knowledge_reflection.py` continuously turns recent conversations
+into weighted relations across transcripts, personal facts, vault notes,
+memory connections and the code graph. Many candidate explanations are scored
+in parallel and then collapsed to the strongest few before storage. This is a
+weighted multi-hypothesis system, not quantum hardware; the useful property is
+that related context is recomputed continuously as new conversation arrives.
+Maintenance runs it every ten minutes and initiative every four hours.
+
 ## Terminal fallback and dictation
 
-`talos_core/interfaces/brain_ui.py` is a dependency-free animated ASCII brain
-with a scrolling thought log and a typed prompt for when speech is unavailable
+`talos_core/interfaces/brain_ui.py` renders a dense, procedural ASCII brain:
+two hemispheres with cortex folds, travelling waves and neuron sparks. A normal
+terminal frame contains roughly 2,000–3,500 changing characters. It is
+dependency-free and includes a scrolling thought log and a typed prompt for when speech is unavailable
 (`talos console`). `talos_core/cognition/dictation.py` is a deterministic
 attention state machine: idle, listening, user speaking, agent speaking,
 thinking and interrupted. It distinguishes direct address ("Hey Talos...")
 from third-person or background speech, supports barge-in, and combines text
-with camera attention (one facing person vs a crowd/away). The native room still
-owns the microphone and playback; the module decides when a turn is for Talos
-and when playback should stop.
+with camera attention (one facing person vs a crowd/away). The native room owns
+the microphone and playback; `Room.observe_voice` now feeds every voice turn into
+the machine. Background/other-speaker turns and crowd/away frames without an
+explicit address return no reply, and speech during an active stream is treated
+as barge-in: the stream is cancelled and listening resumes.
 
 `talos vision FILE QUESTION` asks the local vision model about a camera frame,
 and the room's `/v1/voice/facing` path already sends one transient camera JPEG
