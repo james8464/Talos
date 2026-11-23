@@ -59,9 +59,10 @@ hash-guarded install with rollback and receipts
   fixtures. `health` additionally checks syntax, import resolution, Ruff and
   the full regression suite, and runs every six hours from maintenance.
 - **Decomposition.** `decomposition.Decomposer` expands an objective layer by
-  layer. A manager (deterministic, local or cloud) marks a node as a leaf when
-  it is bounded to one file and a small change. Every node carries its own
-  context only; depth, node count and estimated prompt tokens are capped.
+  layer. A manager marks a node as a leaf when it is bounded to one file and a
+  small change. `HeuristicManager` works offline; `ModelManager` asks a local or
+  cloud model with a prompt containing only that node. Every node carries its
+  own context; depth, node count and estimated prompt tokens are capped.
 - **Routing.** Trivial leaves go to the local model; broad implementation
   leaves go to a cloud model. The plan is persisted under `state/plans/`.
 - **Verification.** `section_patches` applies candidate diffs in a copy,
@@ -120,7 +121,10 @@ From the console, use `/computer ...`; shadow mode prints a preview and
 python3 -m talos_core.cli doctor          # full health report
 python3 -m talos_core.cli doctor --fix    # safe Ruff fixes, then re-check
 python3 -m talos_core.cli decompose "TASK" --file path/to/module.py
+python3 -m talos_core.cli decompose "TASK" --model qwen3:4b   # AI manager
 python3 -m talos_core.cli status
+python3 -m talos_core.cli computer frontmost
+python3 -m talos_core.cli computer screenshot --path /tmp/shot.png
 python3 -m talos_core.cli test
 python3 -m talos_core.self_improvement.improve_talos --cycle
 ```

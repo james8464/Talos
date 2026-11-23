@@ -96,7 +96,7 @@ CONSOLE_COMMANDS = (
 LOOKUP_TOOLS = ("search_memory", "search_knowledge", "list_inbox", "review_decisions", "current_time")
 MAX_LOOKUPS = 3
 PERMITTED_TOOLS = {
-    "act": ("speak", *LOCAL_WRITES),
+    "act": ("speak", "desktop_action", *LOCAL_WRITES),
     "look_up": LOOKUP_TOOLS,
     "wait": ("none",),
     "ask": ("none",),
@@ -146,7 +146,10 @@ Return one structured decision:
   current_time for UTC time. Explain what evidence you need. Respect lookups_remaining.
 - act: propose one action. Use log_alert for a private local alert, set_reminder for a
   future reminder, create_task for a task to track, save_note for a useful local note,
-  or speak for a brief, considerate in-room message. The runtime decides what it can apply.
+  speak for a brief, considerate in-room message, or desktop_action to control this Mac.
+  For desktop_action put one command in detail: "click X Y", "double-click X Y",
+  "type TEXT", "key COMBO", "open APP_OR_PATH", "activate APP", or "menu APP ITEM...".
+  The runtime decides what it can apply.
 - wait: describe the evidence still needed. Use tool none.
 - ask: write a brief clarifying question. Use tool none.
 - reply: give a concise useful answer in detail when replying to a conversation turn.
@@ -438,6 +441,54 @@ def console_usage(database, session):
     return "\n".join(lines)
 
 
+def desktop_action(detail: str, state: Path, *, confirm: bool = False) -> str:
+    """Execute one bounded Mac command from the planner's ``desktop_action`` tool."""
+    from talos_core.mac.computer_use import ComputerUse, PolicyError
+
+    parts = shlex.split(detail)
+    if not parts:
+        raise ValueError("Empty desktop action.")
+    computer = ComputerUse(state)
+    verb, *args = parts
+    try:
+        if verb in ("click", "double-click", "double_click"):
+            if len(args) != 2:
+                raise ValueError("Use click X Y.")
+            receipt = computer.click(int(args[0]), int(args[1]),
+                                     count=2 if verb != "click" else 1)
+        elif verb == "type":
+            text = detail.split(None, 1)[1] if len(parts) > 1 else ""
+            receipt = computer.type_text(text)
+        elif verb == "key":
+            if not args:
+                raise ValueError("Use key COMBO.")
+            receipt = computer.press(args[0], confirm=confirm or "confirm" in args[1:])
+        elif verb in ("open", "activate"):
+            if not args:
+                raise ValueError(f"Use {verb} APP_OR_PATH.")
+            target = Path(args[0]).expanduser()
+            receipt = (computer.open_path(str(target)) if target.exists()
+                       else computer.activate(args[0]))
+        elif verb == "menu":
+            if len(args) < 3:
+                raise ValueError("Use menu APP MENU ITEM.")
+            receipt = computer.menu(args[0], *args[1:])
+        else:
+            raise ValueError(f"Unknown desktop action: {verb}")
+    except PolicyError:
+        raise
+    if not receipt.ok:
+        raise RuntimeError(receipt.detail or "Desktop action failed.")
+    return receipt.detail or "completed"
+
+
+def _state_for(database: sqlite3.Connection) -> Path:
+    row = database.execute("PRAGMA database_list").fetchone()
+    if row and row[2]:
+        return Path(row[2]).resolve().parent
+    return STATE_PATH.parent
+
+
 def process_event(
     database: sqlite3.Connection, event: dict[str, str], *, apply: bool = False,
     trusted_owner: bool = False, model: str = OLLAMA_MODEL,
@@ -445,6 +496,21 @@ def process_event(
     proposal = plan(database, event, trusted_owner=trusted_owner, model=model)
     decision_id = record_decision(database, event, proposal, apply=apply)
     result = {"id": decision_id, "mode": "local" if apply else "shadow", **proposal}
+    if apply and proposal["tool"] == "desktop_action" and trusted_owner:
+        try:
+            detail = desktop_action(proposal["detail"], _state_for(database),
+                                    confirm="confirm" in proposal["detail"].split())
+        except (OSError, ValueError, RuntimeError) as error:
+            with database:
+                database.execute("UPDATE action_outcomes SET status='blocked' WHERE decision_id=?",
+                                 (decision_id,))
+            result["action"] = "blocked"
+            result["error"] = str(error)
+            return result
+        with database:
+            database.execute("UPDATE action_outcomes SET status='applied' WHERE decision_id=?",
+                             (decision_id,))
+        result["desktop"] = detail
     if apply:
         row = database.execute(
             "SELECT status FROM action_outcomes WHERE decision_id = ?", (decision_id,)

@@ -115,6 +115,46 @@ class DecompositionTests(unittest.TestCase):
         self.assertIn("local", outline)
         self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
+    def test_model_manager_splits_then_stops_on_simple_leaves(self):
+        prompts = []
+
+        def infer(prompt):
+            prompts.append(prompt)
+            if "Harden the voice pipeline" in prompt:
+                return json.dumps({
+                    "simple": False, "estimate": 7, "model": "cloud",
+                    "reason": "two files",
+                    "subtasks": [
+                        {"title": "Update room_voice", "files": ["talos_core/room/room_voice.py"]},
+                        {"title": "Update the Swift endpoint", "files": ["mac/VoiceEndpoint.swift"]},
+                    ],
+                })
+            return json.dumps({"simple": True, "estimate": 2, "model": "local",
+                               "reason": "bounded"})
+
+        plan = dec.Decomposer(dec.ModelManager(infer)).decompose(
+            "Harden the voice pipeline", "Fix dropouts.", files=["talos_core/room/room_voice.py"]
+        )
+        self.assertEqual(len(plan["leaves"]), 2)
+        self.assertTrue(all(plan["nodes"][leaf]["model"] == "local" for leaf in plan["leaves"]))
+        self.assertEqual(plan["manager_calls"], 3)
+        self.assertTrue(all(len(prompt) <= 2_400 for prompt in prompts))
+        self.assertNotIn("def ", "".join(prompts))
+
+    def test_model_manager_falls_back_on_malformed_output(self):
+        manager = dec.ModelManager(lambda prompt: "not json")
+        plan = dec.Decomposer(manager).decompose(
+            "Refactor the entire memory pipeline and migrate storage",
+            files=["talos_core/memory/personal_index.py"],
+        )
+        self.assertGreaterEqual(len(plan["leaves"]), 3)
+        self.assertIn("cloud", [plan["nodes"][leaf]["model"] for leaf in plan["leaves"]])
+
+    def test_model_manager_rejects_non_boolean_simple(self):
+        manager = dec.ModelManager(lambda prompt: json.dumps({"simple": "yes"}))
+        decision = manager.assess(dec.Node(id="x", title="Refactor everything"), {"max_depth": 5, "tokens_remaining": 1000})
+        self.assertIsInstance(decision["simple"], bool)
+
 
 if __name__ == "__main__":
     unittest.main()

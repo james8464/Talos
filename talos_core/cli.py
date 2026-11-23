@@ -36,8 +36,22 @@ def _doctor(args) -> int:
 def _decompose(args) -> int:
     from talos_core.self_improvement import decomposition
 
+    manager = None
+    if args.model:
+        from agent import model_text
+        from talos_core.runtime.local_runtime import check_ollama_model
+
+        check_ollama_model(args.model)
+
+        def infer(prompt: str) -> str:
+            return model_text(
+                [{"role": "system", "content": prompt}], model=args.model, max_tokens=500
+            )
+
+        manager = decomposition.ModelManager(infer)
     plan = decomposition.plan_task(
-        args.state, args.task, args.detail, files=args.file, max_depth=args.max_depth
+        args.state, args.task, args.detail, files=args.file,
+        manager=manager, max_depth=args.max_depth,
     )
     print(json.dumps(plan, indent=2, sort_keys=True) if args.json else decomposition.render(plan))
     if not args.json:
@@ -100,6 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
     decompose.add_argument("--file", action="append", default=[])
     decompose.add_argument("--state", type=Path, default=ROOT / "state")
     decompose.add_argument("--max-depth", type=int, default=5)
+    decompose.add_argument("--model", help="Use a local model as the engineering manager.")
     decompose.add_argument("--json", action="store_true")
     decompose.set_defaults(func=_decompose)
 
