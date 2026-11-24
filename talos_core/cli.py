@@ -239,6 +239,21 @@ def _ask(args) -> int:
             one(line)
 
 
+def _sound(args) -> int:
+    from talos_core.mac import sound_events
+
+    try:
+        events = sound_events.classify(args.state, args.file, timeout=args.timeout)
+    except sound_events.SoundEventError as error:
+        print(f"Talos sound: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps({"events": events}, indent=2))
+    else:
+        print(sound_events.describe(events))
+    return 0
+
+
 def _design(args) -> int:
     from talos_core import design_studio
 
@@ -1024,6 +1039,13 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--timeout", type=float, default=240)
     ask.add_argument("--json", action="store_true")
     ask.set_defaults(func=_ask)
+
+    sound = commands.add_parser("sound", help="Classify non-word sounds in an audio file.")
+    sound.add_argument("--file", type=Path, required=True)
+    sound.add_argument("--state", type=Path, default=ROOT / "state")
+    sound.add_argument("--timeout", type=float, default=120)
+    sound.add_argument("--json", action="store_true")
+    sound.set_defaults(func=_sound)
 
     design = commands.add_parser("design", help="Create a poster, nameplate or Pages document.")
     design.add_argument("--kind", choices=("poster", "nameplate", "document"), default="poster")

@@ -25,6 +25,7 @@ python3 -m talos_core.cli console                        # dense ASCII brain + t
 python3 -m talos_core.cli instructions --set "Prefer metric units"  # local prompt policy
 python3 -m talos_core.cli capabilities                   # tools, tests and upstream gaps
 python3 -m talos_core.cli apps                           # native app, permission and MCP status
+python3 -m talos_core.cli sound --file clip.wav           # classify non-word sounds (no playback)
 python3 -m talos_core.cli capabilities --queue           # queue top gaps for coding
 python3 -m talos_core.cli code --model qwen3:4b          # draft/verify/apply one plan
 python3 -m talos_core.cli initiative                     # think of and queue new capabilities
