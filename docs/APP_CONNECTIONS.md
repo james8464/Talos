@@ -154,7 +154,8 @@ talos mcp-client add notion --url https://mcp.notion.com/mcp   --transport http 
 
 Use a `--allowed-tools` list to keep a server read-only at the tool-name level.
 Token/OAuth setup remains the responsibility of the existing server; Talos does
-not store cloud credentials.
+not store cloud credentials. Streamable HTTP was verified end to end against a
+local official-SDK fixture; SSE uses the SDK's `sse_client` path.
 
 
 ### Verified MCP permission boundary
