@@ -179,7 +179,7 @@ def launchd_status(label, interval):
 _WORKER_LOCKS = (("Maintenance", "maintenance"), ("Heartbeat watcher", "heartbeat-watch"),
                  ("Obsidian publisher", "vault-watch"), ("Respan reviewer", "respan-watch"),
                  ("OpenCode worker", "section-OpenCode-watch"), ("OpenClaude worker", "section-OpenClaude-watch"),
-                 ("Self-repair worker", "self-repair-watch"))
+                 ("Self-repair worker", "self-repair-watch"), ("Source observer", "source-observer-watch"))
 
 
 def runtime_locks(state, port=None):
@@ -298,8 +298,9 @@ def repair_evidence(state):
     """Read the incident and source-repair ledgers without starting a repair."""
     from talos_core.self_improvement.self_diagnosis import summary as incidents
     from talos_core.self_improvement.self_repair import summary as repairs
+    from talos_core.self_improvement.source_observer import summary as observer
     lines = []
-    for read in (repairs, incidents):
+    for read in (repairs, incidents, observer):
         try:
             lines.extend(clean(line) for line in read(state))
         except (OSError, ValueError, sqlite3.Error):

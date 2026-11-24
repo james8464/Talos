@@ -28,7 +28,8 @@ def worker_lock(argv):
         return "section-" + argv[argv.index("--engine") + 1] + "-watch"
     return {"overnight_goal": "heartbeat-watch", "vault_watch": "vault-watch",
             "maintenance": "maintenance", "respan_worker": "respan-watch",
-            "self_repair": "self-repair-watch"}[script]
+            "self_repair": "self-repair-watch",
+            "source_observer": "source-observer-watch"}[script]
 
 
 class WorkerSupervisor:

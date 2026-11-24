@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -77,6 +78,32 @@ def _console(args) -> int:
         if args.script:
             return ui.run_script(args.script)
         return ui.run_interactive()
+
+
+def _session(args) -> int:
+    """Launch the compact, scriptable, text-only Talos session."""
+    import io
+
+    from agent import interactive_chat, session_header
+    from talos_core.memory.agent_memory import STATE_PATH, open_memory
+
+    path = args.db or STATE_PATH
+    try:
+        with open_memory(path) as database:
+            if args.script is None:
+                source = sys.stdin
+            else:
+                source = io.StringIO("\n".join(args.script) + "\n")
+            return interactive_chat(
+                database, source, sys.stdout, sys.stderr,
+                apply=args.apply, model=args.model,
+                header=session_header(database, args.model, apply=args.apply),
+            )
+    except (OSError, RuntimeError, ValueError, sqlite3.Error) as error:
+        print(f"Talos could not open a text session: {error}", file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        return 130
 
 
 def _capabilities(args) -> int:
@@ -762,6 +789,27 @@ def build_parser() -> argparse.ArgumentParser:
     console.add_argument("--model", default="qwen2.5:1.5b")
     console.add_argument("--script", nargs="*", help="Run fixed input lines instead of an interactive loop.")
     console.set_defaults(func=_console)
+
+    session = commands.add_parser(
+        "session",
+        aliases=["terminal"],
+        help="Open the compact interactive text session.",
+        description=(
+            "Print a Talos header with model and runtime status, then read prompts "
+            "until /quit. Text only: no audio is synthesized or played."
+        ),
+    )
+    session.add_argument("--db", type=Path, help="Local state database (default: state/agent.sqlite3).")
+    session.add_argument("--model", default="qwen2.5:1.5b", help="Installed local Ollama model.")
+    session.add_argument(
+        "--apply", action="store_true",
+        help="Allow local writes for /task; the default shadows local actions.",
+    )
+    session.add_argument(
+        "--script", nargs="*", metavar="LINE",
+        help="Run fixed input lines instead of reading stdin, for tests and demos.",
+    )
+    session.set_defaults(func=_session)
 
     capabilities = commands.add_parser("capabilities", help="Inventory tools and upstream feature gaps.")
     capabilities.add_argument("--root", type=Path, default=ROOT)

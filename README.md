@@ -10,6 +10,7 @@ loop, and the computer-use API. Common commands:
 ```sh
 python3 run_talos.py                                  # native room app
 python3 agent.py chat                                  # terminal console
+python3 -m talos_core.cli session                       # compact text session (scriptable)
 python3 -m talos_core.cli status                       # health, permissions, graph
 python3 -m talos_core.cli doctor                       # imports, syntax, lint, tests
 python3 -m talos_core.cli decompose "TASK" --file PATH # routable task plan
@@ -81,6 +82,8 @@ state. A generic MCP client built on the official Python SDK is available as
 `state/mcp-servers.json`. In the room, ask `List MCP servers`, `List MCP tools on NAME`, or `Call mcp tool TOOL on NAME with {"key":"value"}`.
 
 ## Terminal sessions and Telegram
+
+Launch the compact text session with `python3 -m talos_core.cli session` (alias `terminal`). It prints the Talos version, selected model, local Ollama readiness, state database and action mode before the first prompt, then reads typed text until `/quit`. It is text only: it never synthesizes or plays audio and does not change your mute or voice settings. Use `--script "/status" "/quit"` for a deterministic non-interactive check. `python3 agent.py chat` opens the same text session and command set; `python3 -m talos_core.cli console` keeps the animated ASCII-brain fallback.
 
 In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Use `/branch project-b` (or `/fork`) to continue from the current conversation. A branch inherits turns up to that point and writes its own subsequent turns. Branches share stored transcript rows. Named sessions use recent turns and can retrieve older matching turns from their visible history, including inherited turns up to the fork. Use `/search QUERY` to search only the current conversation. Automatic recall in the default console excludes named-session turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.
 

@@ -1,11 +1,12 @@
 import io
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 from talos_core import cli
+from talos_core.runtime.local_runtime import OLLAMA_MODEL
 
 
 class CliTests(unittest.TestCase):
@@ -14,7 +15,7 @@ class CliTests(unittest.TestCase):
             cli.main(["--version"])
         self.assertEqual(exit_code.exception.code, 0)
         text = cli.build_parser().format_help()
-        for command in ("doctor", "decompose", "status", "test", "improve", "computer"):
+        for command in ("doctor", "decompose", "status", "test", "improve", "computer", "session"):
             self.assertIn(command, text)
 
     def test_doctor_reports_a_clean_tree(self):
@@ -48,6 +49,76 @@ class CliTests(unittest.TestCase):
         text = output.getvalue()
         self.assertGreaterEqual(len(text), 1000)
         self.assertIn("model: qwen2.5:1.5b", text)
+
+    def test_session_help_documents_scripting_and_text_only_launch(self):
+        output = io.StringIO()
+        with self.assertRaises(SystemExit) as exit_code, redirect_stdout(output):
+            cli.main(["session", "--help"])
+        self.assertEqual(exit_code.exception.code, 0)
+        text = output.getvalue()
+        self.assertIn("--script", text)
+        self.assertIn("--apply", text)
+        self.assertIn("Text only", text)
+
+    def test_session_prints_header_and_runs_scripted_commands(self):
+        database = Path(self.enterContext(tempfile.TemporaryDirectory())) / "session.sqlite"
+        output = io.StringIO()
+        with (
+            patch("agent.local_model_names", return_value=[OLLAMA_MODEL]),
+            redirect_stdout(output),
+        ):
+            code = cli.main(["session", "--db", str(database), "--script", "/status", "/quit"])
+        self.assertEqual(code, 0)
+        text = output.getvalue()
+        self.assertIn("Talos 0.2.0 · text session", text)
+        self.assertIn(f"Model    {OLLAMA_MODEL}\n", text)
+        self.assertIn("Runtime  local Ollama ready · 1 local model installed", text)
+        self.assertIn("Audio    off · text only (no microphone, speaker or audio playback)", text)
+        self.assertIn("Mode     shadow", text)
+        self.assertIn(f"Session text · shadow tasks · model {OLLAMA_MODEL}", text)
+
+    def test_session_prints_a_text_reply_from_stdin(self):
+        database = Path(self.enterContext(tempfile.TemporaryDirectory())) / "session.sqlite"
+        output = io.StringIO()
+        with (
+            patch("agent.local_model_names", return_value=[OLLAMA_MODEL]),
+            patch("agent.chat", return_value="A scripted reply.") as chat,
+            redirect_stdout(output),
+        ):
+            code = cli.main(
+                ["session", "--db", str(database), "--apply", "--script", "Hello there", "/quit"]
+            )
+        self.assertEqual(code, 0)
+        self.assertIn("Talos> A scripted reply.", output.getvalue())
+        self.assertIn("Mode     actions enabled", output.getvalue())
+        chat.assert_called_once_with(
+            ANY, "Hello there", model=OLLAMA_MODEL, session="text"
+        )
+
+    def test_terminal_alias_reports_unavailable_runtime_and_keeps_running(self):
+        database = Path(self.enterContext(tempfile.TemporaryDirectory())) / "session.sqlite"
+        output, errors = io.StringIO(), io.StringIO()
+        with (
+            patch("agent.local_model_names", side_effect=RuntimeError("Ollama is not running.")),
+            redirect_stdout(output),
+            redirect_stderr(errors),
+        ):
+            code = cli.main(["terminal", "--db", str(database), "--script", "/quit"])
+        self.assertEqual(code, 0)
+        text = output.getvalue()
+        self.assertIn(f"Model    {OLLAMA_MODEL}\n", text)
+        self.assertIn("Runtime  local Ollama unavailable · Ollama is not running.", text)
+        self.assertNotIn("Traceback", errors.getvalue())
+
+    def test_session_reports_a_database_that_cannot_open(self):
+        folder = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        blocker = folder / "not-a-directory"
+        blocker.write_text("")
+        errors = io.StringIO()
+        with redirect_stderr(errors):
+            code = cli.main(["session", "--db", str(blocker / "session.sqlite")])
+        self.assertEqual(code, 1)
+        self.assertIn("could not open a text session", errors.getvalue())
 
     def test_graph_query_reports_nodes_and_sources(self):
         output = io.StringIO()

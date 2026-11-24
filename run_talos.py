@@ -281,6 +281,7 @@ def start_memory_workers(model, *, local_only, children, respan=False, room_owne
         ["talos_core.memory.vault_watch"],
         ["talos_core.runtime.maintenance", "--model", model],
         ["talos_core.self_improvement.self_repair", "--watch"],
+        ["talos_core.self_improvement.source_observer", "--watch"],
         ["talos_core.self_improvement.respan_worker",
          *([] if respan else ["--local-only"]),
          *(["--room-owner"] if room_owner else [])],

@@ -22,87 +22,95 @@ class IdentityResolver:
         self._refresh_profile()
 
     def _refresh_profile(self):
-        """Extracts the 'Me' identity from the Contacts database."""
-        paths = self._get_contact_paths()
-        for path in paths:
+        """Extract the Me-card identity from every Contacts database.
+
+        Only an explicit Me card is trusted: falling back to an arbitrary contact
+        would confidently report the wrong person.  Column sets differ between
+        macOS versions, so each optional column is probed before use.
+        """
+        for path in self._get_contact_paths():
             try:
                 with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
-                    # Try different methods to identify the Me card
-                    me_candidates = []
-
-                    # Method 1: Check for Me card with ZME column
-                    me_pk = db.execute(
-                        "SELECT Z_PK FROM ZABCDRECORD WHERE ZME IS NOT NULL LIMIT 1"
-                    ).fetchone()
-                    if me_pk:
-                        me_candidates.append(me_pk[0])
-
-                    # Method 2: Check for Me card with Z22_ME column (newer format)
-                    me_pk = db.execute(
-                        "SELECT Z_PK FROM ZABCDRECORD WHERE Z22_ME IS NOT NULL LIMIT 1"
-                    ).fetchone()
-                    if me_pk:
-                        me_candidates.append(me_pk[0])
-
-                    # Method 3: Check for Me card with container reference
-                    me_pk = db.execute(
-                        "SELECT Z_PK FROM ZABCDRECORD WHERE ZCONTAINERWHERECONTACTISME IS NOT NULL LIMIT 1"
-                    ).fetchone()
-                    if me_pk:
-                        me_candidates.append(me_pk[0])
-
-                    # Use first candidate found
-                    if me_candidates:
-                        me_pk = me_candidates[0]
-
-                        # Get contact details
+                    columns = {
+                        row[1] for row in db.execute("PRAGMA table_info(ZABCDRECORD)")
+                    }
+                    candidates = []
+                    for marker in ("ZME", "Z22_ME", "ZCONTAINERWHERECONTACTISME"):
+                        if marker not in columns:
+                            continue
                         row = db.execute(
-                            """SELECT ZFIRSTNAME, ZLASTNAME, ZORGANIZATION, ZADDRESS
-                               FROM ZABCDRECORD WHERE Z_PK=?
-                               LIMIT 1""",
-                            (me_pk,)
+                            f"SELECT Z_PK FROM ZABCDRECORD WHERE {marker} IS NOT NULL LIMIT 1"
                         ).fetchone()
-                        if row:
-                            first, last, org, addr = row
-                            self.user_profile["full_name"] = f"{first or ''} {last or ''}".strip()
-                            self.user_profile["organization"] = org
-                            self.user_profile["address"] = addr
-                    else:
-                        # Fallback: Try to find any contact with name data
-                        row = db.execute(
-                            """SELECT ZFIRSTNAME, ZLASTNAME, ZORGANIZATION, ZADDRESS
-                               FROM ZABCDRECORD WHERE ZFIRSTNAME IS NOT NULL
-                               ORDER BY Z_PK DESC LIMIT 1"""
-                        ).fetchone()
-                        if row:
-                            first, last, org, addr = row
-                            self.user_profile["full_name"] = f"{first or ''} {last or ''}".strip()
-                            self.user_profile["organization"] = org
-                            self.user_profile["address"] = addr
-                            # Note: This is a fallback, not a real Me card
+                        if row and row[0] not in candidates:
+                            candidates.append(row[0])
 
-                    # Extract all linked emails and phones for the Me/card
-                    if me_pk:
+                    selected = None
+                    for candidate in candidates:
+                        row = db.execute(
+                            """SELECT ZFIRSTNAME, ZLASTNAME, ZORGANIZATION
+                               FROM ZABCDRECORD WHERE Z_PK=?""",
+                            (candidate,),
+                        ).fetchone()
+                        if not row:
+                            continue
+                        first, last, org = row
+                        if first or last or org:
+                            selected = candidate
+                            self.user_profile["full_name"] = (
+                                f"{first or ''} {last or ''}".strip()
+                            )
+                            self.user_profile["organization"] = org or None
+                            break
+                        if selected is None:
+                            selected = candidate
+                    if selected is None:
+                        continue
+
+                    if "ZADDRESS" in columns:
+                        row = db.execute(
+                            "SELECT ZADDRESS FROM ZABCDRECORD WHERE Z_PK=?", (selected,)
+                        ).fetchone()
+                        if row and row[0]:
+                            self.user_profile["address"] = row[0]
+
+                    try:
                         emails = db.execute(
                             "SELECT ZADDRESS FROM ZABCDEMAILADDRESS WHERE ZOWNER=?",
-                            (me_pk,)
+                            (selected,),
                         ).fetchall()
-                        self.user_profile["emails"].update([e[0] for e in emails if e[0]])
-
+                        self.user_profile["emails"].update(e[0] for e in emails if e[0])
+                    except sqlite3.Error:
+                        pass
+                    try:
                         phones = db.execute(
                             "SELECT ZFULLNUMBER FROM ZABCDPHONENUMBER WHERE ZOWNER=?",
-                            (me_pk,)
+                            (selected,),
                         ).fetchall()
-                        self.user_profile["phones"].update([p[0] for p in phones if p[0]])
+                        self.user_profile["phones"].update(p[0] for p in phones if p[0])
+                    except sqlite3.Error:
+                        pass
             except (sqlite3.Error, OSError):
                 continue
 
     def _get_contact_paths(self) -> list[Path]:
-        # Simplified logic mirroring mac_context.py
+        """Return every readable Contacts database, including per-account sources.
+
+        Modern macOS keeps the Me card inside ``Sources/<UUID>/``; the top-level
+        database is often empty.  Only Me-card matches are trusted, so scanning
+        the sources cannot leak another contact into the profile.
+        """
         library = Path.home() / "Library"
         book = library / "Application Support/AddressBook"
-        if not book.exists(): return []
-        return list(book.glob("AddressBook-v*.abcddb"))
+        if not book.exists():
+            return []
+        paths = list(book.glob("AddressBook-v*.abcddb"))
+        paths.extend(book.glob("Sources/*/AddressBook-v*.abcddb"))
+        seen, unique = set(), []
+        for path in paths:
+            if path.is_file() and path not in seen:
+                seen.add(path)
+                unique.append(path)
+        return unique
 
     def resolve_identity(self, query: str) -> dict[str, Any]:
         """

@@ -666,6 +666,52 @@ def watch(database: sqlite3.Connection) -> None:
         time.sleep(2)
 
 
+def project_version() -> str:
+    """Return the installed project version without importing packaging tools."""
+    with Path(__file__).with_name("pyproject.toml").open("rb") as config:
+        return tomllib.load(config)["project"]["version"]
+
+
+def model_status(model: str, *, timeout: float = 1.0) -> tuple[bool, str]:
+    """Check local Ollama without invoking inference or changing any setting."""
+    try:
+        names = local_model_names(timeout=timeout)
+    except (OSError, RuntimeError, ValueError) as error:
+        return False, "unavailable · " + " ".join(str(error).split())
+    if model in names:
+        spoken = "model" if len(names) == 1 else "models"
+        return True, f"ready · {len(names)} local {spoken} installed"
+    installed = ", ".join(names) or "none"
+    return False, f"reachable · model {model!r} is not installed · available: {installed}"
+
+
+def session_header(database, model: str, *, apply: bool) -> str:
+    """Describe the text session without reading private state content."""
+    _, runtime = model_status(model)
+    location = ""
+    if isinstance(database, sqlite3.Connection):
+        location = database.execute("PRAGMA database_list").fetchone()[2] or ""
+    if location:
+        state = Path(location)
+        try:
+            state = state.relative_to(Path(__file__).resolve().parent)
+        except ValueError:
+            pass
+        shown_state = str(state)
+    else:
+        shown_state = "(in memory)"
+    mode = "actions enabled" if apply else "shadow · /task previews local actions"
+    return "\n".join((
+        f"Talos {project_version()} · text session",
+        f"  Model    {model}",
+        f"  Runtime  local Ollama {runtime}",
+        "  Audio    off · text only (no microphone, speaker or audio playback)",
+        f"  State    {shown_state}",
+        f"  Mode     {mode}",
+        "  Commands /help · /status · /models · /quit",
+    ))
+
+
 def show_status(model: str, output: TextIO) -> None:
     print("Talos capabilities", file=output)
     print("  Camera and room sensors: presence detection in the native room app.", file=output)
@@ -736,7 +782,7 @@ def publish_transcript(database, session, path, *, as_html, auto_name):
 
 def interactive_chat(
     database: sqlite3.Connection, source: TextIO, output: TextIO, errors: TextIO, *,
-    apply: bool, model: str,
+    apply: bool, model: str, header: str | None = None,
 ) -> int:
     session = TEXT_SESSION
     location = database.execute("PRAGMA database_list").fetchone()[2] if isinstance(database, sqlite3.Connection) else ""
@@ -744,7 +790,10 @@ def interactive_chat(
         return talos_activity.operation(Path(location).parent, "Console", label) if location else nullcontext()
 
     mode = "local actions enabled" if apply else "shadow tasks"
-    print(f"Talos text console ({mode}). /help lists commands.", file=output, flush=True)
+    banner = header if header is not None else (
+        f"Talos text console · model {model} · {mode}. /help lists commands."
+    )
+    print(banner, file=output, flush=True)
     while True:
         if source.isatty():
             print("You> ", end="", file=output, flush=True)
@@ -776,9 +825,7 @@ def interactive_chat(
                     print(f"Local console · user ID {os.geteuid()} · session {session} · {mode}",
                           file=output, flush=True)
                 case "/version" | "/v":
-                    with Path(__file__).with_name("pyproject.toml").open("rb") as config:
-                        version = tomllib.load(config)["project"]["version"]
-                    print(f"Talos {version}", file=output, flush=True)
+                    print(f"Talos {project_version()}", file=output, flush=True)
                 case "/models" | "/model":
                     option = request.strip()
                     if (command == "/models" and not option) or option == "list":
@@ -1194,7 +1241,9 @@ def main() -> int:
                 case "chat":
                     if args.message is None:
                         return interactive_chat(
-                            database, sys.stdin, sys.stdout, sys.stderr, apply=args.apply, model=args.model
+                            database, sys.stdin, sys.stdout, sys.stderr, apply=args.apply,
+                            model=args.model,
+                            header=session_header(database, args.model, apply=args.apply),
                         )
                     print(chat(database, args.message, model=args.model))
                 case "recall":
