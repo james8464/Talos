@@ -37,6 +37,27 @@ class PagesTests(unittest.TestCase):
         self.assertTrue(path.is_file())
         self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
+    def test_export_pdf_writes_a_private_pdf(self):
+        folder = self.state / "designs"
+        folder.mkdir(mode=0o700)
+        source = folder / "example.pages"
+        source.write_bytes(b"pages")
+        def fake_script(body, timeout=45):
+            target = source.with_suffix(".pdf")
+            target.write_bytes(b"%PDF-1.4")
+        with patch.object(pages, "_osascript", side_effect=fake_script):
+            result = pages.export_pdf(self.state, source)
+        target = Path(result["path"])
+        self.assertEqual(target.suffix, ".pdf")
+        self.assertTrue(target.is_file())
+        self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+
+    def test_export_refuses_documents_outside_designs(self):
+        outside = self.state / "outside.pages"
+        outside.write_bytes(b"pages")
+        with self.assertRaises(pages.PagesError):
+            pages.export_pdf(self.state, outside)
+
     def test_missing_pages_is_reported(self):
         with patch.object(pages, "available", return_value=False):
             with self.assertRaises(pages.PagesError):

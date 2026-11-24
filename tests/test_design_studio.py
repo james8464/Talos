@@ -71,6 +71,17 @@ class DesignStudioTests(unittest.TestCase):
                 "Create a Pages document titled Native Pages.", self.state)
         self.assertIn("Pages document created: /tmp/example.pages", reply)
 
+    def test_export_last_pdf_uses_pages(self):
+        source = self.state / "designs"
+        source.mkdir(mode=0o700)
+        document = source / "last.pages"
+        document.write_bytes(b"pages")
+        with patch.object(design_studio, "_read_last", return_value={"path": str(document)}), \
+             patch("talos_core.mac.pages.export_pdf",
+                   return_value={"path": str(document.with_suffix(".pdf"))}):
+            reply = design_studio.command("Export the last design to PDF.", self.state)
+        self.assertIn("PDF exported", reply)
+
     def test_render_requires_a_model(self):
         self.assertIn("no 3D model", design_studio.command("Render it in Blender.", self.state))
 

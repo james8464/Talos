@@ -158,6 +158,18 @@ def create_pages(state, title, body="", *, open_after=False):
     return _record_last(state, pages.create(state, title, body, open_after=open_after))
 
 
+def export_last_pdf(state):
+    """Export the most recent native Pages document to PDF."""
+    from talos_core.mac import pages
+
+    last = _read_last(state) or {}
+    path = Path(str(last.get("path") or ""))
+    if not path.is_file() or path.suffix.casefold() != ".pages":
+        return "The last design is not a Pages document."
+    result = pages.export_pdf(state, path)
+    return f"PDF exported: {result['path']}"
+
+
 def render_stl(state, stl_path, *, timeout=180):
     """Render an STL to PNG with headless Blender. No window and no audio."""
     blender = Path("/Applications/Blender.app/Contents/MacOS/Blender")
@@ -257,6 +269,10 @@ def command(text, state):
             return f"Opened {Path(path).name} in {target.title()}."
         _open(path)
         return f"Opened {Path(path).name}."
+
+    if re.fullmatch(r"export (?:the )?(?:last|latest) (?:pages )?(?:design|document) to pdf[.! ]*",
+                    words, re.I):
+        return export_last_pdf(state)
 
     render = re.fullmatch(
         r"(?:please )?render (?:the )?(?:last|it)(?: design| nameplate| model| stl)?"

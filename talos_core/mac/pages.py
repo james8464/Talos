@@ -66,6 +66,37 @@ def _osascript(body: str, *, timeout: int = 30) -> None:
         raise PagesError(detail or f"osascript exited {completed.returncode}")
 
 
+def export_script(source: Path, target: Path) -> str:
+    return (
+        'tell application "Pages"\n'
+        "  activate\n"
+        f'  set doc to open POSIX file "{_apple(str(source))}"\n'
+        f'  export doc to POSIX file "{_apple(str(target))}" as PDF\n'
+        "  close doc saving no\n"
+        "end tell\n"
+    )
+
+
+def export_pdf(state, source, *, target=None, timeout: int = 45) -> dict:
+    source = Path(source).resolve()
+    designs = (Path(state) / "designs").resolve()
+    if designs not in source.parents:
+        raise PagesError("Only documents inside the Talos design folder can be exported.")
+    if source.suffix.lower() != ".pages" or not source.is_file():
+        raise PagesError("The source is not a Pages document.")
+    destination = Path(target).resolve() if target else source.with_suffix(".pdf")
+    if destination.parent != designs:
+        raise PagesError("The PDF must stay inside the Talos design folder.")
+    _osascript(export_script(source, destination), timeout=timeout)
+    if not destination.is_file() or destination.stat().st_size == 0:
+        raise PagesError("Pages did not write a PDF.")
+    try:
+        os.chmod(destination, 0o600)
+    except OSError:
+        pass
+    return {"path": str(destination), "kind": "pdf", "source": str(source)}
+
+
 def create(state, title: str, body: str = "", *, open_after: bool = False,
            timeout: int = 30) -> dict:
     if not available():
