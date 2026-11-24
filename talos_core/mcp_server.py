@@ -115,3 +115,17 @@ def serve(stdin=None, stdout=None, root: Path | None = None, state: Path | None 
             sink.write(json.dumps(response, ensure_ascii=False) + "\n")
             sink.flush()
     return 0
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Serve Talos tools over MCP stdio.")
+    parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--state", type=Path)
+    args = parser.parse_args()
+    return serve(root=args.root, state=args.state)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

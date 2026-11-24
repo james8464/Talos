@@ -30,7 +30,7 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `744 tests`, `OK` (`17` skipped by design).
+- Unit suite: `745 tests`, `OK` (`17` skipped by design).
 - Live feature pass: `78/78` checks.
 - Ruff: clean.
 
@@ -47,7 +47,7 @@ Latest results:
 | Mac | screenshot, window list, frontmost app, running apps, control search, inspect app, accessible-text/OCR |
 | Local features | skills (list and use), nodes, todos, maintenance report, health, model, plugins, subagents, checkpoints, recent activity |
 | Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music, private-index app search (Notes/Mail/Messages/Contacts), app status |
-| MCP client | official-SDK stdio and Streamable-HTTP tools/list/tools-call; room discovery and call against Talos and `mcp-server-apple-events` |
+| MCP client | official-SDK stdio and Streamable-HTTP; live list/tools/call against Talos’s own stdio server; room discovery and call against `mcp-server-apple-events` |
 | Identity | `Who am I?` resolves the Contacts Me card from `Sources/` without a placeholder name |
 | Design | poster SVG, real `.pages` via AppleScript, PDF export from Pages, Pages-compatible `.docx` fallback, OpenSCAD nameplate and parametric box + STL, headless Blender PNG |
 | Browser | local page read, text click, field typing, form search/submit, and private screenshot through headless Chrome CDP |

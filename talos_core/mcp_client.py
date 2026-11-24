@@ -178,10 +178,25 @@ def _run(state, name, action, timeout):
         return asyncio.run(runner())
     except TimeoutError as error:
         raise MCPClientError(f"MCP server {name!r} timed out.") from error
+    except BaseExceptionGroup as error:
+        details = " ".join(_exception_text(error))[:400]
+        raise MCPClientError(f"MCP server {name!r} connection failed: {details}") from error
     except (OSError, RuntimeError, ValueError) as error:
         if isinstance(error, MCPClientError):
             raise
         raise MCPClientError(str(error)[:300]) from error
+
+
+def _exception_text(error) -> list[str]:
+    parts = []
+    if isinstance(error, BaseExceptionGroup):
+        for item in error.exceptions:
+            parts.extend(_exception_text(item))
+    else:
+        text = " ".join(str(error).split())
+        if text:
+            parts.append(text)
+    return parts
 
 
 def tools(state, name, timeout=30):

@@ -75,6 +75,13 @@ class MCPClientTests(unittest.TestCase):
         with self.assertRaises(mcp_client.MCPClientError):
             mcp_client.call(self.state, "remote", "delete", {})
 
+    def test_broken_server_is_a_clean_error(self):
+        mcp_client.configure(self.state, "broken", sys.executable,
+                             ["-c", "import sys; sys.exit(1)"])
+        with self.assertRaises(mcp_client.MCPClientError) as caught:
+            mcp_client.tools(self.state, "broken", timeout=10)
+        self.assertIn("failed", str(caught.exception).casefold())
+
     def test_missing_server_is_an_error(self):
         with self.assertRaises(mcp_client.MCPClientError):
             mcp_client.tools(self.state, "missing")
