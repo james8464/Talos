@@ -13,6 +13,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -237,6 +238,21 @@ def _ask(args) -> int:
             return 0
         if line.strip():
             one(line)
+
+
+def _highlight(args) -> int:
+    from talos_core.mac.cursor import CursorOverlay
+
+    overlay = CursorOverlay(args.state)
+    try:
+        shown = overlay.highlight(args.x, args.y, args.width, args.height, args.label,
+                                  hide_after=max(0.1, args.hold))
+        if shown and args.hold > 0:
+            time.sleep(args.hold)
+    finally:
+        overlay.close()
+    print(json.dumps({"ok": bool(shown), "label": args.label}))
+    return 0 if shown else 1
 
 
 def _processes(args) -> int:
@@ -1070,6 +1086,16 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--timeout", type=float, default=240)
     ask.add_argument("--json", action="store_true")
     ask.set_defaults(func=_ask)
+
+    highlight = commands.add_parser("highlight", help="Ring a screen rectangle without clicking.")
+    highlight.add_argument("--x", type=int, required=True)
+    highlight.add_argument("--y", type=int, required=True)
+    highlight.add_argument("--width", type=int, default=64)
+    highlight.add_argument("--height", type=int, default=64)
+    highlight.add_argument("--label", default="target")
+    highlight.add_argument("--hold", type=float, default=0.5)
+    highlight.add_argument("--state", type=Path, default=ROOT / "state")
+    highlight.set_defaults(func=_highlight)
 
     proc = commands.add_parser("processes", help="List Talos processes, listeners and audio.")
     proc.add_argument("--json", action="store_true")

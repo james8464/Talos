@@ -376,6 +376,11 @@ def run(keep: bool = False, control: bool = False) -> dict:
     )
     check(checks, "scene_empty", "empty" in scene.stdout.casefold(),
           (scene.stdout or scene.stderr)[:200])
+    status, scene_body = post("/v1/vision/scene", {
+        "image": base64.b64encode(blank.read_bytes()).decode()}, token)
+    check(checks, "scene_endpoint",
+          status == 200 and bool((scene_body.get("scene") or {}).get("empty")),
+          (scene_body.get("description") or scene_body.get("error") or "")[:160])
     blank.unlink(missing_ok=True)
     try:
         import numpy as np
@@ -398,6 +403,11 @@ def run(keep: bool = False, control: bool = False) -> dict:
                   sound.returncode == 0 and any(
                       label in labels for label in ("telephone", "beep", "music")),
                   (sound.stdout or sound.stderr)[:200])
+            status, sound_body = post("/v1/sound", {
+                "audio": base64.b64encode(sound_path.read_bytes()).decode()}, token)
+            check(checks, "sound_endpoint",
+                  status == 200 and isinstance(sound_body.get("events"), list),
+                  (sound_body.get("description") or sound_body.get("error") or "")[:160])
             sound_path.unlink(missing_ok=True)
     except ImportError:
         pass
@@ -425,6 +435,21 @@ Path(sys.argv[1]).write_bytes(raw)
     check(checks, "audio_synthesis", synthesis.returncode == 0 and size > 1000,
           (synthesis.stderr or f"{size} bytes")[:200])
     Path(audio_path).unlink(missing_ok=True)
+
+    overlay = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "highlight",
+         "--x", "500", "--y", "400", "--width", "72", "--height", "44",
+         "--label", "safe check", "--hold", "0.2"],
+        capture_output=True, text=True, timeout=60,
+    )
+    check(checks, "highlight_overlay",
+          overlay.returncode == 0 and '"ok": true' in overlay.stdout,
+          (overlay.stdout or overlay.stderr)[:160])
+    proc = subprocess.run([sys.executable, "-m", "talos_core.cli", "processes"],
+                          capture_output=True, text=True, timeout=30)
+    check(checks, "process_status",
+          "room service" in proc.stdout and "audio: 0" in proc.stdout,
+          proc.stdout[:200])
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, Mock, patch
 
 from talos_core import cli
 from talos_core.runtime.local_runtime import OLLAMA_MODEL
@@ -159,6 +159,20 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("Talos room", output.getvalue())
         self.assertIn("hi there", output.getvalue())
+
+    def test_highlight_coordinates_do_not_click(self):
+        state = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        fake = Mock()
+        fake.highlight.return_value = True
+        output = io.StringIO()
+        with patch("talos_core.mac.cursor.CursorOverlay", return_value=fake), \
+             redirect_stdout(output):
+            code = cli.main(["highlight", "--x", "10", "--y", "20", "--hold", "0",
+                             "--state", str(state)])
+        self.assertEqual(code, 0)
+        fake.highlight.assert_called_once()
+        fake.close.assert_called_once()
+        self.assertIn('"ok": true', output.getvalue())
 
     def test_design_command_creates_artifacts(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
