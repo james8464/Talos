@@ -161,6 +161,52 @@ def _code(args) -> int:
     return 0 if result.get("ok") else 1
 
 
+def _codejob(args) -> int:
+    from talos_core.self_improvement import coding_jobs, initiative_coder
+
+    if args.action == "start":
+        try:
+            record = coding_jobs.start(
+                args.state, " ".join(args.text), args.file, root=args.root,
+                budget=args.budget, apply=not args.verify_only,
+            )
+        except ValueError as error:
+            print(json.dumps({"ok": False, "error": str(error)}))
+            return 1
+        if args.detach:
+            subprocess.Popen(
+                [sys.executable, "-m", "talos_core.cli", "codejob", "run",
+                 "--id", record["id"]],
+                cwd=str(args.root), stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            record["detached"] = True
+        print(json.dumps(record, indent=2))
+        return 0
+
+    if args.action == "status":
+        if args.id:
+            try:
+                print(json.dumps(coding_jobs.load(args.state, args.id), indent=2))
+            except ValueError as error:
+                print(json.dumps({"ok": False, "error": str(error)}))
+                return 1
+        else:
+            print(json.dumps(coding_jobs.jobs(args.state), indent=2))
+        return 0
+
+    infer = initiative_coder.local_infer(args.model)
+    if args.id:
+        result = coding_jobs.run(args.state, args.id, root=args.root, infer=infer)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if result.get("status") in {"verified", "applied"} else 1
+    results = coding_jobs.run_due(args.state, root=args.root, infer=infer, limit=args.limit)
+    print(json.dumps(results, indent=2, ensure_ascii=False))
+    return 0 if results and all(
+        item.get("status") in {"verified", "applied"} for item in results) else 1
+
+
 def _reflect(args) -> int:
     from talos_core.knowledge_reflection import reflect, summary
     from talos_core.memory.agent_memory import open_memory
@@ -1248,6 +1294,29 @@ def build_parser() -> argparse.ArgumentParser:
     code.add_argument("--verify-only", action="store_true")
     code.add_argument("--all", action="store_true", help="Include upstream/graph gap plans.")
     code.set_defaults(func=_code)
+
+    codejob = commands.add_parser("codejob", help="Queue and run bounded background coding jobs.")
+    jobs = codejob.add_subparsers(dest="action", required=True)
+    start_job = jobs.add_parser("start", help="Queue one job without touching the target.")
+    start_job.add_argument("text", nargs="+")
+    start_job.add_argument("--file", required=True, help="Relative target source file.")
+    start_job.add_argument("--state", type=Path, default=ROOT / "state")
+    start_job.add_argument("--root", type=Path, default=ROOT)
+    start_job.add_argument("--budget", type=int, default=300)
+    start_job.add_argument("--verify-only", action="store_true")
+    start_job.add_argument("--detach", action="store_true", help="Run the job in a detached process.")
+    start_job.set_defaults(func=_codejob)
+    run_job = jobs.add_parser("run", help="Run queued jobs in this process.")
+    run_job.add_argument("--id")
+    run_job.add_argument("--limit", type=int, default=1)
+    run_job.add_argument("--model", default="qwen3:4b")
+    run_job.add_argument("--state", type=Path, default=ROOT / "state")
+    run_job.add_argument("--root", type=Path, default=ROOT)
+    run_job.set_defaults(func=_codejob)
+    status_job = jobs.add_parser("status", help="Show queued and finished jobs.")
+    status_job.add_argument("id", nargs="?")
+    status_job.add_argument("--state", type=Path, default=ROOT / "state")
+    status_job.set_defaults(func=_codejob)
 
     reflect = commands.add_parser("reflect", help="Recompute related context from conversations and knowledge.")
     reflect.add_argument("--state", type=Path, default=ROOT / "state")

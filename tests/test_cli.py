@@ -168,6 +168,29 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(output.getvalue(), "Hello world\n")
 
+    def test_codejob_queues_reports_and_declines(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (root / "example.py").write_text("VALUE = 1\n")
+        state = root / "state"
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["codejob", "start", "Add a constant.", "--file", "example.py",
+                             "--root", str(root), "--state", str(state), "--verify-only"])
+        self.assertEqual(code, 0)
+        job = json.loads(output.getvalue())
+        self.assertEqual(job["status"], "queued")
+        output = io.StringIO()
+        with patch("talos_core.self_improvement.initiative_coder.local_infer",
+                   return_value=lambda prompt: "{}"), redirect_stdout(output):
+            code = cli.main(["codejob", "run", "--id", job["id"],
+                             "--root", str(root), "--state", str(state)])
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(output.getvalue())["status"], "declined")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(cli.main(["codejob", "status", "--state", str(state)]), 0)
+        self.assertEqual(json.loads(output.getvalue())[0]["status"], "declined")
+
     def test_highlight_coordinates_do_not_click(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         fake = Mock()

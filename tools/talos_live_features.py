@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -464,6 +466,31 @@ Path(sys.argv[1]).write_bytes(raw)
           and "streaming ready" in stream_text.casefold()
           and "</think" not in stream_text.casefold(),
           stream_text[:200])
+
+    job_state = Path(tempfile.mkdtemp())
+    target = ROOT / "talos_core" / "runtime" / "text_stream.py"
+    before = hashlib.sha256(target.read_bytes()).hexdigest()
+    started = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "codejob", "start",
+         "Clarify the first helper comment.", "--file", "talos_core/runtime/text_stream.py",
+         "--state", str(job_state), "--root", str(ROOT), "--verify-only", "--budget", "120"],
+        capture_output=True, text=True, timeout=30,
+    )
+    job = json.loads(started.stdout or "{}")
+    ran = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "codejob", "run", "--id", job.get("id", "-"),
+         "--model", "qwen2.5:1.5b", "--state", str(job_state), "--root", str(ROOT)],
+        capture_output=True, text=True, timeout=240,
+    )
+    record = json.loads(ran.stdout or "{}")
+    after = hashlib.sha256(target.read_bytes()).hexdigest()
+    check(checks, "coding_job",
+          started.returncode == 0
+          and record.get("status") in {"verified", "declined", "deferred"}
+          and after == before
+          and (Path(job.get("folder", ".")) / "report.json").is_file(),
+          f"{record.get('status')}: {record.get('message', '')}"[:200])
+    shutil.rmtree(job_state, ignore_errors=True)
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
