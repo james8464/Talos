@@ -244,6 +244,18 @@ def command(text, state):
         rows = reminders(state)
         lines = reminder_lines(rows)
         return "Apple Reminders: " + "; ".join(lines)[:MAX_REPLY] if lines else "No pending Apple reminders."
+    app_search = re.fullmatch(
+        r"search (?:my |apple )?(notes|mail|messages|contacts) for (.+?)[?.!]*",
+        words, re.I,
+    )
+    if app_search:
+        from talos_core.memory import personal_index
+        app = {"notes": "Notes", "mail": "Mail", "messages": "Messages",
+               "contacts": "Contacts"}[app_search.group(1).casefold()]
+        result = personal_index.search(
+            state, Path.home() / "Library", app_search.group(2).strip(), app_filter=app,
+        )
+        return str(result.get("reply") or "No matching records.")[:MAX_REPLY]
     url = re.fullmatch(r"(?:open|visit|go to) (https?://\S+)[.!]?", words, re.I)
     if url:
         return open_url(url.group(1))

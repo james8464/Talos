@@ -57,6 +57,12 @@ class NativeAppsTests(unittest.TestCase):
         with patch.object(native_apps, "music_state", return_value="Music is stopped."):
             self.assertEqual(native_apps.command("What's playing?", self.state), "Music is stopped.")
 
+    def test_read_only_app_search_uses_existing_index(self):
+        with patch("talos_core.memory.personal_index.search", return_value={"reply": "Notes hit"}) as search:
+            reply = native_apps.command("Search my notes for syllabus.", self.state)
+        self.assertEqual(reply, "Notes hit")
+        self.assertEqual(search.call_args.kwargs["app_filter"], "Notes")
+
     def test_only_http_urls_are_opened(self):
         with self.assertRaises(native_apps.NativeAppError):
             native_apps.open_url("file:///etc/passwd")
