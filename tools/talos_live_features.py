@@ -115,6 +115,15 @@ def run(keep: bool = False) -> dict:
     maintenance = ask(token, "Show the maintenance report.")["reply"]
     check(checks, "maintenance", "Maintenance:" in maintenance, maintenance)
 
+    model = ask(token, "What model are you using?")["reply"]
+    plugins = ask(token, "List my plugins.")["reply"]
+    subagents = ask(token, "List subagents.")["reply"]
+    checkpoints = ask(token, "List checkpoints.")["reply"]
+    check(checks, "model", "using" in model.casefold(), model)
+    check(checks, "plugins", "plugin" in plugins.casefold(), plugins)
+    check(checks, "subagents", "subagent" in subagents.casefold(), subagents)
+    check(checks, "checkpoints", "checkpoint" in checkpoints.casefold(), checkpoints)
+
     health = ask(token, "Check your health.")["reply"]
     check(checks, "health", "Audio is muted" in health, health)
 
