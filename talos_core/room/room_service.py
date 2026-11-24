@@ -14,6 +14,7 @@ import time as _time
 from collections.abc import Callable
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal, DecimalException
 from http.client import HTTPException
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -268,6 +269,39 @@ class Room:
         ):
             now = datetime.now(UTC).astimezone()
             return decision("reply", f"It is {now:%H:%M %Z} on {now:%A %d %B %Y}.")
+        arithmetic = re.fullmatch(
+            r"(?:what(?:'s| is)|calculate|compute)\s+"
+            r"(-?\d{1,12}(?:\.\d{1,8})?)\s*([+\-*/×÷])\s*"
+            r"(-?\d{1,12}(?:\.\d{1,8})?)[?.! ]*", text, re.I,
+        )
+        if arithmetic:
+            left, symbol, right = arithmetic.groups()
+            operation = {"+": lambda a, b: a + b, "-": lambda a, b: a - b,
+                         "*": lambda a, b: a * b, "×": lambda a, b: a * b,
+                         "/": lambda a, b: a / b, "÷": lambda a, b: a / b}[symbol]
+            spoken = {"+": "plus", "-": "minus", "*": "times", "×": "times",
+                      "/": "divided by", "÷": "divided by"}[symbol]
+            try:
+                value = operation(Decimal(left), Decimal(right))
+            except DecimalException:
+                return decision("reply", "I couldn't calculate that expression.")
+            return decision("reply", f"{left} {spoken} {right} is {value:f}.")
+        if re.fullmatch(
+            r"(?:how are you|are you (?:healthy|okay|ok)|check your health|what is your status)[?.! ]*",
+            text, re.I,
+        ):
+            report = ""
+            try:
+                lines = (self.db_path.parent / "Maintenance.txt").read_text().strip().splitlines()
+                if lines:
+                    report = f" Last maintenance: {lines[0]}."
+            except OSError:
+                pass
+            return decision(
+                "reply",
+                f"I'm running; the local model is {self.model_state()}. "
+                f"Audio is muted and typed turns are available.{report}",
+            )
         if re.fullmatch(
             r"(?:what(?:'s| is) on my plate(?: today)?|what(?:'s| is) (?:in )?my inbox|"
             r"what are my (?:reminders|tasks)|show my (?:inbox|reminders|tasks)|"
@@ -289,6 +323,23 @@ class Room:
                     break
             listed = "; ".join(f"#{item['id']} {item['kind']}: {item['text']}" for item in selected)
             return decision("reply", f"On your plate ({len(items)} open): " + listed[:540])
+        code_query = re.fullmatch(
+            r"(?:search|look up|find)(?: the)? (?:code(?: graph|base)?|source) (?:for )?(.+?)[?.!]*",
+            text, re.I,
+        )
+        if code_query:
+            query = code_query.group(1).strip()
+            if not query:
+                return decision("reply", "What should I search for in the code?")
+            from talos_core.knowledge_graph import graph as code_graph
+            matches = code_graph.search(query, limit=5)
+            if not matches:
+                return decision("reply", f"I found no code graph match for {query}.")
+            summary = "; ".join(
+                f"{match.get('source', 'code')} {match.get('line', '')} {match.get('title', '')}".strip()
+                for match in matches[:3]
+            )
+            return decision("reply", f"Code results for {query}: {summary}"[:595])
         knowledge = re.fullmatch(
             r"(?:search|look up|lookup|find in) (?:your |the )?(?:knowledge(?: graph)?|notes) "
             r"(?:for|about) (.+?)[?.!]*", text, re.I,

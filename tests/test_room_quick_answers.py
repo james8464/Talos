@@ -93,6 +93,18 @@ class QuickTextAnswerTests(unittest.TestCase):
         self.assertIn("Accessibility is granted", reply)
         self.assertIn("screen recording is not granted", reply)
 
+    def test_arithmetic_health_and_code_graph_are_local(self):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            arithmetic = self.ask("What is 144 / 12?")["reply"]
+            health = self.ask("Check your health.")["reply"]
+            with patch("talos_core.knowledge_graph.graph.search",
+                       return_value=[{"source": "talos_core/room/room_service.py",
+                                      "line": "L1", "title": "Room"}]):
+                code = self.ask("Search the code graph for Room.")["reply"]
+        self.assertEqual(arithmetic, "144 divided by 12 is 12.")
+        self.assertIn("Audio is muted", health)
+        self.assertIn("room_service.py", code)
+
 
 if __name__ == "__main__":
     unittest.main()
