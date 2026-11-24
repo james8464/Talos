@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -157,3 +158,35 @@ def call(state, name, tool, arguments=None, timeout=90):
         return inner()
 
     return _run(state, name, invoke, timeout)
+
+
+def command(text, state):
+    """Handle explicit MCP server/tool requests from the room."""
+    words = text.strip()
+    if re.fullmatch(r"(?:list|show) (?:my )?mcp servers[?.! ]*", words, re.I):
+        names = sorted(servers(state))
+        return "MCP servers: " + ", ".join(names) if names else "No MCP servers are configured."
+    listing = re.fullmatch(r"(?:list|show) mcp tools (?:for|on) (.+?)[?.!]*", words, re.I)
+    if listing:
+        name = listing.group(1).strip()
+        try:
+            found = tools(state, name)
+        except MCPClientError as error:
+            return f"MCP error: {error}"
+        names = [item["name"] for item in found]
+        return f"MCP tools on {name}: " + ", ".join(names) if names else f"No tools on {name}."
+    requested = re.fullmatch(
+        r"call mcp tool (.+?) on (.+?)(?: with (.+))?[.!]?", words, re.I,
+    )
+    if requested:
+        tool, name, raw = requested.group(1).strip(), requested.group(2).strip(), requested.group(3)
+        try:
+            arguments = json.loads(raw or "{}")
+        except ValueError:
+            return "MCP arguments must be a JSON object."
+        try:
+            result = call(state, name, tool, arguments)
+        except (MCPClientError, ValueError) as error:
+            return f"MCP error: {error}"
+        return f"MCP {name}/{tool}: {json.dumps(result, ensure_ascii=False)[:500]}"
+    return None

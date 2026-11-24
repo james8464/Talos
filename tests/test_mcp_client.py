@@ -55,6 +55,14 @@ class MCPClientTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("talos_graph_query", output.getvalue())
 
+    def test_room_style_commands(self):
+        self.assertIn("talos", mcp_client.command("List MCP servers", self.state))
+        self.assertIn("talos_graph_query", mcp_client.command("List MCP tools on talos", self.state))
+        result = mcp_client.command(
+            'Call mcp tool talos_graph_query on talos with {"query":"Room"}', self.state,
+        )
+        self.assertIn("matches", result)
+
     def test_missing_server_is_an_error(self):
         with self.assertRaises(mcp_client.MCPClientError):
             mcp_client.tools(self.state, "missing")

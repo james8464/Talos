@@ -22,7 +22,7 @@ from time import monotonic
 from uuid import uuid4
 
 from agent import model_text, parse_event, plan
-from talos_core import nodes, skills, todo
+from talos_core import mcp_client, nodes, skills, todo
 from talos_core.cognition import (
     cognitive_engine,
     goal_store,
@@ -294,6 +294,12 @@ class Room:
             native = f"Native app error: {error}"
         if native:
             return decision("reply", native)
+        try:
+            mcp = mcp_client.command(text, state)
+        except (mcp_client.MCPClientError, ValueError) as error:
+            mcp = f"MCP error: {error}"
+        if mcp:
+            return decision("reply", mcp)
         if re.fullmatch(r"(?:thanks|thank you|cheers)[.!, ]*", text, re.I):
             return decision("reply", "You're welcome.")
         if re.fullmatch(r"(?:(?:are you|is this|is talos) (?:muted|silent)|"
