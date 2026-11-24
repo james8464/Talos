@@ -441,9 +441,25 @@ class ComputerUse:
         return choice
 
     def click_goal(self, app: str, goal: str, decider=None, model: str | None = None) -> dict:
-        """Find a visible control by intent, then click it and report the choice."""
+        """Find a visible control by intent, then click it and report the choice.
+
+        Some custom-drawn controls accept an accessibility action but do not
+        change state. When the result reports that, fall back to a real
+        coordinate click after activating the app, mirroring Codex-style
+        computer use.
+        """
         choice = self.choose(app, goal, decider=decider, model=model)
+        center = choice.get("center") or [0, 0]
+        self._show_click(int(center[0]), int(center[1]), f"target · {app}")
         result = self.click_ref(app, choice["ref"])
+        hint = str(result.get("hint", "")) if isinstance(result, dict) else ""
+        if "did not change" in hint or (isinstance(result, dict) and result.get("ok") is False):
+            try:
+                self.activate(app)
+                fallback = self.click(int(center[0]), int(center[1])).to_dict()
+                return {**choice, "click": result, "fallback": fallback}
+            except (OSError, RuntimeError, ValueError):
+                pass
         return {**choice, "click": result}
 
     def _harness(self):
@@ -1078,6 +1094,10 @@ def _cli() -> int:
     hover.add_argument("x", type=int)
     hover.add_argument("y", type=int)
     hover.add_argument("--app")
+    move = commands.add_parser("move", help="Move the visible agent pointer.")
+    move.add_argument("x", type=int)
+    move.add_argument("y", type=int)
+    move.add_argument("--app")
     drag = commands.add_parser("drag", help="Background drag between screen points.")
     drag.add_argument("x", type=int)
     drag.add_argument("y", type=int)
@@ -1166,6 +1186,8 @@ def _cli() -> int:
                                   x=args.x, y=args.y)
     elif args.command == "hover":
         payload = computer.hover(args.x, args.y, app=args.app)
+    elif args.command == "move":
+        payload = computer.move(args.x, args.y, app=args.app).to_dict()
     elif args.command == "drag":
         payload = computer.drag(args.x, args.y, args.to_x, args.to_y, app=args.app, mode=args.mode)
     elif args.command == "window":

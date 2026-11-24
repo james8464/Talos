@@ -321,6 +321,16 @@ class Room:
         if re.fullmatch(r"(?:be quiet|stop speaking|don't speak|do not speak|mute yourself)[.!, ]*",
                         text, re.I):
             return decision("reply", "I'm already muted; I won't produce audio.")
+        if match := re.fullmatch(
+                r"(?:please )?(?:move|move the (?:mouse|pointer|cursor))(?: pointer)?"
+                r"(?: to)? (\d{1,4})[, ]+ *(\d{1,4})[.! ]*", text, re.I):
+            x, y = int(match.group(1)), int(match.group(2))
+            try:
+                from talos_core.mac.computer_use import ComputerUse
+                ComputerUse(state).move(x, y)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't move the pointer: {error}")
+            return decision("reply", f"Moved the pointer to {x}, {y}.")
         if re.fullmatch(r"(?:what(?:'s| is) my name|who am i)[?.! ]*", text, re.I):
             try:
                 from talos_core.cognition import talos_identity

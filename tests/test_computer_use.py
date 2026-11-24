@@ -196,6 +196,21 @@ class ComputerUseTests(unittest.TestCase):
         click.assert_called_once_with("Notes", "abc")
         self.assertTrue(result["click"]["ok"])
 
+    def test_click_goal_falls_back_to_a_coordinate_click(self):
+        from unittest.mock import patch
+
+        with patch.object(self.computer, "choose",
+                          return_value={"ref": "abc", "center": [10, 20]}), \
+             patch.object(self.computer, "click_ref",
+                          return_value={"ok": False,
+                                        "hint": "The AX action did not change observable state"}), \
+             patch.object(self.computer, "activate", return_value=cu.Receipt("activate", True, "", "")), \
+             patch.object(self.computer, "click",
+                          return_value=cu.Receipt("click", True, "", "")) as click:
+            result = self.computer.click_goal("Notes", "new note")
+        click.assert_called_once_with(10, 20)
+        self.assertIn("fallback", result)
+
     def test_permission_probe_is_safe_on_this_platform(self):
         result = cu.permissions()
         self.assertIn("platform", result)
