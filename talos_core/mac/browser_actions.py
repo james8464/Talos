@@ -51,7 +51,7 @@ def click_text(url: str, text: str, *, limit: int = 500) -> dict | None:
     wanted = " ".join(str(text).split())[:120]
     if not wanted:
         return None
-    script = f"""(() => {{
+    script = rf"""(() => {{
       const wanted = {json.dumps(wanted.casefold())};
       const nodes = Array.from(document.querySelectorAll(
         'a, button, [role="button"], input[type="submit"], input[type="button"]'));
@@ -89,7 +89,7 @@ def type_into(url: str, field: str, value: str, *, limit: int = 500) -> dict | N
     value = str(value)
     if not wanted or not value:
         return None
-    script = f"""(() => {{
+    script = rf"""(() => {{
       const wanted = {json.dumps(wanted)};
       const value = {json.dumps(value)};
       const label = (el) => ((el.getAttribute('aria-label') || el.getAttribute('placeholder')
