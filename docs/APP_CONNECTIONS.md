@@ -80,7 +80,8 @@ Implemented or already present:
   clicks/keys, screenshots, OCR, windows and background control.
 - Slack/Discord webhooks, Feishu client, ACP client, MCP server.
 - `talos_core/mcp_client.py`: generic MCP stdio client on the official SDK,
-  with `talos mcp-client list|tools|call`; tested against Talos's own server.
+  with `talos mcp-client list|add|tools|call` and room commands for listing
+  servers/tools and calling a tool; tested against Talos's own server.
 - Native Swift app EventKit import for Calendar/Reminders memory.
 
 Next implementation steps:

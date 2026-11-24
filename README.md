@@ -77,7 +77,7 @@ covers Calendar, Reminders, Safari, Shortcuts, Finder, Maps and read-only Music
 state. A generic MCP client built on the official Python SDK is available as
 `talos mcp-client`; configure existing servers (for example `macos-apps-mcp`,
 `apple-calendar-mcp`, or the official Slack/Notion/GitHub servers) in
-`state/mcp-servers.json`.
+`state/mcp-servers.json`. In the room, ask `List MCP servers`, `List MCP tools on NAME`, or `Call mcp tool TOOL on NAME with {"key":"value"}`.
 
 ## Terminal sessions and Telegram
 

@@ -59,7 +59,7 @@ class MCPClientTests(unittest.TestCase):
         self.assertIn("talos", mcp_client.command("List MCP servers", self.state))
         self.assertIn("talos_graph_query", mcp_client.command("List MCP tools on talos", self.state))
         result = mcp_client.command(
-            'Call mcp tool talos_graph_query on talos with {"query":"Room"}', self.state,
+            'Call mcp tool talos_graph_query on talos with {"query":"Room"}.', self.state,
         )
         self.assertIn("matches", result)
 

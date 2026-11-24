@@ -180,8 +180,9 @@ def command(text, state):
     )
     if requested:
         tool, name, raw = requested.group(1).strip(), requested.group(2).strip(), requested.group(3)
+        raw = (raw or "{}").strip().rstrip(" .!?")
         try:
-            arguments = json.loads(raw or "{}")
+            arguments = json.loads(raw)
         except ValueError:
             return "MCP arguments must be a JSON object."
         try:
