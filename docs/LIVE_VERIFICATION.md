@@ -51,6 +51,7 @@ Exercised through `talos computer` against TextEdit and Calculator:
 - `frontmost`, `apps`, `windows`, `screenshot`, `see`, `find`, `ocr`
 - `activate`, `type` and `key` (`12+7` then Return produced `19`)
 - `click-ref` on Calculator's All Clear control
+- `scroll`, `hover`, `window list`, `window resize`/restore, `window minimize`/restore/focus
 - Accessibility and Screen Recording both granted
 
 ## CLI, MCP and service checks
