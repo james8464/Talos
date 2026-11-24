@@ -322,6 +322,32 @@ class Room:
                         text, re.I):
             return decision("reply", "I'm already muted; I won't produce audio.")
         if match := re.fullmatch(
+                r"click (?:on )?(?:the )?(.+?) in ([A-Za-z][^.!?]{0,60})[.! ]*",
+                text, re.I):
+            description, app = match.group(1).strip(), match.group(2).strip()
+            try:
+                from talos_core.mac import gui_actions
+                from talos_core.mac.computer_use import ComputerUse
+                result = gui_actions.target(ComputerUse(state), app, "click", description)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't click in {app}: {error}")
+            if result.get("ok"):
+                return decision("reply", f"Clicked {result.get('label') or description} in {app}.")
+            return decision("reply", f"I found no control matching {description!r} in {app}.")
+        if match := re.fullmatch(
+                r'type (?:"([^"]+)"|(.+?)) into ([A-Za-z][^.!?]{0,60})[.! ]*',
+                text, re.I):
+            value = (match.group(1) or match.group(2) or "").strip()
+            app = match.group(3).strip()
+            if not value:
+                return decision("reply", "Tell me what to type.")
+            try:
+                from talos_core.mac.computer_use import ComputerUse
+                ComputerUse(state).type_text(value[:8000], app=app)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't type into {app}: {error}")
+            return decision("reply", f"Typed {len(value)} characters into {app}.")
+        if match := re.fullmatch(
                 r"(?:please )?(?:move|move the (?:mouse|pointer|cursor))(?: pointer)?"
                 r"(?: to)? (\d{1,4})[, ]+ *(\d{1,4})[.! ]*", text, re.I):
             x, y = int(match.group(1)), int(match.group(2))

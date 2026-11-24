@@ -232,6 +232,10 @@ def run(keep: bool = False) -> dict:
     check(checks, "open_app", "Opened Calculator" in opened, opened)
     front = ask(token, "Which app is in front?")["reply"]
     check(checks, "frontmost_app", "frontmost app is" in front.casefold(), front)
+    clicked = ask(token, "Click the 7 button in Calculator.")["reply"]
+    check(checks, "control_click", "Clicked 7 in Calculator" in clicked, clicked)
+    cleared = ask(token, "Click the All Clear button in Calculator.")["reply"]
+    check(checks, "control_clear", "Clicked" in cleared and "Calculator" in cleared, cleared)
 
     app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
     check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,
