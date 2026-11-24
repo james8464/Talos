@@ -149,6 +149,15 @@ def run(keep: bool = False) -> dict:
     check(checks, "small_talk", "welcome" in thanks.casefold() and "here" in present.casefold(),
           f"{thanks} / {present}")
 
+    fact = ask(token, "Tell me a fun fact.")["reply"]
+    mountain = ask(token, "What is the tallest mountain?")["reply"]
+    tired = ask(token, "I feel tired.")["reply"]
+    identity = ask(token, "What is my name?")["reply"]
+    check(checks, "public_fact", "Honey" in fact and "whatsapp" not in fact.casefold(), fact)
+    check(checks, "general_knowledge", "Everest" in mountain, mountain)
+    check(checks, "wellbeing", "short break" in tired.casefold(), tired)
+    check(checks, "identity", "You are" in identity or "don't have your name" in identity, identity)
+
     knowledge = ask(token, "Search your knowledge for Room.")["reply"]
     check(checks, "knowledge_search", "Knowledge results for Room" in knowledge, knowledge)
 
