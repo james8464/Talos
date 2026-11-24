@@ -118,6 +118,17 @@ def run() -> dict:
     memory = ask(token, f"Search your memory for {fact_subject}.")["reply"]
     check(checks, "memory_search", fact_value in memory, memory)
 
+    forgotten = f"forgotten code {stamp}"
+    ask(token, f"Remember that my {forgotten} is temporary-{stamp}.")
+    ask(token, f"Forget my {forgotten}.")
+    missing = ask(token, f"What is my {forgotten}?")["reply"]
+    check(checks, "missing_fact", "don't have a saved fact" in missing, missing)
+
+    thanks = ask(token, "Thank you.")["reply"]
+    present = ask(token, "Are you there?")["reply"]
+    check(checks, "small_talk", "welcome" in thanks.casefold() and "here" in present.casefold(),
+          f"{thanks} / {present}")
+
     knowledge = ask(token, "Search your knowledge for Room.")["reply"]
     check(checks, "knowledge_search", "Knowledge results for Room" in knowledge, knowledge)
 
