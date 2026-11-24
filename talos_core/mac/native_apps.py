@@ -183,12 +183,22 @@ def installed_app(name):
     return None
 
 
-def open_application(name):
+def _activate_open_app(name, state):
+    try:
+        from talos_core.mac.computer_use import ComputerUse
+        ComputerUse(state, cursor=False).activate(name)
+    except (OSError, RuntimeError, ValueError):
+        pass
+
+
+def open_application(name, state=None):
     """Open an installed application, or return None for an unknown name."""
     app = installed_app(name)
     if app is None:
         return None
     _run([OPEN, "-a", str(app)], timeout=15)
+    if state is not None:
+        _activate_open_app(app.stem, state)
     return f"Opened {app.stem}."
 
 
@@ -360,7 +370,7 @@ def command(text, state):
         return open_path(path.group(1).strip())
     app_open = re.fullmatch(r"(?:open|launch) (?:the )?(.+?)(?: app)?[.!]?", words, re.I)
     if app_open:
-        opened = open_application(app_open.group(1).strip())
+        opened = open_application(app_open.group(1).strip(), state)
         if opened:
             return opened
     directions = re.fullmatch(r"(?:directions|navigate) to (.+?)[.!]?", words, re.I)

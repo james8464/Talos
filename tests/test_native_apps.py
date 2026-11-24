@@ -98,10 +98,12 @@ class NativeAppsTests(unittest.TestCase):
 
         with patch("talos_core.mac.native_apps.installed_app",
                    return_value=Path("/Applications/Calculator.app")), \
-             patch("talos_core.mac.native_apps._run") as run:
+             patch("talos_core.mac.native_apps._run") as run, \
+             patch("talos_core.mac.native_apps._activate_open_app") as activate:
             self.assertEqual(native_apps.command("Open Calculator.", self.state),
                              "Opened Calculator.")
             run.assert_called_once()
+            activate.assert_called_once_with("Calculator", self.state)
         with patch("talos_core.mac.native_apps.installed_app", return_value=None):
             self.assertIsNone(native_apps.command("Open the last design in Pages.", self.state))
         with patch("talos_core.mac.computer_use.ComputerUse.frontmost",
