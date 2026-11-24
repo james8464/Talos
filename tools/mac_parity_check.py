@@ -56,12 +56,42 @@ def calculator(state: Path) -> dict:
     return run(state)
 
 
+def safari(state: Path) -> dict:
+    was_running = subprocess.run(["pgrep", "-x", "Safari"], capture_output=True).returncode == 0
+    subprocess.run(["open", "-a", "Safari", "https://example.com"], check=False)
+    time.sleep(2.5)
+    computer = ComputerUse(state, cursor=True)
+    view = computer.see("Safari")
+    matches = computer.find_controls("Safari", "reload")
+    result = {"controls": len(view["elements"]), "reload": bool(matches)}
+    if matches:
+        result["click"] = computer.click_ref("Safari", matches[0]["ref"]).get("verified")
+    if was_running:
+        subprocess.run(["osascript", "-e", 'tell application "Safari" to close current tab of front window'],
+                       capture_output=True)
+    # Focus is intentionally not switched by the audit except for the app under test.
+    result["ok"] = bool(result.get("click")) and result["controls"] > 5
+    return result
+
+
+def finder(state: Path) -> dict:
+    original = ComputerUse(state, cursor=False).frontmost().get("app", "")
+    computer = ComputerUse(state, cursor=True)
+    computer.activate("Finder")
+    time.sleep(0.5)
+    windows = perception.run("window", "list", "--app", "Finder").get("windows", [])
+    if original:
+        computer.activate(original)
+    return {"ok": bool(windows), "windows": len(windows)}
+
+
 def main() -> int:
     state = ROOT / "state"
     payload = {"permissions": permissions(),
-               "textedit": text_edit(state), "calculator": calculator(state)}
+               "textedit": text_edit(state), "calculator": calculator(state),
+               "safari": safari(state), "finder": finder(state)}
     print(json.dumps(payload, indent=2))
-    return 0 if all(payload[key].get("ok") for key in ("textedit", "calculator")) else 1
+    return 0 if all(payload[key].get("ok") for key in ("textedit", "calculator", "safari", "finder")) else 1
 
 
 if __name__ == "__main__":

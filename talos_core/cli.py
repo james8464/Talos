@@ -297,6 +297,36 @@ def _utility(args) -> int:
     if command == "clarify":
         print("What exactly should Talos change or do next?")
         return 0
+    if command in ("feishu_doc", "feishu_drive"):
+        from talos_core import feishu
+        if args.app_id and args.app_secret:
+            print(json.dumps(feishu.configure(state, args.app_id, args.app_secret)))
+        elif command == "feishu_doc" and args.document:
+            print(json.dumps(feishu.doc(state, args.document), indent=2))
+        else:
+            print(json.dumps(feishu.drive(state, args.folder or ""), indent=2))
+        return 0
+    if command == "acp":
+        import shlex
+
+        from talos_core import acp
+        if not args.command or not args.prompt:
+            print(json.dumps({"ok": False, "error": "supply --command and --prompt"}))
+            return 1
+        if not args.confirm:
+            print(json.dumps({"ok": False, "error": "add --confirm"}))
+            return 1
+        session = acp.ACPSession(shlex.split(args.command))
+        try:
+            initialized = session.initialize()
+            prompted = session.prompt(args.prompt, cwd=str(args.root))
+        except (acp.ACPError, OSError, ValueError) as error:
+            print(json.dumps({"ok": False, "error": str(error)}))
+            return 1
+        finally:
+            session.close()
+        print(json.dumps({"initialized": initialized, "prompt": prompted}, indent=2))
+        return 0
     if command in ("slack", "discord"):
         from talos_core import connectors
         if args.url:
@@ -673,6 +703,21 @@ def build_parser() -> argparse.ArgumentParser:
     completion = commands.add_parser("completion", help="Print supported command names.")
     completion.set_defaults(func=_utility)
 
+    for kind in ("feishu_doc", "feishu_drive"):
+        feishu_cmd = commands.add_parser(kind, help=f"Configure or use Feishu {kind}.")
+        feishu_cmd.add_argument("--state", type=Path, default=ROOT / "state")
+        feishu_cmd.add_argument("--app-id")
+        feishu_cmd.add_argument("--app-secret")
+        feishu_cmd.add_argument("--document")
+        feishu_cmd.add_argument("--folder")
+        feishu_cmd.set_defaults(func=_utility)
+    acp = commands.add_parser("acp", help="Connect to an Agent Client Protocol command.")
+    acp.add_argument("--command")
+    acp.add_argument("--prompt")
+    acp.add_argument("--root", type=Path, default=ROOT)
+    acp.add_argument("--state", type=Path, default=ROOT / "state")
+    acp.add_argument("--confirm", action="store_true")
+    acp.set_defaults(func=_utility)
     for kind in ("slack", "discord"):
         external = commands.add_parser(kind, help=f"Configure or send a {kind} webhook.")
         external.add_argument("--state", type=Path, default=ROOT / "state")
