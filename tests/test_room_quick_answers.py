@@ -58,6 +58,11 @@ class QuickTextAnswerTests(unittest.TestCase):
             reply = self.ask("What is the live pass color?")["reply"]
         self.assertEqual(reply, "Live pass color is cobalt.")
 
+    def test_memory_search_includes_saved_personal_facts(self):
+        self.ask("Remember that my live code is cobalt.")
+        reply = self.ask("Search your memory for live code.")["reply"]
+        self.assertIn("cobalt", reply)
+
     def test_todays_date_is_answered_without_the_model(self):
         with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
             reply = self.ask("What is today's date?")["reply"]

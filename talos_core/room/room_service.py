@@ -274,11 +274,21 @@ class Room:
             r"what do i (?:have|need) to do(?: today)?)[?.! ]*",
             text, re.I,
         ):
-            items = inbox_items(db, limit=6)
+            items = inbox_items(db, limit=50)
             if not items:
                 return decision("reply", "Nothing is on your plate.")
-            listed = "; ".join(f"#{item['id']} {item['kind']}: {item['text']}" for item in items)
-            return decision("reply", "On your plate: " + listed[:560])
+            seen, selected = set(), []
+            ordered = sorted(items, key=lambda item: (item.get("due_at") or "9999", item["id"]))
+            recent = sorted(items, key=lambda item: item["id"], reverse=True)
+            for item in [*ordered[:3], *recent]:
+                if item["id"] in seen:
+                    continue
+                seen.add(item["id"])
+                selected.append(item)
+                if len(selected) == 6:
+                    break
+            listed = "; ".join(f"#{item['id']} {item['kind']}: {item['text']}" for item in selected)
+            return decision("reply", f"On your plate ({len(items)} open): " + listed[:540])
         knowledge = re.fullmatch(
             r"(?:search|look up|lookup|find in) (?:your |the )?(?:knowledge(?: graph)?|notes) "
             r"(?:for|about) (.+?)[?.!]*", text, re.I,
@@ -304,25 +314,41 @@ class Room:
                 return decision("reply", f"Knowledge results for {query}: {summary}"[:595])
             rows = search_transcripts(db, query)
             terms = [term for term in re.findall(r"[^\W_]+", query.casefold()) if len(term) >= 2]
-            rows = [row for row in rows if all(term in row["text"].casefold() for term in terms)]
             picked, seen = [], set()
+
+            def add(line):
+                line = line.strip()
+                folded = line.casefold()
+                if line and folded not in seen:
+                    seen.add(folded)
+                    picked.append(line)
+
+            for subject, value in db.execute(
+                "SELECT subject,value FROM personal_facts WHERE session=?", (TEXT_SESSION,)
+            ):
+                if all(term in f"{subject} {value}".casefold() for term in terms):
+                    add(f"Your {subject} is {value}.")
+            for (note_text,) in db.execute(
+                "SELECT text FROM inbox WHERE kind='note' AND acknowledged_at IS NULL ORDER BY id DESC"
+            ):
+                if all(term in note_text.casefold() for term in terms):
+                    add(note_text)
             for row in rows:
+                text = row["text"]
+                if not all(term in text.casefold() for term in terms):
+                    continue
                 excerpt = row["excerpt"].strip()
                 folded = excerpt.casefold()
-                plain = row["text"].strip().casefold()
+                plain = text.strip().casefold()
                 if (folded.startswith("memory results for ")
                         or plain == query.casefold()
                         or plain.startswith("search your memory for ")
-                        or (row.get("role") == "user" and row["text"].strip().endswith("?"))
-                        or folded in seen):
+                        or (row.get("role") == "user" and text.strip().endswith("?"))):
                     continue
-                seen.add(folded)
-                picked.append(excerpt)
-                if len(picked) == 3:
-                    break
+                add(excerpt)
             if not picked:
                 return decision("reply", f"I found no earlier conversation about {query}.")
-            return decision("reply", f"Memory results for {query}: {'; '.join(picked)}"[:595])
+            return decision("reply", f"Memory results for {query}: {'; '.join(picked[:3])}"[:595])
         mac = self.quick_mac_answer(text)
         if mac:
             return mac
