@@ -79,6 +79,8 @@ hash-guarded install with rollback and receipts
   checks which have a regression test, inventories the pinned OpenClaw and
   Hermes tool surfaces, and writes `state/capability-audit.json`. The best gaps
   are queued through decomposition and the verified patch loop every 12 hours.
+- **Personal instructions.** `cognition/personal_instructions.py` ports
+  OpenClaw's bounded local instruction block into console and room prompts.
 - **Initiative.** `talos_core/self_improvement/initiative.py` inspects health
   failures, empty knowledge stores and Graphify communities without tests,
   optionally asks a model for one new capability, decomposes each accepted idea,
