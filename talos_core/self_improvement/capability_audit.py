@@ -211,6 +211,11 @@ def gaps(root: Path = ROOT, state: Path | None = None) -> list[Gap]:
     return found
 
 
+def top_gaps(root: Path = ROOT, state: Path | None = None, *, limit: int = 2) -> list[Gap]:
+    """Return the highest-scoring gaps, best first, capped at ``limit``."""
+    return gaps(root, state)[:max(0, limit)]
+
+
 def report(root: Path = ROOT, state: Path | None = None) -> dict:
     root = Path(root)
     state = Path(state) if state else root / "state"
@@ -242,20 +247,21 @@ def queue_gaps(root: Path, state: Path, *, limit: int = 2) -> list[dict]:
     """Queue top gaps through decomposition and the verified coding loop."""
     from talos_core.self_improvement import initiative
 
-    report_data = report(root, state)
+    report(root, state)
     ideas = []
-    for gap in report_data["gaps"][:max(1, limit)]:
+    for gap in top_gaps(root, state, limit=max(1, limit)):
+        record = gap.to_dict()
         ideas.append(initiative.Idea(
-            id=initiative._ident(f"port {gap['project']} {gap['name']}"),
-            title=f"Port {gap['project']} capability: {gap['name'].replace('_', ' ')}",
-            rationale=gap["evidence"],
+            id=initiative._ident(f"port {record['project']} {record['name']}"),
+            title=f"Port {record['project']} capability: {record['name'].replace('_', ' ')}",
+            rationale=record["evidence"],
             acceptance=(
                 f"A local implementation covers the upstream behavior with a regression test; "
-                f"replay the {gap['project']} source and compare user-visible results."
+                f"replay the {record['project']} source and compare user-visible results."
             ),
-            source=f"gap:{gap['project'].lower()}",
-            files=(gap["target"],),
-            score=gap["score"],
+            source=f"gap:{record['project'].lower()}",
+            files=(record["target"],),
+            score=record["score"],
         ))
     accepted = []
     for idea in ideas:

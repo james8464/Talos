@@ -45,6 +45,16 @@ class CapabilityAuditTests(unittest.TestCase):
         plan = json.loads(Path(entries[0]["plan_path"]).read_text())
         self.assertGreaterEqual(len(plan["leaves"]), 1)
 
+    def test_top_gaps_returns_ranked_prefix(self):
+        ranked = capability_audit.gaps(self.root, self.state)
+        self.assertTrue(ranked)
+        scores = [gap.score for gap in ranked]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        top = capability_audit.top_gaps(self.root, self.state, limit=2)
+        self.assertEqual([gap.name for gap in top], [gap.name for gap in ranked[:2]])
+        self.assertEqual(len(capability_audit.top_gaps(self.root, self.state, limit=1)), 1)
+        self.assertEqual(capability_audit.top_gaps(self.root, self.state, limit=0), [])
+
     def test_repeated_report_is_stable(self):
         first = capability_audit.report(self.root, self.state)
         second = capability_audit.report(self.root, self.state)
