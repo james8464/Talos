@@ -101,6 +101,16 @@ class QuickTextAnswerTests(unittest.TestCase):
         for text in ("What is my name?", "Show me my tasks.", "What's on my calendar?"):
             self.assertTrue(needs_private_context(text), text)
 
+    def test_model_plugins_subagents_checkpoints_are_local(self):
+        folder = self.root / "backups"
+        folder.mkdir()
+        (folder / "agent-test.sqlite3").write_bytes(b"x")
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertIn("local", self.ask("What model are you using?")["reply"])
+            self.assertIn("No local plugins", self.ask("List my plugins.")["reply"])
+            self.assertIn("No subagents", self.ask("List subagents.")["reply"])
+            self.assertIn("agent-test", self.ask("List checkpoints.")["reply"])
+
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")
         reply = self.ask("Search your memory for live code.")["reply"]

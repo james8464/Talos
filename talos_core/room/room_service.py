@@ -426,6 +426,30 @@ class Room:
                 return decision("reply", "Your todo list is empty.")
             summary = "; ".join(f"#{item['id']} {item['text']}" for item in items[:8])
             return decision("reply", f"Todos: {summary}"[:595])
+        if re.fullmatch(r"(?:(?:what|which) model are you using|what is your model)[?.! ]*",
+                        text, re.I):
+            return decision("reply", f"I'm using {self.model}.")
+        if re.fullmatch(r"(?:list|show) (?:my )?plugins[?.! ]*", text, re.I):
+            from talos_core import plugins
+            found = plugins.discover(state)
+            if not found:
+                return decision("reply", "No local plugins are registered.")
+            summary = "; ".join(str(item.get("name") or item.get("path")) for item in found[:8])
+            return decision("reply", f"Plugins: {summary}"[:595])
+        if re.fullmatch(r"(?:list|show) (?:my )?subagents[?.! ]*", text, re.I):
+            from talos_core import subagents
+            found = subagents.discover(state)
+            if not found:
+                return decision("reply", "No subagents are registered.")
+            summary = "; ".join(str(item.get("name") or item.get("path")) for item in found[:8])
+            return decision("reply", f"Subagents: {summary}"[:595])
+        if re.fullmatch(r"(?:list|show) (?:my )?(?:checkpoints|backups)[?.! ]*", text, re.I):
+            folder = state / "backups"
+            found = sorted(folder.glob("*.sqlite3")) if folder.is_dir() else []
+            if not found:
+                return decision("reply", "No memory checkpoints are available.")
+            summary = "; ".join(path.name for path in found[-5:])
+            return decision("reply", f"Checkpoints: {summary}"[:595])
         added_todo = re.fullmatch(r"(?:add|create) (?:a )?(?:todo|to-do)(?: to)? (.+?)[.!]?", text, re.I)
         if added_todo:
             if not self.apply:
