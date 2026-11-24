@@ -303,9 +303,13 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     #if TALOS_CONTROLLER_REPLAY
     let silentMode = false
     #else
-    let silentMode = ProcessInfo.processInfo.arguments.contains("--mute")
-        || ProcessInfo.processInfo.environment["TALOS_MUTE"] == "1"
-        || !ProcessInfo.processInfo.arguments.contains("--unmute")
+    let silentMode: Bool = {
+        let arguments = ProcessInfo.processInfo.arguments
+        let value = (ProcessInfo.processInfo.environment["TALOS_MUTE"] ?? "").lowercased()
+        return arguments.contains("--mute")
+            || ["1", "true", "yes", "on"].contains(value)
+            || !arguments.contains("--unmute")
+    }()
     #endif
     let isTrial = ProcessInfo.processInfo.arguments.contains("--room-trial")
     let goals = GoalController()

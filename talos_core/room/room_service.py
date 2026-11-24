@@ -73,7 +73,7 @@ from talos_core.room.room_work import (
     saved_brief,
     work_order,
 )
-from talos_core.runtime import background_work, talos_activity, voice_recovery
+from talos_core.runtime import audio_policy, background_work, talos_activity, voice_recovery
 from talos_core.runtime.local_actions import close_named_item, inbox_items, next_reminder, reminder_list
 from talos_core.runtime.local_runtime import check_ollama_model
 from talos_core.self_improvement.idle_lab import IdleLab, IdleReviewDeferred, pending_stages, power_and_idle
@@ -141,8 +141,9 @@ class Room:
         self.db_path = db_path
         self.model = model
         self.apply = apply
-        self.speak = speak and apply and os.environ.get("TALOS_MUTE") != "1"
-        if os.environ.get("TALOS_MUTE") == "1":
+        muted = audio_policy.muted()
+        self.speak = speak and apply and not muted
+        if muted:
             voice = None
         self.online = online
         self.model_state = model_state or (lambda: "ready")

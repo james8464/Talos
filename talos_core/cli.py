@@ -619,7 +619,9 @@ def _graph(args) -> int:
 
 
 def _audio_mode():
-    if os.environ.get("TALOS_MUTE") == "1":
+    from talos_core.runtime.audio_policy import truthy
+
+    if truthy(os.environ.get("TALOS_MUTE")):
         return "muted"
     plist = Path.home() / "Library" / "LaunchAgents" / "local.talos.room.plist"
     try:
@@ -629,7 +631,7 @@ def _audio_mode():
         return "enabled"
     environment = data.get("EnvironmentVariables") or {}
     arguments = data.get("ProgramArguments") or []
-    if environment.get("TALOS_MUTE") == "1" or "--mute" in arguments:
+    if truthy(environment.get("TALOS_MUTE")) or "--mute" in arguments:
         return "muted"
     return "enabled"
 

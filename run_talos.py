@@ -21,6 +21,8 @@ from talos_core.recovery import reconnect_delay, stable_connection
 from talos_core.room.room_service import DEFAULT_PORT, Room, run
 from talos_core.room.room_voice import DEFAULT_VOICE, KokoroVoice, prepare_assets, voice_python
 from talos_core.runtime import talos_activity
+from talos_core.runtime.audio_policy import muted as audio_muted
+from talos_core.runtime.audio_policy import truthy as audio_truthy
 from talos_core.runtime.local_runtime import check_ollama_model, request_ollama_json
 from talos_core.self_improvement.worker_supervision import WorkerSupervisor
 
@@ -75,7 +77,7 @@ def check_bind(port: int) -> None:
 def muted_mode(mute: bool, unmute: bool, environ: dict | None = None) -> bool:
     """Talos is silent unless the operator explicitly opts into speech."""
     environment = os.environ if environ is None else environ
-    return bool(mute or environment.get("TALOS_MUTE") == "1" or not unmute)
+    return bool(mute or audio_truthy(environment.get("TALOS_MUTE")) or not unmute)
 
 
 class ProjectModel:
@@ -243,7 +245,7 @@ def run_trial(args) -> None:
     check_bind(port)
     os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
     check_ollama_model(args.model)
-    voice = None if os.environ.get("TALOS_MUTE") == "1" else prepare_voice(args.voice, offline=True)
+    voice = None if audio_muted() else prepare_voice(args.voice, offline=True)
     with tempfile.TemporaryDirectory(prefix="talos-room-trial-") as directory:
         trial = Path(directory)
         bundle = None if args.headless else build_app(trial_dir=trial)
@@ -259,7 +261,8 @@ def run_trial(args) -> None:
                                             "--unmute" if voice is not None else "--mute"])
 
         try:
-            run(port, Room(trial / "trial.sqlite", args.model, speak=not (args.mute or os.environ.get("TALOS_MUTE") == "1"),
+            run(port, Room(trial / "trial.sqlite", args.model,
+                           speak=not muted_mode(args.mute, args.unmute),
                            voice=voice, online=False),
                 token, ready=launch)
         finally:

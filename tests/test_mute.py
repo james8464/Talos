@@ -64,7 +64,17 @@ class SilentModeTests(unittest.TestCase):
         self.assertTrue(muted_mode(False, False, {}))
         self.assertTrue(muted_mode(True, True, {}))
         self.assertTrue(muted_mode(False, True, {"TALOS_MUTE": "1"}))
+        self.assertTrue(muted_mode(False, True, {"TALOS_MUTE": "true"}))
+        self.assertTrue(muted_mode(False, True, {"TALOS_MUTE": "yes"}))
         self.assertFalse(muted_mode(False, True, {}))
+        self.assertFalse(muted_mode(False, True, {"TALOS_MUTE": "0"}))
+
+    def test_truthy_environment_values_disable_room_audio(self):
+        for value in ("1", "true", "yes", "on", "TRUE"):
+            with self.subTest(value=value), patch.dict(os.environ, {"TALOS_MUTE": value}):
+                room = self.room(speak=True)
+                self.assertFalse(room.speak)
+                self.assertIsNone(room.voice)
 
     def test_telegram_voice_rendering_is_blocked_before_model_loading(self):
         from talos_core.interfaces.telegram_voice import render_note
