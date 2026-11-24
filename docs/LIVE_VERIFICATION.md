@@ -47,7 +47,7 @@ Latest results:
 | Mac | screenshot, window list, frontmost app, running apps, control search, inspect app, accessible-text/OCR |
 | Local features | skills, nodes, todos, maintenance report, health, model, plugins, subagents, checkpoints |
 | Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music, private-index app search, app status |
-| MCP client | official-SDK stdio tools/list and tools/call; room discovery and call against a registered server |
+| MCP client | official-SDK stdio tools/list and tools/call; room discovery and call against Talos and `mcp-server-apple-events` |
 | Safety | `/v1/voice` 503, no audio processes |
 
 ## Native Mac checks
@@ -104,3 +104,16 @@ were not available in this environment:
 
 The clients and configuration paths exist and are covered by the unit suite, but
 no live external send or camera/microphone claim is made.
+
+
+### Existing Apple Events MCP server through the room
+
+Registered with `talos mcp-client add apple-events --command npx --server-args
+'["-y","mcp-server-apple-events","--require-write-confirmation"]'`.
+
+- `List MCP tools on apple-events.` returned
+  `reminders_tasks, reminders_lists, calendar_events, calendar_calendars,
+  reminders_subtasks`.
+- A Calendar read returned `Permission denied: Only write access to calendar.
+  Full access is required.` This is the expected macOS grant boundary for the
+  host process; the native JXA/EventKit-export path remains available.
