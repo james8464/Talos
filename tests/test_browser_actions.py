@@ -16,8 +16,22 @@ class FakeSnapshot:
 
 
 class FakePage:
+    def __init__(self):
+        self.clicked = False
+
     def snapshot(self):
+        if self.clicked:
+            class After:
+                url = "https://example.com/page"
+                title = "Example Page"
+                text = "clicked ok"
+                truncated = False
+            return After()
         return FakeSnapshot()
+
+    def eval_js(self, script):
+        self.clicked = True
+        return {"ok": True, "label": "Run check"}
 
     def screenshot(self, path, full_page=True):
         Path(path).write_bytes(b"\x89PNG\r\n\x1a\nfake")
@@ -27,6 +41,7 @@ class FakePage:
 class FakeBrowser:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
+        self.page = FakePage()
 
     def __enter__(self):
         return self
@@ -35,7 +50,7 @@ class FakeBrowser:
         return False
 
     def open_page(self, url):
-        return FakePage()
+        return self.page
 
 
 class BrowserActionsTests(unittest.TestCase):
@@ -57,6 +72,13 @@ class BrowserActionsTests(unittest.TestCase):
         self.assertTrue(path.is_file())
         self.assertEqual(path.stat().st_mode & 0o777, 0o600)
         self.assertEqual(path.parent.resolve(), (self.state / "screenshots").resolve())
+
+    def test_clicks_visible_text_and_returns_the_result(self):
+        with patch.object(browser_actions, "Browser", FakeBrowser):
+            reply = browser_actions.command("Click Run check on https://example.com/page.",
+                                            self.state)
+        self.assertIn("Clicked Run check", reply)
+        self.assertIn("clicked ok", reply)
 
     def test_only_http_urls_are_accepted(self):
         for text in ("Read file:///etc/passwd", "Read example.com", "Open Safari."):

@@ -316,7 +316,9 @@ def run(keep: bool = False) -> dict:
     class LocalPage(BaseHTTPRequestHandler):
         def do_GET(self):
             body = (b"<html><head><title>Talos Local Page</title></head>"
-                    b"<body><p>local browser check</p></body></html>")
+                    b"<body><p>local browser check</p>"
+                    b"<button onclick=\"document.getElementById('out').textContent='clicked ok'\">Run check</button>"
+                    b"<p id='out'>waiting</p></body></html>")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
@@ -337,6 +339,8 @@ def run(keep: bool = False) -> dict:
         if "Page screenshot saved to " in shot:
             web_paths.append(shot.split("Page screenshot saved to ", 1)[1].strip())
         check(checks, "browser_screenshot", "Page screenshot saved to" in shot, shot)
+        clicked_page = ask(token, f"Click Run check on {page_url}")["reply"]
+        check(checks, "browser_click", "clicked ok" in clicked_page, clicked_page)
     finally:
         server.shutdown()
 

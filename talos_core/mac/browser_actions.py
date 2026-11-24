@@ -7,7 +7,9 @@ audio is produced and page pixels are written to private state, never logged.
 
 from __future__ import annotations
 
+import json
 import re
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -44,6 +46,43 @@ def capture_page(url: str, state) -> str:
     return str(target)
 
 
+def click_text(url: str, text: str, *, limit: int = 500) -> dict | None:
+    """Click the first visible link/button whose label contains ``text``."""
+    wanted = " ".join(str(text).split())[:120]
+    if not wanted:
+        return None
+    script = f"""(() => {{
+      const wanted = {json.dumps(wanted.casefold())};
+      const nodes = Array.from(document.querySelectorAll(
+        'a, button, [role="button"], input[type="submit"], input[type="button"]'));
+      const target = nodes.find((el) => {{
+        if (!el || el.offsetParent === null) return false;
+        const label = (el.innerText || el.value || el.getAttribute('aria-label') || '')
+          .replace(/\s+/g, ' ').trim().toLowerCase();
+        return label.includes(wanted);
+      }});
+      if (!target) return {{ok: false}};
+      const label = (target.innerText || target.value || wanted).trim();
+      target.click();
+      return {{ok: true, label: label}};
+    }})()"""
+    with Browser(headless=True, timeout=20) as browser:
+        page = browser.open_page(url)
+        clicked = page.eval_js(script)
+        if not isinstance(clicked, dict) or not clicked.get("ok"):
+            return None
+        time.sleep(0.35)
+        snapshot = page.snapshot()
+    body = " ".join(str(snapshot.text or "").split())
+    return {
+        "url": snapshot.url,
+        "title": snapshot.title or snapshot.url,
+        "label": str(clicked.get("label") or wanted),
+        "text": body[:limit],
+        "truncated": bool(snapshot.truncated) or len(body) > limit,
+    }
+
+
 def command(text, state, *, limit: int = 700):
     """Answer a page-read or page-screenshot request, or return None."""
     words = " ".join(str(text).split())
@@ -60,6 +99,24 @@ def command(text, state, *, limit: int = 700):
         except BrowserError as error:
             return f"Browser error: {error}"
         return f"Page screenshot saved to {path}"
+
+    click = re.fullmatch(
+        rf"(?:please )?click (?:the )?(.+?) on {URL}[?.! ]*",
+        words, re.I,
+    )
+    if click:
+        if not available():
+            return "Browser automation is unavailable: " + _why()
+        label, url = click.group(1).strip(), _clean_url(click.group(2))
+        try:
+            result = click_text(url, label, limit=limit)
+        except BrowserError as error:
+            return f"Browser error: {error}"
+        if result is None:
+            return f"I found no clickable text matching {label!r} on {url}."
+        suffix = " …" if result["truncated"] else ""
+        return (f"Clicked {result['label']} on {result['title']}: "
+                f"{result['text'] or 'no readable text'}{suffix}")[:1100]
 
     read = re.fullmatch(
         rf"(?:please )?(?:read|summarize|summarise|browse)(?: the)?(?: web ?page| page| site)?"

@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `735 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `74/74` checks.
+- Unit suite: `736 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `75/75` checks.
 - Ruff: clean.
 
 ## Live feature pass
@@ -50,7 +50,7 @@ Latest results:
 | MCP client | official-SDK stdio and Streamable-HTTP tools/list/tools-call; room discovery and call against Talos and `mcp-server-apple-events` |
 | Identity | `Who am I?` resolves the Contacts Me card from `Sources/` without a placeholder name |
 | Design | poster SVG, real `.pages` via AppleScript, Pages-compatible `.docx` fallback, OpenSCAD nameplate + STL, headless Blender PNG |
-| Browser | local page read and private screenshot through headless Chrome CDP |
+| Browser | local page read, text click, and private screenshot through headless Chrome CDP |
 | Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; harness HID click verified on Tk and Calculator; room click targets “7” and All Clear; hover and scroll routes verified |
 | Terminal | `talos ask` one-shot and interactive chat reach the same room routes, including pointer moves and design |
 | Policy | profiles, per-app grants, destructive confirmation, content-free audit |
