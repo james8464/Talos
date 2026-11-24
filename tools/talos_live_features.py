@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import re
 import subprocess
 import sys
@@ -450,6 +451,19 @@ Path(sys.argv[1]).write_bytes(raw)
     check(checks, "process_status",
           "room service" in proc.stdout and "audio: 0" in proc.stdout,
           proc.stdout[:200])
+
+    stream = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "stream",
+         "Reply with exactly: streaming ready."],
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, "TALOS_MUTE": "1"},
+    )
+    stream_text = (stream.stdout or stream.stderr).strip()
+    check(checks, "text_stream",
+          stream.returncode == 0
+          and "streaming ready" in stream_text.casefold()
+          and "</think" not in stream_text.casefold(),
+          stream_text[:200])
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)

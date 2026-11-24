@@ -240,6 +240,20 @@ def _ask(args) -> int:
             one(line)
 
 
+def _stream(args) -> int:
+    from talos_core.runtime import text_stream
+
+    try:
+        for delta in text_stream.stream_reply(" ".join(args.text), model=args.model,
+                                              system=args.system):
+            print(delta, end="", flush=True)
+        print()
+    except RuntimeError as error:
+        print(f"Talos stream: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def _highlight(args) -> int:
     from talos_core.mac.cursor import CursorOverlay
 
@@ -1086,6 +1100,12 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--timeout", type=float, default=240)
     ask.add_argument("--json", action="store_true")
     ask.set_defaults(func=_ask)
+
+    stream = commands.add_parser("stream", help="Stream a local-model text reply token by token.")
+    stream.add_argument("text", nargs="+")
+    stream.add_argument("--model", default="qwen2.5:1.5b")
+    stream.add_argument("--system")
+    stream.set_defaults(func=_stream)
 
     highlight = commands.add_parser("highlight", help="Ring a screen rectangle without clicking.")
     highlight.add_argument("--x", type=int, required=True)

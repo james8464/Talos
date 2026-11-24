@@ -160,6 +160,14 @@ class CliTests(unittest.TestCase):
         self.assertIn("Talos room", output.getvalue())
         self.assertIn("hi there", output.getvalue())
 
+    def test_stream_command_prints_deltas(self):
+        output = io.StringIO()
+        with patch("talos_core.runtime.text_stream.stream_reply",
+                   return_value=iter(["Hello", " world"])), redirect_stdout(output):
+            code = cli.main(["stream", "hi"])
+        self.assertEqual(code, 0)
+        self.assertEqual(output.getvalue(), "Hello world\n")
+
     def test_highlight_coordinates_do_not_click(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         fake = Mock()
