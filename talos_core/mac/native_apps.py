@@ -221,6 +221,32 @@ def reminder_lines(rows):
     return lines
 
 
+def app_status_text(state):
+    from talos_core import mcp_client
+    from talos_core.mac import mac_context
+    from talos_core.mac.computer_use import permissions
+
+    grants = permissions()
+    labels = {True: "granted", False: "not granted", None: "unknown"}
+    exports = []
+    for kind in ("Calendar", "Reminders"):
+        if (Path(state) / "knowledge-imports" / kind / "native.jsonl").is_file():
+            exports.append(kind)
+    sources = ", ".join(sorted(mac_context.enabled(state))) or "none"
+    try:
+        servers = ", ".join(sorted(mcp_client.servers(state))) or "none"
+    except (OSError, ValueError):
+        servers = "unavailable"
+    parts = [
+        f"Accessibility {labels.get(grants.get('accessibility'), 'unknown')}",
+        f"Screen Recording {labels.get(grants.get('screen_recording'), 'unknown')}",
+        f"EventKit exports {', '.join(exports) or 'none'}",
+        f"private sources {sources}",
+        f"MCP servers {servers}",
+    ]
+    return ("App status: " + "; ".join(parts) + ".")[:MAX_REPLY]
+
+
 def command(text, state):
     """Handle native-app read/safe-action requests; return text or None."""
     if not isinstance(text, str):
@@ -281,4 +307,9 @@ def command(text, state):
         return maps_directions(directions.group(1))
     if re.fullmatch(r"(?:what(?:'s| is) playing|music status)[?.! ]*", words, re.I):
         return music_state()
+    if re.fullmatch(
+        r"(?:(?:check )?(?:app|mac) status|which apps can you (?:control|use)|"
+        r"what apps can you use)[?.! ]*", words, re.I,
+    ):
+        return app_status_text(state)
     return None

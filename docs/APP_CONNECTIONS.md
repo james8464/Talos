@@ -76,6 +76,8 @@ Implemented or already present:
   fallback), Reminders (EventKit export), Safari URL/search, Shortcuts,
   Finder, Maps, read-only Music state, and read-only Notes/Mail/Messages/
   Contacts search through the existing private index.
+- `talos_core/mac/native_apps.py` also reports app status: Accessibility,
+  Screen Recording, EventKit exports, private sources and configured MCP servers.
 - `talos_core/mac/mac_context.py`: Contacts, Messages, Mail and WhatsApp reads.
 - `talos_core/mac/computer_use.py` / `perception.py`: AX tree, PID-targeted
   clicks/keys, screenshots, OCR, windows and background control.

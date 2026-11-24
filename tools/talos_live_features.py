@@ -205,6 +205,10 @@ def run(keep: bool = False) -> dict:
 
     shortcuts = ask(token, "List my shortcuts.")["reply"]
     check(checks, "native_shortcuts", "Shortcuts" in shortcuts, shortcuts)
+
+    app_status = ask(token, "Check app status.")["reply"]
+    check(checks, "app_status", "Accessibility" in app_status and "EventKit exports" in app_status,
+          app_status)
     screenshot_path = ""
     if "Screenshot saved to " in screenshot:
         screenshot_path = screenshot.split("Screenshot saved to ", 1)[1].split(" (", 1)[0]

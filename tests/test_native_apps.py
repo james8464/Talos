@@ -63,6 +63,20 @@ class NativeAppsTests(unittest.TestCase):
         self.assertEqual(reply, "Notes hit")
         self.assertEqual(search.call_args.kwargs["app_filter"], "Notes")
 
+    def test_app_status_reports_permissions_exports_sources_and_mcp(self):
+        self.write_export("Calendar", [])
+        self.write_export("Reminders", [])
+        with patch("talos_core.mac.computer_use.permissions",
+                   return_value={"accessibility": True, "screen_recording": False}), \
+             patch("talos_core.mac.mac_context.enabled", return_value={"Mail", "Messages"}), \
+             patch("talos_core.mcp_client.servers", return_value={"talos": {}}):
+            reply = native_apps.command("Check app status.", self.state)
+        self.assertIn("Accessibility granted", reply)
+        self.assertIn("Screen Recording not granted", reply)
+        self.assertIn("Calendar", reply)
+        self.assertIn("Mail", reply)
+        self.assertIn("MCP servers talos", reply)
+
     def test_only_http_urls_are_opened(self):
         with self.assertRaises(native_apps.NativeAppError):
             native_apps.open_url("file:///etc/passwd")
