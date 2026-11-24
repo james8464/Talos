@@ -322,6 +322,49 @@ class Room:
                         text, re.I):
             return decision("reply", "I'm already muted; I won't produce audio.")
         if match := re.fullmatch(
+                r"press (?:the )?(.+?) (?:in|on) ([A-Za-z][^.!?]{0,60})[.! ]*",
+                text, re.I):
+            combo, app = match.group(1).strip(), match.group(2).strip()
+            try:
+                from talos_core.mac.computer_use import ComputerUse, PolicyError
+                ComputerUse(state).press(combo, app=app)
+            except PolicyError:
+                return decision("reply", "That shortcut needs explicit confirmation; I didn't press it.")
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't press {combo} in {app}: {error}")
+            return decision("reply", f"Pressed {combo} in {app}.")
+        if match := re.fullmatch(
+                r"copy (.+?) (?:to|into) (?:my )?clipboard[.! ]*", text, re.I):
+            value = match.group(1).strip().strip('"')
+            if not value:
+                return decision("reply", "Tell me what to copy.")
+            try:
+                from talos_core.mac.computer_use import ComputerUse
+                ComputerUse(state).set_clipboard(value[:10000])
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't copy that: {error}")
+            return decision("reply", f"Copied {len(value)} characters to the clipboard.")
+        if re.fullmatch(r"(?:what(?:'s| is) (?:on )?my clipboard|read my clipboard)[?.! ]*",
+                        text, re.I):
+            try:
+                from talos_core.mac.computer_use import ComputerUse
+                value = ComputerUse(state).clipboard()
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't read the clipboard: {error}")
+            return decision("reply", f"Clipboard: {value[:500]}" if value else "The clipboard is empty.")
+        if match := re.fullmatch(
+                r"(minimi[sz]e|focus|activate) (?:the )?(.+?)(?: (?:window|app))?[.! ]*",
+                text, re.I):
+            action = "minimize" if match.group(1).casefold().startswith("minim") else "focus"
+            app = match.group(2).strip()
+            try:
+                from talos_core.mac.computer_use import ComputerUse
+                ComputerUse(state).window(action, app=app)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't {action} {app}: {error}")
+            verb = "Minimized" if action == "minimize" else "Focused"
+            return decision("reply", f"{verb} {app}.")
+        if match := re.fullmatch(
                 r"(double[- ]click|right[- ]click) (?:on )?(?:the )?(.+?) "
                 r"in ([A-Za-z][^.!?]{0,60})[.! ]*", text, re.I):
             kind, description, app = match.group(1).casefold(), match.group(2), match.group(3)

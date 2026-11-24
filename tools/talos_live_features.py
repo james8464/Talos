@@ -240,6 +240,17 @@ def run(keep: bool = False) -> dict:
     check(checks, "control_hover", "Hovering over" in hovered, hovered)
     scrolled = ask(token, "Scroll down by 2 lines in Calculator.")["reply"]
     check(checks, "control_scroll", "Scrolled down 2 lines" in scrolled, scrolled)
+    pressed = ask(token, "Press escape in Calculator.")["reply"]
+    check(checks, "control_press", "Pressed escape" in pressed, pressed)
+    focused = ask(token, "Focus Calculator.")["reply"]
+    check(checks, "control_focus", "Focused Calculator" in focused, focused)
+    original = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout
+    try:
+        ask(token, "Copy talos clipboard check to my clipboard.")
+        read = ask(token, "What's on my clipboard?")["reply"]
+        check(checks, "clipboard_roundtrip", "talos clipboard check" in read, "round-trip ok")
+    finally:
+        subprocess.run(["pbcopy"], input=original, text=True)
 
     app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
     check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,

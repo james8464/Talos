@@ -31,7 +31,7 @@ Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
 - Unit suite: `735 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `69/69` checks.
+- Live feature pass: `72/72` checks.
 - Ruff: clean.
 
 ## Live feature pass
