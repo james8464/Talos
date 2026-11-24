@@ -34,9 +34,15 @@ from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.cognition.talos_identity import SPOKEN_STYLE
 from talos_core.cognition.turn_timing import classify
 from talos_core.mac import mac_context
+from talos_core.mac.computer_use import ComputerUse, ComputerUseError, permissions
 from talos_core.memory import commitment_memory, personal_facts, visitor_memory
 from talos_core.memory.agent_memory import STATE_PATH, insert_decision, open_memory
-from talos_core.memory.transcript_memory import TEXT_SESSION, insert_transcripts, recent_messages
+from talos_core.memory.transcript_memory import (
+    TEXT_SESSION,
+    insert_transcripts,
+    recent_messages,
+    search_transcripts,
+)
 from talos_core.room import room_checkins, room_vision
 from talos_core.room.room_dialogue import (
     compact_decision,
@@ -75,6 +81,10 @@ class ModelUnavailable(RuntimeError):
 
 
 DEFAULT_PORT = 8765
+CAPABILITIES = (
+    "I can set reminders and tasks, remember facts, search your notes, transcripts and code graph, "
+    "check my health, control Mac apps, and run maintenance. Audio is muted, so every reply stays in text."
+)
 ROOM_INSTRUCTIONS = (
     "Camera data is a local person detector: occupancy only. No images or identities are supplied. "
     "Unknown is different from empty. Occupancy alone is silent. "
@@ -104,7 +114,9 @@ class Room:
         self.db_path = db_path
         self.model = model
         self.apply = apply
-        self.speak = speak and apply
+        self.speak = speak and apply and os.environ.get("TALOS_MUTE") != "1"
+        if os.environ.get("TALOS_MUTE") == "1":
+            voice = None
         self.online = online
         self.model_state = model_state or (lambda: "ready")
         self.monitored_model = model_state is not None
@@ -210,6 +222,10 @@ class Room:
                 return {**decision("reply", "Updating the last reminder."), "amend_id": receipt[0],
                         "minutes": timing["remind_in_minutes"]}
             return decision("reply", "I need a recent voice reminder and a valid delay to change it.")
+        if archive and session == TEXT_SESSION:
+            quick = self.quick_text_answer(db, text.strip())
+            if quick:
+                return quick
         order = work_order(text) or note_request(text) or project_brief(db, text, archive)
         if order:
             return order
@@ -234,6 +250,183 @@ class Room:
                 return decision("reply", "Start a new action with Hey Talos.")
             self.pending_reminders[session] = (started, subject)
             return decision("ask", "How long from now should I remind you?")
+        return None
+
+    def quick_text_answer(self, db, text):
+        """Answer common typed requests without a model round trip."""
+        if re.fullmatch(
+            r"(?:(?:hi|hello|hey)(?: talos)?[.!, ]*)?"
+            r"(?:what can you do|what are your capabilities|help|who are you|what are you)[?.! ]*",
+            text, re.I,
+        ):
+            return decision("reply", CAPABILITIES)
+        if re.fullmatch(
+            r"(?:what(?:'s| is) (?:the )?time(?: is it)?|what time is it|current time|"
+            r"what(?:'s| is) (?:today'?s )?(?:date|day)(?: today)?|what day is (?:it|today)|"
+            r"what(?:'s| is) the (?:date|time)(?: today)?|what(?:'s| is) (?:the )?year)[?.! ]*",
+            text, re.I,
+        ):
+            now = datetime.now(UTC).astimezone()
+            return decision("reply", f"It is {now:%H:%M %Z} on {now:%A %d %B %Y}.")
+        if re.fullmatch(
+            r"(?:what(?:'s| is) on my plate(?: today)?|what(?:'s| is) (?:in )?my inbox|"
+            r"what are my (?:reminders|tasks)|show my (?:inbox|reminders|tasks)|"
+            r"what do i (?:have|need) to do(?: today)?)[?.! ]*",
+            text, re.I,
+        ):
+            items = inbox_items(db, limit=6)
+            if not items:
+                return decision("reply", "Nothing is on your plate.")
+            listed = "; ".join(f"#{item['id']} {item['kind']}: {item['text']}" for item in items)
+            return decision("reply", "On your plate: " + listed[:560])
+        knowledge = re.fullmatch(
+            r"(?:search|look up|lookup|find in) (?:your |the )?(?:knowledge(?: graph)?|notes) "
+            r"(?:for|about) (.+?)[?.!]*", text, re.I,
+        )
+        memory = re.fullmatch(
+            r"(?:search|look up|lookup) (?:your |the )?memory (?:for|about) (.+?)[?.!]*",
+            text, re.I,
+        )
+        known = re.fullmatch(r"what do you know about (.+?)[?.!]*", text, re.I)
+        if knowledge or memory or known:
+            query = (knowledge or memory or known).group(1).strip(" .!?")
+            if not query:
+                return decision("reply", "What should I search for?")
+            if knowledge or known:
+                result = cognitive_engine.query_knowledge(db, query, state=self.db_path.parent)
+                rows = result.get("results") or []
+                if not rows:
+                    return decision("reply", f"I found nothing for {query}.")
+                summary = "; ".join(
+                    f"{row.get('title') or row.get('store', 'match')}: {row.get('snippet', '')}"
+                    for row in rows[:3]
+                )
+                return decision("reply", f"Knowledge results for {query}: {summary}"[:595])
+            rows = search_transcripts(db, query)
+            terms = [term for term in re.findall(r"[^\W_]+", query.casefold()) if len(term) >= 2]
+            rows = [row for row in rows if all(term in row["text"].casefold() for term in terms)]
+            picked, seen = [], set()
+            for row in rows:
+                excerpt = row["excerpt"].strip()
+                folded = excerpt.casefold()
+                plain = row["text"].strip().casefold()
+                if (folded.startswith("memory results for ")
+                        or plain == query.casefold()
+                        or plain.startswith("search your memory for ")
+                        or (row.get("role") == "user" and row["text"].strip().endswith("?"))
+                        or folded in seen):
+                    continue
+                seen.add(folded)
+                picked.append(excerpt)
+                if len(picked) == 3:
+                    break
+            if not picked:
+                return decision("reply", f"I found no earlier conversation about {query}.")
+            return decision("reply", f"Memory results for {query}: {'; '.join(picked)}"[:595])
+        mac = self.quick_mac_answer(text)
+        if mac:
+            return mac
+        recall = re.fullmatch(r"what(?:'s| is) (?:the |my )?(.+?)[?.!]*", text, re.I)
+        if recall:
+            subject = recall.group(1).strip(" .!?")
+            if subject:
+                fact = db.execute(
+                    "SELECT value FROM personal_facts WHERE session=? AND subject=?",
+                    (TEXT_SESSION, subject.casefold()),
+                ).fetchone()
+                if fact:
+                    return decision("reply", f"Your {subject} is {fact[0]}.")
+                note = db.execute(
+                    "SELECT text FROM inbox WHERE kind='note' AND acknowledged_at IS NULL "
+                    "ORDER BY id DESC LIMIT 50"
+                ).fetchall()
+                pattern = re.compile(r"(?:the |my )?" + re.escape(subject) + r" is (.+)", re.I)
+                for row in note:
+                    match = pattern.fullmatch(row["text"].strip())
+                    if match:
+                        return decision("reply", f"{subject[:1].upper() + subject[1:]} is {match.group(1)}.")
+        return None
+
+    def quick_mac_answer(self, text):
+        """Handle read-only macOS requests without asking the language model."""
+        state = self.db_path.parent
+        if re.fullmatch(
+            r"(?:(?:check|show) (?:the )?(?:mac )?permissions|"
+            r"(?:do you have|is) (?:accessibility|screen recording)(?: access)?)[?.! ]*",
+            text, re.I,
+        ):
+            status = permissions()
+            labels = {True: "granted", False: "not granted", None: "unknown"}
+            accessibility = labels.get(status.get("accessibility"), "unknown")
+            screen = labels.get(status.get("screen_recording"), "unknown")
+            guidance = ""
+            if accessibility != "granted" or screen != "granted":
+                guidance = (" Enable the missing grant in System Settings → Privacy & Security, "
+                            "then restart the service.")
+            return decision(
+                "reply",
+                f"Accessibility is {accessibility}; screen recording is {screen}.{guidance}",
+            )
+        if re.fullmatch(r"(?:please )?(?:(?:take|capture|grab) (?:a )?screenshot|screenshot)[?.! ]*",
+                        text, re.I):
+            try:
+                receipt = ComputerUse(state, cursor=False).screenshot()
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                return decision("reply", f"I couldn't take a screenshot: {str(error)[:200]}")
+            if not receipt.ok:
+                status = permissions()
+                hint = ""
+                if status.get("screen_recording") is not True:
+                    hint = (" Grant Screen Recording in System Settings → Privacy & Security, "
+                            "then restart the Talos service.")
+                return decision("reply", f"I couldn't take a screenshot: {receipt.detail or 'unknown error'}.{hint}")
+            size = receipt.metadata.get("bytes", 0)
+            return decision("reply", f"Screenshot saved to {receipt.path} ({size} bytes).")
+        if re.fullmatch(r"(?:(?:what|which) windows are open|(?:list|show) (?:the )?windows)[?.! ]*",
+                        text, re.I):
+            try:
+                computer = ComputerUse(state, cursor=False)
+                front = computer.frontmost().get("app") or "unknown"
+                windows = computer.windows()
+                if not windows:
+                    windows = computer.visible_windows()
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                return decision("reply", f"I couldn't read the open windows: {str(error)[:200]}")
+            if not windows:
+                return decision("reply", f"The frontmost app is {front}, but I couldn't read any window titles.")
+            listed = "; ".join(item["raw"] for item in windows[:6])
+            return decision("reply", f"Frontmost app: {front}. Windows: {listed}"[:595])
+        opened = re.fullmatch(r"(?:please )?(?:open|launch|focus) (.+?)[.!]?", text, re.I)
+        if opened:
+            app = opened.group(1).strip()
+            if not self.apply:
+                return decision("reply", "Mac actions are off in shadow mode.")
+            try:
+                receipt = ComputerUse(state, cursor=False).activate(app)
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                return decision("reply", f"I couldn't open {app}: {str(error)[:200]}")
+            if not receipt.ok:
+                return decision("reply", f"I couldn't open {app}: {receipt.detail or 'unknown error'}")
+            return decision("reply", f"Opened {app}.")
+        inspected = re.fullmatch(
+            r"(?:please )?(?:inspect|look at|show me|what(?:'s| is) in) (.+?)[?.!]*",
+            text, re.I,
+        )
+        if inspected:
+            app = inspected.group(1).strip()
+            if re.match(r"(?:my|the room|this|that|the (?:photo|image|picture|frame|camera|screen|hand))\b",
+                        app, re.I):
+                return None
+            if app in ("the screen", "screen", "my screen"):
+                return self.quick_mac_answer("take a screenshot")
+            try:
+                result = ComputerUse(state, cursor=False).see(app)
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                return decision("reply", f"I couldn't inspect {app}: {str(error)[:200]}")
+            description = (result.get("text") or "").strip()
+            if not description:
+                return decision("reply", f"I inspected {app} but found no readable controls.")
+            return decision("reply", f"{app}: {description[:560]}")
         return None
 
     def facing_turn(self, db, body, stream=None):

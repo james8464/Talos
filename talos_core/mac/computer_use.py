@@ -224,6 +224,31 @@ class ComputerUse:
         receipt = self._osascript("list_windows", script)
         return [{"raw": line.strip()} for line in receipt.output.splitlines() if line.strip()]
 
+    def visible_windows(self) -> list[dict]:
+        """List on-screen windows through Quartz, without needing Accessibility per app."""
+        try:
+            import Quartz
+        except ImportError:
+            return self.windows()
+        options = (Quartz.kCGWindowListOptionOnScreenOnly
+                   | Quartz.kCGWindowListExcludeDesktopElements)
+        listing = Quartz.CGWindowListCopyWindowInfo(options, Quartz.kCGNullWindowID) or []
+        windows = []
+        for item in listing:
+            if item.get(Quartz.kCGWindowLayer, 0) != 0:
+                continue
+            owner = item.get(Quartz.kCGWindowOwnerName) or ""
+            title = item.get(Quartz.kCGWindowName) or ""
+            if not owner:
+                continue
+            bounds = item.get(Quartz.kCGWindowBounds) or {}
+            windows.append({
+                "app": owner, "title": title,
+                "raw": f"{owner}: {title}".rstrip(": "),
+                "bounds": dict(bounds),
+            })
+        return windows
+
     def window_bounds(self, app: str | None = None) -> tuple[int, int, int, int] | None:
         """Return ``(x, y, width, height)`` for the front window, or None."""
         target = _apple_string(_validate_app(app)) if app else None

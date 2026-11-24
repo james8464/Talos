@@ -9,6 +9,8 @@ import urllib.request
 from functools import lru_cache
 from pathlib import Path
 
+from talos_core.runtime.audio_policy import require_audio
+
 MAX_VOICE_SECONDS = 90
 MAX_VOICE_BYTES = 2_000_000
 SAMPLE_RATE = 16_000
@@ -139,6 +141,7 @@ def render_note(text):
     import base64
 
     import av
+    require_audio()
     wav = base64.b64decode(local_voice().speak(text))
     buf = io.BytesIO()
     with av.open(io.BytesIO(wav), format="wav") as source, av.open(buf, "w", format="ogg") as target:

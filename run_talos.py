@@ -63,6 +63,9 @@ def build_app(*, trial_dir: Path | None = None) -> Path:
 
 def check_bind(port: int) -> None:
     with socket.socket() as candidate:
+        # The room server reuses a recently closed socket; the preflight must
+        # allow the same TIME_WAIT reuse or a restart looks like a conflict.
+        candidate.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             candidate.bind(("127.0.0.1", port))
         except OSError as error:
@@ -249,7 +252,8 @@ def run_trial(args) -> None:
                                             "--token-file", str(token), "--port", str(port)])
 
         try:
-            run(port, Room(trial / "trial.sqlite", args.model, voice=voice, online=False),
+            run(port, Room(trial / "trial.sqlite", args.model, speak=not (args.mute or os.environ.get("TALOS_MUTE") == "1"),
+                           voice=voice, online=False),
                 token, ready=launch)
         finally:
             if app_process and app_process.poll() is None:
@@ -304,6 +308,7 @@ def main() -> int:
     parser.add_argument("--model", default="qwen3:4b")
     parser.add_argument("--voice", default=DEFAULT_VOICE, help="English Kokoro voice ID.")
     parser.add_argument("--system-voice", action="store_true", help="Use the macOS voice without Kokoro.")
+    parser.add_argument("--mute", action="store_true", help="Disable all speech output and synthesis.")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--ollama-port", type=int, default=11435)
     parser.add_argument("--section-reviews", action="store_true", help="Run OpenCode and OpenClaude source-section reviews in the background.")
@@ -316,6 +321,8 @@ def main() -> int:
     parser.add_argument("--build-only", action="store_true", help="Build the native app without starting models.")
     parser.add_argument("--room-trial", action="store_true", help="Open an offline practice room with temporary data and sensors initially off.")
     args = parser.parse_args()
+    if args.mute:
+        os.environ["TALOS_MUTE"] = "1"
     backend = None
     children = []
     activity_stop = threading.Event()
@@ -356,7 +363,8 @@ def main() -> int:
         if sys.stdout.isatty():
             print("Starting Talos. Live activity will appear when the room is ready.", flush=True)
         app = None if args.headless else build_app()
-        voice = None if args.system_voice else prepare_voice(args.voice, offline=args.offline)
+        muted = args.mute or os.environ.get("TALOS_MUTE") == "1"
+        voice = None if muted or args.system_voice else prepare_voice(args.voice, offline=args.offline)
         MODEL_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
         os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
         backend = ProjectModel(args.model, args.ollama_port, args.offline)
@@ -376,7 +384,8 @@ def main() -> int:
                 subprocess.run(["/usr/bin/open", "-n", str(app), "--args",
                                 "--token-file", str(TOKEN_PATH), "--port", str(args.port)], check=True)
 
-        run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, voice=voice, online=not args.offline,
+        run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, speak=not muted,
+                           voice=voice, online=not args.offline,
                             model_state=lambda: backend.state, voice_generate=backend.generate_voice),
             TOKEN_PATH, ready=launch_app)
     except KeyboardInterrupt:

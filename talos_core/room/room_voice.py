@@ -13,6 +13,7 @@ import wave
 from pathlib import Path
 
 from talos_core.room.room_dialogue import SENSOR_LINES
+from talos_core.runtime.audio_policy import require_audio
 
 STARTUP_LINE = "Talos online. I was beginning to think you had forgotten me."
 DEFAULT_VOICE = "bm_george"
@@ -91,6 +92,7 @@ class KokoroVoice:
         self.fixed_lines = {}
 
     def speak(self, text: str) -> str:
+        require_audio()
         reusable = text in SENSOR_LINES or text in (
             "How long from now should I remind you?",
             "Sure. What's on your mind?",
