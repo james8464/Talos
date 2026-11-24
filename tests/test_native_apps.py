@@ -78,6 +78,20 @@ class NativeAppsTests(unittest.TestCase):
         self.assertIn("Mail", reply)
         self.assertIn("MCP servers talos", reply)
 
+    def test_audio_and_unverified_writes_are_blocked(self):
+        replies = [
+            native_apps.command("Say hello out loud.", self.state),
+            native_apps.command("Play music.", self.state),
+            native_apps.command("Add an Apple reminder to buy milk.", self.state),
+            native_apps.command("Create a calendar event tomorrow.", self.state),
+            native_apps.command("Send a message to Sam.", self.state),
+        ]
+        self.assertIn("muted", replies[0].casefold())
+        self.assertIn("disabled", replies[1].casefold())
+        self.assertIn("MCP", replies[2])
+        self.assertIn("MCP", replies[3])
+        self.assertIn("confirmation", replies[4])
+
     def test_only_http_urls_are_opened(self):
         with self.assertRaises(native_apps.NativeAppError):
             native_apps.open_url("file:///etc/passwd")

@@ -216,6 +216,13 @@ def run(keep: bool = False) -> dict:
 
     activity = ask(token, "Show my recent activity.")["reply"]
     check(checks, "recent_activity", "Recent activity" in activity, activity)
+
+    speech = ask(token, "Say hello out loud.")["reply"]
+    check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
+
+    music = ask(token, "Play music.")["reply"]
+    check(checks, "music_blocked", "disabled" in music.casefold() or "muted" in music.casefold(),
+          music)
     for app in ("mail", "messages", "contacts"):
         reply = ask(token, f"Search my {app} for zzzznomatch.")["reply"]
         check(checks, f"native_{app}_search",

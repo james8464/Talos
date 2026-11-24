@@ -252,6 +252,22 @@ def command(text, state):
     if not isinstance(text, str):
         return None
     words = text.strip()
+    lowered = words.casefold()
+    if (re.search(r"\b(?:say|speak|read)\b.*\b(?:aloud|out loud)\b", lowered)
+            or re.match(r"^(?:say|speak)\b", lowered)
+            or re.search(r"\b(?:unmute|turn on (?:the )?voice|use (?:your )?voice)\b", lowered)):
+        return "Audio is muted; I can put that in text instead."
+    if re.search(r"\b(?:play|pause|resume|stop)\b.*\b(?:music|song|album|track|playlist)\b", lowered):
+        return "Audio playback is disabled while Talos is muted."
+    if re.search(r"\b(?:add|create|delete|complete|update)\b.*\bapple reminder\b", lowered):
+        return ("Apple Reminders writes go through a configured MCP server; "
+                "I won't claim a change without a receipt.")
+    if re.search(r"\b(?:add|create|delete|move|update)\b.*\bcalendar event\b", lowered):
+        return ("Calendar writes go through a configured MCP server; "
+                "I won't claim a change without a receipt.")
+    if re.search(r"\b(?:send|reply|forward)\b.*\b(?:message|email|mail)\b", lowered):
+        return ("Sending messages or email needs a configured MCP/Automation path "
+                "and explicit confirmation.")
     calendar = re.fullmatch(
         r"(?:what(?:'s| is) on my (?:calendar|schedule)|show my (?:calendar|schedule)|my calendar)(?: (today|tomorrow))?[?.! ]*",
         words, re.I,
