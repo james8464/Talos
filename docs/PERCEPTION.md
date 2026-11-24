@@ -1,0 +1,35 @@
+# Sound and scene perception
+
+Talos classifies media without playing or storing it.
+
+## Non-word sound
+
+`talos sound --file clip.wav` uses Apple's built-in SoundAnalysis classifier
+(`tools/native/sound_classify.swift`). It returns ranked labels such as speech,
+music, applause, laughter, glass, alarms and everyday sounds. On the generated
+Kokoro speech WAV it reported `speech 94%`; silence returned no events.
+
+`POST /v1/sound` accepts `{"audio": "<base64 WAV>"}` and returns
+`{"events": [...], "description": "..."}`. The temporary WAV is private and
+deleted after classification. Nothing is played.
+
+## Scene / people
+
+`talos scene --file frame.png` uses Apple Vision
+(`tools/native/vision_scene.swift`) to count faces and people. A blank frame
+returns `{"people": 0, "faces": 0, "empty": true}` and the description
+`The scene looks empty.`
+
+`POST /v1/vision/scene` accepts a base64 JPEG/PNG and returns the same counts.
+The image is written to a private temporary file, inspected, and deleted.
+
+This detects presence, not biometric identity. Saying “that is me” would
+require an explicit owner-face enrollment feature; it is not enabled by default.
+The native room app can send its camera frame to the endpoint.
+
+## Silence
+
+While `TALOS_MUTE` is set, `/v1/voice` returns 503 and no playback path runs.
+Kokoro can still be tested by synthesizing to a WAV without playback; a 5.12 s
+clip was generated and the player was exercised at volume 0. The running service
+remains muted.

@@ -1,6 +1,7 @@
 """Loopback HTTP endpoint and background room-event worker."""
 
 import argparse
+import base64
 import hmac
 import json
 import math
@@ -9,6 +10,7 @@ import re
 import secrets
 import sqlite3
 import statistics
+import tempfile
 import threading
 import time as _time
 from collections.abc import Callable
@@ -1751,6 +1753,60 @@ class Room:
             match method, path:
                 case "POST", ("/v1/turn" | "/v1/voice/facing"):
                     return 200, self.handle_room_turn(db, body, facing=path.endswith("/facing"))
+                case "POST", "/v1/vision/scene":
+                    from talos_core.mac import scene
+                    raw = body.get("image")
+                    if not isinstance(raw, str) or not raw or len(raw) > 5_500_000:
+                        raise ValueError("Provide a base64 image under 4 MB.")
+                    try:
+                        data = base64.b64decode(raw, validate=True)
+                    except (ValueError, base64.binascii.Error) as error:
+                        raise ValueError("The image is not valid base64.") from error
+                    if data.startswith(b"\xff\xd8\xff"):
+                        suffix = ".jpg"
+                    elif data.startswith(b"\x89PNG\r\n\x1a\n"):
+                        suffix = ".png"
+                    else:
+                        raise ValueError("Send a JPEG or PNG image.")
+                    folder = self.db_path.parent / "senses"
+                    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+                    fd, temporary = tempfile.mkstemp(prefix=".scene-", suffix=suffix, dir=folder)
+                    try:
+                        os.fchmod(fd, 0o600)
+                        with os.fdopen(fd, "wb") as stream:
+                            stream.write(data)
+                        result = scene.detect(self.db_path.parent, temporary)
+                    finally:
+                        try:
+                            os.unlink(temporary)
+                        except OSError:
+                            pass
+                    return 200, {"scene": result, "description": scene.describe(result)}
+                case "POST", "/v1/sound":
+                    from talos_core.mac import sound_events
+                    raw = body.get("audio")
+                    if not isinstance(raw, str) or not raw or len(raw) > 5_500_000:
+                        raise ValueError("Provide base64 WAV audio under 4 MB.")
+                    try:
+                        data = base64.b64decode(raw, validate=True)
+                    except (ValueError, base64.binascii.Error) as error:
+                        raise ValueError("The audio is not valid base64.") from error
+                    if not (data.startswith(b"RIFF") and data[8:12] == b"WAVE"):
+                        raise ValueError("Send WAV audio.")
+                    folder = self.db_path.parent / "senses"
+                    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+                    fd, temporary = tempfile.mkstemp(prefix=".sound-", suffix=".wav", dir=folder)
+                    try:
+                        os.fchmod(fd, 0o600)
+                        with os.fdopen(fd, "wb") as stream:
+                            stream.write(data)
+                        events = sound_events.classify(self.db_path.parent, temporary)
+                    finally:
+                        try:
+                            os.unlink(temporary)
+                        except OSError:
+                            pass
+                    return 200, {"events": events, "description": sound_events.describe(events)}
                 case "GET", "/v1/context/activity":
                     try:
                         report = (self.db_path.parent / "Maintenance.txt").read_text()
@@ -1985,7 +2041,9 @@ class Handler(BaseHTTPRequestHandler):
             body = {}
             if method == "POST":
                 length = int(self.headers.get("Content-Length", "0"))
-                limit = 136000 if self.path == "/v1/visitors/enroll" else 248192 if self.path in ("/v1/turn", "/v1/voice/facing", "/v1/voice/facing/stream") else 8192
+                limit = (136000 if self.path == "/v1/visitors/enroll" else
+                         5_800_000 if self.path in ("/v1/vision/scene", "/v1/sound") else
+                         248192 if self.path in ("/v1/turn", "/v1/voice/facing", "/v1/voice/facing/stream") else 8192)
                 if not 1 <= length <= limit or self.headers.get("Transfer-Encoding"):
                     raise ValueError(f"A JSON body of 1 to {limit} bytes is required.")
                 body = json.loads(self.rfile.read(length))
