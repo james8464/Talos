@@ -209,6 +209,10 @@ def run(keep: bool = False) -> dict:
     app_status = ask(token, "Check app status.")["reply"]
     check(checks, "app_status", "Accessibility" in app_status and "EventKit exports" in app_status,
           app_status)
+
+    app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
+    check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,
+          app_search)
     screenshot_path = ""
     if "Screenshot saved to " in screenshot:
         screenshot_path = screenshot.split("Screenshot saved to ", 1)[1].split(" (", 1)[0]
