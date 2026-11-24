@@ -27,7 +27,7 @@ def configuration(root=ROOT, *, respan=False, sections=False):
     return {
         "Label": LABEL,
         "ProgramArguments": [str(python), str(root / "run_talos.py"),
-                             "--headless", "--offline", "--system-voice", "--mute",
+                             "--headless", "--offline", "--mute",
                              *(["--respan-reviews"] if respan else []),
                              *(["--section-reviews"] if sections else [])],
         "WorkingDirectory": str(root),

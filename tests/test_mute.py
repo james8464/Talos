@@ -56,6 +56,7 @@ class SilentModeTests(unittest.TestCase):
     def test_service_is_installed_muted(self):
         configuration = talos_service.configuration(self.root)
         self.assertIn("--mute", configuration["ProgramArguments"])
+        self.assertNotIn("--system-voice", configuration["ProgramArguments"])
         self.assertEqual(configuration["EnvironmentVariables"]["TALOS_MUTE"], "1")
 
     def test_room_launcher_is_silent_by_default(self):

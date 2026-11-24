@@ -217,13 +217,13 @@ def prepare_voice(voice_name: str, *, offline: bool) -> KokoroVoice | None:
         if not current_environment:
             interpreter = voice_python(STATE, offline=offline)
             if interpreter is None:
-                raise RuntimeError("Use uv for initial Kokoro setup, or select --system-voice.")
+                raise RuntimeError("A high-quality Kokoro voice is not available.")
             os.execv(interpreter, [str(interpreter), str(Path(__file__).resolve()), *sys.argv[1:]])
         model_dir = ROOT / "models" / "kokoro-room"
         prepare_assets(model_dir, offline=offline)
         voice = KokoroVoice(model_dir, voice_name)
     except Exception as error:
-        print(f"Kokoro unavailable: {error}. Using the macOS voice.", file=sys.stderr, flush=True)
+        print(f"Kokoro unavailable: {error}. Voice output is disabled.", file=sys.stderr, flush=True)
         return None
     print(f"Local Kokoro voice ready: {voice.name}", flush=True)
     return voice
@@ -243,7 +243,7 @@ def run_trial(args) -> None:
     check_bind(port)
     os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
     check_ollama_model(args.model)
-    voice = None if args.system_voice else prepare_voice(args.voice, offline=True)
+    voice = None if os.environ.get("TALOS_MUTE") == "1" else prepare_voice(args.voice, offline=True)
     with tempfile.TemporaryDirectory(prefix="talos-room-trial-") as directory:
         trial = Path(directory)
         bundle = None if args.headless else build_app(trial_dir=trial)
@@ -255,7 +255,8 @@ def run_trial(args) -> None:
             if bundle is None:
                 return
             app_process = subprocess.Popen([str(bundle / "Contents/MacOS/Talos"), "--room-trial",
-                                            "--token-file", str(token), "--port", str(port)])
+                                            "--token-file", str(token), "--port", str(port),
+                                            "--unmute" if voice is not None else "--mute"])
 
         try:
             run(port, Room(trial / "trial.sqlite", args.model, speak=not (args.mute or os.environ.get("TALOS_MUTE") == "1"),
@@ -296,13 +297,14 @@ def start_memory_workers(model, *, local_only, children, respan=False, room_owne
         return supervisor
 
 
-def attach_room(port, *, wait=False):
+def attach_room(port, *, wait=False, unmute=False):
     deadline = time.monotonic() + (30 if wait else 0)
+    arguments = ["--token-file", str(TOKEN_PATH), "--port", str(port),
+                 "--unmute" if unmute else "--mute"]
     while True:
         status = talos_activity.probe(port)
         if status.startswith("running") and TOKEN_PATH.is_file():
-            subprocess.run(["/usr/bin/open", str(build_app()), "--args", "--token-file", str(TOKEN_PATH),
-                            "--port", str(port)], check=True)
+            subprocess.run(["/usr/bin/open", str(build_app()), "--args", *arguments], check=True)
             return
         if time.monotonic() >= deadline:
             raise RuntimeError(f"Cannot attach to the room on {port}: {status}. See state/service-error.log.")
@@ -313,7 +315,6 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build and launch the Talos room app and endpoint.")
     parser.add_argument("--model", default="qwen3:4b")
     parser.add_argument("--voice", default=DEFAULT_VOICE, help="English Kokoro voice ID.")
-    parser.add_argument("--system-voice", action="store_true", help="Use the macOS voice without Kokoro.")
     parser.add_argument("--mute", action="store_true", help="Disable all speech output and synthesis.")
     parser.add_argument("--unmute", action="store_true",
                         help="Allow speech output. Talos is silent by default.")
@@ -339,7 +340,7 @@ def main() -> int:
     supervisor = None
     try:
         if args.attach:
-            attach_room(args.port, wait=True)
+            attach_room(args.port, wait=True, unmute=args.unmute)
             return 0
         if args.memory_only:
             if args.shadow or args.build_only or args.room_trial:
@@ -364,7 +365,7 @@ def main() -> int:
             check_bind(args.port)
         except RuntimeError as error:
             if not args.headless and getattr(error.__cause__, "errno", None) == errno.EADDRINUSE:
-                attach_room(args.port)
+                attach_room(args.port, unmute=args.unmute)
                 if sys.stdout.isatty():
                     talos_activity.display(STATE, args.port)
                 return 0
@@ -372,7 +373,7 @@ def main() -> int:
         if sys.stdout.isatty():
             print("Starting Talos. Live activity will appear when the room is ready.", flush=True)
         app = None if args.headless else build_app()
-        voice = None if muted or args.system_voice else prepare_voice(args.voice, offline=args.offline)
+        voice = None if muted else prepare_voice(args.voice, offline=args.offline)
         MODEL_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
         os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)
         backend = ProjectModel(args.model, args.ollama_port, args.offline)
@@ -389,8 +390,9 @@ def main() -> int:
                                           kwargs={"stop": activity_stop}, daemon=True)
                 viewer.start()
             if app:
-                subprocess.run(["/usr/bin/open", "-n", str(app), "--args",
-                                "--token-file", str(TOKEN_PATH), "--port", str(args.port)], check=True)
+                app_arguments = ["--token-file", str(TOKEN_PATH), "--port", str(args.port),
+                                 "--unmute" if not muted else "--mute"]
+                subprocess.run(["/usr/bin/open", "-n", str(app), "--args", *app_arguments], check=True)
 
         run(args.port, Room(STATE_PATH, args.model, apply=not args.shadow, speak=not muted,
                            voice=voice, online=not args.offline,

@@ -111,8 +111,9 @@ the normal planner.
 
 The room shows its connection and microphone state in the main window. The default voice is Kokoro
 `bm_george`. Its models and Python environment are prepared on the first online run.
-Use `--voice am_michael` to select another English Kokoro voice or `--system-voice` for
-macOS speech. Room settings shows the active voice and any fallback.
+Use `--voice am_michael` to select another English Kokoro voice. There is no
+system-voice fallback: if the high-quality Kokoro model is unavailable, replies
+stay on screen.
 
 Room mode starts when the service connects. Allow microphone and speech recognition for dictation. The camera starts when you enable it or have previously opted into facing requests. Each sensor has its own off switch. During a voice reply, a new recognized phrase can interrupt playback. “Hey Talos, stop” also stops announcements. A partial “wait” can silence a conversational reply while the recognizer continues listening for the rest of a correction. During response planning it pauses. The speech client uses
 on-device recognition and shows words as it hears them. It gives the recognizer Talos’s name as a vocabulary hint. The app shows reply,

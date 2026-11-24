@@ -300,6 +300,13 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private var reconnecting = false
     private var speechRequest: Task<Void, Never>?
     private var playbackEpoch = UUID()
+    #if TALOS_CONTROLLER_REPLAY
+    let silentMode = false
+    #else
+    let silentMode = ProcessInfo.processInfo.arguments.contains("--mute")
+        || ProcessInfo.processInfo.environment["TALOS_MUTE"] == "1"
+        || !ProcessInfo.processInfo.arguments.contains("--unmute")
+    #endif
     let isTrial = ProcessInfo.processInfo.arguments.contains("--room-trial")
     let goals = GoalController()
     let privateSources = PrivateSourceController()
@@ -608,7 +615,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
                         let result = try await client?.request("status")
                         modelState = result?["model_state"] as? String ?? ""
                         kokoroVoice = result?["voice"] as? String
-                        voiceLabel = kokoroVoice.map { "Voice: Kokoro · \($0)" } ?? "Voice: macOS fallback"
+                        voiceLabel = kokoroVoice.map { "Voice: Kokoro · \($0)" } ?? "Voice: text only"
                         status = "Connected"
                         if reconnecting {
                             reconnecting = false
@@ -1456,6 +1463,7 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func playStreamedSentence(_ sentence: String, client: RoomClient, index: Int) async throws {
+        if silentMode { throw RoomError("Audio is muted.") }
         guard prefersKokoro else { throw RoomError("Kokoro is recovering.") }
         let text = spokenProjection(sentence)
         let result = try await client.request("voice", body: ["text": text])
@@ -1523,6 +1531,18 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
 
     private func checkVoiceOutput() {
+        if silentMode {
+            voiceLabel = "Voice: muted"
+            status = "Audio is muted."
+            addLine("Voice", "Audio is muted.")
+            return
+        }
+        guard kokoroVoice != nil, prefersKokoro else {
+            voiceLabel = "Voice: text only"
+            status = "High-quality voice unavailable; replies stay on screen."
+            addLine("Voice", "No fallback voice will play.")
+            return
+        }
         checkingOutput = true
         status = "Testing voice output…"
         say("This is Talos checking voice output.")
@@ -1531,10 +1551,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     private func kokoroFailed() {
         if voiceClock >= kokoroRetryAfter {
             voiceOutcome("kokoro_failed")
-            addLine("Voice", "Kokoro audio failed. Trying the macOS voice.")
+            addLine("Voice", "Kokoro audio failed. No fallback voice will play.")
         }
         kokoroRetryAfter = voiceClock + 60
-        voiceLabel = "Voice: macOS fallback · Kokoro retry in one minute"
+        voiceLabel = "Voice: text only · Kokoro retry in one minute"
     }
 
     private func armOutputWatchdog(_ utterance: AVSpeechUtterance, seconds: Double) {
@@ -1563,14 +1583,10 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
 
     private func systemSpeech(_ text: String) {
         guard !text.isEmpty else { finishSpeech(delivered: false); return }
-        let utterance = AVSpeechUtterance(string: text)
-        reportingSystemOutput = checkingOutput || kokoroRetryAfter > voiceClock
-        systemUtterance = utterance
-        armOutputWatchdog(utterance, seconds: 5)
-        #if TALOS_CONTROLLER_REPLAY
-        if let replaySystemOutput { replaySystemOutput(utterance); return }
-        #endif
-        speaker.speak(utterance)
+        voiceLabel = "Voice: text only"
+        status = "High-quality voice unavailable; the reply is on screen."
+        addLine("Voice", "No fallback voice will play.")
+        finishSpeech(delivered: false, keepListening: true)
     }
 
     func stopSpeaking() {
@@ -1598,15 +1614,22 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
         #if TALOS_CONTROLLER_REPLAY
         if let replayUtterance { replayUtterance(text); return }
         #endif
+        if silentMode {
+            voiceLabel = "Voice: muted"
+            status = "Audio is muted."
+            return
+        }
+        guard let kokoroVoice, prefersKokoro else {
+            voiceLabel = "Voice: text only"
+            status = "High-quality voice unavailable; the reply is on screen."
+            addLine("Voice", "No fallback voice will play.")
+            return
+        }
         speaking = true
         playbackText = text
         speechID = id
         stopRecognition()
         beginRecognition()
-        guard let kokoroVoice, prefersKokoro else {
-            systemSpeech(text)
-            return
-        }
         let epoch = UUID()
         playbackEpoch = epoch
         let requested = Date()
