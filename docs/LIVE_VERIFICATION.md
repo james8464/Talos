@@ -30,7 +30,7 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `764 tests`, `OK` (`17` skipped by design).
+- Unit suite: `765 tests`, `OK` (`17` skipped by design).
 - Live feature pass: `72/72` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
 - Ruff: clean.
 
@@ -53,6 +53,7 @@ Latest results:
 | Browser | local page read, text click, field typing, form search/submit, and private screenshot through headless Chrome CDP |
 | Sound/scene | SoundAnalysis labels; Vision people/face counts; room presence; `/v1/sound` and `/v1/vision/scene` live endpoint checks |
 | Processes | `talos processes`/status report room, workers, listeners, stale and audio processes |
+| Native capture | room menu calls native `RoomClient.scene`/`sound`; Swift replay passes against an isolated room; live camera/mic capture remains opt-in |
 | Guidance | on-screen ring and label without click, including a direct coordinate highlight CLI |
 | Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; HID click verified on Tk and Calculator; click/hover/scroll/press/clipboard/window move-resize-focus and confirmed quit/close routes |
 | Terminal | `talos ask` one-shot and interactive chat reach the same room routes, including pointer moves and design |

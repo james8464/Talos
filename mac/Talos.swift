@@ -1,4 +1,5 @@
 import AppKit
+import AudioToolbox
 import AVFoundation
 import Foundation
 import Speech
@@ -15,7 +16,8 @@ struct RoomClient {
 
     func request(_ path: String, body: [String: Any]? = nil) async throws -> [String: Any] {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/v1/\(path)")!)
-        request.timeoutInterval = (path == "turn" || path == "voice/facing" || path == "work/preview") ? 150 : path == "voice" ? 20 : 5
+        let slow = ["turn", "voice/facing", "work/preview", "vision/scene", "sound"].contains(path)
+        request.timeoutInterval = slow ? 150 : path == "voice" ? 20 : 5
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let body {
             request.httpMethod = "POST"
@@ -32,6 +34,14 @@ struct RoomClient {
         }
         return result
     }
+    func scene(_ jpeg: String) async throws -> [String: Any] {
+        try await request("vision/scene", body: ["image": jpeg])
+    }
+
+    func sound(_ wav: String) async throws -> [String: Any] {
+        try await request("sound", body: ["audio": wav])
+    }
+
     @MainActor
     func spokenTurn(body: [String: Any], receive: ([String: Any]) async throws -> Void) async throws -> [String: Any] {
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/v1/voice/facing/stream")!)
@@ -655,6 +665,64 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     func startRoom() {
         if !microphone { toggleMicrophone() }
         if acceptFacing && !cameraRunning { toggleCamera() }
+    }
+
+    func classifyScene() {
+        guard let client else { status = "Connect to the Talos service first."; return }
+        guard cameraRunning else { status = "Turn the camera on first."; return }
+        Task {
+            guard let snapshot = await camera?.snapshot() else {
+                addLine("Scene", "No fresh camera frame is available.")
+                return
+            }
+            do {
+                let result = try await client.scene(snapshot.jpeg)
+                addLine("Scene", result["description"] as? String ?? "No scene description.")
+            } catch {
+                addLine("Scene", error.localizedDescription)
+            }
+        }
+    }
+
+    func classifySound() {
+        guard let client else { status = "Connect to the Talos service first."; return }
+        guard !microphone else {
+            status = "Turn the microphone off before classifying ambient sound."
+            return
+        }
+        Task {
+            let allowed = await AVCaptureDevice.requestAccess(for: .audio)
+            guard allowed else {
+                addLine("Sound", "Microphone access is required.")
+                return
+            }
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("talos-sound-\(UUID().uuidString).wav")
+            let settings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: 24000.0,
+                AVNumberOfChannelsKey: 1,
+                AVLinearPCMBitDepthKey: 16,
+                AVLinearPCMIsFloatKey: false,
+                AVLinearPCMIsBigEndianKey: false,
+            ]
+            do {
+                let recorder = try AVAudioRecorder(url: url, settings: settings)
+                guard recorder.record(forDuration: 2.0) else {
+                    throw RoomError("The microphone could not start recording.")
+                }
+                try? FileManager.default.setAttributes(
+                    [.posixPermissions: 0o600], ofItemAtPath: url.path)
+                try await Task.sleep(for: .seconds(2.2))
+                recorder.stop()
+                let data = try Data(contentsOf: url)
+                let result = try await client.sound(data.base64EncodedString())
+                addLine("Sound", result["description"] as? String ?? "No sounds identified.")
+            } catch {
+                addLine("Sound", error.localizedDescription)
+            }
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     func toggleMicrophone() {

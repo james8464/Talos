@@ -50,3 +50,15 @@ The room runs the Vision detector on that frame and answers from the count:
 an empty frame → `The room looks empty.`; one person → `I see one person.`
 It deliberately does not identify the person without an explicit face
 enrollment feature.
+
+## Native room app
+
+The room menu now has **Classify camera scene** and **Classify ambient sound**.
+The first sends the current camera JPEG to `/v1/vision/scene`; the second records
+a two-second private WAV while the microphone is off and sends it to
+`/v1/sound`. Both display a text line in the room and never play audio. Camera
+and microphone permissions are requested by macOS; nothing is captured unless
+one of those menu actions is chosen. The native `RoomClient.scene`/`sound`
+methods are exercised by `tests/NativeSenseReplay.swift` against an isolated
+room with synthetic media. Actual camera/mic capture was not run automatically
+to avoid recording the sleeping user.

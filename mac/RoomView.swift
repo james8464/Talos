@@ -141,6 +141,10 @@ struct RoomView: View {
                 .disabled(room.busy || room.speaking || room.dictating)
             Button(room.microphone ? "Mute microphone" : "Enable microphone", action: room.toggleMicrophone)
             Button(room.cameraRunning ? "Turn camera off" : "Turn camera on", action: room.toggleCamera)
+            Button("Classify camera scene") { room.classifyScene() }
+                .disabled(!room.cameraRunning || room.busy)
+            Button("Classify ambient sound") { room.classifySound() }
+                .disabled(room.microphone || room.busy)
             Divider()
             Button("Live activity in Obsidian", action: room.openLiveActivity)
             Button("Goals") { room.goals.open(); room.presentGoals = true }
