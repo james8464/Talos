@@ -236,6 +236,10 @@ def run(keep: bool = False) -> dict:
     check(checks, "control_click", "Clicked 7 in Calculator" in clicked, clicked)
     cleared = ask(token, "Click the All Clear button in Calculator.")["reply"]
     check(checks, "control_clear", "Clicked" in cleared and "Calculator" in cleared, cleared)
+    hovered = ask(token, "Hover over the 7 button in Calculator.")["reply"]
+    check(checks, "control_hover", "Hovering over" in hovered, hovered)
+    scrolled = ask(token, "Scroll down by 2 lines in Calculator.")["reply"]
+    check(checks, "control_scroll", "Scrolled down 2 lines" in scrolled, scrolled)
 
     app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
     check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,

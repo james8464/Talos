@@ -322,6 +322,47 @@ class Room:
                         text, re.I):
             return decision("reply", "I'm already muted; I won't produce audio.")
         if match := re.fullmatch(
+                r"(double[- ]click|right[- ]click) (?:on )?(?:the )?(.+?) "
+                r"in ([A-Za-z][^.!?]{0,60})[.! ]*", text, re.I):
+            kind, description, app = match.group(1).casefold(), match.group(2), match.group(3)
+            action = "right_click" if kind.startswith("right") else "double_click"
+            try:
+                from talos_core.mac import gui_actions
+                from talos_core.mac.computer_use import ComputerUse
+                result = gui_actions.target(ComputerUse(state), app, action, description)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't {kind} in {app}: {error}")
+            verb = "Right-clicked" if action == "right_click" else "Double-clicked"
+            if result.get("ok"):
+                return decision("reply", f"{verb} {result.get('label') or description} in {app}.")
+            return decision("reply", f"I found no control matching {description!r} in {app}.")
+        if match := re.fullmatch(
+                r"hover (?:over )?(?:the )?(.+?) in ([A-Za-z][^.!?]{0,60})[.! ]*",
+                text, re.I):
+            description, app = match.group(1), match.group(2)
+            try:
+                from talos_core.mac import gui_actions
+                from talos_core.mac.computer_use import ComputerUse
+                result = gui_actions.target(ComputerUse(state), app, "hover", description)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't hover in {app}: {error}")
+            if result.get("ok"):
+                return decision("reply", f"Hovering over {result.get('label') or description} in {app}.")
+            return decision("reply", f"I found no control matching {description!r} in {app}.")
+        if match := re.fullmatch(
+                r"scroll (up|down)(?: by (\d{1,3})(?: lines?)?)?(?: in ([A-Za-z][^.!?]{0,60}))?[.! ]*",
+                text, re.I):
+            direction = match.group(1).casefold()
+            lines = min(int(match.group(2) or 3), 50)
+            app = (match.group(3) or "").strip() or None
+            try:
+                from talos_core.mac.computer_use import ComputerUse
+                ComputerUse(state).scroll(lines if direction == "down" else -lines, app=app)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't scroll: {error}")
+            where = f" in {app}" if app else ""
+            return decision("reply", f"Scrolled {direction} {lines} lines{where}.")
+        if match := re.fullmatch(
                 r"click (?:on )?(?:the )?(.+?) in ([A-Za-z][^.!?]{0,60})[.! ]*",
                 text, re.I):
             description, app = match.group(1).strip(), match.group(2).strip()

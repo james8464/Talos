@@ -97,11 +97,12 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
             typed = computer.type_ref(app, choice["ref"], str(_required(value, "value")))
             result = {"click": clicked, "type": typed}
     elif action == "double_click":
-        result = computer.click(x, y, count=2, app=app).to_dict()
+        result = _click(computer, x, y, count=2, app=app).to_dict()
     elif action == "right_click":
-        result = computer.right_click(x, y, app=app, confirm=confirm).to_dict()
+        result = _click(computer, x, y, button="right", confirm=confirm, app=app).to_dict()
     elif action == "hover":
-        result = computer.hover(x, y, app=app).to_dict()
+        result = computer.hover(x, y, app=app)
+        result = result.to_dict() if hasattr(result, "to_dict") else result
     elif source == "ocr":
         _activate(computer, app)
         if action == "double_click":
@@ -109,7 +110,8 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
         elif action == "right_click":
             result = _click(computer, x, y, button="right", confirm=confirm).to_dict()
         elif action == "hover":
-            result = computer.hover(x, y).to_dict()
+            result = computer.hover(x, y)
+            result = result.to_dict() if hasattr(result, "to_dict") else result
         else:
             result = _click(computer, x, y).to_dict()
     else:

@@ -50,6 +50,8 @@ code and avoid reimplementing input, cursor, and status UI.
 
 - Tk fixture: AX had no button; OCR found “Start check”; the harness HID click
   changed the label to “started”.
+- Room phrases: click, double-click, right-click, hover, scroll, type, move, and
+  open-app routes are exercised; Calculator “7” and All Clear were verified live.
 - Calculator: intent click selected “7” and the display showed 7; All Clear
   returned it to 0.
 - Pages: AppleScript created a real `.pages` file and opened it with Pages

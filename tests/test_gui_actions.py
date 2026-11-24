@@ -138,6 +138,14 @@ class GuiActionTests(unittest.TestCase):
         names = [call[0] for call in self.computer.calls]
         self.assertEqual(names, ["hid_click", "type_text"])
 
+    def test_hover_accepts_a_plain_dict_result(self):
+        with patch.object(self.computer, "choose",
+                          return_value={"ref": "7", "center": [10, 20]}), \
+             patch.object(self.computer, "hover", return_value={"ok": True}):
+            result = gui_actions.target(self.computer, "App", "hover", "the field")
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["result"], {"ok": True})
+
     def test_verify_asks_the_local_vision_model(self):
         with patch("talos_core.room.room_vision.describe_image",
                    return_value="yes") as describe:
