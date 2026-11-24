@@ -72,7 +72,9 @@ def local_capabilities(root: Path = ROOT) -> list[Capability]:
             return
         needle = alias or name.replace("_", " ")
         haystack = tests.casefold()
-        tested = (name.casefold() in haystack or needle.casefold() in haystack)
+        tail = name.removeprefix("/v1/").casefold()
+        tested = (name.casefold() in haystack or needle.casefold() in haystack
+                  or (tail and tail in haystack))
         found[key] = Capability(name=name, kind=kind, implemented=True,
                                 tested=tested, tested_by="tests" if tested else "",
                                 notes=notes)
