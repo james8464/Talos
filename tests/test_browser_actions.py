@@ -80,6 +80,30 @@ class BrowserActionsTests(unittest.TestCase):
         self.assertIn("Clicked Run check", reply)
         self.assertIn("clicked ok", reply)
 
+    def test_types_into_a_visible_field(self):
+        class TypedPage(FakePage):
+            def eval_js(self, script):
+                return {"ok": True, "label": "search"}
+
+            def snapshot(self):
+                class After:
+                    url = "https://example.com"
+                    title = "Example"
+                    text = "typed talos"
+                    truncated = False
+                return After()
+
+        class TypedBrowser(FakeBrowser):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.page = TypedPage()
+
+        with patch.object(browser_actions, "Browser", TypedBrowser):
+            reply = browser_actions.command(
+                'Type talos into the search box on https://example.com.', self.state)
+        self.assertIn("typed talos", reply)
+        self.assertIn("search", reply)
+
     def test_only_http_urls_are_accepted(self):
         for text in ("Read file:///etc/passwd", "Read example.com", "Open Safari."):
             self.assertIsNone(browser_actions.command(text, self.state))

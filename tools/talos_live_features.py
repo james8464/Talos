@@ -317,6 +317,7 @@ def run(keep: bool = False) -> dict:
         def do_GET(self):
             body = (b"<html><head><title>Talos Local Page</title></head>"
                     b"<body><p>local browser check</p>"
+                    b"<input id='q' placeholder='search' oninput=\"document.getElementById('out').textContent=this.value\">"
                     b"<button onclick=\"document.getElementById('out').textContent='clicked ok'\">Run check</button>"
                     b"<p id='out'>waiting</p></body></html>")
             self.send_response(200)
@@ -341,6 +342,8 @@ def run(keep: bool = False) -> dict:
         check(checks, "browser_screenshot", "Page screenshot saved to" in shot, shot)
         clicked_page = ask(token, f"Click Run check on {page_url}")["reply"]
         check(checks, "browser_click", "clicked ok" in clicked_page, clicked_page)
+        typed_page = ask(token, f"Type talos into the search box on {page_url}")["reply"]
+        check(checks, "browser_type", "talos" in typed_page, typed_page)
     finally:
         server.shutdown()
 
