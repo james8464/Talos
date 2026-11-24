@@ -17,7 +17,7 @@ requires Accessibility + Screen Recording, but it works across arbitrary apps.
 
 | App | MCP status | Talos native path | Fallback |
 | --- | --- | --- | --- |
-| Reminders | No official Apple MCP. Community EventKit servers exist. | `native_apps.py` reads the native EventKit export; live JXA reads and writes are the next step. | Accessibility/computer use |
+| Reminders | No official Apple MCP. Community EventKit servers exist. | `native_apps.py` reads the native EventKit export read-only; use a configured MCP server for writes. | Accessibility/computer use with confirmation |
 | Calendar | No official Apple MCP. Community EventKit servers (`redpop/apple-calendar-mcp`, `FradSer/mcp-server-apple-events`, `orshemtov/apple-calendar-mcp`) exist. | Live JXA read; EventKit export fallback. | Accessibility/computer use |
 | Notes | No official Apple MCP; community servers (`macos-apps-mcp`, `cupertino`, Apple Notes MCP). | Existing JXA Notes importer; native search/create is the next step. | Accessibility/computer use |
 | Mail | No official Apple MCP; community servers. | Existing read-only Envelope Index/`mac_context`; compose/send requires Automation/Accessibility approval. | Accessibility/computer use |
@@ -85,11 +85,12 @@ Implemented or already present:
 
 Next implementation steps:
 
-1. Add safe native Reminders create/complete and Calendar create routes, with
-   explicit confirmation for writes and a test-list/test-event cleanup path.
-2. Add Notes search/create and Mail compose/reply via JXA with explicit review.
-3. Add native Reminders/Calendar writes and Notes actions; add HTTP MCP
-   transports and per-server read-only policy.
+1. Configure an existing reminders/calendar/notes MCP server through
+   `talos mcp-client`; expose only read tools by default and require explicit
+   confirmation for writes.
+2. Add Notes/Mail/Messages actions by reusing established MCP servers or their
+   native APIs, not new per-app protocols.
+3. Add HTTP MCP transports and a per-server read-only policy.
 4. Add a permission/health command that reports EventKit, Automation, AX, Screen
    Recording and configured MCP servers per app.
 5. Keep accessibility/computer use as the fallback for apps without APIs or MCP.
