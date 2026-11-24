@@ -69,6 +69,23 @@ transcripts, or other private context. The key is read from
 is never logged. The default model is `deepseek-v4.1-flash`. This path is
 text-only and does not synthesize audio.
 
+## Local design workflows
+
+Talos creates real files on this Mac without a cloud service:
+
+```sh
+Design a poster titled Library Focus Hours.
+Design a 3D nameplate that says Talos.
+Render the last design in Blender.
+Create a Pages document titled Weekly Notes with body Stay focused.
+Open the last design in Pages.
+```
+
+Posters are SVG; nameplates are OpenSCAD sources rendered to STL; Blender renders
+an STL to PNG headlessly; documents are Pages-compatible `.docx` files produced by
+macOS `textutil`. Artifacts stay in the private `state/designs/` folder. Design
+work is text-only and never triggers audio or playback.
+
 ## Native apps and MCP
 
 Talos prefers integrations that already exist: native APIs first, then a

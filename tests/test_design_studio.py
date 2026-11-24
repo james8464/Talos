@@ -35,6 +35,49 @@ class DesignStudioTests(unittest.TestCase):
         self.assertIn("Library Hours", svg)
         self.assertIsNone(design_studio.command("Open Safari.", self.state))
 
+    def test_document_is_pages_compatible(self):
+        result = design_studio.create_document(
+            self.state, "Library Notes", "Stay focused.\nNo audio.",
+        )
+        target = Path(result["path"])
+        self.assertEqual(target.suffix, ".docx")
+        self.assertTrue(target.is_file())
+        self.assertGreater(target.stat().st_size, 500)
+        import zipfile
+        with zipfile.ZipFile(target) as archive:
+            xml = archive.read("word/document.xml").decode("utf-8")
+        self.assertIn("Library Notes", xml)
+        self.assertIn("Stay focused", xml)
+
+    def test_command_routes_document_and_blender_render(self):
+        document = design_studio.command(
+            "Create a Pages document titled Library Notes with body Stay focused.", self.state,
+        )
+        self.assertIn("Pages-compatible document created", document)
+        plate = design_studio.command("Design a 3D nameplate that says Talos.", self.state)
+        self.assertIn("Nameplate source created", plate)
+        if design_studio.available()["blender"]:
+            render = design_studio.command("Render the last design in Blender.", self.state)
+            self.assertIn("Blender render created", render)
+            self.assertTrue(Path(render.split(": ", 1)[1]).is_file())
+
+    def test_render_requires_a_model(self):
+        self.assertIn("no 3D model", design_studio.command("Render it in Blender.", self.state))
+
+    def test_open_last_design_uses_the_named_app(self):
+        from unittest.mock import patch
+
+        design_studio.create_poster(self.state, "Open me")
+        with patch("talos_core.design_studio._open_bundle") as opened:
+            reply = design_studio.command("Open the last design in Pages.", self.state)
+        self.assertIn("Opened", reply)
+        self.assertIn("Pages", reply)
+        opened.assert_called_once()
+        self.assertEqual(opened.call_args.args[1], "com.apple.Pages")
+
+    def test_open_without_a_design_is_safe(self):
+        self.assertIn("no design", design_studio.command("Open the last design.", self.state))
+
     def test_only_design_requests_are_matched(self):
         for text in ("What's on my calendar?", "Play music.", "Write a function."):
             self.assertIsNone(design_studio.command(text, self.state))

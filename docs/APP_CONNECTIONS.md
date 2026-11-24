@@ -178,3 +178,16 @@ Permission denied: Only write access to calendar. Full access is required.
 That is a macOS Calendar grant issue, not a Talos/protocol issue. Grant Full
 Access to the host that launches the MCP server, then restart that host. Until
 then, Talos's native JXA/EventKit-export Calendar path remains the read path.
+
+
+### Local design and document tools
+
+| App | Existing path | Status |
+| --- | --- | --- |
+| Pages | macOS `textutil` writes a Pages-compatible `.docx`; `open -b com.apple.Pages` opens it | verified locally |
+| OpenSCAD | CLI renders `.scad` to `.stl` | verified locally |
+| Blender | `blender -b -P` renders an STL to PNG with no window or audio | verified locally |
+| Preview/Safari/Finder | `open -b` opens the last design | routed, no GUI write |
+
+These are file-producing workflows, not GUI automation. Use the accessibility or
+computer-use path when a task needs to edit an already-open document.

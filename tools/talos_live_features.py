@@ -49,7 +49,18 @@ def check(checks: list[dict], name: str, ok: bool, detail: str = "") -> None:
     checks.append({"name": name, "ok": bool(ok), "detail": str(detail)[:400]})
 
 
-def cleanup(stamp: int, screenshot: str) -> None:
+def cleanup_designs(paths: list[str]) -> None:
+    """Delete only the design artifacts this pass created."""
+    designs = (ROOT / "state" / "designs").resolve()
+    for value in paths:
+        path = Path(value).resolve()
+        if path.parent != designs:
+            continue
+        for sibling in designs.glob(path.stem + "*"):
+            sibling.unlink(missing_ok=True)
+
+
+def cleanup(stamp: int, screenshot: str, design_paths: list[str] | None = None) -> None:
     """Remove artifacts created by this live pass from the real room state."""
     from talos_core import todo
     from talos_core.memory.agent_memory import STATE_PATH, open_memory
@@ -67,6 +78,7 @@ def cleanup(stamp: int, screenshot: str) -> None:
     todo.remove_matching(STATE_PATH.parent, "live todo")
     if screenshot:
         Path(screenshot).unlink(missing_ok=True)
+    cleanup_designs(design_paths or [])
 
 
 def run(keep: bool = False) -> dict:
@@ -217,6 +229,27 @@ def run(keep: bool = False) -> dict:
     activity = ask(token, "Show my recent activity.")["reply"]
     check(checks, "recent_activity", "Recent activity" in activity, activity)
 
+    identity = ask(token, "Who am I?")["reply"]
+    check(checks, "identity_recal", identity.startswith("You are ")
+          and "don't have" not in identity, "identity resolved" if identity.startswith("You are ")
+          else identity)
+
+    design_paths: list[str] = []
+    document = ask(token, "Create a Pages document titled Live Feature Check.")["reply"]
+    if "Pages-compatible document created: " in document:
+        design_paths.append(document.split(": ", 1)[1].strip())
+    check(checks, "pages_document", "Pages-compatible document created" in document, document)
+
+    nameplate = ask(token, "Design a 3D nameplate that says Talos.")["reply"]
+    if "Nameplate source created: " in nameplate:
+        design_paths.append(nameplate.split(": ", 1)[1].split(" and rendered")[0].strip())
+    check(checks, "design_nameplate", "Nameplate source created" in nameplate, nameplate)
+
+    render = ask(token, "Render the last design in Blender.")["reply"]
+    if "Blender render created: " in render:
+        design_paths.append(render.split(": ", 1)[1].strip())
+    check(checks, "blender_render", "Blender render created" in render, render)
+
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 
@@ -243,7 +276,7 @@ def run(keep: bool = False) -> dict:
     check(checks, "no_audio_processes", audio.returncode != 0, audio.stdout.strip())
 
     if not keep:
-        cleanup(stamp, screenshot_path)
+        cleanup(stamp, screenshot_path, design_paths)
     return {"ok": all(item["ok"] for item in checks), "checks": checks}
 
 
