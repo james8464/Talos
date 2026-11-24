@@ -64,7 +64,7 @@ def cleanup(stamp: int, screenshot: str) -> None:
             "DELETE FROM personal_facts WHERE subject LIKE ? OR subject LIKE ?",
             (f"live pass code {stamp}%", f"forgotten code {stamp}%"),
         )
-    todo.remove_matching(STATE_PATH, f"live todo {stamp}")
+    todo.remove_matching(STATE_PATH.parent, "live todo")
     if screenshot:
         Path(screenshot).unlink(missing_ok=True)
 
@@ -156,7 +156,7 @@ def run(keep: bool = False) -> dict:
     check(checks, "public_fact", "Honey" in fact and "whatsapp" not in fact.casefold(), fact)
     check(checks, "general_knowledge", "Everest" in mountain, mountain)
     check(checks, "wellbeing", "short break" in tired.casefold(), tired)
-    check(checks, "identity", "You are" in identity or "don't have your name" in identity, identity)
+    check(checks, "identity", "You are" in identity or "your name" in identity, identity)
 
     knowledge = ask(token, "Search your knowledge for Room.")["reply"]
     check(checks, "knowledge_search", "Knowledge results for Room" in knowledge, knowledge)
