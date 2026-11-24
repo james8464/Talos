@@ -60,7 +60,8 @@ def cleanup_designs(paths: list[str]) -> None:
             sibling.unlink(missing_ok=True)
 
 
-def cleanup(stamp: int, screenshot: str, design_paths: list[str] | None = None) -> None:
+def cleanup(stamp: int, screenshot: str, design_paths: list[str] | None = None,
+            web_paths: list[str] | None = None) -> None:
     """Remove artifacts created by this live pass from the real room state."""
     from talos_core import todo
     from talos_core.memory.agent_memory import STATE_PATH, open_memory
@@ -79,6 +80,11 @@ def cleanup(stamp: int, screenshot: str, design_paths: list[str] | None = None) 
     if screenshot:
         Path(screenshot).unlink(missing_ok=True)
     cleanup_designs(design_paths or [])
+    shots = (ROOT / "state" / "screenshots").resolve()
+    for value in web_paths or []:
+        path = Path(value).resolve()
+        if path.parent == shots:
+            path.unlink(missing_ok=True)
 
 
 def run(keep: bool = False) -> dict:
@@ -250,6 +256,36 @@ def run(keep: bool = False) -> dict:
         design_paths.append(render.split(": ", 1)[1].strip())
     check(checks, "blender_render", "Blender render created" in render, render)
 
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class LocalPage(BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = (b"<html><head><title>Talos Local Page</title></head>"
+                    b"<body><p>local browser check</p></body></html>")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), LocalPage)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    page_url = f"http://127.0.0.1:{server.server_port}/"
+    web_paths: list[str] = []
+    try:
+        page = ask(token, f"Read {page_url}")["reply"]
+        check(checks, "browser_read", "Talos Local Page" in page and "local browser check" in page, page)
+        shot = ask(token, f"Screenshot {page_url}")["reply"]
+        if "Page screenshot saved to " in shot:
+            web_paths.append(shot.split("Page screenshot saved to ", 1)[1].strip())
+        check(checks, "browser_screenshot", "Page screenshot saved to" in shot, shot)
+    finally:
+        server.shutdown()
+
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 
@@ -276,7 +312,7 @@ def run(keep: bool = False) -> dict:
     check(checks, "no_audio_processes", audio.returncode != 0, audio.stdout.strip())
 
     if not keep:
-        cleanup(stamp, screenshot_path, design_paths)
+        cleanup(stamp, screenshot_path, design_paths, web_paths)
     return {"ok": all(item["ok"] for item in checks), "checks": checks}
 
 

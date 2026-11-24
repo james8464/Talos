@@ -98,6 +98,21 @@ state. A generic MCP client built on the official Python SDK is available as
 `apple-calendar-mcp`, or the official Slack/Notion/GitHub servers) in
 `state/mcp-servers.json`. In the room, ask `List MCP servers`, `List MCP tools on NAME`, or `Call mcp tool TOOL on NAME with {"key":"value"}`.
 
+## Browser automation
+
+Talos can read or capture a web page without touching your normal browser
+profile. It launches a throwaway headless Chrome over the DevTools Protocol:
+
+```sh
+Read https://example.com
+Screenshot https://example.com
+```
+
+Only `http`/`https` URLs are accepted, input values are omitted from snapshots,
+and screenshot pixels are written to private state rather than logged. A Safari
+AppleScript fallback exists, but it needs Safari open and "Develop > Allow
+JavaScript from Apple Events" enabled. Browser work is silent.
+
 ## Terminal sessions and Telegram
 
 Launch the compact text session with `python3 -m talos_core.cli session` (alias `terminal`). It prints the Talos version, selected model, local Ollama readiness, state database and action mode before the first prompt, then reads typed text until `/quit`. It is text only: it never synthesizes or plays audio and does not change your mute or voice settings. Use `--script "/status" "/quit"` for a deterministic non-interactive check. `python3 agent.py chat` opens the same text session and command set; `python3 -m talos_core.cli console` keeps the animated ASCII-brain fallback.

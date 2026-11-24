@@ -202,9 +202,33 @@ def _apps(args) -> int:
     print(json.dumps({
         "status": status,
         "adapters": ["Calendar", "Reminders", "Notes", "Mail", "Messages", "Contacts",
-                     "Safari", "Finder", "Maps", "Shortcuts", "Music"],
+                     "Safari", "Finder", "Maps", "Shortcuts", "Music",
+                     "Chrome CDP", "Pages documents", "OpenSCAD", "Blender"],
         "mcp_servers": servers,
     }, indent=2, ensure_ascii=False))
+    return 0
+
+
+def _design(args) -> int:
+    from talos_core import design_studio
+
+    try:
+        if args.kind == "poster":
+            result = design_studio.create_poster(args.state, args.title, args.body,
+                                                 open_after=args.open_design)
+        elif args.kind == "nameplate":
+            result = design_studio.create_nameplate(args.state, args.title,
+                                                    open_after=args.open_design)
+        else:
+            result = design_studio.create_document(args.state, args.title, args.body,
+                                                   open_after=args.open_design)
+        if args.render and args.kind == "nameplate":
+            rendered = design_studio.render_stl(args.state, result["render"])
+            result["blender"] = rendered["path"]
+    except (OSError, ValueError, RuntimeError) as error:
+        print(json.dumps({"ok": False, "error": str(error)}))
+        return 1
+    print(json.dumps({"ok": True, **result}, indent=2, ensure_ascii=False))
     return 0
 
 
@@ -954,6 +978,15 @@ def build_parser() -> argparse.ArgumentParser:
     apps = commands.add_parser("apps", help="Show native app and MCP integration status.")
     apps.add_argument("--state", type=Path, default=ROOT / "state")
     apps.set_defaults(func=_apps)
+
+    design = commands.add_parser("design", help="Create a poster, nameplate or Pages document.")
+    design.add_argument("--kind", choices=("poster", "nameplate", "document"), default="poster")
+    design.add_argument("--title", required=True)
+    design.add_argument("--body", default="")
+    design.add_argument("--state", type=Path, default=ROOT / "state")
+    design.add_argument("--open", dest="open_design", action="store_true")
+    design.add_argument("--render", action="store_true", help="Render a nameplate with Blender.")
+    design.set_defaults(func=_design)
 
     mcp_client = commands.add_parser("mcp-client", help="Call a configured MCP server.")
     mcp_client.add_argument("action", choices=("list", "add", "tools", "call"))

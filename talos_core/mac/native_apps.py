@@ -244,6 +244,14 @@ def app_status_text(state):
         f"private sources {sources}",
         f"MCP servers {servers}",
     ]
+    tools = []
+    if Path("/usr/bin/textutil").is_file():
+        tools.append("Pages documents")
+    if Path("/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD").is_file():
+        tools.append("OpenSCAD")
+    if Path("/Applications/Blender.app/Contents/MacOS/Blender").is_file():
+        tools.append("Blender")
+    parts.append(f"design tools {', '.join(tools) or 'none'}")
     return ("App status: " + "; ".join(parts) + ".")[:MAX_REPLY]
 
 

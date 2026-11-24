@@ -134,6 +134,73 @@ FINAL_DECISION_SCHEMA = {
     },
 }
 
+
+def decision_schema(*, extra_lookups=(), extra_actions=(), final=False) -> dict:
+    """Planner schema, extended with discovered namespaced MCP tool names."""
+    extra_lookups, extra_actions = tuple(extra_lookups), tuple(extra_actions)
+    if not extra_lookups and not extra_actions:
+        return FINAL_DECISION_SCHEMA if final else DECISION_SCHEMA
+    lookups = (*LOOKUP_TOOLS, *extra_lookups)
+    actions = (*PERMITTED_TOOLS["act"], *extra_actions)
+    tools = ("none", *actions, *lookups)
+    properties = {
+        **DECISION_PROPERTIES,
+        "tool": {"type": "string", "enum": list(tools)},
+    }
+    if final:
+        properties["disposition"] = {"type": "string", "enum": [
+            disposition for disposition in PERMITTED_TOOLS if disposition != "look_up"
+        ]}
+        properties["tool"] = {"type": "string", "enum": [
+            tool for tool in tools if tool not in lookups
+        ]}
+    else:
+        properties["disposition"] = {"type": "string", "enum": list(PERMITTED_TOOLS)}
+    return {
+        "type": "object",
+        "properties": {
+            **properties,
+            "remind_in_minutes": {"type": "integer", "minimum": 0, "maximum": MAX_REMINDER_MINUTES},
+        },
+        "required": list(DECISION_PROPERTIES),
+        "additionalProperties": False,
+    }
+
+
+def is_mcp_tool(tool: str) -> bool:
+    return isinstance(tool, str) and "." in tool and tool not in TOOLS
+
+
+def mcp_arguments(detail: str) -> dict:
+    """Parse the planner's JSON object for a namespaced MCP tool call."""
+    text = detail.strip()
+    if text.casefold().startswith("confirm "):
+        text = text.split(None, 1)[1].strip()
+    if not text:
+        return {}
+    try:
+        arguments = json.loads(text)
+    except ValueError as error:
+        raise RuntimeError("MCP tool arguments must be a single JSON object.") from error
+    if not isinstance(arguments, dict):
+        raise RuntimeError("MCP tool arguments must be a single JSON object.")
+    return arguments
+
+
+def mcp_confirmed(detail: str) -> bool:
+    """Mirror the repo's explicit confirm token used by desktop actions."""
+    return detail.strip().casefold().startswith("confirm ")
+
+
+def mcp_planner_tools(database: sqlite3.Connection) -> list[dict]:
+    """Discovered MCP tools for this planner turn; empty and silent when unconfigured."""
+    try:
+        from talos_core import mcp_client
+        return mcp_client.planner_tools(_state_for(database))
+    except (ImportError, OSError, RuntimeError, ValueError):
+        return []
+
+
 CHARTER = """You are Talos, a local room assistant with initiative. Given a new event,
 identify a useful goal yourself when action is worthwhile. Help the owner avoid missed
 tasks and meaningful disruptions. Respect privacy, prefer the least disruptive useful
@@ -147,10 +214,12 @@ Return one structured decision:
   for unified personal index, vault notes, facts and commitments, search_code_graph for
   Talos source symbols and call paths, inspect_app with an app name to read its visible
   controls, labels and clickable refs, list_inbox for existing tasks, notes and reminders,
-  review_decisions for past actions and feedback, or current_time for UTC time. Explain what evidence you need. Respect lookups_remaining.
+  review_decisions for past actions and feedback, or current_time for UTC time. Explain what evidence you need. Respect lookups_remaining. When mcp_tools lists a read-only server.tool, use that exact name and put its JSON argument object in detail.
 - act: propose one action. Use log_alert for a private local alert, set_reminder for a
   future reminder, create_task for a task to track, save_note for a useful local note,
   speak for a brief, considerate in-room message, or desktop_action to control this Mac.
+  When mcp_tools lists a write-capable server.tool, use that exact name and put confirm
+  followed by its JSON argument object in detail. Only trusted owner requests may do that.
   For desktop_action put one command in detail: "click X Y", "double-click X Y",
   "type TEXT", "key COMBO", "open APP_OR_PATH", "activate APP", or "menu APP ITEM...".
   To address a background app directly, use "type --app APP TEXT", "key --app APP COMBO",
@@ -186,7 +255,16 @@ def parse_event(line: str, *, summary_limit: int = 800) -> dict[str, str]:
     return event
 
 
-def parse_decision(content: str) -> dict:
+def parse_decision(content: str, *, extra_lookups=(), extra_actions=()) -> dict:
+    extra_lookups, extra_actions = tuple(extra_lookups), tuple(extra_actions)
+    lookups = (*LOOKUP_TOOLS, *extra_lookups)
+    actions = (*PERMITTED_TOOLS["act"], *extra_actions)
+    tools = ("none", *actions, *lookups)
+    permitted = {
+        **PERMITTED_TOOLS,
+        "act": actions,
+        "look_up": lookups,
+    }
     try:
         decision = json.loads(content)
     except (TypeError, ValueError) as error:
@@ -196,15 +274,17 @@ def parse_decision(content: str) -> dict:
     ):
         raise RuntimeError("The local model returned unexpected decision fields.")
     disposition, tool = decision["disposition"], decision["tool"]
-    if not isinstance(disposition, str) or disposition not in PERMITTED_TOOLS or tool not in TOOLS:
+    if not isinstance(disposition, str) or disposition not in permitted or tool not in tools:
         raise RuntimeError("The local model returned an unsupported disposition or tool.")
-    if tool not in PERMITTED_TOOLS[disposition]:
+    if tool not in permitted[disposition]:
         raise RuntimeError("The local model returned an inconsistent disposition and tool.")
     for field, limit in TEXT_LIMITS.items():
         value = decision[field]
         if not isinstance(value, str) or len(value.strip()) > limit:
             raise RuntimeError(f"The local model returned invalid text for {field}.")
         decision[field] = value.strip()
+    if is_mcp_tool(tool):
+        mcp_arguments(decision["detail"])
 
     minutes = decision.get("remind_in_minutes", 0)
     if (isinstance(minutes, str) and re.fullmatch(r"\s*\d+\s*", minutes)) or (isinstance(minutes, float) and minutes.is_integer()):
@@ -277,10 +357,14 @@ def model_text(
 
 
 def read_tool(database: sqlite3.Connection, tool: str, detail: str, *, private_context: bool = True):
-    if tool in LOOKUP_TOOLS:
-        location = database.execute("PRAGMA database_list").fetchone()[2]
+    location = database.execute("PRAGMA database_list").fetchone()[2]
+    if is_mcp_tool(tool):
+        from talos_core import mcp_client
         if location:
-            talos_activity.record(Path(location).parent, "Planner", f"Read-only lookup · {tool}")
+            talos_activity.record(Path(location).parent, "Planner", f"Read-only MCP lookup · {tool}")
+        return mcp_client.call_read_only(_state_for(database), tool, mcp_arguments(detail))
+    if tool in LOOKUP_TOOLS and location:
+        talos_activity.record(Path(location).parent, "Planner", f"Read-only lookup · {tool}")
     match tool:
         case "search_memory":
             return transcript_excerpts(search_transcripts(database, detail))
@@ -308,6 +392,10 @@ def plan(
     private_context: bool = True, max_lookups: int = MAX_LOOKUPS, max_tokens: int = 512,
 ) -> dict:
     check_ollama_model(model)
+    mcp_tools = [item for item in mcp_planner_tools(database)
+                 if item.get("read_only") or item.get("write_allowed")]
+    mcp_lookups = tuple(item["name"] for item in mcp_tools if item.get("read_only"))
+    mcp_actions = tuple(item["name"] for item in mcp_tools if item.get("write_allowed"))
     context = {
         "new_event": event,
         "trusted_owner_request": trusted_owner,
@@ -316,15 +404,32 @@ def plan(
         context.update(recent_context(database, event["summary"]))
     if room_context is not None:
         context.update(room_context)
+    if mcp_tools:
+        context["mcp_tools"] = [
+            {
+                "name": item["name"],
+                "description": item["description"][:240],
+                "read_only": bool(item["read_only"]),
+                "arguments": item["input_schema"],
+            }
+            for item in mcp_tools
+        ]
+        context["mcp_rule"] = (
+            "Read-only MCP tools are look_up tools. Put their JSON arguments object in detail. "
+            "Write-capable MCP tools are act tools and need the word confirm before their JSON arguments."
+        )
     tool_results = []
     last_observations = {}
     stalled = False
     for _ in range(max_lookups + 1):
         context["lookup_results"] = tool_results
         context["lookups_remaining"] = 0 if stalled else max_lookups - len(tool_results)
-        schema = DECISION_SCHEMA if context["lookups_remaining"] else FINAL_DECISION_SCHEMA
+        schema = decision_schema(
+            extra_lookups=mcp_lookups, extra_actions=mcp_actions,
+            final=not context["lookups_remaining"],
+        )
         if room_context and room_context.get("conversational_turn"):
-            lookups = list(LOOKUP_TOOLS if private_context else ("current_time",))
+            lookups = list((*LOOKUP_TOOLS, *mcp_lookups) if private_context else ("current_time",))
             if not context["lookups_remaining"]:
                 lookups = []
             instructions = (
@@ -363,7 +468,8 @@ def plan(
             try:
                 proposal = parse_decision(model_text([
                     {"role": "system", "content": system_text}, request,
-                ], model=model, schema=schema, max_tokens=max_tokens))
+                ], model=model, schema=schema, max_tokens=max_tokens),
+                    extra_lookups=mcp_lookups, extra_actions=mcp_actions)
             except (RuntimeError, ValueError) as error:
                 # Retry only malformed JSON/shape, not a semantic refusal or a
                 # deliberately invalid tool in a fixture.
@@ -374,7 +480,8 @@ def plan(
                      + "\nYour previous reply was rejected: " + str(error)[:160]
                      + " Return exactly one valid JSON object with every required field."},
                     request,
-                ], model=model, schema=schema, max_tokens=max_tokens))
+                ], model=model, schema=schema, max_tokens=max_tokens),
+                    extra_lookups=mcp_lookups, extra_actions=mcp_actions)
         if proposal["disposition"] != "look_up":
             if tool_results:
                 proposal["tools_used"] = [entry["tool"] for entry in tool_results]
@@ -383,12 +490,19 @@ def plan(
             break
         tool, detail = proposal["tool"], proposal["detail"]
         if private_context or tool == "current_time":
-            result = read_tool(database, tool, detail, private_context=private_context)
+            try:
+                result = read_tool(database, tool, detail, private_context=private_context)
+            except (OSError, RuntimeError, ValueError) as error:
+                if not is_mcp_tool(tool):
+                    raise
+                result = {"available": False, "error": " ".join(str(error).split())[:200]}
         else:
             result = {"available": False, "reason": "Private context is disabled in this session."}
         # OpenClaw's no-progress detector compares both the call arguments and its outcome.
         # Talos uses a short read-only loop, so a repeated unchanged observation ends lookups.
-        key = (tool, detail.strip().casefold() if tool in ("search_memory", "search_knowledge") else "")
+        key = (tool, detail.strip().casefold() if (
+            tool in ("search_memory", "search_knowledge") or is_mcp_tool(tool)
+        ) else "")
         observation = json.dumps(result, sort_keys=True, ensure_ascii=False)
         stalled = last_observations.get(key) == observation
         last_observations[key] = observation
@@ -614,6 +728,26 @@ def process_event(
     proposal = plan(database, event, trusted_owner=trusted_owner, model=model)
     decision_id = record_decision(database, event, proposal, apply=apply)
     result = {"id": decision_id, "mode": "local" if apply else "shadow", **proposal}
+    if apply and is_mcp_tool(proposal["tool"]):
+        try:
+            if not trusted_owner:
+                raise RuntimeError("MCP actions require an owner-confirmed request.")
+            from talos_core import mcp_client
+            value = mcp_client.call_tool(
+                _state_for(database), proposal["tool"], mcp_arguments(proposal["detail"]),
+                confirm=mcp_confirmed(proposal["detail"]), trusted_owner=trusted_owner,
+            )
+        except (OSError, RuntimeError, ValueError) as error:
+            with database:
+                database.execute("UPDATE action_outcomes SET status='blocked' WHERE decision_id=?",
+                                 (decision_id,))
+            result["action"] = "blocked"
+            result["error"] = " ".join(str(error).split())[:300]
+            return result
+        with database:
+            database.execute("UPDATE action_outcomes SET status='applied' WHERE decision_id=?",
+                             (decision_id,))
+        result["mcp"] = value
     if apply and proposal["tool"] == "desktop_action" and trusted_owner:
         try:
             detail = desktop_action(proposal["detail"], _state_for(database),

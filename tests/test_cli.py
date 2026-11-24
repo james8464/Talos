@@ -1,4 +1,5 @@
 import io
+import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -145,6 +146,22 @@ class CliTests(unittest.TestCase):
         )
         self.assertEqual(args.command, "acp")
         self.assertEqual(args.acp_command, "python fixture.py")
+
+    def test_design_command_creates_artifacts(self):
+        state = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["design", "--kind", "poster", "--title", "Terminal Design",
+                             "--state", str(state)])
+        self.assertEqual(code, 0)
+        payload = json.loads(output.getvalue())
+        self.assertTrue(Path(payload["path"]).is_file())
+        document = io.StringIO()
+        with redirect_stdout(document):
+            code = cli.main(["design", "--kind", "document", "--title", "Terminal Doc",
+                             "--body", "Body text", "--state", str(state)])
+        self.assertEqual(code, 0)
+        self.assertEqual(Path(json.loads(document.getvalue())["path"]).suffix, ".docx")
 
     def test_apps_reports_native_integrations(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))

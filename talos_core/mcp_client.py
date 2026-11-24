@@ -8,10 +8,12 @@ calls their tools.
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 import os
 import re
 import tempfile
+import time
 from pathlib import Path
 
 try:
@@ -24,6 +26,30 @@ except ImportError:  # optional extra
 
 FILE = "mcp-servers.json"
 MAX_TIMEOUT = 180
+DISCOVERY_TTL = 60.0
+MAX_PLANNER_TOOLS = 24
+
+# Read/write hints are only used when a server omits MCP tool annotations.
+# Unknown names fail closed as writes so the planner never writes silently.
+_READ_HINTS = frozenset((
+    "analyze", "audit", "browse", "calculate", "capabilities", "check", "compute",
+    "count", "describe", "diff", "echo", "estimate", "explain", "fetch", "find",
+    "graph", "health", "help", "info", "inspect", "list", "lookup", "memory",
+    "ping", "predict", "preview", "query", "read", "recall", "report", "resolve",
+    "retrieve", "review", "search", "see", "show", "stats", "status", "summarize",
+    "summary", "time", "view", "whoami",
+))
+_WRITE_HINTS = frozenset((
+    "add", "apply", "archive", "cancel", "change", "clear", "close", "commit",
+    "create", "delete", "deploy", "destroy", "disable", "download", "drop", "edit",
+    "enable", "erase", "execute", "export", "forget", "import", "install", "kill",
+    "launch", "merge", "mkdir", "move", "open", "patch", "post", "publish", "push",
+    "put", "reboot", "remove", "rename", "replace", "reset", "restart", "resume",
+    "run", "save", "send", "set", "start", "stop", "submit", "sync", "terminate",
+    "touch", "trigger", "unarchive", "uninstall", "update", "upload", "write",
+))
+
+_DISCOVERY_CACHE: dict[tuple[str, tuple], tuple[float, list[dict]]] = {}
 
 
 class MCPClientError(RuntimeError):
@@ -169,6 +195,7 @@ def tools(state, name, timeout=30):
                     "name": data.get("name", ""),
                     "description": data.get("description", "") or "",
                     "inputSchema": data.get("input_schema") or data.get("inputSchema") or {},
+                    "annotations": _annotations(data.get("annotations")),
                 })
             return tools
         return inner()
@@ -204,6 +231,186 @@ def call(state, name, tool, arguments=None, timeout=90):
         return inner()
 
     return _run(state, name, invoke, timeout)
+
+
+def _camel(key: str) -> str:
+    head, *rest = key.split("_")
+    return head + "".join(word.title() for word in rest)
+
+
+def _annotations(raw) -> dict:
+    """Normalize SDK annotations to snake_case booleans."""
+    if not isinstance(raw, dict):
+        return {}
+    result = {}
+    for key in ("read_only_hint", "destructive_hint", "idempotent_hint", "open_world_hint"):
+        value = raw.get(key, raw.get(_camel(key)))
+        if isinstance(value, bool):
+            result[key] = value
+    return result
+
+
+def is_read_only(tool_name: str, annotations: dict | None = None) -> bool:
+    """Classify a tool without ever assuming an unknown tool is safe to write."""
+    annotations = annotations or {}
+    hint = annotations.get("read_only_hint")
+    if hint is True:
+        return True
+    if hint is False or annotations.get("destructive_hint") is True:
+        return False
+    words = re.findall(r"[a-z0-9]+", str(tool_name).casefold())
+    if any(word in _WRITE_HINTS for word in words):
+        return False
+    return any(word in _READ_HINTS for word in words)
+
+
+def _split_qualified(name: str) -> tuple[str, str]:
+    if not isinstance(name, str) or "." not in name:
+        raise MCPClientError("MCP tool names must be namespaced as server.tool.")
+    server, tool = name.rsplit(".", 1)
+    if not server or not tool:
+        raise MCPClientError("MCP tool names must be namespaced as server.tool.")
+    return server, tool
+
+
+def _allowed(server: dict, tool: str) -> bool:
+    allowed = server.get("allowed_tools")
+    return not isinstance(allowed, list) or tool in allowed
+
+
+def _explicitly_allowed(server: dict, tool: str) -> bool:
+    allowed = server.get("allowed_tools")
+    return isinstance(allowed, list) and tool in allowed
+
+
+def _fingerprint(state: Path | str) -> tuple[str, int, int] | None:
+    path = _path(state)
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return str(path.resolve()), stat.st_mtime_ns, stat.st_size
+
+
+def clear_cache() -> None:
+    """Drop cached discovery results. Tests and configuration changes may need this."""
+    _DISCOVERY_CACHE.clear()
+
+
+def _discover_server(state, name: str, server: dict, timeout: float) -> tuple[list[dict], str]:
+    try:
+        found = tools(state, name, timeout=timeout)
+    except (AttributeError, KeyError, MCPClientError, OSError, RuntimeError, TypeError, ValueError) as error:
+        return [], f"{name}: {' '.join(str(error).split())[:200]}"
+    items = []
+    for raw in found or ():
+        tool = str(raw.get("name") or "").strip()
+        if not tool or not _allowed(server, tool):
+            continue
+        annotations = raw.get("annotations") if isinstance(raw.get("annotations"), dict) else {}
+        read_only = is_read_only(tool, annotations)
+        item = {
+            "name": f"{name}.{tool}",
+            "server": name,
+            "tool": tool,
+            "description": str(raw.get("description") or ""),
+            "input_schema": raw.get("inputSchema") if isinstance(raw.get("inputSchema"), dict) else {},
+            "read_only": read_only,
+            "write_allowed": (not read_only) and _explicitly_allowed(server, tool),
+            "annotations": annotations,
+        }
+        items.append(item)
+    return items, ""
+
+
+def discover(state: Path | str, *, timeout: int = 5, max_age: float = DISCOVERY_TTL) -> list[dict]:
+    """List allowed tools from every configured server, briefly cached and fail-soft.
+
+    A configuration with no servers returns immediately without spawning anything.
+    """
+    configured = servers(state)
+    if not configured or not available():
+        return []
+    fingerprint = _fingerprint(state)
+    key = (str(Path(state).resolve()), fingerprint or ("missing", 0, 0))
+    cached = _DISCOVERY_CACHE.get(key)
+    if cached and 0 <= time.monotonic() - cached[0] < max_age:
+        return copy.deepcopy(cached[1])
+    items: list[dict] = []
+    for name in sorted(configured):
+        server = configured.get(name)
+        if not isinstance(server, dict):
+            continue
+        found, _error = _discover_server(state, name, server, timeout)
+        items.extend(found)
+    items = items[:MAX_PLANNER_TOOLS]
+    for stale in [entry for entry in _DISCOVERY_CACHE if entry[0] == key[0] and entry != key]:
+        del _DISCOVERY_CACHE[stale]
+    _DISCOVERY_CACHE[key] = (time.monotonic(), items)
+    return copy.deepcopy(items)
+
+
+def planner_tools(state: Path | str, *, timeout: int = 5, max_age: float = DISCOVERY_TTL) -> list[dict]:
+    """Discovery for the planner: never raise, return an empty list when unavailable."""
+    try:
+        return discover(state, timeout=timeout, max_age=max_age)
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return []
+
+
+def _cached_metadata(state: Path | str, server_name: str, tool: str) -> dict | None:
+    configured = servers(state)
+    if not configured:
+        return None
+    fingerprint = _fingerprint(state)
+    key = (str(Path(state).resolve()), fingerprint or ("missing", 0, 0))
+    cached = _DISCOVERY_CACHE.get(key)
+    if not cached:
+        return None
+    for item in cached[1]:
+        if item["server"] == server_name and item["tool"] == tool:
+            return item
+    return None
+
+
+def read_only_tool(state: Path | str, name: str) -> bool:
+    """Whether a namespaced tool is read-only, using cached annotations if present."""
+    server_name, tool = _split_qualified(name)
+    meta = _cached_metadata(state, server_name, tool)
+    if meta is not None:
+        return bool(meta["read_only"])
+    return is_read_only(tool)
+
+
+def call_tool(
+    state: Path | str, name: str, arguments: dict | None = None, *,
+    confirm: bool = False, trusted_owner: bool = False, timeout: int = 90,
+):
+    """Call a namespaced planner tool with allowlist and confirmation checks."""
+    server_name, tool = _split_qualified(name)
+    configured = servers(state)
+    server = configured.get(server_name)
+    if not isinstance(server, dict):
+        raise MCPClientError(f"MCP server {server_name!r} is not configured.")
+    if not _allowed(server, tool):
+        raise MCPClientError(f"Tool {tool!r} is not allowed on MCP server {server_name!r}.")
+    if not read_only_tool(state, name):
+        if not _explicitly_allowed(server, tool):
+            raise MCPClientError(
+                f"MCP tool {name!r} changes state; add {tool!r} to the server's allowed_tools first."
+            )
+        if not (trusted_owner and confirm):
+            raise MCPClientError(
+                f"MCP tool {name!r} changes state; it requires an owner-confirmed request."
+            )
+    return call(state, server_name, tool, arguments, timeout)
+
+
+def call_read_only(state: Path | str, name: str, arguments: dict | None = None, *, timeout: int = 90):
+    """Call a namespaced tool only when it is classified read-only."""
+    if not read_only_tool(state, name):
+        raise MCPClientError(f"MCP tool {name!r} is not read-only; it cannot run as a lookup.")
+    return call_tool(state, name, arguments, timeout=timeout)
 
 
 def command(text, state):

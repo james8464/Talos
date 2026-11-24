@@ -12,6 +12,8 @@ import shlex
 import subprocess
 from pathlib import Path
 
+from talos_core.security.policy import Policy, PolicyDenied
+
 
 class MediaRefused(RuntimeError):
     pass
@@ -25,7 +27,8 @@ ENV = {"music": "TALOS_MUSIC_COMMAND", "video": "TALOS_VIDEO_COMMAND"}
 
 
 def generate(kind: str, prompt: str, out: Path | str, *, command: str | None = None,
-             confirm: bool = False, runner=subprocess.run, timeout: int = 300) -> dict:
+             confirm: bool = False, runner=subprocess.run, timeout: int = 300,
+             policy: Policy | None = None) -> dict:
     if kind not in ENV:
         raise ValueError("kind must be music or video")
     if not confirm:
@@ -33,13 +36,19 @@ def generate(kind: str, prompt: str, out: Path | str, *, command: str | None = N
     if not isinstance(prompt, str) or not 1 <= len(prompt.strip()) <= 2000:
         raise ValueError("Prompt must contain 1–2,000 characters.")
     destination = Path(out).expanduser()
-    destination.parent.mkdir(parents=True, exist_ok=True)
     template = command or os.environ.get(ENV[kind])
     if not template:
         raise MediaUnavailable(f"Set {ENV[kind]} to a local generation command.")
     argv = []
     for part in shlex.split(template):
         argv.append(part.replace("{prompt}", prompt.strip()).replace("{out}", str(destination)))
+    active = policy if policy is not None else Policy()
+    try:
+        active.require("external-command", command=argv, payload=prompt,
+                       target=destination, confirm=confirm)
+    except PolicyDenied as error:
+        raise MediaRefused(str(error)) from error
+    destination.parent.mkdir(parents=True, exist_ok=True)
     try:
         completed = runner(argv, capture_output=True, text=True, timeout=timeout, check=False)
     except (OSError, subprocess.SubprocessError) as error:

@@ -35,7 +35,7 @@ from talos_core.cognition.conversation_activity import foreground
 from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.cognition.talos_identity import SPOKEN_STYLE
 from talos_core.cognition.turn_timing import classify
-from talos_core.mac import mac_context, native_apps
+from talos_core.mac import browser_actions, mac_context, native_apps
 from talos_core.mac.computer_use import ComputerUse, ComputerUseError, permissions
 from talos_core.memory import commitment_memory, personal_facts, visitor_memory
 from talos_core.memory.agent_memory import STATE_PATH, insert_decision, open_memory
@@ -306,6 +306,12 @@ class Room:
             design = f"Design error: {error}"
         if design:
             return decision("reply", design)
+        try:
+            web = browser_actions.command(text, state)
+        except browser_actions.BrowserError as error:
+            web = f"Browser error: {error}"
+        if web:
+            return decision("reply", web)
         if re.fullmatch(r"(?:thanks|thank you|cheers)[.!, ]*", text, re.I):
             return decision("reply", "You're welcome.")
         if re.fullmatch(r"(?:(?:are you|is this|is talos) (?:muted|silent)|"

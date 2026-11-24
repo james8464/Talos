@@ -191,3 +191,18 @@ then, Talos's native JXA/EventKit-export Calendar path remains the read path.
 
 These are file-producing workflows, not GUI automation. Use the accessibility or
 computer-use path when a task needs to edit an already-open document.
+
+
+### Browser and approval policy
+
+| Surface | Existing path | Status |
+| --- | --- | --- |
+| Web pages | headless Chrome over CDP (`talos_core/mac/browser.py`), throwaway 0700 profile | verified locally with a loopback fixture |
+| Page reading | `Read URL` / `Summarize URL` in the room; text only, inputs omitted | verified locally |
+| Page screenshot | `Screenshot URL`; PNG under `state/screenshots/` at 0600 | verified locally |
+| Safari fallback | AppleScript (`do JavaScript`), requires the Develop-menu setting | implemented, not enabled |
+
+Approval profiles live in `talos_core/security/policy.py`: `read-only` is the
+default, `workspace-write` limits writes to configured roots, and `full` still
+requires confirmation for destructive actions. Per-app grants persist to
+`state/policy-grants.json`; decisions are audited without payload text.

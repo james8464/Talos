@@ -31,6 +31,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from talos_core.security.policy import Policy
+
 SCREENCAPTURE = "/usr/sbin/screencapture"
 OSASCRIPT = "/usr/bin/osascript"
 OPEN = "/usr/bin/open"
@@ -186,18 +188,26 @@ class ComputerUse:
 
     def __init__(self, state: Path, *, runner: Callable = subprocess.run,
                  clock: Callable[[], float] = time.time,
-                 screen_dir: Path | None = None, cursor: bool | None = None) -> None:
+                 screen_dir: Path | None = None, cursor: bool | None = None,
+                 policy: Policy | None = None) -> None:
         self.state = Path(state)
         self.reader = runner
         self.clock = clock
         self.screen_dir = Path(screen_dir) if screen_dir else self.state / "screens"
         self.log_path = self.state / "computer-use.jsonl"
+        self._policy = policy
         if cursor is None:
             cursor = _is_darwin() and os.environ.get("TALOS_CURSOR", "1") != "0"
         self.cursor = None
         if cursor:
             from talos_core.mac.cursor import CursorOverlay
             self.cursor = CursorOverlay(self.state)
+
+    def policy(self) -> Policy:
+        """The active approval policy, loaded from private state on first use."""
+        if self._policy is None:
+            self._policy = Policy.load(self.state)
+        return self._policy
 
     # -- observation ------------------------------------------------------
     def frontmost(self) -> dict:
@@ -405,8 +415,13 @@ class ComputerUse:
                    "focus", "close", "fullscreen"}
         if action not in allowed:
             raise ValueError(f"Unknown window action: {action}")
-        if action == "close" and not confirm:
-            raise PolicyError("Closing a window needs confirm=True.")
+        if action == "close":
+            decision = self.policy().approve("window", app=app, target=action,
+                                             destructive=True, confirm=confirm)
+            if decision.needs_confirmation:
+                raise PolicyError("Closing a window needs confirm=True.")
+            if not decision.allowed:
+                raise PolicyError(decision.reason)
         args = ["window", action]
         if app:
             args += ["--app", _validate_app(app)]
@@ -688,8 +703,13 @@ class ComputerUse:
 
     def press(self, combo: str, *, confirm: bool = False, app: str | None = None) -> Receipt:
         modifiers, key = _normalize_key(combo)
-        if frozenset(modifiers) | {key} in DESTRUCTIVE_KEYS and not confirm:
-            raise PolicyError(f"{combo} closes or deletes data; pass confirm=True explicitly.")
+        destructive = frozenset(modifiers) | {key} in DESTRUCTIVE_KEYS
+        decision = self.policy().approve("key", app=app, payload=combo,
+                                         destructive=destructive, confirm=confirm)
+        if not decision.allowed:
+            if decision.needs_confirmation and destructive:
+                raise PolicyError(f"{combo} closes or deletes data; pass confirm=True explicitly.")
+            raise PolicyError(decision.reason)
         if app:
             target = _validate_app(app)
             pid = self.app_pid(target)

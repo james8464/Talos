@@ -17,6 +17,26 @@ OpenClaw/Hermes gap list is empty in this checkout because those pinned source t
 live under `state/`; the audit only produces upstream gaps when they are present
 (`talos_core/self_improvement/capability_audit.py:140-211`).
 
+## Implementation status (24 November 2026)
+
+Several gaps in this report were implemented after it was written:
+
+- Browser automation: headless Chrome over CDP, page read/click/type/screenshot,
+  with a local loopback verification (`talos_core/mac/browser.py`).
+- Approval policy: `read-only` / `workspace-write` / `full`, per-app grants,
+  destructive confirmation, content-free audit (`talos_core/security/policy.py`).
+- Parallel delegation: bounded concurrent subagents with per-task failure
+  isolation (`talos_core/delegate.py`).
+- Planner MCP tools: namespaced discovery, read-only routing, allowlisted writes
+  with confirmation (`agent.py`, `talos_core/mcp_client.py`).
+- Visible text session (`talos session`), local design/document workflows, and
+  an honest capability audit that reports unmapped upstream gaps instead of 100%.
+- Identity resolution now reads the Contacts Me card from per-account
+  `Sources/` databases and never falls back to an arbitrary contact.
+
+Still open: full streaming TUI, durable computer-use jobs, repo-wide coding
+sessions, long-running goals, skill/plugin execution, and lifecycle hooks.
+
 ## 1. Codex in 2026
 
 | Area | Current capability | Source |
