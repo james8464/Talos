@@ -30,7 +30,7 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `594 tests`, `OK` (`16` skipped by design).
+- Unit suite: `599 tests`, `OK` (`16` skipped by design).
 - Live feature pass: `41/41` checks.
 - Ruff: clean.
 
@@ -46,6 +46,7 @@ Latest results:
 | Knowledge | knowledge search, code-graph search |
 | Mac | screenshot, window list, frontmost app, running apps, control search, inspect app, accessible-text/OCR |
 | Local features | skills, nodes, todos, maintenance report, health, model, plugins, subagents, checkpoints |
+| Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music |
 | Safety | `/v1/voice` 503, no audio processes |
 
 ## Native Mac checks

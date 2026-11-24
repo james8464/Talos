@@ -131,9 +131,12 @@ class QuickTextAnswerTests(unittest.TestCase):
             self.assertIn("not configured", self.ask("Is the cloud available?")["reply"])
 
     def test_version_timer_counts_and_calendar_are_local(self):
-        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")), \
+             patch("talos_core.mac.native_apps.calendar_events", return_value=[
+                 {"start": "2026-11-25T09:00:00Z", "title": "Standup", "calendar": "Work"}
+             ]):
             self.assertEqual(self.ask("What is your version?")["reply"], "Talos version 0.2.0.")
-            self.assertIn("calendar connection", self.ask("What's on my calendar?")["reply"])
+            self.assertIn("Standup", self.ask("What's on my calendar?")["reply"])
         timer = self.ask("Set a timer for 10 minutes.")
         self.assertEqual(timer["action"], "applied")
         self.assertEqual(timer["tool"], "set_reminder")
@@ -149,6 +152,15 @@ class QuickTextAnswerTests(unittest.TestCase):
         self.assertIn("blue", self.ask("Show my notes.")["reply"])
         self.ask("Set a timer for 10 minutes.")
         self.assertIn("next reminder", self.ask("What's my next reminder?")["reply"].casefold())
+
+    def test_next_task_and_reminder_list_are_local(self):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertIn("no pending tasks", self.ask("What's my next task?")["reply"].casefold())
+            self.assertIn("no pending reminders", self.ask("Show my reminders.")["reply"].casefold())
+        self.ask("Create a task to test the next task route.")
+        self.assertIn("next task route", self.ask("What's my next task?")["reply"])
+        self.ask("Set a timer for 10 minutes.")
+        self.assertIn("timer", self.ask("Show my reminders.")["reply"].casefold())
 
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")

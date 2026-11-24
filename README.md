@@ -67,6 +67,17 @@ transcripts, or other private context. The key is read from
 is never logged. The default model is `deepseek-v4.1-flash`. This path is
 text-only and does not synthesize audio.
 
+## Native apps and MCP
+
+Talos prefers integrations that already exist: native APIs first, then a
+trusted MCP server, then accessibility/computer use. See
+[`docs/APP_CONNECTIONS.md`](docs/APP_CONNECTIONS.md) for the app-by-app matrix,
+the MCP servers researched, and the permission model. The thin native fallback
+covers Calendar, Reminders, Safari, Shortcuts, Finder, Maps and read-only Music
+state; the next step is a generic MCP client for existing servers such as
+`macos-apps-mcp`, `apple-calendar-mcp` and the official Slack/Notion/GitHub
+servers.
+
 ## Terminal sessions and Telegram
 
 In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Use `/branch project-b` (or `/fork`) to continue from the current conversation. A branch inherits turns up to that point and writes its own subsequent turns. Branches share stored transcript rows. Named sessions use recent turns and can retrieve older matching turns from their visible history, including inherited turns up to the fork. Use `/search QUERY` to search only the current conversation. Automatic recall in the default console excludes named-session turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.

@@ -35,7 +35,7 @@ from talos_core.cognition.conversation_activity import foreground
 from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.cognition.talos_identity import SPOKEN_STYLE
 from talos_core.cognition.turn_timing import classify
-from talos_core.mac import mac_context
+from talos_core.mac import mac_context, native_apps
 from talos_core.mac.computer_use import ComputerUse, ComputerUseError, permissions
 from talos_core.memory import commitment_memory, personal_facts, visitor_memory
 from talos_core.memory.agent_memory import STATE_PATH, insert_decision, open_memory
@@ -288,6 +288,12 @@ class Room:
     def quick_text_answer(self, db, text):
         """Answer common typed requests without a model round trip."""
         state = self.db_path.parent
+        try:
+            native = native_apps.command(text, state)
+        except native_apps.NativeAppError as error:
+            native = f"Native app error: {error}"
+        if native:
+            return decision("reply", native)
         if re.fullmatch(r"(?:thanks|thank you|cheers)[.!, ]*", text, re.I):
             return decision("reply", "You're welcome.")
         if re.fullmatch(r"(?:(?:are you|is this|is talos) (?:muted|silent)|"
@@ -338,10 +344,6 @@ class Room:
                         text, re.I):
             from talos_core import VERSION
             return decision("reply", f"Talos version {VERSION}.")
-        if re.fullmatch(r"(?:what(?:'s| is) on my calendar|show my calendar|my calendar)[?.! ]*",
-                        text, re.I):
-            return decision("reply", "Calendar details are available from the room app's meeting brief. "
-                                     "I don't have a calendar connection in this text session.")
         if re.fullmatch(
             r"(?:what(?:'s| is) (?:the )?time(?: is it)?|what time is it|current time|"
             r"what(?:'s| is) (?:today'?s )?(?:date|day)(?: today)?|what day is (?:it|today)|"
@@ -445,6 +447,16 @@ class Room:
             return decision("reply", f"You have {count} pending {label}.")
         if re.fullmatch(r"(?:what(?:'s| is) my next reminder|next reminder)[?.! ]*", text, re.I):
             return decision("reply", next_reminder(db, False)[:595])
+        if re.fullmatch(r"(?:show|list) my reminders[?.! ]*", text, re.I):
+            return decision("reply", reminder_list(db)[:595])
+        if re.fullmatch(r"(?:what(?:'s| is) my next task|next task)[?.! ]*", text, re.I):
+            row = db.execute(
+                "SELECT id,text FROM inbox WHERE kind='task' AND acknowledged_at IS NULL "
+                "ORDER BY id LIMIT 1"
+            ).fetchone()
+            if row is None:
+                return decision("reply", "You have no pending tasks.")
+            return decision("reply", f"Your next task is #{row['id']}: {row['text']}.")
         if re.fullmatch(r"(?:(?:show|list) my notes|what are my notes)[?.! ]*", text, re.I):
             rows = db.execute(
                 "SELECT id,text FROM inbox WHERE kind='note' AND acknowledged_at IS NULL "
