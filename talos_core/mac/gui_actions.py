@@ -34,10 +34,10 @@ def act(computer: ComputerUse, action: str, *, x=None, y=None, value=None,
     if action in ("click", "double_click", "right_click"):
         x, y = int(_required(x, "x")), int(_required(y, "y"))
         if action == "click":
-            return computer.click(x, y, app=app).to_dict()
+            return _click(computer, x, y, app=app).to_dict()
         if action == "double_click":
-            return computer.click(x, y, count=2, app=app).to_dict()
-        return computer.right_click(x, y, app=app, confirm=confirm).to_dict()
+            return _click(computer, x, y, count=2, app=app).to_dict()
+        return _click(computer, x, y, button="right", confirm=confirm, app=app).to_dict()
     if action == "move":
         x, y = int(_required(x, "x")), int(_required(y, "y"))
         return computer.move(x, y, app=app).to_dict()
@@ -89,7 +89,7 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
     if action == "type":
         if source == "ocr":
             _activate(computer, app)
-            computer.click(x, y)
+            _click(computer, x, y)
             typed = computer.type_text(str(_required(value, "value")))
             result = {"click": None, "type": typed}
         else:
@@ -105,18 +105,28 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
     elif source == "ocr":
         _activate(computer, app)
         if action == "double_click":
-            result = computer.click(x, y, count=2).to_dict()
+            result = _click(computer, x, y, count=2).to_dict()
         elif action == "right_click":
-            result = computer.right_click(x, y, confirm=confirm).to_dict()
+            result = _click(computer, x, y, button="right", confirm=confirm).to_dict()
         elif action == "hover":
             result = computer.hover(x, y).to_dict()
         else:
-            result = computer.click(x, y).to_dict()
+            result = _click(computer, x, y).to_dict()
     else:
         result = computer.click_ref(app, choice["ref"])
     return {"ok": True, "app": app, "description": description,
             "ref": choice.get("ref"), "label": choice.get("label", ""),
             "center": [x, y], "action": action, "source": source, "result": result}
+
+
+def _click(computer, x: int, y: int, *, button: str = "left", count: int = 1,
+           confirm: bool = False, app=None):
+    hid = getattr(computer, "hid_click", None)
+    if callable(hid):
+        return hid(x, y, button=button, count=count, confirm=confirm, app=app)
+    if button == "right":
+        return computer.right_click(x, y, confirm=confirm, app=app)
+    return computer.click(x, y, count=count, confirm=confirm, app=app)
 
 
 def _activate(computer, app: str) -> None:

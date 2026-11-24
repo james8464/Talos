@@ -16,7 +16,8 @@ the computer-use behaviour was ported.
   move, type, key, drag, screenshot, wait, natural-language targeting, and
   Retina screenshot-to-screen mapping.
 - `talos_core/mac/computer_use.py` — right-click and pointer-move primitives,
-  plus `talos computer gui-*` commands.
+  plus `talos computer gui-*` commands. Coordinate clicks prefer the installed
+  `computer_harness` HID click and retain AX/AppleScript fallbacks.
 - `talos_core/mac/cursor.py` and `tools/native/cursor_overlay.swift` — the
   visible agent cursor, click ripple, cyan control border, and “Talos is
   controlling this Mac” pill. The indicator stays visible for a whole
@@ -33,7 +34,7 @@ wrapper, and the Electron renderer/backend.
 
 - `tests/test_gui_apps.py`, `tests/test_gui_actions.py`,
   `tests/test_computer_use.py`, `tests/test_cursor_overlay.py`.
-- Live: managed Tk window started and stopped; the cursor/indicator overlay was
-  captured on screen and stayed click-through without taking focus; OCR located
-  the Tk button and delivered a click, though that fixture did not expose the
-  resulting label change reliably. No audio ran.
+- Live: managed Tk window started; OCR located the button, the harness HID
+  click changed it to “started,” and the window stopped. The cursor/indicator
+  overlay was captured on screen, stayed click-through, and took no focus. No
+  audio ran. See `COMPUTER_USE_RESEARCH.md` for the sources behind these choices.

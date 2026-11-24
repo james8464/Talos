@@ -18,6 +18,9 @@ class FakeComputer:
     def __init__(self):
         self.calls = []
 
+    def hid_click(self, x, y, **kwargs):
+        return self._call("hid_click", x, y, **kwargs)
+
     def _call(self, name, *args, **kwargs):
         self.calls.append((name, args, kwargs))
         return Receipt(name)
@@ -73,7 +76,7 @@ class GuiActionTests(unittest.TestCase):
         gui_actions.act(self.computer, "right_click", x=10, y=20)
         gui_actions.act(self.computer, "move", x=10, y=20)
         self.assertEqual([call[0] for call in self.computer.calls],
-                         ["click", "click", "right_click", "move"])
+                         ["hid_click", "hid_click", "hid_click", "move"])
         self.assertEqual(self.computer.calls[1][2]["count"], 2)
 
     def test_type_key_drag_and_screenshot(self):
@@ -123,7 +126,7 @@ class GuiActionTests(unittest.TestCase):
             result = gui_actions.target(self.computer, "App", "click", "the Start button")
         self.assertTrue(result["ok"])
         self.assertEqual(result["source"], "ocr")
-        self.assertIn(("click", (80, 90), {}), self.computer.calls)
+        self.assertIn(("hid_click", (80, 90), {"button": "left", "count": 1, "confirm": False, "app": None}), self.computer.calls)
 
     def test_ocr_fallback_types_after_clicking_the_text(self):
         with patch.object(self.computer, "choose", return_value={}), \
@@ -133,7 +136,7 @@ class GuiActionTests(unittest.TestCase):
                                         value="Talos")
         self.assertTrue(result["ok"])
         names = [call[0] for call in self.computer.calls]
-        self.assertEqual(names, ["click", "type_text"])
+        self.assertEqual(names, ["hid_click", "type_text"])
 
     def test_verify_asks_the_local_vision_model(self):
         with patch("talos_core.room.room_vision.describe_image",

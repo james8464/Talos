@@ -30,7 +30,7 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `729 tests`, `OK` (`17` skipped by design).
+- Unit suite: `734 tests`, `OK` (`17` skipped by design).
 - Live feature pass: `65/65` checks.
 - Ruff: clean.
 
@@ -49,9 +49,9 @@ Latest results:
 | Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music, private-index app search (Notes/Mail/Messages/Contacts), app status |
 | MCP client | official-SDK stdio and Streamable-HTTP tools/list/tools-call; room discovery and call against Talos and `mcp-server-apple-events` |
 | Identity | `Who am I?` resolves the Contacts Me card from `Sources/` without a placeholder name |
-| Design | poster SVG, Pages-compatible `.docx` via `textutil`, OpenSCAD nameplate + STL, headless Blender PNG |
+| Design | poster SVG, real `.pages` via AppleScript, Pages-compatible `.docx` fallback, OpenSCAD nameplate + STL, headless Blender PNG |
 | Browser | local page read and private screenshot through headless Chrome CDP |
-| Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe |
+| Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; harness HID click verified on Tk and Calculator |
 | Terminal | `talos ask` one-shot and interactive chat reach the same room routes, including pointer moves and design |
 | Policy | profiles, per-app grants, destructive confirmation, content-free audit |
 | Safety | `/v1/voice` 503, no audio processes, speech/music requests blocked, unverified app writes refused |

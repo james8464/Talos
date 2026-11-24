@@ -715,6 +715,44 @@ class ComputerUse:
         self.audit(receipt, point=[x, y], button=button)
         return receipt
 
+    def hid_click(self, x: int, y: int, *, button: str = "left", count: int = 1,
+                  app: str | None = None, confirm: bool = False) -> Receipt:
+        """Post a real HID click, preferring the installed harness engine.
+
+        The harness click sets the mouse click-state field, activates the
+        pointer, and is the reliable path for custom-drawn apps that ignore
+        AppleScript's ``click at``. It falls back to the existing primitives.
+        """
+        x, y = _validate_point(x, y)
+        if button not in ("left", "right"):
+            raise ValueError("button must be 'left' or 'right'")
+        if count < 1 or count > 3:
+            raise ValueError("count must be 1–3")
+        self._show_cursor(x, y, f"click {app}" if app else "click")
+        self._show_click(x, y, f"click {app}" if app else "click")
+        engine = self._harness()
+        if app:
+            pid = self.app_pid(app)
+            try:
+                if engine is not None and hasattr(engine, "post_click_to_pid"):
+                    engine.post_click_to_pid(pid, x, y, button=button, count=count)
+                else:
+                    self._post_click_to_pid(pid, x, y, count, button=button)
+            except (OSError, RuntimeError, ValueError) as error:
+                raise ComputerUseError(f"Could not click {app}: {error}") from error
+            receipt = Receipt("hid_click_to_pid", True, _now(), f"delivered to {app}",
+                              confirmed=confirm, metadata={"pid": pid, "count": count})
+        elif engine is not None and hasattr(engine, "click"):
+            engine.click(x, y, button=button, count=count)
+            receipt = Receipt("hid_click", True, _now(), f"posted at {x},{y}",
+                              confirmed=confirm, metadata={"count": count})
+        elif button == "right":
+            receipt = self.right_click(x, y, confirm=confirm)
+        else:
+            receipt = self.click(x, y, count=count, confirm=confirm)
+        self.audit(receipt, point=[x, y], button=button, app=app)
+        return receipt
+
     def right_click(self, x: int, y: int, *, confirm: bool = False,
                     app: str | None = None) -> Receipt:
         """Right-click a screen point, directly to an app when given."""
