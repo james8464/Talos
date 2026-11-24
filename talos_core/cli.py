@@ -602,6 +602,22 @@ def _graph(args) -> int:
     return 0 if payload.get("stats", {}).get("available", True) else 1
 
 
+def _audio_mode():
+    if os.environ.get("TALOS_MUTE") == "1":
+        return "muted"
+    plist = Path.home() / "Library" / "LaunchAgents" / "local.talos.room.plist"
+    try:
+        import plistlib
+        data = plistlib.loads(plist.read_bytes())
+    except (OSError, ValueError):
+        return "enabled"
+    environment = data.get("EnvironmentVariables") or {}
+    arguments = data.get("ProgramArguments") or []
+    if environment.get("TALOS_MUTE") == "1" or "--mute" in arguments:
+        return "muted"
+    return "enabled"
+
+
 def _status(args) -> int:
     from talos_core.mac import computer_use
     from talos_core.self_improvement import health
@@ -611,7 +627,7 @@ def _status(args) -> int:
     print(health.summary(state))
     permissions = computer_use.permissions()
     print("Mac access · Accessibility {accessibility} · Screen Recording {screen_recording}".format(**permissions))
-    print("Audio · " + ("muted" if os.environ.get("TALOS_MUTE") == "1" else "enabled"))
+    print("Audio · " + _audio_mode())
     graph = ROOT / "graphify-out" / "graph.json"
     print(f"Source graph · {'present' if graph.is_file() else 'missing (run graphify extract . --code-only)'}")
     return 0
