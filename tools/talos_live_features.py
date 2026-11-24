@@ -258,6 +258,14 @@ def run(keep: bool = False) -> dict:
 
     activity = ask(token, "Show my recent activity.")["reply"]
     check(checks, "recent_activity", "Recent activity" in activity, activity)
+    from talos_core import skills
+    skill_path = skills.create(ROOT / "state", "Live pass skill", "Used by the live pass",
+                               "Say the live pass skill is loaded.")
+    try:
+        skill_reply = ask(token, "Use the Live pass skill.")["reply"]
+        check(checks, "skill_use", "live pass skill is loaded" in skill_reply, skill_reply)
+    finally:
+        skill_path.unlink(missing_ok=True)
     move = ask(token, "Move the mouse to 700, 450.")["reply"]
     check(checks, "pointer_move", "Moved the pointer" in move, move)
     cli = subprocess.run(

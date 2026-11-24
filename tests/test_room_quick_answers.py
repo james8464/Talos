@@ -251,6 +251,7 @@ class QuickTextAnswerTests(unittest.TestCase):
         nodes.register(self.root, "local-mac")
         with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
             self.assertIn("Live check", self.ask("List my skills.")["reply"])
+            self.assertIn("Ask Talos.", self.ask("Use the Live check skill.")["reply"])
             self.assertIn("local-mac", self.ask("List nodes.")["reply"])
             self.assertIn("check the build", self.ask("Add a todo to check the build.")["reply"])
             self.assertIn("check the build", self.ask("Show my todos.")["reply"])

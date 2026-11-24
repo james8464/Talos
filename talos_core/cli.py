@@ -630,8 +630,18 @@ def _skills(args) -> int:
     from talos_core import skills
 
     if args.create:
-        path = skills.create(args.state, args.create[0], " ".join(args.create[1:]))
+        name = args.create[0]
+        description = " ".join(args.create[1:])
+        if args.body is not None and not description:
+            description = "Local skill"
+        path = skills.create(args.state, name, description, args.body or "")
         print(json.dumps({"created": str(path)}))
+    elif args.show:
+        item = skills.find(args.state, " ".join(args.show))
+        if item is None:
+            print(json.dumps({"ok": False, "error": "No matching skill."}))
+            return 1
+        print(json.dumps({"ok": True, "skill": item}, indent=2, ensure_ascii=False))
     else:
         print(json.dumps({"skills": skills.discover(args.state)}, indent=2))
     return 0
@@ -1056,6 +1066,8 @@ def build_parser() -> argparse.ArgumentParser:
     skill = commands.add_parser("skills", help="List or create local skill files.")
     skill.add_argument("--state", type=Path, default=ROOT / "state")
     skill.add_argument("--create", nargs="+")
+    skill.add_argument("--show", nargs="+")
+    skill.add_argument("--body")
     skill.set_defaults(func=_skills)
 
     node = commands.add_parser("nodes", help="List or register local nodes.")

@@ -65,3 +65,19 @@ def discover(state: Path | str) -> list[dict]:
         except (OSError, ValueError):
             continue
     return found
+
+
+def find(state: Path | str, query: str) -> dict | None:
+    """Return the single skill matching a name or description, if unambiguous."""
+    words = " ".join(str(query).split()).casefold()
+    if not words:
+        return None
+    found = discover(state)
+    exact = [item for item in found if item["name"].casefold() == words]
+    if exact:
+        return exact[0]
+    partial = [
+        item for item in found
+        if words in item["name"].casefold() or words in item["description"].casefold()
+    ]
+    return partial[0] if len(partial) == 1 else None

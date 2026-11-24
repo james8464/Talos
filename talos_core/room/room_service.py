@@ -686,6 +686,13 @@ class Room:
                 f"{item.get('name')}: {item.get('description', '')}".strip() for item in found[:5]
             )
             return decision("reply", f"Skills: {summary}"[:595])
+        if match := re.fullmatch(r"(?:use|show|open|read) (?:the )?(.+?) skill[?.! ]*",
+                                 text, re.I):
+            item = skills.find(state, match.group(1).strip())
+            if not item:
+                return decision("reply", f"No skill named {match.group(1).strip()!r}.")
+            body = item.get("body") or item.get("description") or ""
+            return decision("reply", f"Skill {item['name']}: {body[:1200]}")
         if re.fullmatch(r"(?:list|show) (?:my )?(?:nodes|peers)[?.! ]*", text, re.I):
             found = nodes.nodes(state)
             if not found:
