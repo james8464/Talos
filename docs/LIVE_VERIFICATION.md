@@ -31,7 +31,7 @@ Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
 - Unit suite: `606 tests`, `OK` (`16` skipped by design).
-- Live feature pass: `46/46` checks.
+- Live feature pass: `49/49` checks.
 - Ruff: clean.
 
 ## Live feature pass
@@ -46,7 +46,7 @@ Latest results:
 | Knowledge | knowledge search, code-graph search |
 | Mac | screenshot, window list, frontmost app, running apps, control search, inspect app, accessible-text/OCR |
 | Local features | skills, nodes, todos, maintenance report, health, model, plugins, subagents, checkpoints |
-| Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music, private-index app search, app status |
+| Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music, private-index app search (Notes/Mail/Messages/Contacts), app status |
 | MCP client | official-SDK stdio tools/list and tools/call; room discovery and call against Talos and `mcp-server-apple-events` |
 | Safety | `/v1/voice` 503, no audio processes |
 

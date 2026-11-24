@@ -213,6 +213,10 @@ def run(keep: bool = False) -> dict:
     app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
     check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,
           app_search)
+    for app in ("mail", "messages", "contacts"):
+        reply = ask(token, f"Search my {app} for zzzznomatch.")["reply"]
+        check(checks, f"native_{app}_search",
+              "No matching" in reply or "disabled" in reply, reply)
     screenshot_path = ""
     if "Screenshot saved to " in screenshot:
         screenshot_path = screenshot.split("Screenshot saved to ", 1)[1].split(" (", 1)[0]
