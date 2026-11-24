@@ -36,7 +36,7 @@ from talos_core.cognition.spoken_stream import SpokenStream
 from talos_core.cognition.talos_identity import SPOKEN_STYLE
 from talos_core.cognition.turn_timing import classify
 from talos_core.mac import browser_actions, mac_context, native_apps
-from talos_core.mac.computer_use import ComputerUse, ComputerUseError, permissions
+from talos_core.mac.computer_use import ComputerUse, ComputerUseError, PolicyError, permissions
 from talos_core.memory import commitment_memory, personal_facts, visitor_memory
 from talos_core.memory.agent_memory import STATE_PATH, insert_decision, open_memory
 from talos_core.memory.transcript_memory import (
@@ -326,7 +326,6 @@ class Room:
                 text, re.I):
             combo, app = match.group(1).strip(), match.group(2).strip()
             try:
-                from talos_core.mac.computer_use import ComputerUse, PolicyError
                 ComputerUse(state).press(combo, app=app)
             except PolicyError:
                 return decision("reply", "That shortcut needs explicit confirmation; I didn't press it.")
@@ -339,7 +338,6 @@ class Room:
             if not value:
                 return decision("reply", "Tell me what to copy.")
             try:
-                from talos_core.mac.computer_use import ComputerUse
                 ComputerUse(state).set_clipboard(value[:10000])
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't copy that: {error}")
@@ -347,7 +345,6 @@ class Room:
         if re.fullmatch(r"(?:what(?:'s| is) (?:on )?my clipboard|read my clipboard)[?.! ]*",
                         text, re.I):
             try:
-                from talos_core.mac.computer_use import ComputerUse
                 value = ComputerUse(state).clipboard()
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't read the clipboard: {error}")
@@ -358,7 +355,6 @@ class Room:
             action = "minimize" if match.group(1).casefold().startswith("minim") else "focus"
             app = match.group(2).strip()
             try:
-                from talos_core.mac.computer_use import ComputerUse
                 ComputerUse(state).window(action, app=app)
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't {action} {app}: {error}")
@@ -371,7 +367,6 @@ class Room:
             action = "right_click" if kind.startswith("right") else "double_click"
             try:
                 from talos_core.mac import gui_actions
-                from talos_core.mac.computer_use import ComputerUse
                 result = gui_actions.target(ComputerUse(state), app, action, description)
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't {kind} in {app}: {error}")
@@ -385,7 +380,6 @@ class Room:
             description, app = match.group(1), match.group(2)
             try:
                 from talos_core.mac import gui_actions
-                from talos_core.mac.computer_use import ComputerUse
                 result = gui_actions.target(ComputerUse(state), app, "hover", description)
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't hover in {app}: {error}")
@@ -399,7 +393,6 @@ class Room:
             lines = min(int(match.group(2) or 3), 50)
             app = (match.group(3) or "").strip() or None
             try:
-                from talos_core.mac.computer_use import ComputerUse
                 ComputerUse(state).scroll(lines if direction == "down" else -lines, app=app)
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't scroll: {error}")
@@ -411,7 +404,6 @@ class Room:
             description, app = match.group(1).strip(), match.group(2).strip()
             try:
                 from talos_core.mac import gui_actions
-                from talos_core.mac.computer_use import ComputerUse
                 result = gui_actions.target(ComputerUse(state), app, "click", description)
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't click in {app}: {error}")
@@ -426,7 +418,6 @@ class Room:
             if not value:
                 return decision("reply", "Tell me what to type.")
             try:
-                from talos_core.mac.computer_use import ComputerUse
                 ComputerUse(state).type_text(value[:8000], app=app)
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't type into {app}: {error}")
@@ -436,7 +427,6 @@ class Room:
                 r"(?: to)? (\d{1,4})[, ]+ *(\d{1,4})[.! ]*", text, re.I):
             x, y = int(match.group(1)), int(match.group(2))
             try:
-                from talos_core.mac.computer_use import ComputerUse
                 ComputerUse(state).move(x, y)
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't move the pointer: {error}")
@@ -678,6 +668,36 @@ class Room:
                 for match in matches[:3]
             )
             return decision("reply", f"Code results for {query}: {summary}"[:595])
+        if match := re.fullmatch(
+                r"(?:list|show) (?:the |my )?(?:(.+?) )?windows[?.! ]*", text, re.I):
+            app = (match.group(1) or "").strip() or None
+            if app and app.casefold() in ("my", "all"):
+                app = None
+            try:
+                computer = ComputerUse(state, cursor=False)
+                if app is None:
+                    app = str(computer.frontmost().get("app") or "") or None
+                rows = computer.windows(app) if app else computer.windows()
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't list windows: {error}")
+            if not rows:
+                return decision("reply", f"No windows found for {app}." if app else "No windows found.")
+            lines = []
+            for row in rows[:8]:
+                raw = str(row.get("raw") or row.get("title") or row.get("name") or "").strip()
+                if raw:
+                    lines.append(raw)
+            return decision("reply", (f"Windows ({len(rows)}): " + "; ".join(lines))[:595])
+        if re.fullmatch(r"(?:what|which) windows are open[?.! ]*", text, re.I):
+            try:
+                computer = ComputerUse(state, cursor=False)
+                rows = computer.windows()
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't list windows: {error}")
+            if not rows:
+                return decision("reply", "No windows found.")
+            return decision("reply", ("Windows: " + "; ".join(
+                str(row.get("raw") or row.get("title") or "") for row in rows[:8]))[:595])
         if re.fullmatch(r"(?:list|show) (?:my )?skills[?.! ]*", text, re.I):
             found = skills.discover(state)
             if not found:

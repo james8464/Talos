@@ -240,6 +240,8 @@ def run(keep: bool = False) -> dict:
     check(checks, "control_hover", "Hovering over" in hovered, hovered)
     scrolled = ask(token, "Scroll down by 2 lines in Calculator.")["reply"]
     check(checks, "control_scroll", "Scrolled down 2 lines" in scrolled, scrolled)
+    windows = ask(token, "List Calculator windows.")["reply"]
+    check(checks, "window_list", "Calculator" in windows and "Windows" in windows, windows)
     pressed = ask(token, "Press escape in Calculator.")["reply"]
     check(checks, "control_press", "Pressed escape" in pressed, pressed)
     focused = ask(token, "Focus Calculator.")["reply"]

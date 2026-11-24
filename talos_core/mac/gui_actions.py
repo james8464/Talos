@@ -97,7 +97,8 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
             typed = computer.type_ref(app, choice["ref"], str(_required(value, "value")))
             result = {"click": clicked, "type": typed}
     elif action == "double_click":
-        result = _click(computer, x, y, count=2, app=app).to_dict()
+        _activate(computer, app)
+        result = _click(computer, x, y, count=2).to_dict()
     elif action == "right_click":
         result = _click(computer, x, y, button="right", confirm=confirm, app=app).to_dict()
     elif action == "hover":
