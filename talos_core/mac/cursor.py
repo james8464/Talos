@@ -122,6 +122,36 @@ class CursorOverlay:
                 self._timer.start()
             return True
 
+    def begin_session(self, label: str = "computer use") -> bool:
+        """Keep the control indicator visible until :meth:`end_session`."""
+        with self._lock:
+            process = self._start()
+            if process is None or process.stdin is None:
+                return False
+            try:
+                process.stdin.write(json.dumps(
+                    {"session": True, "label": label[:60], "visible": True, "control": True}
+                ) + "\n")
+                process.stdin.flush()
+            except (OSError, ValueError):
+                self.close()
+                return False
+            if self._timer is not None:
+                self._timer.cancel()
+                self._timer = None
+            return True
+
+    def end_session(self) -> None:
+        with self._lock:
+            process = self.process
+            if process is None or process.stdin is None:
+                return
+            try:
+                process.stdin.write('{"session": false}\n')
+                process.stdin.flush()
+            except (OSError, ValueError):
+                pass
+
     def ripple(self, x: int, y: int, label: str = "click") -> bool:
         """Draw a click ripple without resetting the current label."""
         with self._lock:

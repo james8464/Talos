@@ -47,6 +47,13 @@ class CursorOverlayTests(unittest.TestCase):
         self.assertEqual(self.lines()[0], {"x": 30, "y": 40, "label": "click",
                                           "visible": True, "control": True, "click": True})
 
+    def test_session_keeps_the_indicator_until_it_ends(self):
+        with patch.object(self.overlay, "_ensure_binary", return_value=True):
+            self.assertTrue(self.overlay.begin_session("computer use"))
+            self.overlay.end_session()
+        self.assertEqual(self.lines()[0]["session"], True)
+        self.assertEqual(self.lines()[1], {"session": False})
+
     def test_labels_are_bounded_and_a_failed_helper_never_raises(self):
         with patch.object(self.overlay, "_ensure_binary", return_value=True):
             self.overlay.show(1, 2, "x" * 200, hide_after=None)

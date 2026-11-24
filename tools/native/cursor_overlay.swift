@@ -189,6 +189,16 @@ handle.readabilityHandler = { stream in
         guard let object = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any]
         else { continue }
         DispatchQueue.main.async {
+            if object["session"] as? Bool == true {
+                controlView.setActive(true)
+                controlWindow.orderFrontRegardless()
+                return
+            }
+            if object["session"] as? Bool == false {
+                controlView.setActive(false)
+                controlWindow.orderOut(nil)
+                return
+            }
             if object["control"] as? Bool == false || object["visible"] as? Bool == false {
                 cursorWindow.orderOut(nil)
                 controlView.setActive(false)

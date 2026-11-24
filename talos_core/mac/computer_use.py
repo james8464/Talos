@@ -942,6 +942,24 @@ class ComputerUseLoop:
         self.confirm_sensitive = confirm_sensitive
 
     def run(self, goal: str, decide: Callable, *, observe_first: bool = True) -> dict:
+        overlay = getattr(self.computer, "cursor", None)
+        started = False
+        if overlay is not None:
+            try:
+                started = overlay.begin_session("computer use")
+            except (OSError, ValueError):
+                started = False
+        try:
+            return self._run_steps(goal, decide, observe_first=observe_first)
+        finally:
+            if started:
+                try:
+                    overlay.end_session()
+                except (OSError, ValueError):
+                    pass
+
+    def _run_steps(self, goal: str, decide: Callable, *,
+                   observe_first: bool = True) -> dict:
         if not isinstance(goal, str) or not goal.strip():
             raise ValueError("A goal is required.")
         history: list[dict] = []
