@@ -140,6 +140,16 @@ class QuickTextAnswerTests(unittest.TestCase):
         self.assertIn("Timer", timer["reply"])
         self.assertIn("1 pending reminder", self.ask("How many reminders do I have?")["reply"])
 
+    def test_tomorrow_next_reminder_and_notes_are_local(self):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertIn("Tomorrow is", self.ask("What's the date tomorrow?")["reply"])
+            self.assertIn("no pending reminders", self.ask("What's my next reminder?")["reply"].casefold())
+            self.assertIn("no saved notes", self.ask("Show my notes.")["reply"].casefold())
+        self.ask("Remember that the live note color is blue.")
+        self.assertIn("blue", self.ask("Show my notes.")["reply"])
+        self.ask("Set a timer for 10 minutes.")
+        self.assertIn("next reminder", self.ask("What's my next reminder?")["reply"].casefold())
+
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")
         reply = self.ask("Search your memory for live code.")["reply"]

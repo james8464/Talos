@@ -350,6 +350,12 @@ class Room:
         ):
             now = datetime.now(UTC).astimezone()
             return decision("reply", f"It is {now:%H:%M %Z} on {now:%A %d %B %Y}.")
+        if re.fullmatch(
+            r"(?:what(?:'s| is) (?:the )?(?:date|day) tomorrow|what(?:'s| is) tomorrow'?s date|"
+            r"what day is tomorrow)[?.! ]*", text, re.I,
+        ):
+            tomorrow = datetime.now(UTC).astimezone() + timedelta(days=1)
+            return decision("reply", f"Tomorrow is {tomorrow:%A %d %B %Y}.")
         arithmetic = re.fullmatch(
             r"(?:what(?:'s| is)|calculate|compute)\s+"
             r"(-?\d{1,12}(?:\.\d{1,8})?)\s*([+\-*/×÷])\s*"
@@ -437,6 +443,17 @@ class Room:
             ).fetchone()[0]
             label = kind if count == 1 else kind + "s"
             return decision("reply", f"You have {count} pending {label}.")
+        if re.fullmatch(r"(?:what(?:'s| is) my next reminder|next reminder)[?.! ]*", text, re.I):
+            return decision("reply", next_reminder(db, False)[:595])
+        if re.fullmatch(r"(?:(?:show|list) my notes|what are my notes)[?.! ]*", text, re.I):
+            rows = db.execute(
+                "SELECT id,text FROM inbox WHERE kind='note' AND acknowledged_at IS NULL "
+                "ORDER BY id DESC LIMIT 8"
+            ).fetchall()
+            if not rows:
+                return decision("reply", "You have no saved notes.")
+            listed = "; ".join(f"#{row['id']} {row['text']}" for row in rows)
+            return decision("reply", f"Notes: {listed}"[:595])
         if re.fullmatch(r"(?:(?:list|show)(?: me)? (?:my )?approvals|what needs my approval)[?.! ]*",
                         text, re.I):
             items = inbox_items(db, limit=50)
