@@ -79,6 +79,21 @@ class QuickTextAnswerTests(unittest.TestCase):
             self.assertIn("Honey", self.ask("Tell me a fun fact.")["reply"])
             self.assertIn("short break", self.ask("I feel tired.")["reply"])
 
+    def test_placeholder_identity_is_not_reported(self):
+        resolver = type("Resolver", (), {
+            "resolve_identity": lambda self, text: {"identity": {"full_name": "User"}},
+        })()
+        with patch("talos_core.cognition.talos_identity.get_resolver", return_value=resolver):
+            reply = self.ask("What is my name?")["reply"]
+        self.assertIn("don't have your name", reply)
+
+    def test_saved_name_is_used_for_identity(self):
+        self.ask("Remember that my name is James.")
+        with patch("talos_core.cognition.talos_identity.get_resolver",
+                   return_value={"identity": {"full_name": "User"}}):
+            reply = self.ask("What is my name?")["reply"]
+        self.assertIn("James", reply)
+
     def test_private_context_is_only_used_for_personal_questions(self):
         from talos_core.room.room_service import needs_private_context
         for text in ("Tell me a fun fact.", "What is the tallest mountain?", "Who wrote Hamlet?"):

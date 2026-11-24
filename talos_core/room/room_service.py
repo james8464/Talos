@@ -296,8 +296,15 @@ class Room:
                 name = ((context or {}).get("identity") or {}).get("full_name")
             except (OSError, RuntimeError, sqlite3.Error):
                 name = None
-            if name:
-                return decision("reply", f"You are {name}.")
+            if name and name.strip().casefold() not in {
+                    "user", "me", "myself", "owner", "admin", "talos", "you", "unknown"}:
+                return decision("reply", f"You are {name.strip()}.")
+            fact = db.execute(
+                "SELECT value FROM personal_facts WHERE session=? AND subject IN ('name', 'full name')",
+                (TEXT_SESSION,),
+            ).fetchone()
+            if fact:
+                return decision("reply", f"You are {fact[0]}.")
             return decision("reply", "I don't have your name saved in this session.")
         if re.fullmatch(r"(?:(?:tell me|give me) (?:a |one )?fun fact|fun fact)[?.! ]*",
                         text, re.I):
