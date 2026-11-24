@@ -18,8 +18,9 @@ the computer-use behaviour was ported.
 - `talos_core/mac/computer_use.py` — right-click and pointer-move primitives,
   plus `talos computer gui-*` commands.
 - `talos_core/mac/cursor.py` and `tools/native/cursor_overlay.swift` — the
-  visible agent cursor, click ripple, and “Talos is controlling this Mac”
-  indicator. The overlay is click-through, never takes focus, and hides itself.
+  visible agent cursor, click ripple, cyan control border, and “Talos is
+  controlling this Mac” pill. The indicator stays visible for a whole
+  ``ComputerUseLoop`` session, is click-through, and never takes focus.
 
 Talos does not call `cliclick` or `xdotool`; the port delegates to its existing
 `ComputerUse` primitives so receipts, PID-targeted input, policy checks, and

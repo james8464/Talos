@@ -240,7 +240,19 @@ def run(keep: bool = False) -> dict:
           and "don't have" not in identity, "identity resolved" if identity.startswith("You are ")
           else identity)
 
+    email = ask(token, "What is my email address?")["reply"]
+    check(checks, "identity_email", "don't have" not in email.casefold(),
+          "email resolved" if "don't have" not in email.casefold() else email)
+    phone = ask(token, "What is my phone number?")["reply"]
+    check(checks, "identity_phone", "don't have" not in phone.casefold(),
+          "phone resolved" if "don't have" not in phone.casefold() else phone)
+
     design_paths: list[str] = []
+    poster = ask(token, "Design a poster titled Live Feature Poster.")["reply"]
+    if "Poster created: " in poster:
+        design_paths.append(poster.split(": ", 1)[1].strip())
+    check(checks, "design_poster", "Poster created" in poster, poster)
+
     document = ask(token, "Create a Pages document titled Live Feature Check.")["reply"]
     if "Pages-compatible document created: " in document:
         design_paths.append(document.split(": ", 1)[1].strip())

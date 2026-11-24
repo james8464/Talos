@@ -98,6 +98,14 @@ state. A generic MCP client built on the official Python SDK is available as
 `apple-calendar-mcp`, or the official Slack/Notion/GitHub servers) in
 `state/mcp-servers.json`. In the room, ask `List MCP servers`, `List MCP tools on NAME`, or `Call mcp tool TOOL on NAME with {"key":"value"}`.
 
+## Computer-control feedback
+
+While Talos drives the Mac it shows a native, click-through overlay: an agent
+cursor and label, a click ripple, and a cyan screen border with a
+“TALOS IS CONTROLLING THIS MAC” pill. The indicator stays visible for the whole
+multi-step control session. It never takes focus or mouse events. Set
+`TALOS_CURSOR=0` to disable it.
+
 ## Browser automation
 
 Talos can read or capture a web page without touching your normal browser
