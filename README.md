@@ -51,6 +51,22 @@ TALOS_MUTE=1 python3 -m talos_core.interfaces.telegram_gateway --owner YOUR_NUME
 
 In silent mode the room drops its voice object, disables proactive speech, and returns HTTP 503 from `POST /v1/voice`. Kokoro and Telegram voice-note synthesis raise a clear error before loading models, so callers fall back to text. Typed turns, memory, reminders, Mac control, maintenance and the local model continue to work. The installed launchd service and `Start-Talos.command` use silence by default.
 
+## Optional OpenCode Go model
+
+Talos can make an explicit text-only call to the OpenCode Go subscription:
+
+```sh
+talos cloud "Explain the tradeoff in one paragraph."
+talos cloud "Reply with exactly CLOUD_OK." --json
+```
+
+In the room, ask `Ask the cloud to …` or `Use deepseek to …`. The route sends
+only the text after that prefix; it does not add room history, saved facts,
+transcripts, or other private context. The key is read from
+`TALOS_OPENCODE_KEY`, `state/opencode.key`, or the local OpenCode auth store and
+is never logged. The default model is `deepseek-v4.1-flash`. This path is
+text-only and does not synthesize audio.
+
 ## Terminal sessions and Telegram
 
 In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Use `/branch project-b` (or `/fork`) to continue from the current conversation. A branch inherits turns up to that point and writes its own subsequent turns. Branches share stored transcript rows. Named sessions use recent turns and can retrieve older matching turns from their visible history, including inherited turns up to the fork. Use `/search QUERY` to search only the current conversation. Automatic recall in the default console excludes named-session turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.

@@ -2,6 +2,7 @@
 
 import json
 import re
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from uuid import UUID
 
@@ -101,7 +102,12 @@ def apply_order(db, steps, event, *, apply, archive, request_id):
         for step in steps:
             if step["tool"] == "set_reminder":
                 minutes = step["remind_in_minutes"]
-                reply += f" Reminder delay: {minutes} minute" + ("." if minutes == 1 else "s.")
+                due = (datetime.now(UTC) + timedelta(minutes=minutes)).astimezone()
+                if minutes <= 60:
+                    unit = "minute" if minutes == 1 else "minutes"
+                    reply += f" Reminder set for {minutes} {unit} from now ({due:%a %d %b at %H:%M %Z})."
+                else:
+                    reply += f" Reminder set for {due:%a %d %b at %H:%M %Z}."
     return receipts, reply, fresh
 
 

@@ -73,6 +73,18 @@ Exercised through `talos computer` against TextEdit and Calculator:
   `--command` parser collision; `initialize`, `session/new` and
   `session/prompt` returned `pong`.
 
+## Cloud model
+
+The optional OpenCode Go bridge was verified against the subscription:
+
+- `talos cloud "Reply with exactly CLOUD_OK." --json` returned
+  `{"ok": true, "model": "deepseek-v4.1-flash", "reply": "CLOUD_OK"}`.
+- The room route `Ask the cloud to reply with exactly CLOUD_OK.` returned
+  `CLOUD_OK`; `Is the cloud available?` reported it as configured.
+- The key is stored only in the private runtime state (or the OpenCode auth
+  store), never logged. The route sends only the requested text, not room
+  history or saved private context. The path is text-only.
+
 ## Not live-verified here
 
 These require external credentials, endpoints, hardware or operator input that

@@ -1017,8 +1017,12 @@ class Room:
         disposition = proposal["disposition"]
         if proposal["tool"] == "set_reminder" and action == "applied":
             minutes = proposal["remind_in_minutes"]
-            unit = "minute" if minutes == 1 else "minutes"
-            reply = f"Reminder set for {minutes} {unit} from now. {detail}"
+            due = (datetime.now(UTC) + timedelta(minutes=minutes)).astimezone()
+            if minutes <= 60:
+                unit = "minute" if minutes == 1 else "minutes"
+                reply = f"Reminder set for {minutes} {unit} from now ({due:%a %d %b at %H:%M %Z}). {detail}"
+            else:
+                reply = f"Reminder set for {due:%a %d %b at %H:%M %Z}. {detail}"
         elif proposal["tool"] == "create_task" and action == "applied":
             reply = f"Added to your task list: {detail}"
         elif disposition == "act" and action == "applied":
