@@ -354,7 +354,8 @@ def plan(
                 {"role": "system", "content": "You are Talos, a local assistant. " + instructions},
                 *room_context.get("recent_dialogue", []),
                 {"role": "user", "content": question},
-            ], model, lookups, can_search=room_context.get("public_web_available", False))
+            ], model, lookups, can_search=room_context.get("public_web_available", False),
+               request=event["summary"])
         else:
             policy_hint = cognitive_engine.active_policy_hint(cognitive_engine._infer_state(database))
             system_text = PERSONALITY + "\n" + CHARTER + ("\n" + policy_hint if policy_hint else "")

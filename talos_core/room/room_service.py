@@ -266,6 +266,17 @@ class Room:
     def quick_text_answer(self, db, text):
         """Answer common typed requests without a model round trip."""
         state = self.db_path.parent
+        if re.fullmatch(r"(?:thanks|thank you|cheers)[.!, ]*", text, re.I):
+            return decision("reply", "You're welcome.")
+        if re.fullmatch(r"(?:are you there|you there|are you awake|are you online)[?.! ]*",
+                        text, re.I):
+            return decision("reply", "Yes, I'm here.")
+        if re.fullmatch(r"(?:hi|hello|hey)(?: talos)?[.!, ]*", text, re.I):
+            return decision("reply", "Hello. How can I help?")
+        weather = re.fullmatch(r"(?:what(?:'s| is) )?(?:the )?weather(?: like)?(?: today)?[?.! ]*",
+                               text, re.I)
+        if weather and not self.online:
+            return decision("reply", "Online weather lookups are off in this session.")
         if re.fullmatch(
             r"(?:(?:hi|hello|hey)(?: talos)?[.!, ]*)?"
             r"(?:what can you do|what are your capabilities|help|who are you|what are you)[?.! ]*",
@@ -469,6 +480,10 @@ class Room:
                     match = pattern.fullmatch(row["text"].strip())
                     if match:
                         return decision("reply", f"{subject[:1].upper() + subject[1:]} is {match.group(1)}.")
+                if (re.fullmatch(r"what(?:'s| is) my .+", text, re.I)
+                        and subject.casefold() not in
+                        {"name", "address", "email", "phone", "number", "birthday", "date of birth"}):
+                    return decision("reply", f"I don't have a saved fact for your {subject}.")
         return None
 
     def quick_mac_answer(self, text):

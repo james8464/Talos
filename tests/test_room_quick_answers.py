@@ -58,10 +58,23 @@ class QuickTextAnswerTests(unittest.TestCase):
             reply = self.ask("What is the live pass color?")["reply"]
         self.assertEqual(reply, "Live pass color is cobalt.")
 
+    def test_small_talk_and_offline_weather_are_local(self):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertEqual(self.ask("Thank you.")["reply"], "You're welcome.")
+            self.assertEqual(self.ask("Are you there?")["reply"], "Yes, I'm here.")
+            self.assertIn("Online weather lookups are off", self.ask("What's the weather?")["reply"])
+
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")
         reply = self.ask("Search your memory for live code.")["reply"]
         self.assertIn("cobalt", reply)
+
+    def test_forgotten_fact_is_not_invented_from_private_context(self):
+        self.ask("Remember that my favorite editor is Neovim.")
+        self.ask("Forget my favorite editor.")
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            reply = self.ask("What is my favorite editor?")["reply"]
+        self.assertIn("don't have a saved fact", reply)
 
     def test_todays_date_is_answered_without_the_model(self):
         with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):

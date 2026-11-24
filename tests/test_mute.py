@@ -45,7 +45,7 @@ class SilentModeTests(unittest.TestCase):
         room = self.room()
         with patch("talos_core.room.room_service.plan",
                    return_value=decision("reply", "Text only, no audio.")):
-            status, body = room.route("POST", "/v1/turn", {"text": "Hello Talos", "source": "text"})
+            status, body = room.route("POST", "/v1/turn", {"text": "Tell me something.", "source": "text"})
         self.assertEqual(status, 200)
         self.assertEqual(body["reply"], "Text only, no audio.")
         self.assertNotIn("wav", body)

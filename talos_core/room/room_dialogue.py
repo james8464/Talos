@@ -192,8 +192,29 @@ def with_spoken_instructions(messages, guidance):
     return [{"role": "system", "content": guidance}, *messages]
 
 
-def compact_decision(generate, messages, model, lookups, *, can_search=False, read_only=False):
-    choices = ["reply", "calculate"] if read_only else ["reply", "ignore", "calculate", *LOCAL_WRITES, *lookups]
+def compact_decision(generate, messages, model, lookups, *, can_search=False, read_only=False,
+                     request=""):
+    if request:
+        folded = request.casefold()
+        arithmetic = bool(re.search(
+            r"\d|[+\-*/×÷]|\b(?:calculate|plus|minus|times|divided|sum|total|come to|how much|how many)\b",
+            folded,
+        ))
+        wants_write = bool(re.search(
+            r"\b(?:remind|reminder|task|todo|note|remember|save|log|alert|add|create|delete|forget)\b",
+            folded,
+        ))
+        choices = ["reply"]
+        if not read_only:
+            choices.append("ignore")
+        if arithmetic:
+            choices.append("calculate")
+        if not read_only:
+            if wants_write:
+                choices += LOCAL_WRITES
+            choices += lookups
+    else:
+        choices = ["reply", "calculate"] if read_only else ["reply", "ignore", "calculate", *LOCAL_WRITES, *lookups]
     if can_search:
         choices.append("search_web")
     schema = {"type": "object", "properties": {
