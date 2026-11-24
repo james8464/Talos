@@ -64,6 +64,14 @@ class QuickTextAnswerTests(unittest.TestCase):
             self.assertEqual(self.ask("Are you there?")["reply"], "Yes, I'm here.")
             self.assertIn("Online weather lookups are off", self.ask("What's the weather?")["reply"])
 
+    def test_recent_activity_is_local(self):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")), \
+             patch("talos_core.room.room_service.talos_activity.snapshot",
+                   return_value=["Room · running", "Maintenance · running"]):
+            reply = self.ask("Show my recent activity.")["reply"]
+        self.assertIn("Room", reply)
+        self.assertIn("Maintenance", reply)
+
     def test_mute_questions_are_answered_locally(self):
         with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
             self.assertIn("audio is muted", self.ask("Are you muted?")["reply"])

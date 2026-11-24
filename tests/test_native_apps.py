@@ -46,6 +46,7 @@ class NativeAppsTests(unittest.TestCase):
         with patch.object(native_apps, "calendar_events", return_value=[
                 {"title": "Standup", "start": self.now.isoformat(), "calendar": "Work"}]):
             self.assertIn("Standup", native_apps.command("What's on my calendar?", self.state))
+            self.assertIn("Standup", native_apps.command("What's on my schedule?", self.state))
         with patch.object(native_apps, "open_url", return_value="Opened URL.") as opened:
             self.assertEqual(native_apps.command("open https://example.com", self.state), "Opened URL.")
             opened.assert_called_once_with("https://example.com")

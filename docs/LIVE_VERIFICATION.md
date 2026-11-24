@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `607 tests`, `OK` (`16` skipped by design).
-- Live feature pass: `49/49` checks.
+- Unit suite: `608 tests`, `OK` (`16` skipped by design).
+- Live feature pass: `50/50` checks.
 - Ruff: clean.
 
 ## Live feature pass
@@ -45,7 +45,7 @@ Latest results:
 | Work | reminder, task, task list, note, inbox, goals |
 | Knowledge | knowledge search, code-graph search |
 | Mac | screenshot, window list, frontmost app, running apps, control search, inspect app, accessible-text/OCR |
-| Local features | skills, nodes, todos, maintenance report, health, model, plugins, subagents, checkpoints |
+| Local features | skills, nodes, todos, maintenance report, health, model, plugins, subagents, checkpoints, recent activity |
 | Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music, private-index app search (Notes/Mail/Messages/Contacts), app status |
 | MCP client | official-SDK stdio and Streamable-HTTP tools/list/tools-call; room discovery and call against Talos and `mcp-server-apple-events` |
 | Safety | `/v1/voice` 503, no audio processes |

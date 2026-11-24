@@ -382,6 +382,14 @@ class Room:
                 return decision("reply", "I couldn't calculate that expression.")
             return decision("reply", f"{left} {spoken} {right} is {value:f}.")
         if re.fullmatch(
+            r"(?:(?:show|list)(?: me)? (?:my )?recent activity|what have you been doing)[?.! ]*",
+            text, re.I,
+        ):
+            lines = talos_activity.snapshot(state, None)
+            if not lines:
+                return decision("reply", "No recent activity is recorded.")
+            return decision("reply", "Recent activity: " + " · ".join(lines[:4])[:560])
+        if re.fullmatch(
             r"(?:how are you|are you (?:healthy|okay|ok)|check your health|what is your status)[?.! ]*",
             text, re.I,
         ):

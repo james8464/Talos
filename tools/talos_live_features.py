@@ -213,6 +213,9 @@ def run(keep: bool = False) -> dict:
     app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
     check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,
           app_search)
+
+    activity = ask(token, "Show my recent activity.")["reply"]
+    check(checks, "recent_activity", "Recent activity" in activity, activity)
     for app in ("mail", "messages", "contacts"):
         reply = ask(token, f"Search my {app} for zzzznomatch.")["reply"]
         check(checks, f"native_{app}_search",

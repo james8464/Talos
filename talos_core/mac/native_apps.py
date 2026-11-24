@@ -253,7 +253,7 @@ def command(text, state):
         return None
     words = text.strip()
     calendar = re.fullmatch(
-        r"(?:what(?:'s| is) on my calendar|show my calendar|my calendar)(?: (today|tomorrow))?[?.! ]*",
+        r"(?:what(?:'s| is) on my (?:calendar|schedule)|show my (?:calendar|schedule)|my calendar)(?: (today|tomorrow))?[?.! ]*",
         words, re.I,
     )
     if calendar:
