@@ -145,8 +145,17 @@ Call mcp tool list_events on apple-calendar with {"start":"2026-11-25","end":"20
 
 Use each server's own permission prompts and documentation. Start with read
 tools; only enable write tools after deciding how the server confirms or gates
-changes. HTTP/remote MCP transports are not wired into this client yet; the
-current client is stdio-only, which covers the local Apple app servers.
+changes. The client supports stdio, Streamable HTTP and SSE. For hosted servers
+that use OAuth/bearer authorization, pass headers and an allowlist:
+
+```sh
+talos mcp-client add notion --url https://mcp.notion.com/mcp   --transport http --headers '{"Authorization":"Bearer YOUR_TOKEN"}'   --allowed-tools '["notion-search","notion-fetch"]'
+```
+
+Use a `--allowed-tools` list to keep a server read-only at the tool-name level.
+Token/OAuth setup remains the responsibility of the existing server; Talos does
+not store cloud credentials.
+
 
 ### Verified MCP permission boundary
 

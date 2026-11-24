@@ -63,6 +63,18 @@ class MCPClientTests(unittest.TestCase):
         )
         self.assertIn("matches", result)
 
+    def test_url_config_and_tool_allowlist(self):
+        mcp_client.configure(
+            self.state, "remote", url="https://example.com/mcp",
+            headers={"Authorization": "Bearer test"}, transport="http",
+            allowed_tools=["search"],
+        )
+        server = mcp_client.servers(self.state)["remote"]
+        self.assertEqual(server["transport"], "http")
+        self.assertEqual(server["allowed_tools"], ["search"])
+        with self.assertRaises(mcp_client.MCPClientError):
+            mcp_client.call(self.state, "remote", "delete", {})
+
     def test_missing_server_is_an_error(self):
         with self.assertRaises(mcp_client.MCPClientError):
             mcp_client.tools(self.state, "missing")

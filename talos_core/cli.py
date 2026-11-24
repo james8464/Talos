@@ -168,14 +168,25 @@ def _mcp_client(args) -> int:
         if args.action == "list":
             payload = {"servers": sorted(mcp_client.servers(args.state))}
         elif args.action == "add":
-            if not args.server or not args.mcp_command:
-                raise ValueError("MCP server name and --command are required.")
-            server_args = json.loads(args.server_args or "[]")
-            environment = json.loads(args.environment) if args.environment else None
-            payload = mcp_client.configure(
-                args.state, args.server, args.mcp_command, server_args,
-                env=environment, cwd=args.cwd,
-            )
+            if not args.server:
+                raise ValueError("MCP server name is required.")
+            headers = json.loads(args.headers) if args.headers else None
+            allowed = json.loads(args.allowed_tools) if args.allowed_tools else None
+            transport = args.transport or ("http" if args.url else "stdio")
+            if args.url:
+                payload = mcp_client.configure(
+                    args.state, args.server, url=args.url, transport=transport,
+                    headers=headers, allowed_tools=allowed,
+                )
+            else:
+                if not args.mcp_command:
+                    raise ValueError("MCP server requires --command or --url.")
+                server_args = json.loads(args.server_args or "[]")
+                environment = json.loads(args.environment) if args.environment else None
+                payload = mcp_client.configure(
+                    args.state, args.server, args.mcp_command, server_args,
+                    env=environment, cwd=args.cwd, allowed_tools=allowed,
+                )
         elif not args.server:
             raise ValueError("MCP server name is required.")
         elif args.action == "tools":
@@ -882,6 +893,10 @@ def build_parser() -> argparse.ArgumentParser:
     mcp_client.add_argument("--server-args", default="[]")
     mcp_client.add_argument("--environment")
     mcp_client.add_argument("--cwd")
+    mcp_client.add_argument("--url")
+    mcp_client.add_argument("--transport", choices=("stdio", "http", "sse"))
+    mcp_client.add_argument("--headers")
+    mcp_client.add_argument("--allowed-tools")
     mcp_client.add_argument("--state", type=Path, default=ROOT / "state")
     mcp_client.set_defaults(func=_mcp_client)
 

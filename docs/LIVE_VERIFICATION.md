@@ -30,7 +30,7 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `605 tests`, `OK` (`16` skipped by design).
+- Unit suite: `606 tests`, `OK` (`16` skipped by design).
 - Live feature pass: `45/45` checks.
 - Ruff: clean.
 

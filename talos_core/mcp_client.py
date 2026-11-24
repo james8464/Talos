@@ -46,22 +46,47 @@ def servers(state: Path | str) -> dict:
     return data if isinstance(data, dict) else {}
 
 
-def configure(state: Path | str, name: str, command: str, args=None, *, env=None, cwd=None) -> dict:
+def configure(state: Path | str, name: str, command: str | None = None, args=None, *,
+              url=None, headers=None, transport="stdio", allowed_tools=None,
+              env=None, cwd=None) -> dict:
     name = " ".join(str(name).split())
     if not name or len(name) > 60:
         raise ValueError("MCP server name must be 1–60 characters.")
-    if not isinstance(command, str) or not command:
-        raise ValueError("MCP command must be a non-empty executable path.")
+    if bool(command) == bool(url):
+        raise ValueError("Provide exactly one MCP command or URL.")
+    if url is not None:
+        if not isinstance(url, str) or not re.match(r"^https?://", url.strip(), re.I):
+            raise ValueError("MCP URL must start with http:// or https://.")
+        if transport not in ("http", "sse"):
+            raise ValueError("URL MCP transport must be http or sse.")
+    else:
+        if not isinstance(command, str) or not command:
+            raise ValueError("MCP command must be a non-empty executable path.")
+        if transport != "stdio":
+            raise ValueError("Command MCP transport must be stdio.")
     if args is not None and (not isinstance(args, list) or not all(isinstance(v, str) for v in args)):
         raise ValueError("MCP args must be a list of strings.")
+    if allowed_tools is not None and (
+        not isinstance(allowed_tools, list) or not all(isinstance(v, str) for v in allowed_tools)
+    ):
+        raise ValueError("allowed_tools must be a list of strings.")
     state = Path(state)
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
     data = servers(state)
-    data[name] = {"command": command, "args": list(args or [])}
-    if env is not None:
-        data[name]["env"] = {str(k): str(v) for k, v in env.items()}
-    if cwd is not None:
-        data[name]["cwd"] = str(cwd)
+    entry = {"transport": transport}
+    if url is not None:
+        entry["url"] = url.strip()
+        if headers:
+            entry["headers"] = {str(k): str(v) for k, v in headers.items()}
+    else:
+        entry.update({"command": command, "args": list(args or [])})
+        if env is not None:
+            entry["env"] = {str(k): str(v) for k, v in env.items()}
+        if cwd is not None:
+            entry["cwd"] = str(cwd)
+    if allowed_tools is not None:
+        entry["allowed_tools"] = sorted(set(allowed_tools))
+    data[name] = entry
     fd, temporary = tempfile.mkstemp(prefix=".mcp-servers-", dir=state)
     try:
         os.fchmod(fd, 0o600)
@@ -77,19 +102,35 @@ def configure(state: Path | str, name: str, command: str, args=None, *, env=None
         raise
     return {"name": name, "configured": True}
 
-
 def _server(state: Path | str, name: str) -> dict:
     if not available():
         raise MCPClientError("Install the optional 'mcp' extra to use MCP servers.")
     server = servers(state).get(name)
     if not isinstance(server, dict):
         raise MCPClientError(f"No MCP server named {name!r}.")
-    if not isinstance(server.get("command"), str) or not server["command"]:
-        raise MCPClientError(f"MCP server {name!r} has no command.")
+    if not server.get("url") and not server.get("command"):
+        raise MCPClientError(f"MCP server {name!r} has no command or URL.")
     return server
 
 
+async def _session_action(read, write, action):
+    async with ClientSession(read, write) as session:
+        await session.initialize()
+        return await action(session)
+
+
 async def _with_session(server: dict, action):
+    if server.get("url"):
+        from mcp.client.sse import sse_client
+        from mcp.client.streamable_http import create_mcp_http_client, streamable_http_client
+
+        headers = server.get("headers") or None
+        if server.get("transport") == "sse":
+            async with sse_client(server["url"], headers=headers, timeout=10) as (read, write):
+                return await _session_action(read, write, action)
+        async with create_mcp_http_client(headers=headers) as http_client:
+            async with streamable_http_client(server["url"], http_client=http_client) as (read, write):
+                return await _session_action(read, write, action)
     parameters = StdioServerParameters(
         command=server["command"],
         args=[str(v) for v in server.get("args", [])],
@@ -97,10 +138,7 @@ async def _with_session(server: dict, action):
         cwd=server.get("cwd"),
     )
     async with stdio_client(parameters) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            return await action(session)
-
+        return await _session_action(read, write, action)
 
 def _run(state, name, action, timeout):
     server = _server(state, name)
@@ -139,6 +177,10 @@ def tools(state, name, timeout=30):
 
 
 def call(state, name, tool, arguments=None, timeout=90):
+    server = _server(state, name)
+    allowed = server.get("allowed_tools")
+    if isinstance(allowed, list) and tool not in allowed:
+        raise MCPClientError(f"Tool {tool!r} is not allowed on MCP server {name!r}.")
     arguments = {} if arguments is None else arguments
     if not isinstance(arguments, dict):
         raise ValueError("MCP tool arguments must be an object.")
