@@ -30,7 +30,7 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `758 tests`, `OK` (`17` skipped by design).
+- Unit suite: `759 tests`, `OK` (`17` skipped by design).
 - Live feature pass: `72/72` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
 - Ruff: clean.
 
@@ -52,6 +52,7 @@ Latest results:
 | Design | poster SVG, real `.pages` create/append/PDF via AppleScript, Pages-compatible `.docx` fallback, OpenSCAD nameplate and parametric box + STL, headless Blender PNG |
 | Browser | local page read, text click, field typing, form search/submit, and private screenshot through headless Chrome CDP |
 | Sound/scene | SoundAnalysis labels; Vision people/face counts; room presence answers from a camera frame; `/v1/sound` and `/v1/vision/scene` classify without playback |
+| Guidance | on-screen ring and label for a requested control; no click and no audio |
 | Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; HID click verified on Tk and Calculator; click/hover/scroll/press/clipboard/window move-resize-focus and confirmed quit/close routes |
 | Terminal | `talos ask` one-shot and interactive chat reach the same room routes, including pointer moves and design |
 | Policy | profiles, per-app grants, destructive confirmation, content-free audit |

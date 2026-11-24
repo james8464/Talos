@@ -63,6 +63,7 @@ final class CursorView: NSView {
 final class ControlView: NSView {
     private let pill = NSView()
     private let label = NSTextField(labelWithString: "●  TALOS IS CONTROLLING THIS MAC")
+    private var highlightLayer: CAShapeLayer?
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -95,6 +96,27 @@ final class ControlView: NSView {
     func setActive(_ active: Bool) {
         isHidden = !active
         needsLayout = true
+    }
+
+    func highlight(_ rect: NSRect, label text: String) {
+        highlightLayer?.removeFromSuperlayer()
+        let shape = CAShapeLayer()
+        shape.frame = bounds
+        let path = NSBezierPath(roundedRect: rect.insetBy(dx: -4, dy: -4),
+                                xRadius: 12, yRadius: 12)
+        shape.path = path.cgPath
+        shape.fillColor = NSColor.systemCyan.withAlphaComponent(0.08).cgColor
+        shape.strokeColor = NSColor.systemCyan.cgColor
+        shape.lineWidth = 3
+        layer?.addSublayer(shape)
+        highlightLayer = shape
+        label.stringValue = "●  " + text.uppercased()
+    }
+
+    func clearHighlight() {
+        highlightLayer?.removeFromSuperlayer()
+        highlightLayer = nil
+        label.stringValue = "●  TALOS IS CONTROLLING THIS MAC"
     }
 
     func ripple(at point: NSPoint) {
@@ -196,12 +218,30 @@ handle.readabilityHandler = { stream in
             }
             if object["session"] as? Bool == false {
                 controlView.setActive(false)
+                controlView.clearHighlight()
                 controlWindow.orderOut(nil)
                 return
+            }
+            if object["highlight"] as? Bool == true {
+                let x = (object["x"] as? NSNumber)?.doubleValue ?? 0
+                let y = (object["y"] as? NSNumber)?.doubleValue ?? 0
+                let width = (object["width"] as? NSNumber)?.doubleValue ?? 56
+                let height = (object["height"] as? NSNumber)?.doubleValue ?? 56
+                let rect = NSRect(x: x - screenFrame.minX,
+                                  y: screenFrame.maxY - (y + height),
+                                  width: width, height: height)
+                controlView.highlight(rect, label: object["label"] as? String ?? "target")
+                controlView.setActive(true)
+                controlWindow.orderFrontRegardless()
+                return
+            }
+            if object["highlight"] as? Bool == false {
+                controlView.clearHighlight()
             }
             if object["control"] as? Bool == false || object["visible"] as? Bool == false {
                 cursorWindow.orderOut(nil)
                 controlView.setActive(false)
+                controlView.clearHighlight()
                 controlWindow.orderOut(nil)
                 if object["visible"] as? Bool == false { return }
             }

@@ -423,6 +423,17 @@ class Room:
             verb = "Minimized" if action == "minimize" else "Focused"
             return decision("reply", f"{verb} {app}.")
         if match := re.fullmatch(
+                r"(?:show|point to|highlight|where is) (?:me )?(?:the )?(.+?) "
+                r"in ([A-Za-z][^.!?]{0,60})[.! ]*", text, re.I):
+            description, app = match.group(1), match.group(2)
+            try:
+                result = ComputerUse(state).highlight(app, description)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't highlight that in {app}: {error}")
+            if result.get("highlighted"):
+                return decision("reply", f"Highlighted {result.get('label') or description} in {app}.")
+            return decision("reply", "The on-screen highlight is unavailable.")
+        if match := re.fullmatch(
                 r"(double[- ]click|right[- ]click) (?:on )?(?:the )?(.+?) "
                 r"in ([A-Za-z][^.!?]{0,60})[.! ]*", text, re.I):
             kind, description, app = match.group(1).casefold(), match.group(2), match.group(3)

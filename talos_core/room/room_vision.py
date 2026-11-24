@@ -78,8 +78,14 @@ def answer(text, frame, people=None, state=None):
         raise ValueError("Expected a camera JPEG.")
     if people is not None and (type(people) is not int or people < 0):
         raise ValueError("Expected a person count from the same frame.")
-    if _PRESENCE.fullmatch(_question_words(text)) or _PEOPLE_COUNT.fullmatch(
-            _question_words(text)):
+    words = _question_words(text)
+    if _PEOPLE_COUNT.fullmatch(words):
+        count = people if people is not None else _scene_people(frame, state)
+        if count is None:
+            return "I have no person count for this camera frame."
+        count_label = {0: "no people", 1: "one person"}.get(count, f"{count} people")
+        return f"The camera detected {count_label} in this frame."
+    if _PRESENCE.fullmatch(words):
         count = people if people is not None else _scene_people(frame, state)
         if count is None:
             return "I couldn't inspect the camera frame."

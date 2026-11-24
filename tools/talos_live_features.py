@@ -92,6 +92,16 @@ def cleanup(stamp: int, screenshot: str, design_paths: list[str] | None = None,
 
 def control_checks(token, checks):
     """Intrusive mouse/keyboard checks; runs only with --control."""
+    ask(token, "Open TextEdit.")
+    inspected = ask(token, "Inspect TextEdit.")["reply"]
+    check(checks, "mac_inspect", "TextEdit:" in inspected, inspected)
+    found = ask(token, "Find all clear in Calculator.")["reply"]
+    check(checks, "mac_find", "Matches in Calculator" in found, found)
+    ocr = ask(token, "Read text in TextEdit.")["reply"]
+    check(checks, "mac_ocr", "Text in TextEdit" in ocr, ocr)
+    screenshot = ask(token, "Take a screenshot.")["reply"]
+    check(checks, "mac_screenshot", "Screenshot saved to" in screenshot, screenshot)
+
     opened = ask(token, "Open Calculator.")["reply"]
     check(checks, "open_app", "Opened Calculator" in opened, opened)
     front = ask(token, "Which app is in front?")["reply"]
@@ -120,6 +130,9 @@ def control_checks(token, checks):
 
     move = ask(token, "Move the mouse to 700, 450.")["reply"]
     check(checks, "pointer_move", "Moved the pointer" in move, move)
+    if "Screenshot saved to " in screenshot:
+        return screenshot.split("Screenshot saved to ", 1)[1].split(" (", 1)[0]
+    return ""
 
 def run(keep: bool = False, control: bool = False) -> dict:
     token = TOKEN_PATH.read_text().strip()
@@ -228,24 +241,11 @@ def run(keep: bool = False, control: bool = False) -> dict:
     permissions = ask(token, "Check Mac permissions.")["reply"]
     check(checks, "mac_permissions", "Accessibility is" in permissions, permissions)
 
-    ask(token, "Open TextEdit.")
-    inspected = ask(token, "Inspect TextEdit.")["reply"]
-    check(checks, "mac_inspect", "TextEdit:" in inspected, inspected)
-
     frontmost = ask(token, "Which app is frontmost?")["reply"]
     check(checks, "mac_frontmost", "frontmost app is" in frontmost, frontmost)
 
     running_apps = ask(token, "List running apps.")["reply"]
     check(checks, "mac_apps", "Running apps:" in running_apps, running_apps)
-
-    found = ask(token, "Find all clear in Calculator.")["reply"]
-    check(checks, "mac_find", "Matches in Calculator" in found, found)
-
-    ocr = ask(token, "Read text in TextEdit.")["reply"]
-    check(checks, "mac_ocr", "Text in TextEdit" in ocr, ocr)
-
-    screenshot = ask(token, "Take a screenshot.")["reply"]
-    check(checks, "mac_screenshot", "Screenshot saved to" in screenshot, screenshot)
 
     calendar = ask(token, "What's on my calendar?")["reply"]
     check(checks, "native_calendar", "Calendar:" in calendar or "No events" in calendar, calendar)
@@ -437,8 +437,6 @@ Path(sys.argv[1]).write_bytes(raw)
         check(checks, f"native_{app}_search",
               "No matching" in reply or "disabled" in reply, reply)
     screenshot_path = ""
-    if "Screenshot saved to " in screenshot:
-        screenshot_path = screenshot.split("Screenshot saved to ", 1)[1].split(" (", 1)[0]
 
     vision = ask(token, "What can you see right now?")["reply"]
     check(checks, "camera_handshake", "camera frame" in vision or "can't see" in vision, vision)
@@ -463,7 +461,7 @@ Path(sys.argv[1]).write_bytes(raw)
     check(checks, "no_audio_processes", audio.returncode != 0, audio.stdout.strip())
 
     if control:
-        control_checks(token, checks)
+        screenshot_path = control_checks(token, checks) or ""
     if not keep:
         cleanup(stamp, screenshot_path, design_paths, web_paths)
     return {"ok": all(item["ok"] for item in checks), "checks": checks}

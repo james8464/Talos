@@ -152,6 +152,31 @@ class CursorOverlay:
             except (OSError, ValueError):
                 pass
 
+    def highlight(self, x: int, y: int, width: int = 56, height: int = 56,
+                  label: str = "target", *, hide_after: float | None = 8.0) -> bool:
+        """Ring a screen rectangle and label it without clicking."""
+        with self._lock:
+            process = self._start()
+            if process is None or process.stdin is None:
+                return False
+            try:
+                process.stdin.write(json.dumps(
+                    {"highlight": True, "x": int(x), "y": int(y),
+                     "width": int(width), "height": int(height),
+                     "label": label[:40], "visible": True, "control": True}
+                ) + "\n")
+                process.stdin.flush()
+            except (OSError, ValueError):
+                self.close()
+                return False
+            if self._timer is not None:
+                self._timer.cancel()
+            if hide_after:
+                self._timer = threading.Timer(hide_after, self.hide)
+                self._timer.daemon = True
+                self._timer.start()
+            return True
+
     def ripple(self, x: int, y: int, label: str = "click") -> bool:
         """Draw a click ripple without resetting the current label."""
         with self._lock:

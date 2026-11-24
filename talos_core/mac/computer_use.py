@@ -440,6 +440,16 @@ class ComputerUse:
         self._show_cursor(int(center[0]), int(center[1]), f"target · {app}")
         return choice
 
+    def highlight(self, app: str, goal: str, decider=None, model: str | None = None,
+                  *, seconds: float = 8.0) -> dict:
+        """Ring the requested control on screen without clicking it."""
+        choice = self.choose(app, goal, decider=decider, model=model)
+        center = choice.get("center") or [0, 0]
+        if self.cursor is not None:
+            self.cursor.highlight(int(center[0]) - 28, int(center[1]) - 28, 56, 56,
+                                  choice.get("label") or goal, hide_after=seconds)
+        return {**choice, "highlighted": self.cursor is not None}
+
     def click_goal(self, app: str, goal: str, decider=None, model: str | None = None) -> dict:
         """Find a visible control by intent, then click it and report the choice.
 
@@ -1113,6 +1123,10 @@ def _cli() -> int:
     choose.add_argument("goal")
     choose.add_argument("--model")
     choose.add_argument("--click", action="store_true")
+    highlight = commands.add_parser("highlight", help="Ring a control on screen without clicking.")
+    highlight.add_argument("app")
+    highlight.add_argument("goal")
+    highlight.add_argument("--model")
     find = commands.add_parser("find", help="Rank visible controls by label.")
     find.add_argument("app")
     find.add_argument("query")
@@ -1211,6 +1225,8 @@ def _cli() -> int:
     elif args.command == "choose":
         payload = (computer.click_goal(args.app, args.goal, model=args.model)
                    if args.click else computer.choose(args.app, args.goal, model=args.model))
+    elif args.command == "highlight":
+        payload = computer.highlight(args.app, args.goal, model=args.model)
     elif args.command == "find":
         payload = computer.find_controls(args.app, args.query)
     elif args.command == "ocr":
