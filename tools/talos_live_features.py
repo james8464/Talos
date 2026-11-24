@@ -376,6 +376,54 @@ def run(keep: bool = False, control: bool = False) -> dict:
     check(checks, "scene_empty", "empty" in scene.stdout.casefold(),
           (scene.stdout or scene.stderr)[:200])
     blank.unlink(missing_ok=True)
+    try:
+        import numpy as np
+        import soundfile as sf
+        ping = Path("/System/Library/Sounds/Ping.aiff")
+        if ping.is_file():
+            data, rate = sf.read(ping)
+            if getattr(data, "ndim", 1) > 1:
+                data = data[:, 0]
+            gap = np.zeros(int(rate * 0.4))
+            repeated = np.concatenate([data, gap] * 8)
+            sound_path = Path(tempfile.mkdtemp()) / "ping-long.wav"
+            sf.write(sound_path, repeated, rate)
+            sound = subprocess.run(
+                [sys.executable, "-m", "talos_core.cli", "sound", "--file", str(sound_path)],
+                capture_output=True, text=True, timeout=120,
+            )
+            labels = sound.stdout.casefold()
+            check(checks, "sound_classify",
+                  sound.returncode == 0 and any(
+                      label in labels for label in ("telephone", "beep", "music")),
+                  (sound.stdout or sound.stderr)[:200])
+            sound_path.unlink(missing_ok=True)
+    except ImportError:
+        pass
+
+    audio_fd, audio_path = tempfile.mkstemp(suffix=".wav")
+    import os as _os
+    _os.close(audio_fd)
+    synthesis_script = """
+import base64, io, sys, wave
+from pathlib import Path
+from talos_core.room.room_voice import KokoroVoice
+voice = KokoroVoice(Path('models/kokoro-room'), 'bm_george')
+raw = base64.b64decode(voice.speak('Talos audio synthesis check.'))
+with wave.open(io.BytesIO(raw), 'rb') as wav:
+    assert wav.getnframes() > 1000 and wav.getframerate() == 24000
+Path(sys.argv[1]).write_bytes(raw)
+"""
+    environment = {**_os.environ, "PYTHONPATH": str(ROOT)}
+    environment.pop("TALOS_MUTE", None)
+    synthesis = subprocess.run(
+        [str(ROOT / "state" / "kokoro-env" / "bin" / "python"), "-c", synthesis_script, audio_path],
+        capture_output=True, text=True, timeout=180, env=environment,
+    )
+    size = Path(audio_path).stat().st_size if Path(audio_path).exists() else 0
+    check(checks, "audio_synthesis", synthesis.returncode == 0 and size > 1000,
+          (synthesis.stderr or f"{size} bytes")[:200])
+    Path(audio_path).unlink(missing_ok=True)
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)

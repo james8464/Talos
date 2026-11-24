@@ -31,7 +31,7 @@ Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
 - Unit suite: `757 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `69/69` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; no audio playback runs.
+- Live feature pass: `71/71` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
 - Ruff: clean.
 
 ## Live feature pass

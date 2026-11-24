@@ -33,3 +33,12 @@ While `TALOS_MUTE` is set, `/v1/voice` returns 503 and no playback path runs.
 Kokoro can still be tested by synthesizing to a WAV without playback; a 5.12 s
 clip was generated and the player was exercised at volume 0. The running service
 remains muted.
+
+## Verified examples
+
+- `Ping.aiff` repeated for length: telephone 69%, telephone bell 58%, beep 52%.
+- `Glass.aiff` repeated: music 60%, percussion 53%, glockenspiel 41%.
+- A standard 512×512 public test portrait: `{"people": 1, "faces": 1}`.
+- A blank frame: `{"people": 0, "faces": 0, "empty": true}`.
+- Kokoro produced a valid 5.12 s, 24 kHz mono WAV; the player path was
+  exercised at volume 0 and the running service stayed muted.
