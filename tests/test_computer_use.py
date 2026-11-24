@@ -142,6 +142,20 @@ class ComputerUseTests(unittest.TestCase):
         self.assertTrue(any("input drag" in command and "--to-x 30" in command for command in commands))
         self.assertTrue(any("window resize" in command and "--width 800" in command for command in commands))
 
+    def test_app_scroll_without_coordinates_uses_the_window_center(self):
+        from unittest.mock import patch
+
+        from talos_core.mac import perception
+
+        with patch.object(perception, "run", return_value={"ok": True}) as run, \
+             patch.object(self.computer, "window_bounds", return_value=(100, 200, 300, 400)), \
+             patch.object(self.computer, "_show_cursor"):
+            self.assertTrue(self.computer.scroll(5, app="TextEdit")["ok"])
+        command = " ".join(run.call_args.args)
+        self.assertIn("--app TextEdit", command)
+        self.assertIn("--x 250", command)
+        self.assertIn("--y 400", command)
+
     def test_closing_a_window_requires_confirmation(self):
         with self.assertRaises(cu.PolicyError):
             self.computer.window("close", app="TextEdit")

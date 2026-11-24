@@ -344,7 +344,14 @@ class ComputerUse:
         args = ["input", "scroll", "--amount", str(int(amount)), "--dx", str(int(dx)),
                 "--unit", unit]
         if app:
-            args += ["--app", _validate_app(app)]
+            target = _validate_app(app)
+            args += ["--app", target]
+            if x is None or y is None:
+                bounds = self.window_bounds(target)
+                if bounds is None:
+                    raise ComputerUseError(f"No window for {target!r} to scroll.")
+                x = bounds[0] + bounds[2] // 2 if x is None else x
+                y = bounds[1] + bounds[3] // 2 if y is None else y
         if x is not None and y is not None:
             _validate_point(x, y)
             args += ["--x", str(int(x)), "--y", str(int(y))]
