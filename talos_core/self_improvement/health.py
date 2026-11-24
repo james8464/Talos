@@ -123,13 +123,22 @@ def check_ruff(root: Path, *, fix: bool = False,
     return Check("ruff", ok, f"{count} lint finding(s)", int((time.monotonic() - started) * 1000), findings)
 
 
+def test_environment() -> dict:
+    """Environment for the regression suite, independent of service runtime."""
+    env = os.environ.copy()
+    env.pop("TALOS_MUTE", None)
+    env["TALOS_CURSOR"] = "0"
+    env["TALOS_TESTING"] = "1"
+    return env
+
+
 def check_tests(root: Path, *, timeout: int = DEFAULT_TIMEOUT,
                 runner: Callable = subprocess.run) -> Check:
     started = time.monotonic()
     command = [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"]
     try:
         completed = runner(command, cwd=root, capture_output=True, text=True,
-                           timeout=timeout, check=False)
+                           timeout=timeout, check=False, env=test_environment())
     except subprocess.TimeoutExpired:
         return Check("tests", False, f"timed out after {timeout}s",
                      int((time.monotonic() - started) * 1000))

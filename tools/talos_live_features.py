@@ -234,6 +234,8 @@ def run(keep: bool = False) -> dict:
 
     activity = ask(token, "Show my recent activity.")["reply"]
     check(checks, "recent_activity", "Recent activity" in activity, activity)
+    move = ask(token, "Move the mouse to 700, 450.")["reply"]
+    check(checks, "pointer_move", "Moved the pointer" in move, move)
 
     identity = ask(token, "Who am I?")["reply"]
     check(checks, "identity_recal", identity.startswith("You are ")

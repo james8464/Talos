@@ -194,7 +194,8 @@ def _run_targeted(root: Path, files: list[str], runner: Callable,
                    "-s", "tests", "-p", Path(name).name]
         try:
             completed = runner(command, cwd=root, capture_output=True,
-                               text=True, timeout=timeout, check=False)
+                               text=True, timeout=timeout, check=False,
+                               env=health.test_environment())
         except (OSError, subprocess.SubprocessError) as error:
             failed.append(f"{name}: {type(error).__name__}")
             continue

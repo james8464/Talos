@@ -52,6 +52,8 @@ class HealthTests(unittest.TestCase):
 
         def runner(command, **options):
             calls.append(command)
+            self.assertNotIn("TALOS_MUTE", options["env"])
+            self.assertEqual(options["env"]["TALOS_CURSOR"], "0")
             return SimpleNamespace(returncode=1, stdout="", stderr="FAILED (failures=2)\n")
 
         report = health.health(self.root, self.state, quick=False, lint=False,
