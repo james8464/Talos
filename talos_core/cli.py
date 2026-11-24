@@ -297,6 +297,59 @@ def _utility(args) -> int:
     if command == "clarify":
         print("What exactly should Talos change or do next?")
         return 0
+    if command in ("slack", "discord"):
+        from talos_core import connectors
+        if args.url:
+            print(json.dumps(connectors.configure(state, command, args.url)))
+        elif args.send:
+            print(json.dumps(connectors.send(state, command, args.send)))
+        else:
+            print(json.dumps({"kind": command,
+                              "configured": bool(connectors._load(state).get(command))}))
+        return 0
+    if command == "codex_runtime":
+        from talos_core import codex_runtime
+        try:
+            result = codex_runtime.run(args.prompt, root=args.root, model=args.model,
+                                       confirm=args.confirm)
+        except (codex_runtime.RuntimeRefused, RuntimeError, ValueError) as error:
+            print(json.dumps({"ok": False, "error": str(error)}))
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0 if result["ok"] else 1
+    if command == "login":
+        from talos_core import session_auth
+        token = session_auth.login(state)
+        print(json.dumps({"logged_in": True, "token_chars": len(token)}))
+        return 0
+    if command == "logout":
+        from talos_core import session_auth
+        print(json.dumps({"logged_out": session_auth.logout(state)}))
+        return 0
+    if command == "import_cmd":
+        from talos_core import commands
+        if args.name and args.cmd_args:
+            print(json.dumps(commands.import_command(state, args.name, args.cmd_args)))
+        else:
+            print(json.dumps({"commands": commands.commands(state)}, indent=2))
+        return 0
+    if command == "webhook":
+        from talos_core import webhook
+        if args.url and args.secret:
+            print(json.dumps(webhook.configure(state, args.url, args.secret)))
+        else:
+            print(json.dumps({"webhook": webhook.config(state)}, indent=2))
+        return 0
+    if command == "moa":
+        from talos_core import moa
+        if not args.response:
+            print(json.dumps({"ok": False, "error": "supply --response"}))
+            return 1
+        print(json.dumps(moa.choose(args.response, keywords=args.keyword), indent=2))
+        return 0
+    if command == "pets":
+        print("  /\\_/\\\n ( o.o )\n  > ^ <   Talos is watching the cursor.")
+        return 0
     if command == "todo":
         from talos_core import todo
         if args.add:
@@ -619,6 +672,43 @@ def build_parser() -> argparse.ArgumentParser:
 
     completion = commands.add_parser("completion", help="Print supported command names.")
     completion.set_defaults(func=_utility)
+
+    for kind in ("slack", "discord"):
+        external = commands.add_parser(kind, help=f"Configure or send a {kind} webhook.")
+        external.add_argument("--state", type=Path, default=ROOT / "state")
+        external.add_argument("--url")
+        external.add_argument("--send")
+        external.set_defaults(func=_utility)
+    runtime = commands.add_parser("codex_runtime", help="Run the local Codex CLI read-only.")
+    runtime.add_argument("prompt")
+    runtime.add_argument("--root", type=Path, default=ROOT)
+    runtime.add_argument("--state", type=Path, default=ROOT / "state")
+    runtime.add_argument("--model")
+    runtime.add_argument("--confirm", action="store_true")
+    runtime.set_defaults(func=_utility)
+    login = commands.add_parser("login", help="Create a local owner token.")
+    login.add_argument("--state", type=Path, default=ROOT / "state")
+    login.set_defaults(func=_utility)
+    logout = commands.add_parser("logout", help="Remove the local owner token.")
+    logout.add_argument("--state", type=Path, default=ROOT / "state")
+    logout.set_defaults(func=_utility)
+    import_cmd = commands.add_parser("import_cmd", help="Import or list command aliases.")
+    import_cmd.add_argument("--state", type=Path, default=ROOT / "state")
+    import_cmd.add_argument("--name")
+    import_cmd.add_argument("cmd_args", nargs="*")
+    import_cmd.set_defaults(func=_utility)
+    webhook = commands.add_parser("webhook", help="Configure signed webhooks.")
+    webhook.add_argument("--state", type=Path, default=ROOT / "state")
+    webhook.add_argument("--url")
+    webhook.add_argument("--secret")
+    webhook.set_defaults(func=_utility)
+    moa = commands.add_parser("moa", help="Choose among candidate agent responses.")
+    moa.add_argument("--response", action="append")
+    moa.add_argument("--keyword", action="append")
+    moa.set_defaults(func=_utility)
+    pets = commands.add_parser("pets", help="Show the Talos desk companion.")
+    pets.add_argument("--state", type=Path, default=ROOT / "state")
+    pets.set_defaults(func=_utility)
 
     for name, help_text in (
         ("auth", "Show configured local credentials."),
