@@ -156,6 +156,120 @@ def _audit(args) -> int:
     return audit_main(argv)
 
 
+def _media(args) -> int:
+    from talos_core import media
+
+    if args.confirm is False:
+        raise SystemExit("Add --confirm to run a generation command.")
+    try:
+        result = media.generate(args.kind, args.prompt, args.out, confirm=True,
+                                command=args.command)
+    except (media.MediaRefused, media.MediaUnavailable, ValueError) as error:
+        print(json.dumps({"ok": False, "error": str(error)}))
+        return 1
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+def _clipboard(args) -> int:
+    from talos_core.mac.computer_use import ComputerUse
+
+    computer = ComputerUse(args.state, cursor=False)
+    if args.set is not None:
+        text = " ".join(args.set)
+        computer.set_clipboard(text)
+        print(json.dumps({"saved": len(text)}))
+    else:
+        print(json.dumps({"text": computer.clipboard()}))
+    return 0
+
+
+def _skills(args) -> int:
+    from talos_core import skills
+
+    if args.create:
+        path = skills.create(args.state, args.create[0], " ".join(args.create[1:]))
+        print(json.dumps({"created": str(path)}))
+    else:
+        print(json.dumps({"skills": skills.discover(args.state)}, indent=2))
+    return 0
+
+
+def _nodes(args) -> int:
+    from talos_core import nodes
+
+    if args.register:
+        print(json.dumps(nodes.register(args.state, args.register, endpoint=args.endpoint or "")))
+    elif args.remove:
+        print(json.dumps({"removed": nodes.remove(args.state, args.remove)}))
+    else:
+        print(json.dumps({"nodes": nodes.nodes(args.state)}, indent=2))
+    return 0
+
+
+def _plugins(args) -> int:
+    from talos_core import plugins
+    print(json.dumps({"plugins": plugins.discover(args.state)}, indent=2))
+    return 0
+
+
+def _subagents(args) -> int:
+    from talos_core import subagents
+    print(json.dumps({"subagents": subagents.discover(args.state)}, indent=2))
+    return 0
+
+
+def _tools(args) -> int:
+    from talos_core.self_improvement import capability_audit
+    payload = capability_audit.report(args.root, args.state)
+    print(json.dumps({"summary": payload["summary"],
+                      "gaps": len(payload["gaps"])}, indent=2))
+    return 0
+
+
+def _model(args) -> int:
+    from talos_core.runtime.local_runtime import local_model_names
+    print(json.dumps({"models": sorted(local_model_names())}, indent=2))
+    return 0
+
+
+def _logs(args) -> int:
+    from talos_core.runtime import talos_activity
+    print("\n".join(talos_activity.snapshot(args.state, None)))
+    return 0
+
+
+def _config(args) -> int:
+    from talos_core.mac import computer_use
+    print(json.dumps({
+        "root": str(ROOT), "state": str(args.state),
+        "permissions": computer_use.permissions(),
+        "graph": (ROOT / "graphify-out/graph.json").is_file(),
+    }, indent=2))
+    return 0
+
+
+def _theme(args) -> int:
+    from talos_core.interfaces import theme
+    print(json.dumps({"themes": list(theme.names()), "default": "cyan"}))
+    return 0
+
+
+def _worktree(args) -> int:
+    import subprocess
+    completed = subprocess.run(["git", "-C", str(args.root), "worktree", "list", "--porcelain"],
+                               capture_output=True, text=True, check=False)
+    print(completed.stdout or completed.stderr)
+    return completed.returncode
+
+
+def _verify(args) -> int:
+    from talos_core.self_improvement import health
+    report = health.health(args.root, args.state, quick=True, lint=True, tests=False)
+    print(json.dumps(report["checks"], indent=2))
+    return 0 if report["ok"] else 1
+
+
 def _vision(args) -> int:
     import base64
 
@@ -266,6 +380,69 @@ def build_parser() -> argparse.ArgumentParser:
     initiative.add_argument("--model", help="Optional local model for one novel idea.")
     initiative.add_argument("--limit", type=int, default=3)
     initiative.set_defaults(func=_initiative)
+
+    media = commands.add_parser("media", help="Run a configured local music/video generator.")
+    media.add_argument("kind", choices=["music", "video"])
+    media.add_argument("prompt")
+    media.add_argument("out", type=Path)
+    media.add_argument("--command")
+    media.add_argument("--confirm", action="store_true")
+    media.set_defaults(func=_media)
+
+    clipboard = commands.add_parser("clipboard", help="Read or set the Mac clipboard.")
+    clipboard.add_argument("--state", type=Path, default=ROOT / "state")
+    clipboard.add_argument("--set", nargs="+")
+    clipboard.set_defaults(func=_clipboard)
+
+    skill = commands.add_parser("skills", help="List or create local skill files.")
+    skill.add_argument("--state", type=Path, default=ROOT / "state")
+    skill.add_argument("--create", nargs="+")
+    skill.set_defaults(func=_skills)
+
+    node = commands.add_parser("nodes", help="List or register local nodes.")
+    node.add_argument("--state", type=Path, default=ROOT / "state")
+    node.add_argument("--register")
+    node.add_argument("--remove")
+    node.add_argument("--endpoint")
+    node.set_defaults(func=_nodes)
+
+    plugin = commands.add_parser("plugins", help="List local plugin manifests.")
+    plugin.add_argument("--state", type=Path, default=ROOT / "state")
+    plugin.set_defaults(func=_plugins)
+
+    sub = commands.add_parser("subagents", help="List registered subagents.")
+    sub.add_argument("--state", type=Path, default=ROOT / "state")
+    sub.set_defaults(func=_subagents)
+
+    tools = commands.add_parser("tools", help="Show the local capability summary.")
+    tools.add_argument("--root", type=Path, default=ROOT)
+    tools.add_argument("--state", type=Path, default=ROOT / "state")
+    tools.set_defaults(func=_tools)
+
+    model = commands.add_parser("model", help="List installed local models.")
+    model.set_defaults(func=_model)
+
+    logs = commands.add_parser("logs", help="Show the recent local activity journal.")
+    logs.add_argument("--state", type=Path, default=ROOT / "state")
+    logs.set_defaults(func=_logs)
+
+    config = commands.add_parser("config", help="Show local paths and permissions.")
+    config.add_argument("--state", type=Path, default=ROOT / "state")
+    config.set_defaults(func=_config)
+
+    theme = commands.add_parser("theme", help="List terminal themes.")
+    theme.add_argument("--state", type=Path, default=ROOT / "state")
+    theme.set_defaults(func=_theme)
+
+    worktree = commands.add_parser("worktree", help="List Git worktrees.")
+    worktree.add_argument("--root", type=Path, default=ROOT)
+    worktree.add_argument("--state", type=Path, default=ROOT / "state")
+    worktree.set_defaults(func=_worktree)
+
+    verify = commands.add_parser("verify", help="Run the quick local verification.")
+    verify.add_argument("--root", type=Path, default=ROOT)
+    verify.add_argument("--state", type=Path, default=ROOT / "state")
+    verify.set_defaults(func=_verify)
 
     instructions = commands.add_parser("instructions", help="Read or set local personal instructions.")
     instructions.add_argument("--state", type=Path, default=ROOT / "state")

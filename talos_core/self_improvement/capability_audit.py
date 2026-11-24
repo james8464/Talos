@@ -107,6 +107,8 @@ def local_capabilities(root: Path = ROOT) -> list[Capability]:
         ("talos_core.github", "github_publish"),
         ("talos_core.nodes", "nodes"),
         ("talos_core.delegate", "delegate"),
+        ("talos_core.media", "music_generate"),
+        ("talos_core.media", "video_generate"),
     ):
         try:
             __import__(module_name)
