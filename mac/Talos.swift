@@ -322,7 +322,6 @@ final class RoomController: NSObject, ObservableObject, AVSpeechSynthesizerDeleg
     }
     private lazy var calendar = MeetingCalendar()
     let client: RoomClient?
-    @Published var reviewingPlan = false
     private var vaultURL: URL? {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "--token-file"), args.indices.contains(i+1) else { return nil }

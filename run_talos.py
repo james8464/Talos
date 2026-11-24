@@ -1,7 +1,5 @@
 """Build and start the local Talos room stack with a project-owned model store."""
 
-from talos_core.recovery import reconnect_delay, stable_connection
-
 import argparse
 import errno
 import os
