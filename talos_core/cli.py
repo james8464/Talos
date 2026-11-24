@@ -239,6 +239,21 @@ def _ask(args) -> int:
             one(line)
 
 
+def _scene(args) -> int:
+    from talos_core.mac import scene
+
+    try:
+        result = scene.detect(args.state, args.file, timeout=args.timeout)
+    except scene.SceneError as error:
+        print(f"Talos scene: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(scene.describe(result))
+    return 0
+
+
 def _sound(args) -> int:
     from talos_core.mac import sound_events
 
@@ -1039,6 +1054,13 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--timeout", type=float, default=240)
     ask.add_argument("--json", action="store_true")
     ask.set_defaults(func=_ask)
+
+    scene = commands.add_parser("scene", help="Detect people and faces in an image.")
+    scene.add_argument("--file", type=Path, required=True)
+    scene.add_argument("--state", type=Path, default=ROOT / "state")
+    scene.add_argument("--timeout", type=float, default=60)
+    scene.add_argument("--json", action="store_true")
+    scene.set_defaults(func=_scene)
 
     sound = commands.add_parser("sound", help="Classify non-word sounds in an audio file.")
     sound.add_argument("--file", type=Path, required=True)

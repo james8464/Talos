@@ -17,6 +17,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -358,6 +359,23 @@ def run(keep: bool = False, control: bool = False) -> dict:
         check(checks, "browser_search", "searched talos" in searched, searched)
     finally:
         server.shutdown()
+
+    status, voice_reply = post("/v1/turn", {"text": "Hello Talos, how are you?",
+                                             "source": "voice"}, token)
+    check(checks, "voice_text_reply",
+          status == 200 and bool((voice_reply.get("reply") or "").strip()),
+          (voice_reply.get("reply") or "")[:160])
+
+    from PIL import Image
+    blank = Path(tempfile.mkdtemp()) / "blank-scene.png"
+    Image.new("RGB", (320, 240), (20, 30, 40)).save(blank)
+    scene = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "scene", "--file", str(blank)],
+        capture_output=True, text=True, timeout=120,
+    )
+    check(checks, "scene_empty", "empty" in scene.stdout.casefold(),
+          (scene.stdout or scene.stderr)[:200])
+    blank.unlink(missing_ok=True)
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
