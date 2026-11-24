@@ -204,8 +204,8 @@ def run(keep: bool = False) -> dict:
     running_apps = ask(token, "List running apps.")["reply"]
     check(checks, "mac_apps", "Running apps:" in running_apps, running_apps)
 
-    found = ask(token, "Find bold in TextEdit.")["reply"]
-    check(checks, "mac_find", "Matches in TextEdit" in found, found)
+    found = ask(token, "Find all clear in Calculator.")["reply"]
+    check(checks, "mac_find", "Matches in Calculator" in found, found)
 
     ocr = ask(token, "Read text in TextEdit.")["reply"]
     check(checks, "mac_ocr", "Text in TextEdit" in ocr, ocr)

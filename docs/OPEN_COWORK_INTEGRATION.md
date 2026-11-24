@@ -80,5 +80,6 @@ npm run build
 - `tests/test_gui_actions.py` — every action, failure isolation, vision target,
   coordinate mapping.
 - `tests/test_computer_use.py` — existing input/AX behaviour remains green.
-- Live: vendored UI loaded, chatted through Talos, screenshotted; no audio
-  process ran.
+- Full suite after consolidation: `726 tests`, `OK` (`17` skipped).
+- Live: vendored UI loaded, answered `Show my recent activity.` in 97 ms, and
+  the room live pass completed `58/58` checks with no audio process running.
