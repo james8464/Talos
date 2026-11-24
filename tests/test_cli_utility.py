@@ -32,6 +32,20 @@ class CliUtilityTests(unittest.TestCase):
             self.assertIn(code, (0, 1), command)
             self.assertTrue(text.strip(), command)
 
+    def test_approvals_bundles_connectors_hooks_and_tour(self):
+        for command in ("approvals", "bundles", "connectors", "hooks", "tour"):
+            code, text = self.run_cli(command)
+            self.assertEqual(code, 0, command)
+            self.assertTrue(text.strip(), command)
+
+    def test_focus_pane_targets_the_window(self):
+        with patch("talos_core.mac.computer_use.ComputerUse.window",
+                   return_value={"ok": True}) as focus:
+            code, text = self.run_cli("focus_pane", "TextEdit")
+        self.assertEqual(code, 0)
+        self.assertTrue(json.loads(text)["ok"])
+        self.assertEqual(focus.call_args.kwargs["app"], "TextEdit")
+
     def test_prompt_size_and_profile_are_available(self):
         code, text = self.run_cli("prompt_size")
         self.assertIn(code, (0, 1))

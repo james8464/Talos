@@ -248,6 +248,67 @@ def _utility(args) -> int:
         from talos_core.runtime.local_runtime import local_model_names
         print(json.dumps({"models": sorted(local_model_names())}))
         return 0
+    if command == "todo":
+        from talos_core import todo
+        if args.add:
+            print(json.dumps(todo.add(state, args.add)))
+        elif args.done:
+            print(json.dumps({"completed": todo.complete(state, args.done)}))
+        else:
+            print(json.dumps({"todos": todo.items(state)}, indent=2))
+        return 0
+    if command == "tour":
+        print("1. Run `talos status` for permissions and health.")
+        print("2. Run `talos console` to type when speech is unavailable.")
+        print("3. Run `talos capabilities` and `talos capabilities --queue`.")
+        print("4. The launchd service runs maintenance, reflection and coding.")
+        return 0
+    if command == "tip":
+        from talos_core.self_improvement import capability_audit
+        report = capability_audit.report(args.root, state)
+        gap = report["gaps"][0]["name"] if report["gaps"] else "none"
+        print(f"Tip: {report['summary']['tested']}/{report['summary']['total']} tools tested; next gap: {gap}.")
+        return 0
+    if command == "focus_pane":
+        from talos_core.mac.computer_use import ComputerUse
+        result = ComputerUse(state, cursor=False).window("focus", app=args.app)
+        print(json.dumps(result, ensure_ascii=False))
+        return 0 if result.get("ok") else 1
+    if command == "completion":
+        parser = build_parser()
+        names = sorted({name for action in parser._subparsers._group_actions
+                        for name in action.choices})
+        print(" ".join(names))
+        return 0
+    if command == "approvals":
+        from talos_core.memory.agent_memory import open_memory
+        from talos_core.runtime.local_actions import inbox_items
+        path = state / "agent.sqlite3"
+        if not path.is_file():
+            print("[]")
+            return 0
+        with open_memory(path) as db:
+            print(json.dumps(inbox_items(db, limit=20), indent=2))
+        return 0
+    if command == "connectors":
+        import os
+
+        from talos_core.mac import mac_context
+        print(json.dumps({"apps": sorted(mac_context.enabled(state)),
+                          "telegram": bool(os.environ.get("TALOS_TELEGRAM_TOKEN"))}, indent=2))
+        return 0
+    if command == "journey":
+        from talos_core.runtime import talos_activity
+        print("\n".join(talos_activity.snapshot(state, None)))
+        return 0
+    if command == "hooks":
+        folder = state / "hooks"
+        print(json.dumps({"hooks": sorted(p.stem for p in folder.glob("*.json")) if folder.is_dir() else []}))
+        return 0
+    if command == "bundles":
+        from talos_core import skills
+        print(json.dumps({"bundles": [item["name"] for item in skills.discover(state)]}))
+        return 0
     if command == "usage":
         import agent
         from talos_core.memory.agent_memory import open_memory
@@ -486,6 +547,40 @@ def build_parser() -> argparse.ArgumentParser:
     initiative.add_argument("--model", help="Optional local model for one novel idea.")
     initiative.add_argument("--limit", type=int, default=3)
     initiative.set_defaults(func=_initiative)
+
+    todo = commands.add_parser("todo", help="Local todo list.")
+    todo.add_argument("--state", type=Path, default=ROOT / "state")
+    todo.add_argument("--add")
+    todo.add_argument("--done", type=int)
+    todo.set_defaults(func=_utility)
+
+    tour = commands.add_parser("tour", help="Show onboarding steps.")
+    tour.add_argument("--state", type=Path, default=ROOT / "state")
+    tour.set_defaults(func=_utility)
+
+    tip = commands.add_parser("tip", help="Show one capability improvement tip.")
+    tip.add_argument("--state", type=Path, default=ROOT / "state")
+    tip.add_argument("--root", type=Path, default=ROOT)
+    tip.set_defaults(func=_utility)
+
+    focus = commands.add_parser("focus_pane", help="Focus an application window.")
+    focus.add_argument("app")
+    focus.add_argument("--state", type=Path, default=ROOT / "state")
+    focus.set_defaults(func=_utility)
+
+    completion = commands.add_parser("completion", help="Print supported command names.")
+    completion.set_defaults(func=_utility)
+
+    for name, help_text in (
+        ("approvals", "List pending local approvals."),
+        ("connectors", "List enabled connectors."),
+        ("journey", "Show the recent activity journey."),
+        ("hooks", "List local hook manifests."),
+        ("bundles", "List local skill bundles."),
+    ):
+        extra = commands.add_parser(name, help=help_text)
+        extra.add_argument("--state", type=Path, default=ROOT / "state")
+        extra.set_defaults(func=_utility)
 
     for name, help_text in (
         ("usage", "Show measured console token usage."),
