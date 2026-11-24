@@ -180,6 +180,8 @@ class QuickTextAnswerTests(unittest.TestCase):
         self.assertIn("Opened Safari", compound)
         self.assertIn("can't perform", compound)
         self.assertIn("/tmp/shot.png", shot_compound)
+        self.assertIn("Frontmost app: TextEdit", shot_compound)
+        self.assertIn("Untitled window", shot_compound)
 
     def test_permission_question_reports_both_grants(self):
         with patch("talos_core.room.room_service.permissions",

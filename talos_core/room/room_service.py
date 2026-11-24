@@ -627,7 +627,21 @@ class Room:
                             "then restart the Talos service.")
                 return decision("reply", f"I couldn't take a screenshot: {receipt.detail or 'unknown error'}.{hint}")
             size = receipt.metadata.get("bytes", 0)
-            return decision("reply", f"Screenshot saved to {receipt.path} ({size} bytes).")
+            reply = f"Screenshot saved to {receipt.path} ({size} bytes)."
+            if re.search(r"\b(?:what|tell|describe|read|show|see)\b", text, re.I):
+                try:
+                    computer = ComputerUse(state, cursor=False)
+                    front = computer.frontmost().get("app") or "unknown"
+                    seen = computer.see(front)
+                    content = (seen.get("text") or "").strip()
+                except (ComputerUseError, OSError, RuntimeError) as error:
+                    reply += f" I couldn't read the frontmost app: {mac_error(error)}"
+                else:
+                    if content:
+                        reply += f" Frontmost app: {front}. Visible controls: {content[:300]}"
+                    else:
+                        reply += f" Frontmost app: {front}; no control text was readable."
+            return decision("reply", reply[:595])
         if re.fullmatch(r"(?:(?:what|which) windows are open|(?:list|show) (?:the )?windows)[?.! ]*",
                         text, re.I):
             try:
