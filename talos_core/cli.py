@@ -156,6 +156,11 @@ def _audit(args) -> int:
     return audit_main(argv)
 
 
+def _mcp(args) -> int:
+    from talos_core import mcp_server
+    return mcp_server.serve(root=args.root, state=args.state)
+
+
 def _utility(args) -> int:
     import shutil
     from datetime import UTC, datetime
@@ -186,7 +191,7 @@ def _utility(args) -> int:
         return 0 if report["ok"] else 1
     if command == "insights":
         from talos_core.self_improvement import capability_audit, health
-        report = capability_audit.report(args.root, state)
+        report = capability_audit.report(getattr(args, "root", ROOT), state)
         print(json.dumps({"capabilities": report["summary"],
                           "gaps": len(report["gaps"]),
                           "health": health.summary(state)}, indent=2))
@@ -248,6 +253,50 @@ def _utility(args) -> int:
         from talos_core.runtime.local_runtime import local_model_names
         print(json.dumps({"models": sorted(local_model_names())}))
         return 0
+    if command == "auth":
+        import os
+        print(json.dumps({"telegram_token": bool(os.environ.get("TALOS_TELEGRAM_TOKEN")),
+                          "respan_key": (state / "respan.key").is_file()}))
+        return 0
+    if command == "pairing":
+        print(json.dumps({"telegram_state": (state / "telegram").is_dir()}))
+        return 0
+    if command == "migrate":
+        from talos_core.memory.agent_memory import open_memory
+        path = state / "agent.sqlite3"
+        if not path.is_file():
+            print(json.dumps({"ok": False, "error": "agent database unavailable"}))
+            return 1
+        with open_memory(path) as db:
+            tables = [row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
+        print(json.dumps({"ok": True, "tables": len(tables)}))
+        return 0
+    if command == "curator":
+        from talos_core.self_improvement import capability_audit
+        report = capability_audit.report(getattr(args, "root", ROOT), state)
+        print(json.dumps({"summary": report["summary"], "gaps": len(report["gaps"])}, indent=2))
+        return 0
+    if command == "peer":
+        from talos_core import nodes
+        print(json.dumps({"peers": nodes.nodes(state)}, indent=2))
+        return 0
+    if command == "egress":
+        from talos_core.mac import computer_use
+        print(json.dumps({"permissions": computer_use.permissions(),
+                          "loopback_only": True}, indent=2))
+        return 0
+    if command == "update":
+        import subprocess
+        completed = subprocess.run(["git", "-C", str(args.root), "status", "--short", "--branch"],
+                                   capture_output=True, text=True, check=False)
+        print(completed.stdout or completed.stderr)
+        return completed.returncode
+    if command == "uninstall":
+        print("Stop with: python3 tools/talos_service.py stop")
+        return 0
+    if command == "clarify":
+        print("What exactly should Talos change or do next?")
+        return 0
     if command == "todo":
         from talos_core import todo
         if args.add:
@@ -265,7 +314,7 @@ def _utility(args) -> int:
         return 0
     if command == "tip":
         from talos_core.self_improvement import capability_audit
-        report = capability_audit.report(args.root, state)
+        report = capability_audit.report(getattr(args, "root", ROOT), state)
         gap = report["gaps"][0]["name"] if report["gaps"] else "none"
         print(f"Tip: {report['summary']['tested']}/{report['summary']['total']} tools tested; next gap: {gap}.")
         return 0
@@ -572,6 +621,15 @@ def build_parser() -> argparse.ArgumentParser:
     completion.set_defaults(func=_utility)
 
     for name, help_text in (
+        ("auth", "Show configured local credentials."),
+        ("pairing", "Show Telegram pairing state."),
+        ("migrate", "Open and report the local agent schema."),
+        ("curator", "Show capability curation summary."),
+        ("peer", "List local peer nodes."),
+        ("egress", "Show local network/permission policy."),
+        ("update", "Show Git update state."),
+        ("uninstall", "Show service uninstall command."),
+        ("clarify", "Ask for a clearer instruction."),
         ("approvals", "List pending local approvals."),
         ("connectors", "List enabled connectors."),
         ("journey", "Show the recent activity journey."),
@@ -607,6 +665,11 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "prompt_size":
             utility.add_argument("--model", default="qwen3:4b")
         utility.set_defaults(func=_utility)
+
+    mcp = commands.add_parser("mcp", help="Serve Talos tools over MCP stdio.")
+    mcp.add_argument("--root", type=Path, default=ROOT)
+    mcp.add_argument("--state", type=Path, default=ROOT / "state")
+    mcp.set_defaults(func=_mcp)
 
     media = commands.add_parser("media", help="Run a configured local music/video generator.")
     media.add_argument("kind", choices=["music", "video"])

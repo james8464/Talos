@@ -32,6 +32,14 @@ class CliUtilityTests(unittest.TestCase):
             self.assertIn(code, (0, 1), command)
             self.assertTrue(text.strip(), command)
 
+    def test_curator_and_uninstall_are_available(self):
+        code, text = self.run_cli("curator")
+        self.assertEqual(code, 0)
+        self.assertIn("summary", text)
+        code, text = self.run_cli("uninstall")
+        self.assertEqual(code, 0)
+        self.assertIn("talos_service.py stop", text)
+
     def test_approvals_bundles_connectors_hooks_and_tour(self):
         for command in ("approvals", "bundles", "connectors", "hooks", "tour"):
             code, text = self.run_cli(command)
