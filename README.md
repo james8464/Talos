@@ -11,6 +11,7 @@ loop, and the computer-use API. Common commands:
 python3 run_talos.py                                  # native room app
 python3 agent.py chat                                  # terminal console
 python3 -m talos_core.cli session                       # compact text session (scriptable)
+python3 -m talos_core.cli ask "Move the mouse to 700, 450."  # ask the running Talos room
 python3 -m talos_core.cli status                       # health, permissions, graph
 python3 -m talos_core.cli doctor                       # imports, syntax, lint, tests
 python3 -m talos_core.cli decompose "TASK" --file PATH # routable task plan

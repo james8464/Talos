@@ -209,6 +209,21 @@ def _apps(args) -> int:
     return 0
 
 
+def _ask(args) -> int:
+    from talos_core.interfaces import room_client
+
+    try:
+        result = room_client.turn(args.state, " ".join(args.text), timeout=args.timeout)
+    except room_client.RoomClientError as error:
+        print(f"Talos ask: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(result.get("reply") or "(no reply)")
+    return 0
+
+
 def _design(args) -> int:
     from talos_core import design_studio
 
@@ -977,6 +992,13 @@ def build_parser() -> argparse.ArgumentParser:
     apps = commands.add_parser("apps", help="Show native app and MCP integration status.")
     apps.add_argument("--state", type=Path, default=ROOT / "state")
     apps.set_defaults(func=_apps)
+
+    ask = commands.add_parser("ask", help="Ask the running Talos room and print its reply.")
+    ask.add_argument("text", nargs="+")
+    ask.add_argument("--state", type=Path, default=ROOT / "state")
+    ask.add_argument("--timeout", type=float, default=240)
+    ask.add_argument("--json", action="store_true")
+    ask.set_defaults(func=_ask)
 
     design = commands.add_parser("design", help="Create a poster, nameplate or Pages document.")
     design.add_argument("--kind", choices=("poster", "nameplate", "document"), default="poster")

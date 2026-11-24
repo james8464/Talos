@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `722 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `61/61` checks.
+- Unit suite: `727 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `63/63` checks.
 - Ruff: clean.
 
 ## Live feature pass
@@ -52,6 +52,7 @@ Latest results:
 | Design | poster SVG, Pages-compatible `.docx` via `textutil`, OpenSCAD nameplate + STL, headless Blender PNG |
 | Browser | local page read and private screenshot through headless Chrome CDP |
 | Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe |
+| Terminal | `talos ask` reaches the same room routes, including pointer moves and design |
 | Policy | profiles, per-app grants, destructive confirmation, content-free audit |
 | Safety | `/v1/voice` 503, no audio processes, speech/music requests blocked, unverified app writes refused |
 

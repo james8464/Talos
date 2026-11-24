@@ -16,6 +16,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -236,6 +237,12 @@ def run(keep: bool = False) -> dict:
     check(checks, "recent_activity", "Recent activity" in activity, activity)
     move = ask(token, "Move the mouse to 700, 450.")["reply"]
     check(checks, "pointer_move", "Moved the pointer" in move, move)
+    cli = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "ask", "Show my recent activity."],
+        capture_output=True, text=True, timeout=120,
+    )
+    check(checks, "cli_ask", cli.returncode == 0 and "Recent activity" in cli.stdout,
+          (cli.stdout or cli.stderr)[-250:])
 
     identity = ask(token, "Who am I?")["reply"]
     check(checks, "identity_recal", identity.startswith("You are ")
