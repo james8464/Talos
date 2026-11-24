@@ -167,6 +167,15 @@ def _mcp_client(args) -> int:
     try:
         if args.action == "list":
             payload = {"servers": sorted(mcp_client.servers(args.state))}
+        elif args.action == "add":
+            if not args.server or not args.mcp_command:
+                raise ValueError("MCP server name and --command are required.")
+            server_args = json.loads(args.server_args or "[]")
+            environment = json.loads(args.environment) if args.environment else None
+            payload = mcp_client.configure(
+                args.state, args.server, args.mcp_command, server_args,
+                env=environment, cwd=args.cwd,
+            )
         elif not args.server:
             raise ValueError("MCP server name is required.")
         elif args.action == "tools":
@@ -865,10 +874,14 @@ def build_parser() -> argparse.ArgumentParser:
     mcp.set_defaults(func=_mcp)
 
     mcp_client = commands.add_parser("mcp-client", help="Call a configured MCP server.")
-    mcp_client.add_argument("action", choices=("list", "tools", "call"))
+    mcp_client.add_argument("action", choices=("list", "add", "tools", "call"))
     mcp_client.add_argument("server", nargs="?")
     mcp_client.add_argument("tool", nargs="?")
     mcp_client.add_argument("--arguments", default="{}")
+    mcp_client.add_argument("--command", dest="mcp_command")
+    mcp_client.add_argument("--server-args", default="[]")
+    mcp_client.add_argument("--environment")
+    mcp_client.add_argument("--cwd")
     mcp_client.add_argument("--state", type=Path, default=ROOT / "state")
     mcp_client.set_defaults(func=_mcp_client)
 

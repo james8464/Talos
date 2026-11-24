@@ -1,11 +1,14 @@
 """Integration test for the official-SDK MCP client using Talos's own server."""
 
+import io
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
-from talos_core import mcp_client
+from talos_core import cli, mcp_client
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,6 +34,26 @@ class MCPClientTests(unittest.TestCase):
         )
         self.assertIsInstance(result, dict)
         self.assertIn("matches", result)
+
+    def test_cli_add_and_tools_for_existing_server(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main([
+                "mcp-client", "add", "talos",
+                "--command", sys.executable,
+                "--server-args", json.dumps([
+                    "-m", "talos_core.cli", "mcp", "--root", str(ROOT),
+                    "--state", str(self.state),
+                ]),
+                "--cwd", str(ROOT), "--state", str(self.state),
+            ])
+        self.assertEqual(code, 0)
+        self.assertIn("configured", output.getvalue())
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["mcp-client", "tools", "talos", "--state", str(self.state)])
+        self.assertEqual(code, 0)
+        self.assertIn("talos_graph_query", output.getvalue())
 
     def test_missing_server_is_an_error(self):
         with self.assertRaises(mcp_client.MCPClientError):
