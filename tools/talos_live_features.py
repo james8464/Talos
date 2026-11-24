@@ -81,6 +81,20 @@ def run() -> dict:
     goals = ask(token, "Show my goals.")["reply"]
     check(checks, "goals", "goal" in goals.casefold(), goals)
 
+    todo_text = f"live todo {stamp}"
+    added_todo = ask(token, f"Add a todo to {todo_text}.")["reply"]
+    listed_todos = ask(token, "Show my todos.")["reply"]
+    check(checks, "todo", todo_text in added_todo and todo_text in listed_todos, listed_todos)
+
+    local_skills = ask(token, "List my skills.")["reply"]
+    check(checks, "skills", "skill" in local_skills.casefold(), local_skills)
+
+    peer_nodes = ask(token, "List nodes.")["reply"]
+    check(checks, "nodes", "node" in peer_nodes.casefold(), peer_nodes)
+
+    maintenance = ask(token, "Show the maintenance report.")["reply"]
+    check(checks, "maintenance", "Maintenance:" in maintenance, maintenance)
+
     health = ask(token, "Check your health.")["reply"]
     check(checks, "health", "Audio is muted" in health, health)
 
@@ -116,6 +130,18 @@ def run() -> dict:
     ask(token, "Open TextEdit.")
     inspected = ask(token, "Inspect TextEdit.")["reply"]
     check(checks, "mac_inspect", "TextEdit:" in inspected, inspected)
+
+    frontmost = ask(token, "Which app is frontmost?")["reply"]
+    check(checks, "mac_frontmost", "frontmost app is" in frontmost, frontmost)
+
+    running_apps = ask(token, "List running apps.")["reply"]
+    check(checks, "mac_apps", "Running apps:" in running_apps, running_apps)
+
+    found = ask(token, "Find bold in TextEdit.")["reply"]
+    check(checks, "mac_find", "Matches in TextEdit" in found, found)
+
+    ocr = ask(token, "Read text in TextEdit.")["reply"]
+    check(checks, "mac_ocr", "Text in TextEdit" in ocr, ocr)
 
     screenshot = ask(token, "Take a screenshot.")["reply"]
     check(checks, "mac_screenshot", "Screenshot saved to" in screenshot, screenshot)

@@ -22,6 +22,7 @@ from time import monotonic
 from uuid import uuid4
 
 from agent import model_text, parse_event, plan
+from talos_core import nodes, skills, todo
 from talos_core.cognition import (
     cognitive_engine,
     goal_store,
@@ -86,6 +87,15 @@ CAPABILITIES = (
     "I can set reminders and tasks, remember facts, search your notes, transcripts and code graph, "
     "check my health, control Mac apps, and run maintenance. Audio is muted, so every reply stays in text."
 )
+
+
+def mac_error(error):
+    """Keep helper tracebacks out of user-facing replies."""
+    lines = [line.strip() for line in str(error).strip().splitlines() if line.strip()]
+    for line in reversed(lines):
+        if re.search(r"\b(?:error|exception|failed|denied|unavailable|not granted)\b", line, re.I):
+            return line[:200]
+    return "the macOS helper failed; see state/computer-use.jsonl"
 ROOM_INSTRUCTIONS = (
     "Camera data is a local person detector: occupancy only. No images or identities are supplied. "
     "Unknown is different from empty. Occupancy alone is silent. "
@@ -255,6 +265,7 @@ class Room:
 
     def quick_text_answer(self, db, text):
         """Answer common typed requests without a model round trip."""
+        state = self.db_path.parent
         if re.fullmatch(
             r"(?:(?:hi|hello|hey)(?: talos)?[.!, ]*)?"
             r"(?:what can you do|what are your capabilities|help|who are you|what are you)[?.! ]*",
@@ -340,6 +351,42 @@ class Room:
                 for match in matches[:3]
             )
             return decision("reply", f"Code results for {query}: {summary}"[:595])
+        if re.fullmatch(r"(?:list|show) (?:my )?skills[?.! ]*", text, re.I):
+            found = skills.discover(state)
+            if not found:
+                return decision("reply", "You have no local skills yet.")
+            summary = "; ".join(
+                f"{item.get('name')}: {item.get('description', '')}".strip() for item in found[:5]
+            )
+            return decision("reply", f"Skills: {summary}"[:595])
+        if re.fullmatch(r"(?:list|show) (?:my )?(?:nodes|peers)[?.! ]*", text, re.I):
+            found = nodes.nodes(state)
+            if not found:
+                return decision("reply", "No peer nodes are registered.")
+            summary = "; ".join(f"{item.get('name')} ({item.get('kind', 'local')})" for item in found[:8])
+            return decision("reply", f"Nodes: {summary}"[:595])
+        if re.fullmatch(r"(?:list|show) (?:my )?(?:todos|to-dos|todo list)[?.! ]*", text, re.I):
+            items = [item for item in todo.items(state) if not item.get("done")]
+            if not items:
+                return decision("reply", "Your todo list is empty.")
+            summary = "; ".join(f"#{item['id']} {item['text']}" for item in items[:8])
+            return decision("reply", f"Todos: {summary}"[:595])
+        added_todo = re.fullmatch(r"(?:add|create) (?:a )?(?:todo|to-do)(?: to)? (.+?)[.!]?", text, re.I)
+        if added_todo:
+            if not self.apply:
+                return decision("reply", "Todo changes are off in shadow mode.")
+            item = todo.add(state, added_todo.group(1).strip())
+            return decision("reply", f"Added todo #{item['id']}: {item['text']}")
+        if re.fullmatch(r"(?:run (?:a )?self-check|show (?:the )?maintenance report|self-check)[?.! ]*",
+                        text, re.I):
+            try:
+                lines = (state / "Maintenance.txt").read_text().strip().splitlines()
+            except OSError:
+                lines = []
+            lines = [line.strip() for line in lines if line.strip()][:3]
+            if not lines:
+                return decision("reply", "No maintenance report is available yet.")
+            return decision("reply", "Maintenance: " + " · ".join(lines)[:560])
         knowledge = re.fullmatch(
             r"(?:search|look up|lookup|find in) (?:your |the )?(?:knowledge(?: graph)?|notes) "
             r"(?:for|about) (.+?)[?.!]*", text, re.I,
@@ -449,7 +496,7 @@ class Room:
             try:
                 receipt = ComputerUse(state, cursor=False).screenshot()
             except (ComputerUseError, OSError, RuntimeError) as error:
-                return decision("reply", f"I couldn't take a screenshot: {str(error)[:200]}")
+                return decision("reply", f"I couldn't take a screenshot: {mac_error(error)}")
             if not receipt.ok:
                 status = permissions()
                 hint = ""
@@ -468,11 +515,57 @@ class Room:
                 if not windows:
                     windows = computer.visible_windows()
             except (ComputerUseError, OSError, RuntimeError) as error:
-                return decision("reply", f"I couldn't read the open windows: {str(error)[:200]}")
+                return decision("reply", f"I couldn't read the open windows: {mac_error(error)}")
             if not windows:
                 return decision("reply", f"The frontmost app is {front}, but I couldn't read any window titles.")
             listed = "; ".join(item["raw"] for item in windows[:6])
             return decision("reply", f"Frontmost app: {front}. Windows: {listed}"[:595])
+        if re.fullmatch(r"(?:(?:which|what) app is frontmost|what is the frontmost app)[?.! ]*",
+                        text, re.I):
+            try:
+                app = ComputerUse(state, cursor=False).frontmost().get("app") or "unknown"
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                return decision("reply", f"I couldn't read the frontmost app: {mac_error(error)}")
+            return decision("reply", f"The frontmost app is {app}.")
+        if re.fullmatch(r"(?:(?:list|show) (?:the )?(?:running |open )?apps|what apps are open)[?.! ]*",
+                        text, re.I):
+            try:
+                found = ComputerUse(state, cursor=False).apps()
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                return decision("reply", f"I couldn't list the apps: {mac_error(error)}")
+            names = [item.get("name", "") for item in found if item.get("name")]
+            if not names:
+                return decision("reply", "I couldn't read any running apps.")
+            return decision("reply", "Running apps: " + ", ".join(names[:12]))
+        locate = re.fullmatch(r"(?:find|where is) (.+?) in (.+?)[?.!]*", text, re.I)
+        if locate:
+            query, app = locate.group(1).strip(), locate.group(2).strip()
+            try:
+                matches = ComputerUse(state, cursor=False).find_controls(app, query)
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                return decision("reply", f"I couldn't search {app}: {mac_error(error)}")
+            if not matches:
+                return decision("reply", f"I found no control matching {query} in {app}.")
+            summary = "; ".join(
+                f"{item.get('label') or item.get('title') or item.get('role', 'control')} "
+                f"[{item.get('ref', '')}]"
+                for item in matches[:5]
+            )
+            return decision("reply", f"Matches in {app}: {summary}"[:595])
+        ocr_request = re.fullmatch(r"(?:ocr|read (?:the )?text in) (.+?)[?.!]*", text, re.I)
+        if ocr_request:
+            app = ocr_request.group(1).strip()
+            try:
+                result = ComputerUse(state, cursor=False).ocr(app)
+            except (ComputerUseError, OSError, RuntimeError):
+                try:
+                    result = ComputerUse(state, cursor=False).ocr(app)
+                except (ComputerUseError, OSError, RuntimeError) as error:
+                    return decision("reply", f"I couldn't read text in {app}: {mac_error(error)}")
+            content = (result.get("text") or "").strip()
+            if not content:
+                return decision("reply", f"I found no readable text in {app}.")
+            return decision("reply", f"Text in {app}: {content[:540]}")
         opened = re.fullmatch(r"(?:please )?(?:open|launch|focus) (.+?)[.!]?", text, re.I)
         if opened:
             app = opened.group(1).strip()
@@ -481,7 +574,7 @@ class Room:
             try:
                 receipt = ComputerUse(state, cursor=False).activate(app)
             except (ComputerUseError, OSError, RuntimeError) as error:
-                return decision("reply", f"I couldn't open {app}: {str(error)[:200]}")
+                return decision("reply", f"I couldn't open {app}: {mac_error(error)}")
             if not receipt.ok:
                 return decision("reply", f"I couldn't open {app}: {receipt.detail or 'unknown error'}")
             return decision("reply", f"Opened {app}.")
@@ -499,7 +592,7 @@ class Room:
             try:
                 result = ComputerUse(state, cursor=False).see(app)
             except (ComputerUseError, OSError, RuntimeError) as error:
-                return decision("reply", f"I couldn't inspect {app}: {str(error)[:200]}")
+                return decision("reply", f"I couldn't inspect {app}: {mac_error(error)}")
             description = (result.get("text") or "").strip()
             if not description:
                 return decision("reply", f"I inspected {app} but found no readable controls.")

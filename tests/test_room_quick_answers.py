@@ -75,16 +75,27 @@ class QuickTextAnswerTests(unittest.TestCase):
         computer.see = lambda app: {"app": app, "text": "Untitled window"}
         computer.frontmost = lambda: {"app": "TextEdit"}
         computer.windows = lambda: [{"raw": "Untitled — TextEdit"}]
+        computer.apps = lambda: [{"name": "TextEdit"}, {"name": "Safari"}]
+        computer.find_controls = lambda app, query: [{"ref": "abc123", "label": "Search"}]
+        computer.ocr = lambda app: {"text": "Hello from TextEdit"}
         computer.activate = lambda app: type("Receipt", (), {"ok": True, "detail": ""})()
         with patch("talos_core.room.room_service.ComputerUse", return_value=computer):
             shot = self.ask("Take a screenshot.")["reply"]
             seen = self.ask("Inspect TextEdit.")["reply"]
             opened = self.ask("Open TextEdit.")["reply"]
             windows = self.ask("What windows are open?")["reply"]
+            front = self.ask("Which app is frontmost?")["reply"]
+            apps = self.ask("List running apps.")["reply"]
+            found = self.ask("Find Search in TextEdit.")["reply"]
+            ocr = self.ask("Read text in TextEdit.")["reply"]
         self.assertIn("/tmp/shot.png", shot)
         self.assertEqual(seen, "TextEdit: Untitled window")
         self.assertEqual(opened, "Opened TextEdit.")
         self.assertIn("Untitled — TextEdit", windows)
+        self.assertIn("TextEdit", front)
+        self.assertIn("Safari", apps)
+        self.assertIn("abc123", found)
+        self.assertIn("Hello from TextEdit", ocr)
 
     def test_permission_question_reports_both_grants(self):
         with patch("talos_core.room.room_service.permissions",
@@ -104,6 +115,19 @@ class QuickTextAnswerTests(unittest.TestCase):
         self.assertEqual(arithmetic, "144 divided by 12 is 12.")
         self.assertIn("Audio is muted", health)
         self.assertIn("room_service.py", code)
+
+    def test_skills_nodes_todos_and_maintenance_are_local(self):
+        from talos_core import nodes, skills
+        skills.create(self.root, "Live check", "Runs live checks", "Ask Talos.")
+        nodes.register(self.root, "local-mac")
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertIn("Live check", self.ask("List my skills.")["reply"])
+            self.assertIn("local-mac", self.ask("List nodes.")["reply"])
+            self.assertIn("check the build", self.ask("Add a todo to check the build.")["reply"])
+            self.assertIn("check the build", self.ask("Show my todos.")["reply"])
+        (self.root / "Maintenance.txt").write_text("Self-check · healthy\n")
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertIn("Self-check", self.ask("Show the maintenance report.")["reply"])
 
 
 if __name__ == "__main__":
