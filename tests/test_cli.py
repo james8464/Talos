@@ -65,6 +65,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("Talos", output.getvalue())
         self.assertIn("Mac access", output.getvalue())
+        self.assertIn("Audio", output.getvalue())
 
 
 if __name__ == "__main__":

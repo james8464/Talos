@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -610,6 +611,7 @@ def _status(args) -> int:
     print(health.summary(state))
     permissions = computer_use.permissions()
     print("Mac access · Accessibility {accessibility} · Screen Recording {screen_recording}".format(**permissions))
+    print("Audio · " + ("muted" if os.environ.get("TALOS_MUTE") == "1" else "enabled"))
     graph = ROOT / "graphify-out" / "graph.json"
     print(f"Source graph · {'present' if graph.is_file() else 'missing (run graphify extract . --code-only)'}")
     return 0
