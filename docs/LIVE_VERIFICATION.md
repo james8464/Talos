@@ -6,8 +6,9 @@ Last run: 24 November 2026, macOS, Talos room service running under launchd as
 ## Silent operation
 
 - `POST /v1/voice` returns `503 {"error": "Kokoro voice is unavailable."}`.
-- The launchd plist contains `--mute` and `TALOS_MUTE=1`; `Start-Talos.command`
-  also launches muted by default.
+- The launchd plist contains `--mute` and `TALOS_MUTE=1`; the room launcher
+  is silent by default and `--unmute` is the explicit speech opt-in.
+  `Start-Talos.command` also launches muted by default.
 - `talos status` prints `Audio · muted` when `TALOS_MUTE=1`.
 - No `afplay`, `/usr/bin/say`, or Kokoro process was running after the checks.
 - Kokoro and Telegram voice-note synthesis raise `Audio output is muted.` before

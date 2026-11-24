@@ -72,6 +72,12 @@ def check_bind(port: int) -> None:
             raise RuntimeError(f"Cannot open Talos loopback port {port}: {error}") from error
 
 
+def muted_mode(mute: bool, unmute: bool, environ: dict | None = None) -> bool:
+    """Talos is silent unless the operator explicitly opts into speech."""
+    environment = os.environ if environ is None else environ
+    return bool(mute or environment.get("TALOS_MUTE") == "1" or not unmute)
+
+
 class ProjectModel:
     """Own only this launcher's processes. The room stays available during model recovery."""
 
@@ -309,6 +315,8 @@ def main() -> int:
     parser.add_argument("--voice", default=DEFAULT_VOICE, help="English Kokoro voice ID.")
     parser.add_argument("--system-voice", action="store_true", help="Use the macOS voice without Kokoro.")
     parser.add_argument("--mute", action="store_true", help="Disable all speech output and synthesis.")
+    parser.add_argument("--unmute", action="store_true",
+                        help="Allow speech output. Talos is silent by default.")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--ollama-port", type=int, default=11435)
     parser.add_argument("--section-reviews", action="store_true", help="Run OpenCode and OpenClaude source-section reviews in the background.")
@@ -321,7 +329,8 @@ def main() -> int:
     parser.add_argument("--build-only", action="store_true", help="Build the native app without starting models.")
     parser.add_argument("--room-trial", action="store_true", help="Open an offline practice room with temporary data and sensors initially off.")
     args = parser.parse_args()
-    if args.mute:
+    muted = muted_mode(args.mute, args.unmute)
+    if muted:
         os.environ["TALOS_MUTE"] = "1"
     backend = None
     children = []
@@ -363,7 +372,6 @@ def main() -> int:
         if sys.stdout.isatty():
             print("Starting Talos. Live activity will appear when the room is ready.", flush=True)
         app = None if args.headless else build_app()
-        muted = args.mute or os.environ.get("TALOS_MUTE") == "1"
         voice = None if muted or args.system_voice else prepare_voice(args.voice, offline=args.offline)
         MODEL_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
         os.environ["TALOS_OLLAMA_PORT"] = str(args.ollama_port)

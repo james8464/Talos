@@ -40,14 +40,16 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 ## Silent mode
 
-Talos can run without producing any sound. Start the launcher with `--mute`, or export `TALOS_MUTE=1` for any entry point:
+Talos is silent by default: the room launcher drops its voice object unless you pass
+`--unmute`. Use `--mute` or export `TALOS_MUTE=1` to force silence for any entry point:
 
 ```sh
-python3 run_talos.py --mute
+python3 run_talos.py                 # silent by default
+python3 run_talos.py --unmute        # explicit speech opt-in
 TALOS_MUTE=1 python3 -m talos_core.interfaces.telegram_gateway --owner YOUR_NUMERIC_ID
 ```
 
-In silent mode the room drops its voice object, disables proactive speech, and returns HTTP 503 from `POST /v1/voice`. Kokoro and Telegram voice-note synthesis raise a clear error before loading models, so callers fall back to text. Typed turns, memory, reminders, Mac control, maintenance and the local model continue to work. The installed launchd service uses `--mute` and `TALOS_MUTE=1` by default.
+In silent mode the room drops its voice object, disables proactive speech, and returns HTTP 503 from `POST /v1/voice`. Kokoro and Telegram voice-note synthesis raise a clear error before loading models, so callers fall back to text. Typed turns, memory, reminders, Mac control, maintenance and the local model continue to work. The installed launchd service and `Start-Talos.command` use silence by default.
 
 ## Terminal sessions and Telegram
 

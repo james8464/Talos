@@ -58,6 +58,13 @@ class SilentModeTests(unittest.TestCase):
         self.assertIn("--mute", configuration["ProgramArguments"])
         self.assertEqual(configuration["EnvironmentVariables"]["TALOS_MUTE"], "1")
 
+    def test_room_launcher_is_silent_by_default(self):
+        from run_talos import muted_mode
+        self.assertTrue(muted_mode(False, False, {}))
+        self.assertTrue(muted_mode(True, True, {}))
+        self.assertTrue(muted_mode(False, True, {"TALOS_MUTE": "1"}))
+        self.assertFalse(muted_mode(False, True, {}))
+
     def test_telegram_voice_rendering_is_blocked_before_model_loading(self):
         from talos_core.interfaces.telegram_voice import render_note
         with self.assertRaises(RuntimeError):
