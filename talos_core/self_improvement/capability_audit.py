@@ -224,6 +224,10 @@ def local_capabilities(root: Path = ROOT, *, index: TestIndex | None = None,
         ("talos_core.mac.browser_actions", "browser_actions"),
         ("talos_core.design_studio", "design_studio"),
         ("talos_core.security.policy", "policy"),
+        ("talos_core.mac.pages", "pages"),
+        ("talos_core.mac.gui_apps", "gui_apps"),
+        ("talos_core.mac.gui_actions", "gui_actions"),
+        ("talos_core.interfaces.room_client", "room_client"),
     ):
         try:
             __import__(module_name)

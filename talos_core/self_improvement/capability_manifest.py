@@ -102,4 +102,16 @@ LOCAL_EVIDENCE: dict[str, str] = {
         "tests/test_policy_profiles.py::PolicyProfileTests::"
         "test_destructive_actions_still_require_confirmation"
     ),
+    "feature:pages": "tests/test_pages.py::PagesTests::test_create_saves_a_private_document",
+    "feature:gui_apps": (
+        "tests/test_gui_apps.py::GuiAppManagerTests::test_start_status_log_and_stop"
+    ),
+    "feature:gui_actions": (
+        "tests/test_gui_actions.py::GuiActionTests::"
+        "test_ocr_fallback_clicks_a_custom_drawn_control"
+    ),
+    "feature:room_client": (
+        "tests/test_room_client.py::RoomClientTests::"
+        "test_turn_sends_the_question_and_returns_the_payload"
+    ),
 }
