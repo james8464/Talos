@@ -112,3 +112,38 @@ Next implementation steps:
 - Computer-use server: https://github.com/maestrojeong/cua-rs-mcp
 - Codex computer use: https://learn.chatgpt.com/docs/computer-use
 - Codex AX background control analysis: https://www.macstories.net/notes/openais-new-codex-app-has-the-best-computer-use-feature-ive-ever-tested/
+
+## Registering an existing stdio MCP server
+
+Install the optional MCP client dependency once:
+
+```sh
+uv pip install --python .venv/bin/python 'mcp>=1.0'
+```
+
+Register a server without writing any adapter code:
+
+```sh
+# Example: an existing Apple Calendar MCP server
+talos mcp-client add apple-calendar --command npx \
+  --server-args '["-y","@redpop/apple-calendar-mcp"]'
+
+# Example: an existing Apple Reminders/Calendar EventKit server
+talos mcp-client add apple-events --command npx \
+  --server-args '["-y","mcp-server-apple-events"]'
+
+talos mcp-client tools apple-calendar
+```
+
+In the room:
+
+```text
+List MCP servers
+List MCP tools on apple-calendar
+Call mcp tool list_events on apple-calendar with {"start":"2026-11-25","end":"2026-11-26"}
+```
+
+Use each server's own permission prompts and documentation. Start with read
+tools; only enable write tools after deciding how the server confirms or gates
+changes. HTTP/remote MCP transports are not wired into this client yet; the
+current client is stdio-only, which covers the local Apple app servers.
