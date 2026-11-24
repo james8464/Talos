@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `745 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `78/78` checks.
+- Unit suite: `747 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `67/67` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control` and are never run automatically.
 - Ruff: clean.
 
 ## Live feature pass
@@ -49,7 +49,7 @@ Latest results:
 | Native apps | live Calendar, native Reminders export, Shortcuts, Safari URL/search, Finder, Maps, read-only Music, private-index app search (Notes/Mail/Messages/Contacts), app status |
 | MCP client | official-SDK stdio and Streamable-HTTP; live list/tools/call against Talos’s own stdio server; room discovery and call against `mcp-server-apple-events` |
 | Identity | `Who am I?` resolves the Contacts Me card from `Sources/` without a placeholder name |
-| Design | poster SVG, real `.pages` via AppleScript, PDF export from Pages, Pages-compatible `.docx` fallback, OpenSCAD nameplate and parametric box + STL, headless Blender PNG |
+| Design | poster SVG, real `.pages` create/append/PDF via AppleScript, Pages-compatible `.docx` fallback, OpenSCAD nameplate and parametric box + STL, headless Blender PNG |
 | Browser | local page read, text click, field typing, form search/submit, and private screenshot through headless Chrome CDP |
 | Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; HID click verified on Tk and Calculator; click/hover/scroll/press/clipboard/window move-resize-focus routes verified |
 | Terminal | `talos ask` one-shot and interactive chat reach the same room routes, including pointer moves and design |

@@ -88,7 +88,38 @@ def cleanup(stamp: int, screenshot: str, design_paths: list[str] | None = None,
             path.unlink(missing_ok=True)
 
 
-def run(keep: bool = False) -> dict:
+def control_checks(token, checks):
+    """Intrusive mouse/keyboard checks; runs only with --control."""
+    opened = ask(token, "Open Calculator.")["reply"]
+    check(checks, "open_app", "Opened Calculator" in opened, opened)
+    front = ask(token, "Which app is in front?")["reply"]
+    check(checks, "frontmost_app", "frontmost app is" in front.casefold(), front)
+    clicked = ask(token, "Click the 7 button in Calculator.")["reply"]
+    check(checks, "control_click", "Clicked 7 in Calculator" in clicked, clicked)
+    cleared = ask(token, "Click the All Clear button in Calculator.")["reply"]
+    check(checks, "control_clear", "Clicked" in cleared and "Calculator" in cleared, cleared)
+    hovered = ask(token, "Hover over the 7 button in Calculator.")["reply"]
+    check(checks, "control_hover", "Hovering over" in hovered, hovered)
+    scrolled = ask(token, "Scroll down by 2 lines in Calculator.")["reply"]
+    check(checks, "control_scroll", "Scrolled down 2 lines" in scrolled, scrolled)
+    windows = ask(token, "List Calculator windows.")["reply"]
+    check(checks, "window_list", "Calculator" in windows and "Windows" in windows, windows)
+    pressed = ask(token, "Press escape in Calculator.")["reply"]
+    check(checks, "control_press", "Pressed escape" in pressed, pressed)
+    focused = ask(token, "Focus Calculator.")["reply"]
+    check(checks, "control_focus", "Focused Calculator" in focused, focused)
+    original = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout
+    try:
+        ask(token, "Copy talos clipboard check to my clipboard.")
+        read = ask(token, "What's on my clipboard?")["reply"]
+        check(checks, "clipboard_roundtrip", "talos clipboard check" in read, "round-trip ok")
+    finally:
+        subprocess.run(["pbcopy"], input=original, text=True)
+
+    move = ask(token, "Move the mouse to 700, 450.")["reply"]
+    check(checks, "pointer_move", "Moved the pointer" in move, move)
+
+def run(keep: bool = False, control: bool = False) -> dict:
     token = TOKEN_PATH.read_text().strip()
     stamp = int(time.time())
     checks: list[dict] = []
@@ -228,32 +259,6 @@ def run(keep: bool = False) -> dict:
     app_status = ask(token, "Check app status.")["reply"]
     check(checks, "app_status", "Accessibility" in app_status and "EventKit exports" in app_status,
           app_status)
-    opened = ask(token, "Open Calculator.")["reply"]
-    check(checks, "open_app", "Opened Calculator" in opened, opened)
-    front = ask(token, "Which app is in front?")["reply"]
-    check(checks, "frontmost_app", "frontmost app is" in front.casefold(), front)
-    clicked = ask(token, "Click the 7 button in Calculator.")["reply"]
-    check(checks, "control_click", "Clicked 7 in Calculator" in clicked, clicked)
-    cleared = ask(token, "Click the All Clear button in Calculator.")["reply"]
-    check(checks, "control_clear", "Clicked" in cleared and "Calculator" in cleared, cleared)
-    hovered = ask(token, "Hover over the 7 button in Calculator.")["reply"]
-    check(checks, "control_hover", "Hovering over" in hovered, hovered)
-    scrolled = ask(token, "Scroll down by 2 lines in Calculator.")["reply"]
-    check(checks, "control_scroll", "Scrolled down 2 lines" in scrolled, scrolled)
-    windows = ask(token, "List Calculator windows.")["reply"]
-    check(checks, "window_list", "Calculator" in windows and "Windows" in windows, windows)
-    pressed = ask(token, "Press escape in Calculator.")["reply"]
-    check(checks, "control_press", "Pressed escape" in pressed, pressed)
-    focused = ask(token, "Focus Calculator.")["reply"]
-    check(checks, "control_focus", "Focused Calculator" in focused, focused)
-    original = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout
-    try:
-        ask(token, "Copy talos clipboard check to my clipboard.")
-        read = ask(token, "What's on my clipboard?")["reply"]
-        check(checks, "clipboard_roundtrip", "talos clipboard check" in read, "round-trip ok")
-    finally:
-        subprocess.run(["pbcopy"], input=original, text=True)
-
     app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
     check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,
           app_search)
@@ -268,8 +273,6 @@ def run(keep: bool = False) -> dict:
         check(checks, "skill_use", "live pass skill is loaded" in skill_reply, skill_reply)
     finally:
         skill_path.unlink(missing_ok=True)
-    move = ask(token, "Move the mouse to 700, 450.")["reply"]
-    check(checks, "pointer_move", "Moved the pointer" in move, move)
     cli = subprocess.run(
         [sys.executable, "-m", "talos_core.cli", "ask", "Show my recent activity."],
         capture_output=True, text=True, timeout=120,
@@ -381,6 +384,8 @@ def run(keep: bool = False) -> dict:
                            capture_output=True, text=True)
     check(checks, "no_audio_processes", audio.returncode != 0, audio.stdout.strip())
 
+    if control:
+        control_checks(token, checks)
     if not keep:
         cleanup(stamp, screenshot_path, design_paths, web_paths)
     return {"ok": all(item["ok"] for item in checks), "checks": checks}
@@ -390,8 +395,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--keep", action="store_true", help="Keep the test reminders, notes and screenshot.")
+    parser.add_argument("--control", action="store_true",
+                        help="Run intrusive mouse/keyboard checks (moves/clicks Calculator).")
     args = parser.parse_args()
-    result = run(keep=args.keep)
+    result = run(keep=args.keep, control=args.control)
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:

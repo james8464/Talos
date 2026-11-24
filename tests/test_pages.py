@@ -58,6 +58,18 @@ class PagesTests(unittest.TestCase):
         with self.assertRaises(pages.PagesError):
             pages.export_pdf(self.state, outside)
 
+    def test_append_script_contains_the_text_and_save(self):
+        body = pages.append_script(Path("/tmp/a.pages"), "Next paragraph.")
+        self.assertIn("set body text to", body)
+        self.assertIn("Next paragraph.", body)
+        self.assertIn("save doc", body)
+
+    def test_append_refuses_outside_designs(self):
+        outside = self.state / "outside.pages"
+        outside.write_bytes(b"pages")
+        with self.assertRaises(pages.PagesError):
+            pages.append(self.state, outside, "text")
+
     def test_missing_pages_is_reported(self):
         with patch.object(pages, "available", return_value=False):
             with self.assertRaises(pages.PagesError):

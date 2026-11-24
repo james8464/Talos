@@ -196,6 +196,18 @@ def create_pages(state, title, body="", *, open_after=False):
     return _record_last(state, pages.create(state, title, body, open_after=open_after))
 
 
+def append_last_pages(state, text):
+    """Append a paragraph to the most recent native Pages document."""
+    from talos_core.mac import pages
+
+    last = _read_last(state) or {}
+    path = Path(str(last.get("path") or ""))
+    if not path.is_file() or path.suffix.casefold() != ".pages":
+        return "The last design is not a Pages document."
+    pages.append(state, path, text)
+    return f"Updated Pages document: {path}"
+
+
 def export_last_pdf(state):
     """Export the most recent native Pages document to PDF."""
     from talos_core.mac import pages
@@ -307,6 +319,13 @@ def command(text, state):
             return f"Opened {Path(path).name} in {target.title()}."
         _open(path)
         return f"Opened {Path(path).name}."
+
+    appended = re.fullmatch(
+        r"(?:add|append)(?: a paragraph)?(?: saying|:)? (.+?) to (?:the )?"
+        r"(?:last|latest) (?:pages )?document[.! ]*", words, re.I,
+    )
+    if appended:
+        return append_last_pages(state, appended.group(1).strip())
 
     box = re.fullmatch(
         r"(?:please )?(?:design|create|make) (?:a |an )?(?:3d |parametric )?box"

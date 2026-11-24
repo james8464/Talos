@@ -66,6 +66,37 @@ def _osascript(body: str, *, timeout: int = 30) -> None:
         raise PagesError(detail or f"osascript exited {completed.returncode}")
 
 
+def append_script(source: Path, text: str) -> str:
+    clean = " ".join(str(text).split())[:4000]
+    return (
+        'tell application "Pages"\n'
+        "  activate\n"
+        f'  set doc to open POSIX file "{_apple(str(source))}"\n'
+        "  tell doc\n"
+        f'    set body text to (body text & return & "{_apple(clean)}")\n'
+        "  end tell\n"
+        "  save doc\n"
+        "  close doc saving no\n"
+        "end tell\n"
+    )
+
+
+def append(state, source, text, *, timeout: int = 30) -> dict:
+    source = Path(source).resolve()
+    designs = (Path(state) / "designs").resolve()
+    if designs not in source.parents:
+        raise PagesError("Only documents inside the Talos design folder can be edited.")
+    if source.suffix.lower() != ".pages" or not source.is_file():
+        raise PagesError("The source is not a Pages document.")
+    clean = " ".join(str(text).split())[:4000]
+    if not clean:
+        raise PagesError("There is no text to append.")
+    _osascript(append_script(source, clean), timeout=timeout)
+    if not source.is_file():
+        raise PagesError("Pages did not save the document.")
+    return {"path": str(source), "kind": "pages-append", "characters": len(clean)}
+
+
 def export_script(source: Path, target: Path) -> str:
     return (
         'tell application "Pages"\n'

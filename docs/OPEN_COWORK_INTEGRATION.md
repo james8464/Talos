@@ -35,6 +35,8 @@ wrapper, and the Electron renderer/backend.
 - `tests/test_gui_apps.py`, `tests/test_gui_actions.py`,
   `tests/test_computer_use.py`, `tests/test_cursor_overlay.py`.
 - Live: managed Tk window started; OCR located the button, the harness HID
-  click changed it to “started,” and the window stopped. The cursor/indicator
+  click changed it to “started,” and the window stopped. The intrusive live
+  checks are opt-in (`--control`) so a normal acceptance pass never presses
+  Calculator buttons or moves the user's pointer. The cursor/indicator
   overlay was captured on screen, stayed click-through, and took no focus. No
   audio ran. See `COMPUTER_USE_RESEARCH.md` for the sources behind these choices.

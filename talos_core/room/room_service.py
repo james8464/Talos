@@ -384,7 +384,13 @@ class Room:
             action = "minimize" if match.group(1).casefold().startswith("minim") else "focus"
             app = match.group(2).strip()
             try:
-                ComputerUse(state).window(action, app=app)
+                computer = ComputerUse(state)
+                receipt = computer.activate(app) if action == "focus" else computer.window(
+                    action, app=app)
+                data = receipt.to_dict() if hasattr(receipt, "to_dict") else receipt
+                if isinstance(data, dict) and data.get("ok") is False:
+                    detail = data.get("detail") or "the app refused"
+                    return decision("reply", f"I couldn't {action} {app}: {str(detail)[:200]}")
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't {action} {app}: {error}")
             verb = "Minimized" if action == "minimize" else "Focused"
