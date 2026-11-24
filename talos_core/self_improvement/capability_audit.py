@@ -95,11 +95,22 @@ def local_capabilities(root: Path = ROOT) -> list[Capability]:
                 add(name, "computer_use")
     except (ImportError, OSError):
         pass
-    try:
-        from talos_core.cognition import personal_instructions  # noqa: F401
-        add("personal_instructions", "feature", notes="bounded local prompt block")
-    except (ImportError, OSError):
-        pass
+    for module_name, capability in (
+        ("talos_core.cognition.personal_instructions", "personal_instructions"),
+        ("talos_core.interfaces.theme", "theme"),
+        ("talos_core.security.redact", "secrets"),
+        ("talos_core.knowledge.pdf", "pdf"),
+        ("talos_core.plugins", "plugins"),
+        ("talos_core.skills", "skill_workshop"),
+        ("talos_core.subagents", "subagents"),
+        ("talos_core.portal", "portal"),
+        ("talos_core.github", "github_publish"),
+    ):
+        try:
+            __import__(module_name)
+            add(capability, "feature", notes=module_name)
+        except (ImportError, OSError):
+            pass
     try:
         from talos_core.cli import build_parser
         for action in build_parser()._subparsers._group_actions:
