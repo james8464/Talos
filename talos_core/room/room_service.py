@@ -555,14 +555,26 @@ class Room:
         ocr_request = re.fullmatch(r"(?:ocr|read (?:the )?text in) (.+?)[?.!]*", text, re.I)
         if ocr_request:
             app = ocr_request.group(1).strip()
+            content = ""
             try:
                 result = ComputerUse(state, cursor=False).ocr(app)
-            except (ComputerUseError, OSError, RuntimeError):
+                content = (result.get("text") or "").strip()
+                if not content:
+                    content = " ".join(
+                        str(item.get("text", "")).strip()
+                        for item in result.get("items") or ()
+                        if item.get("text")
+                    ).strip()
+            except (ComputerUseError, OSError, RuntimeError) as error:
+                print(f"Talos OCR {app}: {type(error).__name__}: {str(error)[-400:]}", flush=True)
                 try:
-                    result = ComputerUse(state, cursor=False).ocr(app)
-                except (ComputerUseError, OSError, RuntimeError) as error:
-                    return decision("reply", f"I couldn't read text in {app}: {mac_error(error)}")
-            content = (result.get("text") or "").strip()
+                    seen = ComputerUse(state, cursor=False).see(app)
+                    content = (seen.get("text") or "").strip()
+                except (ComputerUseError, OSError, RuntimeError) as fallback_error:
+                    return decision(
+                        "reply",
+                        f"I couldn't read text in {app}: {mac_error(fallback_error)}",
+                    )
             if not content:
                 return decision("reply", f"I found no readable text in {app}.")
             return decision("reply", f"Text in {app}: {content[:540]}")
