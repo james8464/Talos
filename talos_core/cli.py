@@ -239,6 +239,20 @@ def _ask(args) -> int:
             one(line)
 
 
+def _processes(args) -> int:
+    from talos_core.runtime import processes
+
+    data = processes.inventory()
+    if args.stop_stale:
+        processes.stop_stale(data)
+        data = processes.inventory()
+    if args.json:
+        print(json.dumps(data, indent=2))
+    else:
+        print(processes.summary(data))
+    return 0
+
+
 def _scene(args) -> int:
     from talos_core.mac import scene
 
@@ -820,6 +834,7 @@ def _audio_mode():
 
 def _status(args) -> int:
     from talos_core.mac import computer_use
+    from talos_core.runtime import processes
     from talos_core.self_improvement import health
 
     state = args.state or ROOT / "state"
@@ -828,6 +843,7 @@ def _status(args) -> int:
     permissions = computer_use.permissions()
     print("Mac access · Accessibility {accessibility} · Screen Recording {screen_recording}".format(**permissions))
     print("Audio · " + _audio_mode())
+    print(processes.summary(processes.inventory()))
     graph = ROOT / "graphify-out" / "graph.json"
     print(f"Source graph · {'present' if graph.is_file() else 'missing (run graphify extract . --code-only)'}")
     return 0
@@ -1054,6 +1070,12 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--timeout", type=float, default=240)
     ask.add_argument("--json", action="store_true")
     ask.set_defaults(func=_ask)
+
+    proc = commands.add_parser("processes", help="List Talos processes, listeners and audio.")
+    proc.add_argument("--json", action="store_true")
+    proc.add_argument("--stop-stale", action="store_true",
+                      help="Stop stale Talos GUI/live-test/headless-browser processes.")
+    proc.set_defaults(func=_processes)
 
     scene = commands.add_parser("scene", help="Detect people and faces in an image.")
     scene.add_argument("--file", type=Path, required=True)

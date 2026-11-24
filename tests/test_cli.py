@@ -139,6 +139,7 @@ class CliTests(unittest.TestCase):
         self.assertIn("Talos", output.getvalue())
         self.assertIn("Mac access", output.getvalue())
         self.assertIn("Audio", output.getvalue())
+        self.assertIn("Processes:", output.getvalue())
 
     def test_acp_command_option_does_not_overwrite_subcommand(self):
         args = cli.build_parser().parse_args(
