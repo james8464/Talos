@@ -350,6 +350,35 @@ class Room:
                 return decision("reply", f"I couldn't read the clipboard: {error}")
             return decision("reply", f"Clipboard: {value[:500]}" if value else "The clipboard is empty.")
         if match := re.fullmatch(
+                r"move (?:the )?(.+?) window to (\d{1,4})[, ]+ *(\d{1,4})[.! ]*",
+                text, re.I):
+            app, x, y = match.group(1).strip(), int(match.group(2)), int(match.group(3))
+            try:
+                ComputerUse(state).window("move", app=app, x=x, y=y)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't move {app}'s window: {error}")
+            return decision("reply", f"Moved {app}'s window to {x}, {y}.")
+        if match := re.fullmatch(
+                r"resize (?:the )?(.+?) window to (\d{1,4})(?: ?x| by )(\d{1,4})[.! ]*",
+                text, re.I):
+            app, width, height = match.group(1).strip(), int(match.group(2)), int(match.group(3))
+            try:
+                ComputerUse(state).window("resize", app=app, width=width, height=height)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't resize {app}'s window: {error}")
+            return decision("reply", f"Resized {app}'s window to {width} by {height}.")
+        if match := re.fullmatch(
+                r"drag (?:from )?(\d{1,4})[, ]+ *(\d{1,4}) to (\d{1,4})[, ]+ *(\d{1,4})"
+                r"(?: in ([A-Za-z][^.!?]{0,60}))?[.! ]*", text, re.I):
+            x1, y1, x2, y2 = (int(match.group(i)) for i in range(1, 5))
+            app = (match.group(5) or "").strip() or None
+            try:
+                ComputerUse(state).drag(x1, y1, x2, y2, app=app)
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't drag: {error}")
+            where = f" in {app}" if app else ""
+            return decision("reply", f"Dragged from {x1}, {y1} to {x2}, {y2}{where}.")
+        if match := re.fullmatch(
                 r"(minimi[sz]e|focus|activate) (?:the )?(.+?)(?: (?:window|app))?[.! ]*",
                 text, re.I):
             action = "minimize" if match.group(1).casefold().startswith("minim") else "focus"
