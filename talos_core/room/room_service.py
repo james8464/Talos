@@ -96,6 +96,21 @@ def mac_error(error):
         if re.search(r"\b(?:error|exception|failed|denied|unavailable|not granted)\b", line, re.I):
             return line[:200]
     return "the macOS helper failed; see state/computer-use.jsonl"
+
+
+_PRIVATE_MARKERS = re.compile(
+    r"\b(?:my|our|we|us|i|me|mine|remember|schedule|calendar|email|mail|message|messages|"
+    r"contact|contacts|note|notes|task|tasks|todo|remind|reminder|goal|goals|file|files|"
+    r"home|work|family|birthday|address|phone|name)\b",
+    re.I,
+)
+
+
+def needs_private_context(text):
+    """Public/trivia questions do not need the user's private transcripts."""
+    cleaned = re.sub(r"\b(?:tell|show|give|help|remind)\s+me\b", "", text, flags=re.I)
+    cleaned = re.sub(r"\b(?:please|talos)\b", "", cleaned, flags=re.I)
+    return bool(_PRIVATE_MARKERS.search(cleaned))
 ROOM_INSTRUCTIONS = (
     "Camera data is a local person detector: occupancy only. No images or identities are supplied. "
     "Unknown is different from empty. Occupancy alone is silent. "
@@ -274,6 +289,22 @@ class Room:
         if re.fullmatch(r"(?:be quiet|stop speaking|don't speak|do not speak|mute yourself)[.!, ]*",
                         text, re.I):
             return decision("reply", "I'm already muted; I won't produce audio.")
+        if re.fullmatch(r"(?:what(?:'s| is) my name|who am i)[?.! ]*", text, re.I):
+            try:
+                from talos_core.cognition import talos_identity
+                context = talos_identity.get_resolver(state).resolve_identity(text)
+                name = ((context or {}).get("identity") or {}).get("full_name")
+            except (OSError, RuntimeError, sqlite3.Error):
+                name = None
+            if name:
+                return decision("reply", f"You are {name}.")
+            return decision("reply", "I don't have your name saved in this session.")
+        if re.fullmatch(r"(?:(?:tell me|give me) (?:a |one )?fun fact|fun fact)[?.! ]*",
+                        text, re.I):
+            return decision("reply", "Honey never spoils; sealed jars have remained edible for thousands of years.")
+        if re.fullmatch(r"(?:i(?:'m| am) |i feel )(?:tired|exhausted|sleepy)[.!, ]*",
+                        text, re.I):
+            return decision("reply", "Take a short break. I'll keep things quiet.")
         if re.fullmatch(r"(?:are you there|you there|are you awake|are you online)[?.! ]*",
                         text, re.I):
             return decision("reply", "Yes, I'm here.")
@@ -818,7 +849,8 @@ class Room:
                     "unknown" if current is None else "occupied" if current else "empty"
                 )
                 proposal = plan(db, event, model=self.model, trusted_owner=source == "text",
-                                private_context=archive, max_lookups=1 if source == "voice" else 3,
+                                private_context=archive and needs_private_context(text),
+                                max_lookups=1 if source == "voice" else 3,
                                 max_tokens=256 if source == "voice" else 512, room_context=context)
                 if proposal["disposition"] == "research":
                     answer, sources = ("Say Hey Talos to start a public search.", []) if follow_up else self.public_lookup(("web", text))

@@ -69,6 +69,23 @@ class QuickTextAnswerTests(unittest.TestCase):
             self.assertIn("audio is muted", self.ask("Are you muted?")["reply"])
             self.assertIn("already muted", self.ask("Stop speaking.")["reply"])
 
+    def test_identity_fun_fact_and_tired_are_local(self):
+        resolver = type("Resolver", (), {
+            "resolve_identity": lambda self, text: {"identity": {"full_name": "Alex Example"}},
+        })()
+        with patch("talos_core.cognition.talos_identity.get_resolver", return_value=resolver), \
+             patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertEqual(self.ask("What is my name?")["reply"], "You are Alex Example.")
+            self.assertIn("Honey", self.ask("Tell me a fun fact.")["reply"])
+            self.assertIn("short break", self.ask("I feel tired.")["reply"])
+
+    def test_private_context_is_only_used_for_personal_questions(self):
+        from talos_core.room.room_service import needs_private_context
+        for text in ("Tell me a fun fact.", "What is the tallest mountain?", "Who wrote Hamlet?"):
+            self.assertFalse(needs_private_context(text), text)
+        for text in ("What is my name?", "Show me my tasks.", "What's on my calendar?"):
+            self.assertTrue(needs_private_context(text), text)
+
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")
         reply = self.ask("Search your memory for live code.")["reply"]
