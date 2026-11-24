@@ -124,11 +124,15 @@ def tools(state, name, timeout=30):
     def collect(session):
         async def inner():
             result = await session.list_tools()
-            return [
-                {"name": tool.name, "description": getattr(tool, "description", "") or "",
-                 "inputSchema": getattr(tool, "inputSchema", {}) or {}}
-                for tool in result.tools
-            ]
+            tools = []
+            for tool in result.tools:
+                data = tool.model_dump() if hasattr(tool, "model_dump") else vars(tool)
+                tools.append({
+                    "name": data.get("name", ""),
+                    "description": data.get("description", "") or "",
+                    "inputSchema": data.get("input_schema") or data.get("inputSchema") or {},
+                })
+            return tools
         return inner()
 
     return _run(state, name, collect, timeout)

@@ -147,3 +147,22 @@ Use each server's own permission prompts and documentation. Start with read
 tools; only enable write tools after deciding how the server confirms or gates
 changes. HTTP/remote MCP transports are not wired into this client yet; the
 current client is stdio-only, which covers the local Apple app servers.
+
+### Verified MCP permission boundary
+
+The existing `mcp-server-apple-events` package listed all five tools through
+Talos's MCP client:
+
+```text
+reminders_tasks, reminders_lists, calendar_events, calendar_calendars, reminders_subtasks
+```
+
+A read of `calendar_events` then failed with:
+
+```text
+Permission denied: Only write access to calendar. Full access is required.
+```
+
+That is a macOS Calendar grant issue, not a Talos/protocol issue. Grant Full
+Access to the host that launches the MCP server, then restart that host. Until
+then, Talos's native JXA/EventKit-export Calendar path remains the read path.
