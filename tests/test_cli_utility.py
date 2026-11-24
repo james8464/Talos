@@ -26,6 +26,20 @@ class CliUtilityTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("worktree", text)
 
+    def test_checkpoints_debug_insights_monitoring_and_webapp(self):
+        for command in ("checkpoints", "debug", "insights", "monitoring", "webapp"):
+            code, text = self.run_cli(command)
+            self.assertIn(code, (0, 1), command)
+            self.assertTrue(text.strip(), command)
+
+    def test_prompt_size_and_profile_are_available(self):
+        code, text = self.run_cli("prompt_size")
+        self.assertIn(code, (0, 1))
+        self.assertTrue(text.strip())
+        code, text = self.run_cli("profile")
+        self.assertEqual(code, 0)
+        self.assertIn("permissions", text)
+
     def test_config_logs_and_theme_are_inspectable(self):
         for command in ("config", "logs", "theme"):
             code, text = self.run_cli(command)

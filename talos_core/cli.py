@@ -156,6 +156,112 @@ def _audit(args) -> int:
     return audit_main(argv)
 
 
+def _utility(args) -> int:
+    import shutil
+    from datetime import UTC, datetime
+
+    command = args.command
+    state = getattr(args, "state", ROOT / "state")
+    state.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if command == "backup":
+        source = state / "agent.sqlite3"
+        if not source.is_file():
+            print(json.dumps({"ok": False, "error": "agent database unavailable"}))
+            return 1
+        folder = state / "backups"
+        folder.mkdir(mode=0o700, exist_ok=True)
+        destination = folder / f"agent-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}.sqlite3"
+        shutil.copy2(source, destination)
+        destination.chmod(0o600)
+        print(json.dumps({"backup": str(destination)}))
+        return 0
+    if command == "checkpoints":
+        folder = state / "backups"
+        print(json.dumps({"checkpoints": sorted(str(p) for p in folder.glob("*.sqlite3"))}))
+        return 0
+    if command == "debug" or command == "monitoring":
+        from talos_core.self_improvement import health
+        report = health.health(args.root, state, quick=True, lint=True)
+        print(json.dumps(report["checks"], indent=2))
+        return 0 if report["ok"] else 1
+    if command == "insights":
+        from talos_core.self_improvement import capability_audit, health
+        report = capability_audit.report(args.root, state)
+        print(json.dumps({"capabilities": report["summary"],
+                          "gaps": len(report["gaps"]),
+                          "health": health.summary(state)}, indent=2))
+        return 0
+    if command == "profile":
+        from talos_core.mac import computer_use
+        print(json.dumps({"root": str(ROOT), "state": str(state),
+                          "permissions": computer_use.permissions()}, indent=2))
+        return 0
+    if command == "prompt_size":
+        from agent import console_context
+        from talos_core.memory.agent_memory import STATE_PATH, open_memory
+        path = state / "agent.sqlite3"
+        if not path.is_file():
+            from contextlib import closing
+            with closing(open_memory(STATE_PATH)) as db:
+                print(console_context(db, "text", "", args.model))
+        else:
+            with open_memory(path) as db:
+                print(console_context(db, "text", "", args.model))
+        return 0
+    if command == "security":
+        from talos_core.mac import computer_use
+        from talos_core.security.redact import findings
+        print(json.dumps({"permissions": computer_use.permissions(),
+                          "redaction_patterns": findings("Bearer abcdefghijklmnop")}, indent=2))
+        return 0
+    if command == "setup":
+        print("Install the service with: python3 tools/talos_service.py install")
+        print("Run the room with:      python3 run_talos.py")
+        return 0
+    if command == "skin":
+        from talos_core.interfaces.theme import names
+        print(json.dumps({"themes": list(names())}))
+        return 0
+    if command == "vault":
+        folder = state / "Talos Memory"
+        notes = list(folder.rglob("*.md")) if folder.is_dir() else []
+        print(json.dumps({"vault": str(folder), "notes": len(notes),
+                          "exists": folder.is_dir()}, indent=2))
+        return 0
+    if command == "gui":
+        print("python3 run_talos.py")
+        return 0
+    if command == "webapp":
+        from talos_core.portal import render
+        print(render({"command": "webapp", "state": str(state)}))
+        return 0
+    if command == "whatsapp":
+        from talos_core.mac import mac_context
+        print(json.dumps({"enabled_apps": sorted(mac_context.enabled(state)),
+                          "available_apps": mac_context.APPS}, indent=2))
+        return 0
+    if command == "dump":
+        from talos_core.runtime import talos_activity
+        print("\n".join(talos_activity.snapshot(state, None)))
+        return 0
+    if command == "fallback":
+        from talos_core.runtime.local_runtime import local_model_names
+        print(json.dumps({"models": sorted(local_model_names())}))
+        return 0
+    if command == "usage":
+        import agent
+        from talos_core.memory.agent_memory import open_memory
+        path = state / "agent.sqlite3"
+        if not path.is_file():
+            print("No agent database.")
+            return 1
+        with open_memory(path) as db:
+            print(agent.console_usage(db, None))
+        return 0
+    print(f"{command}: no local implementation")
+    return 1
+
+
 def _media(args) -> int:
     from talos_core import media
 
@@ -380,6 +486,32 @@ def build_parser() -> argparse.ArgumentParser:
     initiative.add_argument("--model", help="Optional local model for one novel idea.")
     initiative.add_argument("--limit", type=int, default=3)
     initiative.set_defaults(func=_initiative)
+
+    for name, help_text in (
+        ("usage", "Show measured console token usage."),
+        ("backup", "Back up the local agent database."),
+        ("checkpoints", "List local database backups."),
+        ("debug", "Run the quick self-check."),
+        ("monitoring", "Run the quick self-check."),
+        ("insights", "Show capability and health summary."),
+        ("profile", "Show local paths and permissions."),
+        ("prompt_size", "Show console prompt component sizes."),
+        ("security", "Show permissions and redaction status."),
+        ("setup", "Show service setup commands."),
+        ("skin", "List terminal themes."),
+        ("vault", "Show the local Obsidian vault."),
+        ("gui", "Show the native app command."),
+        ("webapp", "Render the local status portal."),
+        ("whatsapp", "Show enabled WhatsApp/Mac sources."),
+        ("dump", "Print recent local activity."),
+        ("fallback", "List local model fallbacks."),
+    ):
+        utility = commands.add_parser(name, help=help_text)
+        utility.add_argument("--state", type=Path, default=ROOT / "state")
+        utility.add_argument("--root", type=Path, default=ROOT)
+        if name == "prompt_size":
+            utility.add_argument("--model", default="qwen3:4b")
+        utility.set_defaults(func=_utility)
 
     media = commands.add_parser("media", help="Run a configured local music/video generator.")
     media.add_argument("kind", choices=["music", "video"])

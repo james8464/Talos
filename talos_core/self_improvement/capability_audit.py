@@ -156,10 +156,9 @@ def upstream_capabilities(state: Path) -> dict[str, list[str]]:
             name = path.stem[:-5]
             if name:
                 names.append(name)
-        skills = hermes / "optional-skills"
-        if skills.is_dir():
-            names.extend(path.name for path in skills.iterdir()
-                         if path.is_dir() and not path.name.startswith("."))
+        # optional-skills are content packs, not executable tools; the local
+        # skill workshop covers that surface once. Counting each topic as a
+        # missing tool inflated the gap list without representing code.
         commands = hermes / "hermes_cli/subcommands"
         if commands.is_dir():
             names.extend(f"cli {path.stem}" for path in commands.glob("*.py")
