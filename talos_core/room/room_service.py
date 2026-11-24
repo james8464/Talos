@@ -147,6 +147,7 @@ class Room:
         if muted:
             voice = None
         self.online = online
+        self.monitored_model = model_state is not None
         self.model_state = model_state or (lambda: "ready")
         self.monitored_model = model_state is not None
         self.voice_generate = voice_generate

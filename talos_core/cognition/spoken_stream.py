@@ -1,6 +1,8 @@
 """Interruptible Ollama generation for the read-only room conversation path."""
 
 import http.client
+from room_dialogue import with_spoken_instructions
+
 import json
 import os
 import re
