@@ -65,3 +65,12 @@ def complete(state: Path | str, ident: int) -> bool:
     if changed:
         _save(Path(state), found)
     return changed
+
+
+def remove_matching(state: Path | str, prefix: str) -> int:
+    """Remove local todos whose text starts with ``prefix``."""
+    found = _load(Path(state))
+    kept = [item for item in found if not str(item.get("text", "")).startswith(prefix)]
+    if len(kept) != len(found):
+        _save(Path(state), kept)
+    return len(found) - len(kept)

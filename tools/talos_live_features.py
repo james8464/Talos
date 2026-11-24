@@ -49,7 +49,27 @@ def check(checks: list[dict], name: str, ok: bool, detail: str = "") -> None:
     checks.append({"name": name, "ok": bool(ok), "detail": str(detail)[:400]})
 
 
-def run() -> dict:
+def cleanup(stamp: int, screenshot: str) -> None:
+    """Remove artifacts created by this live pass from the real room state."""
+    from talos_core import todo
+    from talos_core.memory.agent_memory import STATE_PATH, open_memory
+
+    with open_memory(STATE_PATH) as db, db:
+        db.execute(
+            "DELETE FROM inbox WHERE text = ? OR text LIKE ? OR text LIKE ?",
+            ("check the live feature pass", f"verify live features {stamp}%",
+             f"the live feature pass is {stamp}%"),
+        )
+        db.execute(
+            "DELETE FROM personal_facts WHERE subject LIKE ? OR subject LIKE ?",
+            (f"live pass code {stamp}%", f"forgotten code {stamp}%"),
+        )
+    todo.remove_matching(STATE_PATH, f"live todo {stamp}")
+    if screenshot:
+        Path(screenshot).unlink(missing_ok=True)
+
+
+def run(keep: bool = False) -> dict:
     token = TOKEN_PATH.read_text().strip()
     stamp = int(time.time())
     checks: list[dict] = []
@@ -156,6 +176,9 @@ def run() -> dict:
 
     screenshot = ask(token, "Take a screenshot.")["reply"]
     check(checks, "mac_screenshot", "Screenshot saved to" in screenshot, screenshot)
+    screenshot_path = ""
+    if "Screenshot saved to " in screenshot:
+        screenshot_path = screenshot.split("Screenshot saved to ", 1)[1].split(" (", 1)[0]
 
     vision = ask(token, "What can you see right now?")["reply"]
     check(checks, "camera_handshake", "camera frame" in vision or "can't see" in vision, vision)
@@ -168,14 +191,17 @@ def run() -> dict:
                            capture_output=True, text=True)
     check(checks, "no_audio_processes", audio.returncode != 0, audio.stdout.strip())
 
+    if not keep:
+        cleanup(stamp, screenshot_path)
     return {"ok": all(item["ok"] for item in checks), "checks": checks}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--keep", action="store_true", help="Keep the test reminders, notes and screenshot.")
     args = parser.parse_args()
-    result = run()
+    result = run(keep=args.keep)
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
