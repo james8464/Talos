@@ -6,7 +6,9 @@ Last run: 24 November 2026, macOS, Talos room service running under launchd as
 ## Silent operation
 
 - `POST /v1/voice` returns `503 {"error": "Kokoro voice is unavailable."}`.
-- The launchd plist contains `--mute` and `TALOS_MUTE=1`.
+- The launchd plist contains `--mute` and `TALOS_MUTE=1`; `Start-Talos.command`
+  also launches muted by default.
+- `talos status` prints `Audio · muted` when `TALOS_MUTE=1`.
 - No `afplay`, `/usr/bin/say`, or Kokoro process was running after the checks.
 - Kokoro and Telegram voice-note synthesis raise `Audio output is muted.` before
   loading models, so callers fall back to text.
@@ -25,7 +27,7 @@ Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
 - Unit suite: `574 tests`, `OK` (`16` skipped by design).
-- Live feature pass: `33/33` checks.
+- Live feature pass: `41/41` checks.
 - Ruff: clean.
 
 ## Live feature pass
@@ -34,12 +36,12 @@ Latest results:
 
 | Area | Check |
 | --- | --- |
-| Chat | capabilities, time, date, arithmetic, small talk, presence handshake |
+| Chat | capabilities, time, date, arithmetic, small talk, public facts, general knowledge, wellbeing, identity, mute questions, presence handshake |
 | Memory | save/recall a personal fact, search memory, forget a fact, missing-fact answer |
 | Work | reminder, task, task list, note, inbox, goals |
 | Knowledge | knowledge search, code-graph search |
 | Mac | screenshot, window list, frontmost app, running apps, control search, inspect app, accessible-text/OCR |
-| Local features | skills, nodes, todos, maintenance report, health |
+| Local features | skills, nodes, todos, maintenance report, health, model, plugins, subagents, checkpoints |
 | Safety | `/v1/voice` 503, no audio processes |
 
 ## Native Mac checks
