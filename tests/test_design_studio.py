@@ -3,6 +3,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from talos_core import design_studio
 
@@ -51,7 +52,7 @@ class DesignStudioTests(unittest.TestCase):
 
     def test_command_routes_document_and_blender_render(self):
         document = design_studio.command(
-            "Create a Pages document titled Library Notes with body Stay focused.", self.state,
+            "Create a document titled Library Notes with body Stay focused.", self.state,
         )
         self.assertIn("Pages-compatible document created", document)
         plate = design_studio.command("Design a 3D nameplate that says Talos.", self.state)
@@ -60,6 +61,15 @@ class DesignStudioTests(unittest.TestCase):
             render = design_studio.command("Render the last design in Blender.", self.state)
             self.assertIn("Blender render created", render)
             self.assertTrue(Path(render.split(": ", 1)[1]).is_file())
+
+    def test_pages_document_uses_the_native_app_when_available(self):
+        with patch("talos_core.mac.pages.available", return_value=True), \
+             patch("talos_core.mac.pages.create",
+                   return_value={"path": "/tmp/example.pages", "kind": "pages",
+                                 "opened": False}):
+            reply = design_studio.command(
+                "Create a Pages document titled Native Pages.", self.state)
+        self.assertIn("Pages document created: /tmp/example.pages", reply)
 
     def test_render_requires_a_model(self):
         self.assertIn("no 3D model", design_studio.command("Render it in Blender.", self.state))

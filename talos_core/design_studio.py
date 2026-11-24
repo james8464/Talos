@@ -151,6 +151,13 @@ def create_document(state, title, body="", *, fmt="docx", open_after=False):
     return _record_last(state, result)
 
 
+def create_pages(state, title, body="", *, open_after=False):
+    """Create a real Pages document, then remember it as the latest design."""
+    from talos_core.mac import pages
+
+    return _record_last(state, pages.create(state, title, body, open_after=open_after))
+
+
 def render_stl(state, stl_path, *, timeout=180):
     """Render an STL to PNG with headless Blender. No window and no audio."""
     blender = Path("/Applications/Blender.app/Contents/MacOS/Blender")
@@ -282,6 +289,11 @@ def command(text, state):
                 break
         if not title:
             return "Tell me the document title."
+        if "pages document" in words.casefold():
+            from talos_core.mac import pages
+            if pages.available():
+                result = create_pages(state, title, body)
+                return f"Pages document created: {result['path']}"
         result = create_document(state, title, body, fmt="docx")
         return f"Pages-compatible document created: {result['path']}"
 

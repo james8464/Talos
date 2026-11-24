@@ -184,7 +184,7 @@ then, Talos's native JXA/EventKit-export Calendar path remains the read path.
 
 | App | Existing path | Status |
 | --- | --- | --- |
-| Pages | macOS `textutil` writes a Pages-compatible `.docx`; `open -b com.apple.Pages` opens it | verified locally |
+| Pages | AppleScript creates and saves a real `.pages` document; `textutil` remains the fast `.docx` fallback | verified locally |
 | OpenSCAD | CLI renders `.scad` to `.stl` | verified locally |
 | Blender | `blender -b -P` renders an STL to PNG with no window or audio | verified locally |
 | Preview/Safari/Finder | `open -b` opens the last design | routed, no GUI write |

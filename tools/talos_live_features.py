@@ -266,7 +266,7 @@ def run(keep: bool = False) -> dict:
         design_paths.append(poster.split(": ", 1)[1].strip())
     check(checks, "design_poster", "Poster created" in poster, poster)
 
-    document = ask(token, "Create a Pages document titled Live Feature Check.")["reply"]
+    document = ask(token, "Create a document titled Live Feature Check.")["reply"]
     if "Pages-compatible document created: " in document:
         design_paths.append(document.split(": ", 1)[1].strip())
     check(checks, "pages_document", "Pages-compatible document created" in document, document)
