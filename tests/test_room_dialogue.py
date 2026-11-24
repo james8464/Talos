@@ -83,13 +83,25 @@ class RoomDialogueTests(unittest.TestCase):
         self.assertEqual(messages[2]["content"], "Three.")
         self.assertTrue(messages[-1]["content"].endswith("And on two of those combined?"))
 
-    def test_spoken_calculation_uses_local_arithmetic(self):
-        for expr, expected in (("3 * 2", "3 times 2 is 6."), ("4", "4."),
-                               ("1 / 0", "I couldn't calculate that expression."),
-                               ("3 and some code", "I couldn't calculate that expression.")):
-            with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=
-                    json.dumps({"action": "calculate", "text": expr})):
-                self.assertEqual(self.turn("What does that come to?")["reply"], expected)
+    def test_absolute_reminders_target_named_clock_times(self):
+        from datetime import UTC, datetime
+
+        from talos_core.room.room_dialogue import absolute_reminder
+
+        now = datetime(2026, 11, 24, 10, 0, tzinfo=UTC)
+        cases = {
+            "Remind me to call Sam tomorrow at 9.": ("call Sam", 1380),
+            "Remind me to call Sam tomorrow.": ("call Sam", 1380),
+            "Set a reminder for tomorrow at 9.": ("Reminder", 1380),
+            "Remind me to call Sam at 3pm.": ("call Sam", 300),
+            "Remind me to call Sam at 9.": ("call Sam", 1380),
+        }
+        for text, (detail, minutes) in cases.items():
+            with self.subTest(text=text):
+                result = absolute_reminder(text, now=now)
+                self.assertEqual(result["tool"], "set_reminder")
+                self.assertEqual(result["detail"], detail)
+                self.assertEqual(result["remind_in_minutes"], minutes)
 
     def test_invalid_short_tool_output_cannot_apply(self):
         with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=

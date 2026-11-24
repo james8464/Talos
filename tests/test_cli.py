@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 from talos_core import cli
 
@@ -73,6 +74,15 @@ class CliTests(unittest.TestCase):
         )
         self.assertEqual(args.command, "acp")
         self.assertEqual(args.acp_command, "python fixture.py")
+
+    def test_cloud_command_uses_the_optional_bridge(self):
+        output = io.StringIO()
+        with patch("talos_core.cognition.cloud_model.complete", return_value="Cloud OK") as complete:
+            with redirect_stdout(output):
+                code = cli.main(["cloud", "hello", "--json"])
+        self.assertEqual(code, 0)
+        self.assertIn("Cloud OK", output.getvalue())
+        complete.assert_called_once()
 
 
 if __name__ == "__main__":

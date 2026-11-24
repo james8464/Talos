@@ -1,7 +1,9 @@
 """Short, tool-aware conversational decisions for the native room client."""
 
 import json
+import math
 import re
+from datetime import datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from operator import add, mul, sub, truediv
 
@@ -96,6 +98,59 @@ def explicit_reminder(message):
     if not 1 <= minutes <= MAX_REMINDER_MINUTES or len(task.strip()) > 400 or not task.strip():
         return None
     return decision("set_reminder", task.strip(), minutes)
+
+
+_ABSOLUTE_DATE = r"(?P<date>today|tomorrow|tonight)"
+_ABSOLUTE_TIME = r"(?P<hour>\d{1,2})(?::(?P<minute>\d{2}))?\s*(?P<suffix>am|pm)?"
+
+
+def _absolute_target(date_word, hour, minute, suffix, now):
+    day = now.date() + (timedelta(days=1) if date_word == "tomorrow" else timedelta())
+    if hour is None:
+        hour = 20 if date_word == "tonight" else 9
+        minute = 0
+    hour, minute = int(hour), int(minute or 0)
+    if suffix:
+        if suffix.casefold() == "pm" and hour < 12:
+            hour += 12
+        elif suffix.casefold() == "am" and hour == 12:
+            hour = 0
+    if not 0 <= hour <= 23 or not 0 <= minute <= 59:
+        return None
+    target = datetime.combine(day, time(hour, minute), tzinfo=now.tzinfo)
+    if target <= now and date_word != "tomorrow":
+        target += timedelta(days=1)
+    return target
+
+
+def absolute_reminder(message, *, now=None):
+    """Resolve a named clock time such as "tomorrow at 9" without a model."""
+    text = message.strip()
+    patterns = (
+        (_REQUEST_PREFIX + r"remind me(?: to)? (?P<task>.+?) " + _ABSOLUTE_DATE
+         + r"(?: at " + _ABSOLUTE_TIME + r")?[.!?]?", "task"),
+        (_REQUEST_PREFIX + r"remind me(?: to)? (?P<task>.+?) at " + _ABSOLUTE_TIME + r"[.!?]?", "task"),
+        (_REQUEST_PREFIX + r"set (?:a )?reminder for " + _ABSOLUTE_DATE
+         + r"(?: at " + _ABSOLUTE_TIME + r")?[.!?]?", "date"),
+    )
+    for pattern, kind in patterns:
+        match = re.fullmatch(pattern, text, re.I)
+        if not match:
+            continue
+        data = match.groupdict()
+        task = "Reminder" if kind == "date" else (data.get("task") or "")
+        date_word = data.get("date")
+        hour, minute, suffix = data.get("hour"), data.get("minute"), data.get("suffix")
+        now = now or datetime.now().astimezone()
+        target = _absolute_target(date_word, hour, minute, suffix, now)
+        if target is None:
+            return None
+        minutes = math.ceil((target - now).total_seconds() / 60)
+        task = task.strip(" .!?")
+        if not 1 <= minutes <= MAX_REMINDER_MINUTES or not task or len(task) > 400:
+            return None
+        return decision("set_reminder", task, minutes)
+    return None
 
 
 def decision(action, detail, minutes=0):

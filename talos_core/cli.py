@@ -533,6 +533,22 @@ def _model(args) -> int:
     return 0
 
 
+def _cloud(args) -> int:
+    from talos_core.cognition import cloud_model
+    try:
+        reply = cloud_model.complete(
+            args.prompt, model=args.model, system=args.system, max_tokens=args.max_tokens,
+        )
+    except (cloud_model.CloudModelError, ValueError) as error:
+        print(json.dumps({"ok": False, "error": str(error)}))
+        return 1
+    if args.json:
+        print(json.dumps({"ok": True, "model": args.model, "reply": reply}, ensure_ascii=False))
+    else:
+        print(reply)
+    return 0
+
+
 def _logs(args) -> int:
     from talos_core.runtime import talos_activity
     print("\n".join(talos_activity.snapshot(args.state, None)))
@@ -864,6 +880,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     model = commands.add_parser("model", help="List installed local models.")
     model.set_defaults(func=_model)
+
+    cloud = commands.add_parser("cloud", help="Ask the optional OpenCode Go cloud model.")
+    cloud.add_argument("prompt")
+    cloud.add_argument("--model", default="deepseek-v4.1-flash")
+    cloud.add_argument("--system")
+    cloud.add_argument("--max-tokens", type=int, default=800)
+    cloud.add_argument("--json", action="store_true")
+    cloud.set_defaults(func=_cloud)
 
     logs = commands.add_parser("logs", help="Show the recent local activity journal.")
     logs.add_argument("--state", type=Path, default=ROOT / "state")

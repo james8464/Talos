@@ -111,6 +111,25 @@ class QuickTextAnswerTests(unittest.TestCase):
             self.assertIn("No subagents", self.ask("List subagents.")["reply"])
             self.assertIn("agent-test", self.ask("List checkpoints.")["reply"])
 
+    def test_absolute_reminders_and_approvals_are_local(self):
+        self.assertIn("No pending approvals", self.ask("Show me my approvals.")["reply"])
+        result = self.ask("Remind me to call Sam tomorrow at 9.")
+        self.assertEqual(result["action"], "applied")
+        self.assertEqual(result["tool"], "set_reminder")
+        self.assertIn("call Sam", result["reply"])
+        self.assertIn("call Sam", self.ask("Show me my approvals.")["reply"])
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertIn("dated memory", self.ask("What did I ask you yesterday?")["reply"])
+
+    def test_explicit_cloud_request_sends_only_the_prompt(self):
+        with patch("talos_core.cognition.cloud_model.configured", return_value=True), \
+             patch("talos_core.cognition.cloud_model.complete", return_value="Cloud answer.") as complete:
+            reply = self.ask("Ask the cloud to explain gravity.")["reply"]
+        self.assertEqual(reply, "Cloud answer.")
+        self.assertIn("explain gravity", complete.call_args.args[0])
+        with patch("talos_core.cognition.cloud_model.configured", return_value=False):
+            self.assertIn("not configured", self.ask("Is the cloud available?")["reply"])
+
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")
         reply = self.ask("Search your memory for live code.")["reply"]
@@ -148,6 +167,8 @@ class QuickTextAnswerTests(unittest.TestCase):
             apps = self.ask("List running apps.")["reply"]
             found = self.ask("Find Search in TextEdit.")["reply"]
             ocr = self.ask("Read text in TextEdit.")["reply"]
+            compound = self.ask("Open Safari and search for Talos.")["reply"]
+            shot_compound = self.ask("Take a screenshot and tell me what's on screen.")["reply"]
         self.assertIn("/tmp/shot.png", shot)
         self.assertEqual(seen, "TextEdit: Untitled window")
         self.assertEqual(opened, "Opened TextEdit.")
@@ -156,6 +177,9 @@ class QuickTextAnswerTests(unittest.TestCase):
         self.assertIn("Safari", apps)
         self.assertIn("abc123", found)
         self.assertIn("Hello from TextEdit", ocr)
+        self.assertIn("Opened Safari", compound)
+        self.assertIn("can't perform", compound)
+        self.assertIn("/tmp/shot.png", shot_compound)
 
     def test_permission_question_reports_both_grants(self):
         with patch("talos_core.room.room_service.permissions",

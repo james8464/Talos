@@ -47,6 +47,7 @@ from talos_core.memory.transcript_memory import (
 )
 from talos_core.room import room_checkins, room_vision
 from talos_core.room.room_dialogue import (
+    absolute_reminder,
     compact_decision,
     conversational_correction,
     corrected_recollection,
@@ -257,6 +258,8 @@ class Room:
             return order
         if reminder := explicit_reminder(text):
             return reminder
+        elif absolute := absolute_reminder(text):
+            return absolute
         elif task := explicit_task(text):
             return task
         elif re.fullmatch(r"(?:what(?:'s| is) on my (?:to[ -]?do|task) list|list my tasks)[?.!]?",
@@ -389,6 +392,42 @@ class Room:
                     break
             listed = "; ".join(f"#{item['id']} {item['kind']}: {item['text']}" for item in selected)
             return decision("reply", f"On your plate ({len(items)} open): " + listed[:540])
+        cloud_request = re.fullmatch(
+            r"(?:ask|use) (?:the )?(?:cloud|deepseek|opencode)(?: model)?(?: to)?[ :]+(.+?)[?.!]*",
+            text, re.I,
+        )
+        if cloud_request:
+            from talos_core.cognition import cloud_model
+            if not cloud_model.configured():
+                return decision("reply", "OpenCode Go is not configured.")
+            try:
+                answer = cloud_model.complete(
+                    cloud_request.group(1).strip(),
+                    system="Answer briefly and clearly. Do not claim actions you cannot perform.",
+                    max_tokens=500,
+                )
+            except (cloud_model.CloudModelError, ValueError) as error:
+                return decision("reply", f"I couldn't reach the cloud model: {str(error)[:200]}")
+            return decision("reply", answer[:595])
+        if re.fullmatch(r"(?:(?:is|check) (?:the )?(?:cloud|opencode go)(?: model)?"
+                        r"(?: available| configured)?|cloud status)[?.! ]*", text, re.I):
+            from talos_core.cognition import cloud_model
+            return decision(
+                "reply",
+                "OpenCode Go is configured." if cloud_model.configured()
+                else "OpenCode Go is not configured.",
+            )
+        if re.fullmatch(r"(?:(?:list|show)(?: me)? (?:my )?approvals|what needs my approval)[?.! ]*",
+                        text, re.I):
+            items = inbox_items(db, limit=50)
+            if not items:
+                return decision("reply", "No pending approvals.")
+            listed = "; ".join(f"#{item['id']} {item['kind']}: {item['text']}" for item in items[:6])
+            return decision("reply", f"Pending approvals ({len(items)}): {listed}"[:595])
+        if re.fullmatch(r"what did i (?:ask(?: you)?|say|tell you) (?:yesterday|last night|today)[?.! ]*",
+                        text, re.I):
+            return decision("reply", "I don't have a reliable dated memory of that. "
+                                     "Ask me to search a topic in saved transcripts.")
         code_query = re.fullmatch(
             r"(?:search|look up|find)(?: the)? (?:code(?: graph|base)?|source) (?:for )?(.+?)[?.!]*",
             text, re.I,
@@ -574,7 +613,7 @@ class Room:
                 "reply",
                 f"Accessibility is {accessibility}; screen recording is {screen}.{guidance}",
             )
-        if re.fullmatch(r"(?:please )?(?:(?:take|capture|grab) (?:a )?screenshot|screenshot)[?.! ]*",
+        if re.fullmatch(r"(?:please )?(?:(?:take|capture|grab) (?:a )?screenshot\b.*|screenshot)[?.! ]*",
                         text, re.I):
             try:
                 receipt = ComputerUse(state, cursor=False).screenshot()
@@ -663,7 +702,11 @@ class Room:
             return decision("reply", f"Text in {app}: {content[:540]}")
         opened = re.fullmatch(r"(?:please )?(?:open|launch|focus) (.+?)[.!]?", text, re.I)
         if opened:
-            app = opened.group(1).strip()
+            parts = re.split(r"\s+and\s+", opened.group(1).strip(), maxsplit=1, flags=re.I)
+            app = parts[0].strip()
+            follow = parts[1].strip() if len(parts) > 1 else ""
+            if not app:
+                return decision("reply", "Which app should I open?")
             if not self.apply:
                 return decision("reply", "Mac actions are off in shadow mode.")
             try:
@@ -672,6 +715,8 @@ class Room:
                 return decision("reply", f"I couldn't open {app}: {mac_error(error)}")
             if not receipt.ok:
                 return decision("reply", f"I couldn't open {app}: {receipt.detail or 'unknown error'}")
+            if follow:
+                return decision("reply", f"Opened {app}. I can't perform “{follow}” in the same request; ask me separately.")
             return decision("reply", f"Opened {app}.")
         inspected = re.fullmatch(
             r"(?:please )?(?:inspect|look at|show me|what(?:'s| is) in) (.+?)[?.!]*",
