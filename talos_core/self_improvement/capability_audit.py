@@ -105,6 +105,8 @@ def local_capabilities(root: Path = ROOT) -> list[Capability]:
         ("talos_core.subagents", "subagents"),
         ("talos_core.portal", "portal"),
         ("talos_core.github", "github_publish"),
+        ("talos_core.nodes", "nodes"),
+        ("talos_core.delegate", "delegate"),
     ):
         try:
             __import__(module_name)
