@@ -300,6 +300,11 @@ def run(keep: bool = False) -> dict:
         design_paths.append(document.split(": ", 1)[1].strip())
     check(checks, "pages_document", "Pages-compatible document created" in document, document)
 
+    box = ask(token, "Design a 3D box 40x30x20 with 2mm walls.")["reply"]
+    if "Box source created: " in box:
+        design_paths.append(box.split(": ", 1)[1].split(" and rendered")[0].strip())
+    check(checks, "design_box", "Box source created" in box, box)
+
     nameplate = ask(token, "Design a 3D nameplate that says Talos.")["reply"]
     if "Nameplate source created: " in nameplate:
         design_paths.append(nameplate.split(": ", 1)[1].split(" and rendered")[0].strip())

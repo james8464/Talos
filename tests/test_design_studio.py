@@ -71,6 +71,22 @@ class DesignStudioTests(unittest.TestCase):
                 "Create a Pages document titled Native Pages.", self.state)
         self.assertIn("Pages document created: /tmp/example.pages", reply)
 
+    def test_parametric_box_renders_when_openscad_exists(self):
+        source = design_studio.box_scad(40, 30, 20, 2)
+        self.assertIn("difference()", source)
+        self.assertIn("w = 40", source)
+        result = design_studio.create_box(self.state, 40, 30, 20, 2)
+        self.assertTrue(Path(result["path"]).is_file())
+        if design_studio.OPENSCAD.is_file():
+            self.assertIsNotNone(result["render"])
+            self.assertTrue(Path(result["render"]).is_file())
+
+    def test_box_command_parses_dimensions(self):
+        reply = design_studio.command(
+            "Design a 3D box 40x30x20 with 2mm walls.", self.state)
+        self.assertIn("Box source created", reply)
+        self.assertIn("rendered", reply)
+
     def test_export_last_pdf_uses_pages(self):
         source = self.state / "designs"
         source.mkdir(mode=0o700)

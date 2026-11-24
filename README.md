@@ -77,6 +77,7 @@ Talos creates real files on this Mac without a cloud service:
 ```sh
 Design a poster titled Library Focus Hours.
 Design a 3D nameplate that says Talos.
+Design a 3D box 40x30x20 with 2mm walls.
 Render the last design in Blender.
 Create a Pages document titled Weekly Notes with body Stay focused.
 Open the last design in Pages.

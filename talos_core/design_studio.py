@@ -151,6 +151,44 @@ def create_document(state, title, body="", *, fmt="docx", open_after=False):
     return _record_last(state, result)
 
 
+def box_scad(width=80, depth=50, height=30, wall=3):
+    dims = [int(width), int(depth), int(height)]
+    thickness = int(wall)
+    if not all(10 <= value <= 500 for value in dims):
+        raise ValueError("Box dimensions must be 10–500 mm.")
+    if not 1 <= thickness <= min(dims) // 3:
+        raise ValueError("Wall thickness must fit inside the box.")
+    w, d, h = dims
+    return f"""// Talos parametric box — OpenSCAD
+w = {w}; d = {d}; h = {h}; t = {thickness};
+difference() {{
+  cube([w, d, h], center=true);
+  translate([0, 0, t])
+    cube([w - 2*t, d - 2*t, h], center=true);
+}}
+"""
+
+
+def create_box(state, width=80, depth=50, height=30, wall=3, *, open_after=False):
+    source_text = box_scad(width, depth, height, wall)
+    stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+    source = _write(_folder(state) / f"box-{stamp}.scad", source_text)
+    result = {"path": str(source), "kind": "openscad-box", "render": None, "opened": False}
+    if OPENSCAD.is_file():
+        target = source.with_suffix(".stl")
+        completed = subprocess.run(
+            [str(OPENSCAD), "-o", str(target), str(source)],
+            capture_output=True, text=True, timeout=120,
+        )
+        if completed.returncode == 0 and target.is_file():
+            target.chmod(0o600)
+            result["render"] = str(target)
+    if open_after:
+        _open(source)
+        result["opened"] = True
+    return _record_last(state, result)
+
+
 def create_pages(state, title, body="", *, open_after=False):
     """Create a real Pages document, then remember it as the latest design."""
     from talos_core.mac import pages
@@ -269,6 +307,20 @@ def command(text, state):
             return f"Opened {Path(path).name} in {target.title()}."
         _open(path)
         return f"Opened {Path(path).name}."
+
+    box = re.fullmatch(
+        r"(?:please )?(?:design|create|make) (?:a |an )?(?:3d |parametric )?box"
+        r"(?: (?:that is|measuring|with dimensions))? "
+        r"(\d{1,3})(?:\s*(?:x|by)\s*)(\d{1,3})(?:\s*(?:x|by)\s*)(\d{1,3})"
+        r"(?: ?mm)?(?: with (\d{1,2})(?: ?mm)? walls?)?[.! ]*",
+        words, re.I,
+    )
+    if box:
+        width, depth, height = (int(box.group(i)) for i in (1, 2, 3))
+        wall = int(box.group(4) or 3)
+        result = create_box(state, width, depth, height, wall)
+        rendered = f" and rendered {result['render']}" if result.get("render") else ""
+        return f"Box source created: {result['path']}{rendered}"
 
     if re.fullmatch(r"export (?:the )?(?:last|latest) (?:pages )?(?:design|document) to pdf[.! ]*",
                     words, re.I):
