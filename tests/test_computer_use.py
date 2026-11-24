@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from talos_core.mac import computer_use as cu
 
@@ -210,6 +210,16 @@ class ComputerUseTests(unittest.TestCase):
             result = self.computer.click_goal("Notes", "new note")
         click.assert_called_once_with(10, 20)
         self.assertIn("fallback", result)
+
+    def test_highlight_rings_without_clicking(self):
+        cursor = Mock()
+        cursor.highlight.return_value = True
+        self.computer.cursor = cursor
+        with patch.object(self.computer, "choose",
+                          return_value={"ref": "7", "center": [100, 200], "label": "7"}):
+            result = self.computer.highlight("Calculator", "7")
+        cursor.highlight.assert_called_once_with(72, 172, 56, 56, "7", hide_after=8.0)
+        self.assertTrue(result["highlighted"])
 
     def test_permission_probe_is_safe_on_this_platform(self):
         result = cu.permissions()
