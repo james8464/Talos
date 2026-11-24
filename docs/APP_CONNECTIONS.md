@@ -79,6 +79,8 @@ Implemented or already present:
 - `talos_core/mac/computer_use.py` / `perception.py`: AX tree, PID-targeted
   clicks/keys, screenshots, OCR, windows and background control.
 - Slack/Discord webhooks, Feishu client, ACP client, MCP server.
+- `talos_core/mcp_client.py`: generic MCP stdio client on the official SDK,
+  with `talos mcp-client list|tools|call`; tested against Talos's own server.
 - Native Swift app EventKit import for Calendar/Reminders memory.
 
 Next implementation steps:
@@ -86,8 +88,8 @@ Next implementation steps:
 1. Add safe native Reminders create/complete and Calendar create routes, with
    explicit confirmation for writes and a test-list/test-event cleanup path.
 2. Add Notes search/create and Mail compose/reply via JXA with explicit review.
-3. Add a generic MCP stdio/HTTP client and a config for trusted servers; expose
-   only read-only tools by default.
+3. Add native Reminders/Calendar writes and Notes actions; add HTTP MCP
+   transports and per-server read-only policy.
 4. Add a permission/health command that reports EventKit, Automation, AX, Screen
    Recording and configured MCP servers per app.
 5. Keep accessibility/computer use as the fallback for apps without APIs or MCP.

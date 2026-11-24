@@ -74,9 +74,10 @@ trusted MCP server, then accessibility/computer use. See
 [`docs/APP_CONNECTIONS.md`](docs/APP_CONNECTIONS.md) for the app-by-app matrix,
 the MCP servers researched, and the permission model. The thin native fallback
 covers Calendar, Reminders, Safari, Shortcuts, Finder, Maps and read-only Music
-state; the next step is a generic MCP client for existing servers such as
-`macos-apps-mcp`, `apple-calendar-mcp` and the official Slack/Notion/GitHub
-servers.
+state. A generic MCP client built on the official Python SDK is available as
+`talos mcp-client`; configure existing servers (for example `macos-apps-mcp`,
+`apple-calendar-mcp`, or the official Slack/Notion/GitHub servers) in
+`state/mcp-servers.json`.
 
 ## Terminal sessions and Telegram
 

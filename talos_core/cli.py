@@ -162,6 +162,28 @@ def _mcp(args) -> int:
     return mcp_server.serve(root=args.root, state=args.state)
 
 
+def _mcp_client(args) -> int:
+    from talos_core import mcp_client
+    try:
+        if args.action == "list":
+            payload = {"servers": sorted(mcp_client.servers(args.state))}
+        elif not args.server:
+            raise ValueError("MCP server name is required.")
+        elif args.action == "tools":
+            payload = {"server": args.server, "tools": mcp_client.tools(args.state, args.server)}
+        else:
+            if not args.tool:
+                raise ValueError("MCP tool name is required.")
+            arguments = json.loads(args.arguments or "{}")
+            payload = {"server": args.server, "tool": args.tool,
+                       "result": mcp_client.call(args.state, args.server, args.tool, arguments)}
+    except (mcp_client.MCPClientError, ValueError) as error:
+        print(json.dumps({"ok": False, "error": str(error)}))
+        return 1
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    return 0
+
+
 def _utility(args) -> int:
     import shutil
     from datetime import UTC, datetime
@@ -841,6 +863,14 @@ def build_parser() -> argparse.ArgumentParser:
     mcp.add_argument("--root", type=Path, default=ROOT)
     mcp.add_argument("--state", type=Path, default=ROOT / "state")
     mcp.set_defaults(func=_mcp)
+
+    mcp_client = commands.add_parser("mcp-client", help="Call a configured MCP server.")
+    mcp_client.add_argument("action", choices=("list", "tools", "call"))
+    mcp_client.add_argument("server", nargs="?")
+    mcp_client.add_argument("tool", nargs="?")
+    mcp_client.add_argument("--arguments", default="{}")
+    mcp_client.add_argument("--state", type=Path, default=ROOT / "state")
+    mcp_client.set_defaults(func=_mcp_client)
 
     media = commands.add_parser("media", help="Run a configured local music/video generator.")
     media.add_argument("kind", choices=["music", "video"])

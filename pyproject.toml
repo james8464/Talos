@@ -22,6 +22,7 @@ control = [
     "computer-harness @ git+https://github.com/huytieu/computer-harness@cea3a9459d08e1eeafefe0fc4b6c2fa39dc31129",
     "macos-computer-use-kit>=0.3.2",
 ]
+mcp = ["mcp>=1.0"]
 dev = ["ruff>=0.9", "pytest>=8"]
 
 [project.scripts]
