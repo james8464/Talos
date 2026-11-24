@@ -67,6 +67,13 @@ class CliTests(unittest.TestCase):
         self.assertIn("Mac access", output.getvalue())
         self.assertIn("Audio", output.getvalue())
 
+    def test_acp_command_option_does_not_overwrite_subcommand(self):
+        args = cli.build_parser().parse_args(
+            ["acp", "--command", "python fixture.py", "--prompt", "hi", "--confirm"]
+        )
+        self.assertEqual(args.command, "acp")
+        self.assertEqual(args.acp_command, "python fixture.py")
+
 
 if __name__ == "__main__":
     unittest.main()

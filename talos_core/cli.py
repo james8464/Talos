@@ -311,13 +311,13 @@ def _utility(args) -> int:
         import shlex
 
         from talos_core import acp
-        if not args.command or not args.prompt:
+        if not args.acp_command or not args.prompt:
             print(json.dumps({"ok": False, "error": "supply --command and --prompt"}))
             return 1
         if not args.confirm:
             print(json.dumps({"ok": False, "error": "add --confirm"}))
             return 1
-        session = acp.ACPSession(shlex.split(args.command))
+        session = acp.ACPSession(shlex.split(args.acp_command))
         try:
             initialized = session.initialize()
             prompted = session.prompt(args.prompt, cwd=str(args.root))
@@ -730,7 +730,7 @@ def build_parser() -> argparse.ArgumentParser:
         feishu_cmd.add_argument("--folder")
         feishu_cmd.set_defaults(func=_utility)
     acp = commands.add_parser("acp", help="Connect to an Agent Client Protocol command.")
-    acp.add_argument("--command")
+    acp.add_argument("--command", dest="acp_command")
     acp.add_argument("--prompt")
     acp.add_argument("--root", type=Path, default=ROOT)
     acp.add_argument("--state", type=Path, default=ROOT / "state")
