@@ -127,6 +127,10 @@ def absolute_reminder(message, *, now=None):
     """Resolve a named clock time such as "tomorrow at 9" without a model."""
     text = message.strip()
     patterns = (
+        (_REQUEST_PREFIX + r"remind me " + _ABSOLUTE_DATE
+         + r"(?: at " + _ABSOLUTE_TIME + r")? to (?P<task>.+?)[.!?]?", "task"),
+        (_REQUEST_PREFIX + r"remind me at " + _ABSOLUTE_TIME
+         + r" to (?P<task>.+?)[.!?]?", "task"),
         (_REQUEST_PREFIX + r"remind me(?: to)? (?P<task>.+?) " + _ABSOLUTE_DATE
          + r"(?: at " + _ABSOLUTE_TIME + r")?[.!?]?", "task"),
         (_REQUEST_PREFIX + r"remind me(?: to)? (?P<task>.+?) at " + _ABSOLUTE_TIME + r"[.!?]?", "task"),

@@ -95,6 +95,10 @@ class RoomDialogueTests(unittest.TestCase):
             "Set a reminder for tomorrow at 9.": ("Reminder", 1380),
             "Remind me to call Sam at 3pm.": ("call Sam", 300),
             "Remind me to call Sam at 9.": ("call Sam", 1380),
+            "Remind me tomorrow at 9 to call Sam.": ("call Sam", 1380),
+            "Remind me at 3pm to call Sam.": ("call Sam", 300),
+            "Remind me tomorrow to call Sam.": ("call Sam", 1380),
+            "Remind me at 9 to call Sam.": ("call Sam", 1380),
         }
         for text, (detail, minutes) in cases.items():
             with self.subTest(text=text):
