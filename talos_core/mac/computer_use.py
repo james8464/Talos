@@ -601,15 +601,21 @@ class ComputerUse:
             cf.CFRelease(event)
             time.sleep(0.01)
 
-    def _post_click_to_pid(self, pid: int, x: int, y: int, count: int) -> None:
+    def _post_click_to_pid(self, pid: int, x: int, y: int, count: int,
+                           button: str = "left") -> None:
         try:
             import Quartz
         except ImportError as error:
             raise ComputerUseError("Direct clicks need pyobjc-framework-Quartz.") from error
+        if button == "right":
+            kinds = (Quartz.kCGEventRightMouseDown, Quartz.kCGEventRightMouseUp)
+            mouse_button = Quartz.kCGMouseButtonRight
+        else:
+            kinds = (Quartz.kCGEventLeftMouseDown, Quartz.kCGEventLeftMouseUp)
+            mouse_button = Quartz.kCGMouseButtonLeft
         for number in range(1, count + 1):
-            for kind in (Quartz.kCGEventLeftMouseDown, Quartz.kCGEventLeftMouseUp):
-                event = Quartz.CGEventCreateMouseEvent(
-                    None, kind, (x, y), Quartz.kCGMouseButtonLeft)
+            for kind in kinds:
+                event = Quartz.CGEventCreateMouseEvent(None, kind, (x, y), mouse_button)
                 Quartz.CGEventSetIntegerValueField(
                     event, Quartz.kCGMouseEventClickState, number)
                 Quartz.CGEventPostToPid(int(pid), event)
@@ -652,7 +658,15 @@ class ComputerUse:
             self.audit(receipt, point=[x, y], app=app)
             return receipt
         if button == "right":
-            raise PolicyError("Right-click menus vary by app; use menu() or click a visible control.")
+            if app:
+                pid = self.app_pid(app)
+                self._post_click_to_pid(pid, x, y, count, button="right")
+                receipt = Receipt("right_click_to_pid", True, _now(),
+                                  f"delivered to {app}", confirmed=confirm,
+                                  metadata={"pid": pid, "count": count})
+                self.audit(receipt, point=[x, y], app=app)
+                return receipt
+            return self.right_click(x, y, confirm=confirm)
         if count != 1:
             # Double-click is expressed by repeating the click action in one script.
             script = (f'tell application "System Events"\nrepeat {count} times\n'
@@ -661,6 +675,55 @@ class ComputerUse:
             script = f'tell application "System Events" to click at {{{x}, {y}}}'
         receipt = self._osascript("click", script, confirmed=confirm)
         self.audit(receipt, point=[x, y], button=button)
+        return receipt
+
+    def right_click(self, x: int, y: int, *, confirm: bool = False,
+                    app: str | None = None) -> Receipt:
+        """Right-click a screen point, directly to an app when given."""
+        x, y = _validate_point(x, y)
+        self._show_cursor(x, y, f"right-click {app}" if app else "right-click")
+        if app:
+            pid = self.app_pid(app)
+            self._post_click_to_pid(pid, x, y, 1, button="right")
+            receipt = Receipt("right_click_to_pid", True, _now(),
+                              f"delivered to {app}", confirmed=confirm,
+                              metadata={"pid": pid})
+            self.audit(receipt, point=[x, y], app=app)
+            return receipt
+        try:
+            import Quartz
+        except ImportError as error:
+            raise ComputerUseError(
+                "Global right-clicks need pyobjc-framework-Quartz.") from error
+        for kind in (Quartz.kCGEventRightMouseDown, Quartz.kCGEventRightMouseUp):
+            event = Quartz.CGEventCreateMouseEvent(
+                None, kind, (x, y), Quartz.kCGMouseButtonRight)
+            Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
+            time.sleep(0.02)
+        receipt = Receipt("right_click", True, _now(), f"posted at {x},{y}",
+                          confirmed=confirm)
+        self.audit(receipt, point=[x, y])
+        return receipt
+
+    def move(self, x: int, y: int, *, app: str | None = None) -> Receipt:
+        """Move the pointer without clicking; PID-targeted when ``app`` is set."""
+        x, y = _validate_point(x, y)
+        self._show_cursor(x, y, f"move · {app}" if app else "move")
+        try:
+            import Quartz
+        except ImportError as error:
+            raise ComputerUseError("Pointer moves need pyobjc-framework-Quartz.") from error
+        event = Quartz.CGEventCreateMouseEvent(
+            None, Quartz.kCGEventMouseMoved, (x, y), 0)
+        if app:
+            pid = self.app_pid(app)
+            Quartz.CGEventPostToPid(pid, event)
+            receipt = Receipt("move_to_pid", True, _now(), f"delivered to {app}",
+                              metadata={"pid": pid})
+        else:
+            Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
+            receipt = Receipt("move", True, _now(), f"posted at {x},{y}")
+        self.audit(receipt, point=[x, y], app=app)
         return receipt
 
     def type_text(self, text: str, *, app: str | None = None) -> Receipt:
@@ -899,6 +962,26 @@ class ComputerUseLoop:
         return self.computer.screenshot()
 
 
+def _gui_command(args, computer) -> dict:
+    from talos_core.mac import gui_actions, gui_apps
+
+    manager = gui_apps.GuiAppManager(args.state)
+    if args.command == "gui-launch":
+        return manager.start(args.start_command, name=args.name, wait=args.wait,
+                             confirm=args.confirm)
+    if args.command == "gui-status":
+        return manager.status()
+    if args.command == "gui-stop":
+        return manager.stop(force=args.force)
+    if args.command == "gui-act":
+        return gui_actions.act(computer, args.action, x=args.x, y=args.y,
+                               value=args.value, app=args.app, confirm=args.confirm)
+    if args.command == "gui-goal":
+        return gui_actions.target(computer, args.app, args.action, args.goal,
+                                  value=args.value, confirm=args.confirm)
+    return {"ok": True, "answer": gui_actions.verify(computer, args.app, args.question)}
+
+
 def _cli() -> int:
     import argparse
 
@@ -976,6 +1059,33 @@ def _cli() -> int:
     type_ref.add_argument("app")
     type_ref.add_argument("ref")
     type_ref.add_argument("text")
+    gui_launch = commands.add_parser("gui-launch", help="Start a managed GUI app.")
+    gui_launch.add_argument("--command", dest="start_command", required=True)
+    gui_launch.add_argument("--name")
+    gui_launch.add_argument("--wait", type=float, default=1.0)
+    gui_launch.add_argument("--confirm", action="store_true")
+    commands.add_parser("gui-status", help="Show the managed GUI app.")
+    gui_stop = commands.add_parser("gui-stop", help="Stop the managed GUI app.")
+    gui_stop.add_argument("--force", action="store_true")
+    gui_act = commands.add_parser("gui-act", help="Run one coordinate GUI action.")
+    gui_act.add_argument("action", choices=("click", "double_click", "right_click", "move",
+                                             "type", "key", "drag", "screenshot", "wait"))
+    gui_act.add_argument("--x", type=int)
+    gui_act.add_argument("--y", type=int)
+    gui_act.add_argument("--value")
+    gui_act.add_argument("--app")
+    gui_act.add_argument("--confirm", action="store_true")
+    gui_goal = commands.add_parser("gui-goal", help="Act on an element by description.")
+    gui_goal.add_argument("app")
+    gui_goal.add_argument("goal")
+    gui_goal.add_argument("--action", choices=("click", "double_click", "right_click",
+                                                "hover", "type"), default="click")
+    gui_goal.add_argument("--value")
+    gui_goal.add_argument("--confirm", action="store_true")
+    gui_verify = commands.add_parser("gui-verify", help="Ask the local vision model about a window.")
+    gui_verify.add_argument("app")
+    gui_verify.add_argument("question")
+
     args = parser.parse_args()
 
     computer = ComputerUse(args.state)
@@ -1022,6 +1132,12 @@ def _cli() -> int:
                                   index=args.index, x=args.x, y=args.y,
                                   width=args.width, height=args.height,
                                   confirm=args.confirm)
+    elif args.command.startswith("gui-"):
+        try:
+            payload = _gui_command(args, computer)
+        except (ValueError, OSError, RuntimeError) as error:
+            print(json.dumps({"ok": False, "error": str(error)}))
+            return 1
     else:
         payload = computer.menu(args.app, *args.items).to_dict()
     print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))

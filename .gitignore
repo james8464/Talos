@@ -21,3 +21,5 @@ venv/
 dist/
 
 .DS_Store
+
+talos_gui/node_modules/
