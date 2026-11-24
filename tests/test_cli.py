@@ -191,6 +191,22 @@ class CliTests(unittest.TestCase):
             self.assertEqual(cli.main(["codejob", "status", "--state", str(state)]), 0)
         self.assertEqual(json.loads(output.getvalue())[0]["status"], "declined")
 
+    def test_codejob_detach_forwards_state_root_and_model(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (root / "example.py").write_text("VALUE = 1\n")
+        state = root / "state"
+        with patch("talos_core.cli.subprocess.Popen") as popen, \
+                redirect_stdout(io.StringIO()):
+            code = cli.main(["codejob", "start", "Add a constant.", "--file", "example.py",
+                             "--root", str(root), "--state", str(state),
+                             "--verify-only", "--detach", "--model", "test-model"])
+        self.assertEqual(code, 0)
+        argv = popen.call_args.args[0]
+        self.assertIn(str(state), argv)
+        self.assertIn(str(root), argv)
+        self.assertIn("test-model", argv)
+        self.assertIn("--id", argv)
+
     def test_highlight_coordinates_do_not_click(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         fake = Mock()

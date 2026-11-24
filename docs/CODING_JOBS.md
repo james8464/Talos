@@ -22,3 +22,10 @@ rollback snapshot and is reverted if verification fails. Artifacts live in
 `run_due` holds a non-blocking lock so a worker and an interactive run cannot
 claim the same job. A failed model reply or deadline is recorded as `declined`
 or `deferred`, not raised.
+
+`start --detach` launches `run` in a new session and forwards the same state,
+root and model. A detached qwen3:4b job was observed going `queued` to
+`verified` with the sandbox tests passing and the target hash unchanged in
+verify-only mode. A model server failure (for example an Ollama token repeat
+limit) is recorded as `error` with the server message and leaves the source
+untouched.

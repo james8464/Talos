@@ -176,7 +176,8 @@ def _codejob(args) -> int:
         if args.detach:
             subprocess.Popen(
                 [sys.executable, "-m", "talos_core.cli", "codejob", "run",
-                 "--id", record["id"]],
+                 "--id", record["id"], "--model", args.model,
+                 "--state", str(args.state), "--root", str(args.root)],
                 cwd=str(args.root), stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 start_new_session=True,
@@ -186,9 +187,10 @@ def _codejob(args) -> int:
         return 0
 
     if args.action == "status":
-        if args.id:
+        job_id = args.id or getattr(args, "job_id", None)
+        if job_id:
             try:
-                print(json.dumps(coding_jobs.load(args.state, args.id), indent=2))
+                print(json.dumps(coding_jobs.load(args.state, job_id), indent=2))
             except ValueError as error:
                 print(json.dumps({"ok": False, "error": str(error)}))
                 return 1
@@ -1303,6 +1305,7 @@ def build_parser() -> argparse.ArgumentParser:
     start_job.add_argument("--state", type=Path, default=ROOT / "state")
     start_job.add_argument("--root", type=Path, default=ROOT)
     start_job.add_argument("--budget", type=int, default=300)
+    start_job.add_argument("--model", default="qwen3:4b")
     start_job.add_argument("--verify-only", action="store_true")
     start_job.add_argument("--detach", action="store_true", help="Run the job in a detached process.")
     start_job.set_defaults(func=_codejob)
@@ -1315,6 +1318,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_job.set_defaults(func=_codejob)
     status_job = jobs.add_parser("status", help="Show queued and finished jobs.")
     status_job.add_argument("id", nargs="?")
+    status_job.add_argument("--id", dest="job_id")
     status_job.add_argument("--state", type=Path, default=ROOT / "state")
     status_job.set_defaults(func=_codejob)
 

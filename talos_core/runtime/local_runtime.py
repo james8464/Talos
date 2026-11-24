@@ -47,7 +47,11 @@ def request_ollama_json(
             )
         with connection.getresponse() as response:
             if response.status != 200:
-                raise RuntimeError(f"Local Ollama returned HTTP {response.status} for {path}.")
+                detail = response.read(4096).decode("utf-8", "replace").strip()
+                suffix = f" {detail[:300]}" if detail else ""
+                raise RuntimeError(
+                    f"Local Ollama returned HTTP {response.status} for {path}.{suffix}"
+                )
             body = response.read(256 * 1024 + 1)
         if len(body) > 256 * 1024:
             raise ValueError("Unexpectedly large response")
