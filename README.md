@@ -113,21 +113,6 @@ and screenshot pixels are written to private state rather than logged. A Safari
 AppleScript fallback exists, but it needs Safari open and "Develop > Allow
 JavaScript from Apple Events" enabled. Browser work is silent.
 
-## Desktop GUI
-
-`talos gui` opens the vendored OpenCowork interface (the real React UI, MIT)
-against Talos's own room and model. It is served on loopback by a small Python
-bridge, so the room token never reaches the browser and no Electron runtime is
-needed:
-
-```sh
-python3 -m talos_core.cli gui
-python3 -m talos_core.cli gui --no-open --port 8766
-```
-
-The GUI is text-only. See [the integration notes](docs/OPEN_COWORK_INTEGRATION.md)
-for provenance, the computer-use port, and what deliberately stays in Talos.
-
 ## Terminal sessions and Telegram
 
 Launch the compact text session with `python3 -m talos_core.cli session` (alias `terminal`). It prints the Talos version, selected model, local Ollama readiness, state database and action mode before the first prompt, then reads typed text until `/quit`. It is text only: it never synthesizes or plays audio and does not change your mute or voice settings. Use `--script "/status" "/quit"` for a deterministic non-interactive check. `python3 agent.py chat` opens the same text session and command set; `python3 -m talos_core.cli console` keeps the animated ASCII-brain fallback.

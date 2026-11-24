@@ -83,7 +83,8 @@ class CursorOverlay:
                 return False
             try:
                 process.stdin.write(json.dumps(
-                    {"x": int(x), "y": int(y), "label": label[:60], "visible": True}
+                    {"x": int(x), "y": int(y), "label": label[:60], "visible": True,
+                     "control": True}
                 ) + "\n")
                 process.stdin.flush()
             except (OSError, ValueError):
@@ -97,13 +98,54 @@ class CursorOverlay:
                 self._timer.start()
             return True
 
+    def click(self, x: int, y: int, label: str = "click",
+              *, hide_after: float | None = HIDE_AFTER) -> bool:
+        """Show the cursor and a click ripple at a screen point."""
+        with self._lock:
+            process = self._start()
+            if process is None or process.stdin is None:
+                return False
+            try:
+                process.stdin.write(json.dumps(
+                    {"x": int(x), "y": int(y), "label": label[:60], "visible": True,
+                     "control": True, "click": True}
+                ) + "\n")
+                process.stdin.flush()
+            except (OSError, ValueError):
+                self.close()
+                return False
+            if self._timer is not None:
+                self._timer.cancel()
+            if hide_after:
+                self._timer = threading.Timer(hide_after, self.hide)
+                self._timer.daemon = True
+                self._timer.start()
+            return True
+
+    def ripple(self, x: int, y: int, label: str = "click") -> bool:
+        """Draw a click ripple without resetting the current label."""
+        with self._lock:
+            process = self.process
+            if process is None or process.stdin is None:
+                return False
+            try:
+                process.stdin.write(json.dumps(
+                    {"x": int(x), "y": int(y), "label": label[:60], "visible": True,
+                     "control": True, "click": True}
+                ) + "\n")
+                process.stdin.flush()
+            except (OSError, ValueError):
+                self.close()
+                return False
+            return True
+
     def hide(self) -> None:
         with self._lock:
             process = self.process
             if process is None or process.stdin is None:
                 return
             try:
-                process.stdin.write('{"visible": false}\n')
+                process.stdin.write('{"visible": false, "control": false}\n')
                 process.stdin.flush()
             except (OSError, ValueError):
                 pass

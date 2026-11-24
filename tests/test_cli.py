@@ -147,11 +147,6 @@ class CliTests(unittest.TestCase):
         self.assertEqual(args.command, "acp")
         self.assertEqual(args.acp_command, "python fixture.py")
 
-    def test_gui_command_is_registered(self):
-        args = cli.build_parser().parse_args(["gui", "--no-open"])
-        self.assertEqual(args.port, 8766)
-        self.assertTrue(args.no_open)
-
     def test_design_command_creates_artifacts(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         output = io.StringIO()

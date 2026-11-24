@@ -338,6 +338,43 @@ class Room:
             if fact:
                 return decision("reply", f"You are {fact[0]}.")
             return decision("reply", "I don't have your name saved in this session.")
+        if re.fullmatch(r"(?:what(?:'s| is) my (?:e-?mail|email address)|"
+                        r"what(?:'s| is) my e-?mail)[?.! ]*", text, re.I):
+            try:
+                from talos_core.cognition import talos_identity
+                identity = (talos_identity.get_resolver(state).resolve_identity("who am i")
+                            .get("identity") or {})
+                emails = [value for value in identity.get("emails") or [] if value]
+            except (OSError, RuntimeError, sqlite3.Error):
+                emails = []
+            if emails:
+                noun = "address is" if len(emails) == 1 else "addresses are"
+                return decision("reply", f"Your email {noun} {', '.join(emails[:5])}.")
+            return decision("reply", "I don't have your email address saved.")
+        if re.fullmatch(r"(?:what(?:'s| is) my (?:phone|phone number|mobile|cell)[?.! ]*)",
+                        text, re.I):
+            try:
+                from talos_core.cognition import talos_identity
+                identity = (talos_identity.get_resolver(state).resolve_identity("who am i")
+                            .get("identity") or {})
+                phones = [value for value in identity.get("phones") or [] if value]
+            except (OSError, RuntimeError, sqlite3.Error):
+                phones = []
+            if phones:
+                noun = "number is" if len(phones) == 1 else "numbers are"
+                return decision("reply", f"Your phone {noun} {', '.join(phones[:5])}.")
+            return decision("reply", "I don't have your phone number saved.")
+        if re.fullmatch(r"(?:where do i live|what(?:'s| is) my address)[?.! ]*", text, re.I):
+            try:
+                from talos_core.cognition import talos_identity
+                identity = (talos_identity.get_resolver(state).resolve_identity("who am i")
+                            .get("identity") or {})
+                address = identity.get("address")
+            except (OSError, RuntimeError, sqlite3.Error):
+                address = None
+            if address:
+                return decision("reply", f"You live at {address}.")
+            return decision("reply", "I don't have your address saved.")
         if re.fullmatch(r"(?:(?:tell me|give me) (?:a |one )?fun fact|fun fact)[?.! ]*",
                         text, re.I):
             return decision("reply", "Honey never spoils; sealed jars have remained edible for thousands of years.")

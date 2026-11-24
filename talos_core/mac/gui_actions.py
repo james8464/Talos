@@ -10,6 +10,7 @@ PID-targeted input, and permission checks instead of shelling out to cliclick.
 
 from __future__ import annotations
 
+import re
 import time
 
 from talos_core.mac.computer_use import ComputerUse, ComputerUseError
@@ -69,27 +70,81 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
     if action not in ("click", "double_click", "right_click", "hover", "type"):
         raise ValueError("Vision targeting supports click, double-click, right-click, "
                          "hover, and type.")
-    choice = computer.choose(app, description)
+    try:
+        choice = computer.choose(app, description)
+    except (OSError, RuntimeError, ValueError):
+        choice = {}
+    source = "accessibility"
     if not choice or not choice.get("ref"):
-        return {"ok": False, "app": app, "description": description,
-                "error": "No matching control was found."}
+        matches = _ocr_matches(computer, app, description)
+        if not matches:
+            return {"ok": False, "app": app, "description": description,
+                    "error": "No matching control was found."}
+        match = matches[0]
+        choice = {"ref": None, "center": match.get("center_screen") or [0, 0],
+                  "label": match.get("text", ""), "source": "ocr"}
+        source = "ocr"
     center = choice.get("center") or [0, 0]
     x, y = int(center[0]), int(center[1])
     if action == "type":
-        clicked = computer.click_ref(app, choice["ref"])
-        typed = computer.type_ref(app, choice["ref"], str(_required(value, "value")))
-        result = {"click": clicked, "type": typed}
+        if source == "ocr":
+            _activate(computer, app)
+            computer.click(x, y)
+            typed = computer.type_text(str(_required(value, "value")))
+            result = {"click": None, "type": typed}
+        else:
+            clicked = computer.click_ref(app, choice["ref"])
+            typed = computer.type_ref(app, choice["ref"], str(_required(value, "value")))
+            result = {"click": clicked, "type": typed}
     elif action == "double_click":
         result = computer.click(x, y, count=2, app=app).to_dict()
     elif action == "right_click":
         result = computer.right_click(x, y, app=app, confirm=confirm).to_dict()
     elif action == "hover":
         result = computer.hover(x, y, app=app).to_dict()
+    elif source == "ocr":
+        _activate(computer, app)
+        if action == "double_click":
+            result = computer.click(x, y, count=2).to_dict()
+        elif action == "right_click":
+            result = computer.right_click(x, y, confirm=confirm).to_dict()
+        elif action == "hover":
+            result = computer.hover(x, y).to_dict()
+        else:
+            result = computer.click(x, y).to_dict()
     else:
         result = computer.click_ref(app, choice["ref"])
     return {"ok": True, "app": app, "description": description,
-            "ref": choice["ref"], "label": choice.get("label", ""),
-            "center": [x, y], "action": action, "result": result}
+            "ref": choice.get("ref"), "label": choice.get("label", ""),
+            "center": [x, y], "action": action, "source": source, "result": result}
+
+
+def _activate(computer, app: str) -> None:
+    activate = getattr(computer, "activate", None)
+    if callable(activate):
+        try:
+            activate(app)
+        except (OSError, RuntimeError, ValueError):
+            pass
+
+
+def _ocr_matches(computer, app: str, description: str) -> list[dict]:
+    """Look for visible text when the accessibility tree has no control."""
+    candidates = [description]
+    stripped = re.sub(r"^(?:the|a|an)\s+", "", description.strip(), flags=re.I)
+    stripped = re.sub(r"\s+(?:button|field|menu|item|tab|checkbox|link)$", "",
+                      stripped, flags=re.I)
+    if stripped and stripped.casefold() != description.casefold():
+        candidates.append(stripped)
+    for query in candidates:
+        try:
+            found = computer.ocr(app, query)
+        except (OSError, RuntimeError, ValueError):
+            continue
+        matches = (found or {}).get("matches") or []
+        if matches:
+            return matches
+    return []
 
 
 def verify(computer: ComputerUse, app: str, question: str) -> str:

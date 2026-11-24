@@ -628,8 +628,29 @@ class ComputerUse:
             except (OSError, ValueError):
                 pass
 
+    def _show_click(self, x: int, y: int, label: str = "click") -> None:
+        if self.cursor is not None:
+            try:
+                self.cursor.ripple(int(x), int(y), label[:40])
+            except (OSError, ValueError):
+                pass
+
     def activate(self, app: str) -> Receipt:
         app = _validate_app(app)
+        try:
+            pid = self.app_pid(app)
+            from AppKit import NSApplicationActivateIgnoringOtherApps, NSRunningApplication
+
+            running = NSRunningApplication.runningApplicationWithProcessIdentifier_(pid)
+            if running is not None and running.activateWithOptions_(
+                    NSApplicationActivateIgnoringOtherApps):
+                receipt = Receipt("activate_pid", True, _now(), f"activated {app}",
+                                  metadata={"pid": pid})
+                self.audit(receipt, app=app)
+                time.sleep(0.15)
+                return receipt
+        except (ImportError, OSError, RuntimeError, ValueError):
+            pass
         receipt = self._run("activate_app", [OPEN, "-a", app])
         self.audit(receipt, app=app)
         return receipt
@@ -650,6 +671,7 @@ class ComputerUse:
         if count < 1 or count > 3:
             raise ValueError("count must be 1–3")
         self._show_cursor(x, y, f"click {app}" if app else "click")
+        self._show_click(x, y, f"click {app}" if app else "click")
         if app:
             pid = self.app_pid(app)
             self._post_click_to_pid(pid, x, y, count)
@@ -682,6 +704,7 @@ class ComputerUse:
         """Right-click a screen point, directly to an app when given."""
         x, y = _validate_point(x, y)
         self._show_cursor(x, y, f"right-click {app}" if app else "right-click")
+        self._show_click(x, y, f"right-click {app}" if app else "right-click")
         if app:
             pid = self.app_pid(app)
             self._post_click_to_pid(pid, x, y, 1, button="right")

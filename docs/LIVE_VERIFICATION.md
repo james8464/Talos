@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `726 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `58/58` checks; the vendored OpenCowork GUI also replied through the Talos room.
+- Unit suite: `721 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `58/58` checks.
 - Ruff: clean.
 
 ## Live feature pass
@@ -51,7 +51,7 @@ Latest results:
 | Identity | `Who am I?` resolves the Contacts Me card from `Sources/` without a placeholder name |
 | Design | poster SVG, Pages-compatible `.docx` via `textutil`, OpenSCAD nameplate + STL, headless Blender PNG |
 | Browser | local page read and private screenshot through headless Chrome CDP |
-| GUI | vendored OpenCowork renderer served by `talos gui`, chat proxied to the room |
+| Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe |
 | Policy | profiles, per-app grants, destructive confirmation, content-free audit |
 | Safety | `/v1/voice` 503, no audio processes, speech/music requests blocked, unverified app writes refused |
 

@@ -37,8 +37,15 @@ class CursorOverlayTests(unittest.TestCase):
         with patch.object(self.overlay, "_ensure_binary", return_value=True):
             self.assertTrue(self.overlay.show(120, 240, "TYPING", hide_after=None))
             self.overlay.hide()
-        self.assertEqual(self.lines()[0], {"x": 120, "y": 240, "label": "TYPING", "visible": True})
-        self.assertEqual(self.lines()[1], {"visible": False})
+        self.assertEqual(self.lines()[0], {"x": 120, "y": 240, "label": "TYPING",
+                                          "visible": True, "control": True})
+        self.assertEqual(self.lines()[1], {"visible": False, "control": False})
+
+    def test_click_sends_a_ripple_and_control_flag(self):
+        with patch.object(self.overlay, "_ensure_binary", return_value=True):
+            self.assertTrue(self.overlay.click(30, 40, "click", hide_after=None))
+        self.assertEqual(self.lines()[0], {"x": 30, "y": 40, "label": "click",
+                                          "visible": True, "control": True, "click": True})
 
     def test_labels_are_bounded_and_a_failed_helper_never_raises(self):
         with patch.object(self.overlay, "_ensure_binary", return_value=True):

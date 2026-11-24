@@ -209,20 +209,6 @@ def _apps(args) -> int:
     return 0
 
 
-def _gui(args) -> int:
-    from talos_core.interfaces import gui_bridge
-
-    try:
-        url = gui_bridge.serve(args.state, port=args.port, open_browser=not args.no_open)
-    except gui_bridge.GuiBridgeError as error:
-        print(f"Talos GUI: {error}", file=sys.stderr)
-        return 1
-    except KeyboardInterrupt:
-        return 0
-    print(url)
-    return 0
-
-
 def _design(args) -> int:
     from talos_core import design_studio
 
@@ -991,12 +977,6 @@ def build_parser() -> argparse.ArgumentParser:
     apps = commands.add_parser("apps", help="Show native app and MCP integration status.")
     apps.add_argument("--state", type=Path, default=ROOT / "state")
     apps.set_defaults(func=_apps)
-
-    gui = commands.add_parser("gui", help="Open the Talos desktop GUI (OpenCowork interface).")
-    gui.add_argument("--state", type=Path, default=ROOT / "state")
-    gui.add_argument("--port", type=int, default=8766)
-    gui.add_argument("--no-open", action="store_true", help="Serve without opening a browser.")
-    gui.set_defaults(func=_gui)
 
     design = commands.add_parser("design", help="Create a poster, nameplate or Pages document.")
     design.add_argument("--kind", choices=("poster", "nameplate", "document"), default="poster")

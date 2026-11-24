@@ -58,6 +58,10 @@ class FakeComputer:
     def window_jpeg(self, app):
         return "jpeg-base64"
 
+    def ocr(self, app, query=None):
+        self.calls.append(("ocr", app, query))
+        return {"matches": []}
+
 
 class GuiActionTests(unittest.TestCase):
     def setUp(self):
@@ -110,7 +114,26 @@ class GuiActionTests(unittest.TestCase):
         with patch.object(self.computer, "choose", return_value={}):
             result = gui_actions.target(self.computer, "App", "click", "nothing")
         self.assertFalse(result["ok"])
-        self.assertEqual(self.computer.calls, [])
+        self.assertEqual([call for call in self.computer.calls if call[0] != "ocr"], [])
+
+    def test_ocr_fallback_clicks_a_custom_drawn_control(self):
+        with patch.object(self.computer, "choose", return_value={}), \
+             patch.object(self.computer, "ocr", return_value={"matches": [
+                 {"text": "Start", "center_screen": [80, 90]}]}):
+            result = gui_actions.target(self.computer, "App", "click", "the Start button")
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["source"], "ocr")
+        self.assertIn(("click", (80, 90), {}), self.computer.calls)
+
+    def test_ocr_fallback_types_after_clicking_the_text(self):
+        with patch.object(self.computer, "choose", return_value={}), \
+             patch.object(self.computer, "ocr", return_value={"matches": [
+                 {"text": "Name", "center_screen": [40, 50]}]}):
+            result = gui_actions.target(self.computer, "App", "type", "the Name field",
+                                        value="Talos")
+        self.assertTrue(result["ok"])
+        names = [call[0] for call in self.computer.calls]
+        self.assertEqual(names, ["click", "type_text"])
 
     def test_verify_asks_the_local_vision_model(self):
         with patch("talos_core.room.room_vision.describe_image",
