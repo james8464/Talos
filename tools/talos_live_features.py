@@ -194,6 +194,17 @@ def run(keep: bool = False) -> dict:
 
     screenshot = ask(token, "Take a screenshot.")["reply"]
     check(checks, "mac_screenshot", "Screenshot saved to" in screenshot, screenshot)
+
+    calendar = ask(token, "What's on my calendar?")["reply"]
+    check(checks, "native_calendar", "Calendar:" in calendar or "No events" in calendar, calendar)
+
+    native_reminders = ask(token, "Show my Apple reminders.")["reply"]
+    check(checks, "native_reminders",
+          "Apple Reminders" in native_reminders or "No pending Apple reminders" in native_reminders,
+          native_reminders)
+
+    shortcuts = ask(token, "List my shortcuts.")["reply"]
+    check(checks, "native_shortcuts", "Shortcuts" in shortcuts, shortcuts)
     screenshot_path = ""
     if "Screenshot saved to " in screenshot:
         screenshot_path = screenshot.split("Screenshot saved to ", 1)[1].split(" (", 1)[0]
