@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from talos_core import codex_runtime, connectors
 
@@ -34,9 +35,11 @@ class ConnectorRuntimeTests(unittest.TestCase):
         def runner(argv, **options):
             calls.append((argv, options))
             return SimpleNamespace(returncode=0, stdout="ok", stderr="")
-        with self.assertRaises(codex_runtime.RuntimeRefused):
+        with patch("talos_core.codex_runtime.shutil.which", return_value="/usr/bin/codex"), \
+             self.assertRaises(codex_runtime.RuntimeRefused):
             codex_runtime.run("review", confirm=False, runner=runner)
-        result = codex_runtime.run("review", confirm=True, runner=runner)
+        with patch("talos_core.codex_runtime.shutil.which", return_value="/usr/bin/codex"):
+            result = codex_runtime.run("review", confirm=True, runner=runner)
         self.assertTrue(result["ok"])
         self.assertIn("--sandbox", calls[0][0])
         self.assertIn("read-only", calls[0][0])
