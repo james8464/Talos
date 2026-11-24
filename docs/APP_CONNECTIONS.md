@@ -78,6 +78,7 @@ Implemented or already present:
   Contacts search through the existing private index.
 - `talos_core/mac/native_apps.py` also reports app status: Accessibility,
   Screen Recording, EventKit exports, private sources and configured MCP servers.
+  `talos apps` exposes the same report from the CLI.
   Speech/music requests and unverified app writes are refused rather than claimed.
 - `talos_core/mac/mac_context.py`: Contacts, Messages, Mail and WhatsApp reads.
 - `talos_core/mac/computer_use.py` / `perception.py`: AX tree, PID-targeted

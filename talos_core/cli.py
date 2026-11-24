@@ -162,6 +162,25 @@ def _mcp(args) -> int:
     return mcp_server.serve(root=args.root, state=args.state)
 
 
+def _apps(args) -> int:
+    from talos_core import mcp_client
+    from talos_core.mac import native_apps
+
+    try:
+        status = native_apps.app_status_text(args.state)
+        servers = sorted(mcp_client.servers(args.state))
+    except (OSError, ValueError, RuntimeError) as error:
+        print(json.dumps({"ok": False, "error": str(error)}))
+        return 1
+    print(json.dumps({
+        "status": status,
+        "adapters": ["Calendar", "Reminders", "Notes", "Mail", "Messages", "Contacts",
+                     "Safari", "Finder", "Maps", "Shortcuts", "Music"],
+        "mcp_servers": servers,
+    }, indent=2, ensure_ascii=False))
+    return 0
+
+
 def _mcp_client(args) -> int:
     from talos_core import mcp_client
     try:
@@ -883,6 +902,10 @@ def build_parser() -> argparse.ArgumentParser:
     mcp.add_argument("--root", type=Path, default=ROOT)
     mcp.add_argument("--state", type=Path, default=ROOT / "state")
     mcp.set_defaults(func=_mcp)
+
+    apps = commands.add_parser("apps", help="Show native app and MCP integration status.")
+    apps.add_argument("--state", type=Path, default=ROOT / "state")
+    apps.set_defaults(func=_apps)
 
     mcp_client = commands.add_parser("mcp-client", help="Call a configured MCP server.")
     mcp_client.add_argument("action", choices=("list", "add", "tools", "call"))

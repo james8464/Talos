@@ -75,6 +75,15 @@ class CliTests(unittest.TestCase):
         self.assertEqual(args.command, "acp")
         self.assertEqual(args.acp_command, "python fixture.py")
 
+    def test_apps_reports_native_integrations(self):
+        state = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["apps", "--state", str(state)])
+        self.assertEqual(code, 0)
+        self.assertIn("App status", output.getvalue())
+        self.assertIn("Calendar", output.getvalue())
+
     def test_cloud_command_uses_the_optional_bridge(self):
         output = io.StringIO()
         with patch("talos_core.cognition.cloud_model.complete", return_value="Cloud OK") as complete:
