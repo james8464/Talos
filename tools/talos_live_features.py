@@ -322,7 +322,9 @@ def run(keep: bool = False) -> dict:
         def do_GET(self):
             body = (b"<html><head><title>Talos Local Page</title></head>"
                     b"<body><p>local browser check</p>"
+                    b"<form onsubmit=\"event.preventDefault();document.getElementById('out').textContent='searched '+document.getElementById('q').value\">"
                     b"<input id='q' placeholder='search' oninput=\"document.getElementById('out').textContent=this.value\">"
+                    b"<button type='submit'>Search</button></form>"
                     b"<button onclick=\"document.getElementById('out').textContent='clicked ok'\">Run check</button>"
                     b"<p id='out'>waiting</p></body></html>")
             self.send_response(200)
@@ -349,6 +351,8 @@ def run(keep: bool = False) -> dict:
         check(checks, "browser_click", "clicked ok" in clicked_page, clicked_page)
         typed_page = ask(token, f"Type talos into the search box on {page_url}")["reply"]
         check(checks, "browser_type", "talos" in typed_page, typed_page)
+        searched = ask(token, f"Search talos on {page_url}")["reply"]
+        check(checks, "browser_search", "searched talos" in searched, searched)
     finally:
         server.shutdown()
 

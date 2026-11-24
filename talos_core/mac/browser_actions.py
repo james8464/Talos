@@ -127,6 +127,48 @@ def type_into(url: str, field: str, value: str, *, limit: int = 500) -> dict | N
     }
 
 
+def search(url: str, query: str, *, field: str = "search", limit: int = 600) -> dict | None:
+    """Type a query into a visible field and submit the form."""
+    value = str(query)
+    wanted = " ".join(str(field).split())[:80].casefold()
+    if not value.strip():
+        return None
+    script = rf"""(() => {{
+      const wanted = {json.dumps(wanted)};
+      const value = {json.dumps(value)};
+      const label = (el) => ((el.getAttribute('aria-label') || el.getAttribute('placeholder')
+        || el.name || el.id || '') + ' ' + (el.getAttribute('type') || ''))
+        .replace(/\s+/g, ' ').trim().toLowerCase();
+      const nodes = Array.from(document.querySelectorAll(
+        'input:not([type="hidden"]), textarea, [contenteditable="true"]'));
+      let target = nodes.find((el) => el.offsetParent !== null && label(el).includes(wanted));
+      if (!target) target = nodes.find((el) => el.offsetParent !== null);
+      if (!target) return {{ok: false}};
+      target.focus();
+      if (target.isContentEditable) target.textContent = value;
+      else target.value = value;
+      target.dispatchEvent(new Event('input', {{bubbles: true}}));
+      target.dispatchEvent(new Event('change', {{bubbles: true}}));
+      if (target.form && target.form.requestSubmit) target.form.requestSubmit();
+      else target.dispatchEvent(new KeyboardEvent('keydown', {{key: 'Enter', bubbles: true}}));
+      return {{ok: true}};
+    }})()"""
+    with Browser(headless=True, timeout=20) as browser:
+        page = browser.open_page(url)
+        submitted = page.eval_js(script)
+        if not isinstance(submitted, dict) or not submitted.get("ok"):
+            return None
+        time.sleep(0.5)
+        snapshot = page.snapshot()
+    body = " ".join(str(snapshot.text or "").split())
+    return {
+        "url": snapshot.url,
+        "title": snapshot.title or snapshot.url,
+        "text": body[:limit],
+        "truncated": bool(snapshot.truncated) or len(body) > limit,
+    }
+
+
 def command(text, state, *, limit: int = 700):
     """Answer a page-read or page-screenshot request, or return None."""
     words = " ".join(str(text).split())
@@ -143,6 +185,22 @@ def command(text, state, *, limit: int = 700):
         except BrowserError as error:
             return f"Browser error: {error}"
         return f"Page screenshot saved to {path}"
+
+    search_web = re.fullmatch(
+        rf"search (?:for )?(.+?) on {URL}[?.! ]*", words, re.I)
+    if search_web:
+        if not available():
+            return "Browser automation is unavailable: " + _why()
+        query, url = search_web.group(1).strip(), _clean_url(search_web.group(2))
+        try:
+            result = search(url, query, limit=limit)
+        except BrowserError as error:
+            return f"Browser error: {error}"
+        if result is None:
+            return f"I found no search field on {url}."
+        suffix = " …" if result["truncated"] else ""
+        return (f"Searched {result['title']} for {query!r}: "
+                f"{result['text'] or 'no readable text'}{suffix}")[:1100]
 
     type_web = re.fullmatch(
         rf'type (?:"([^"]+)"|(.+?)) into (?:the )?(.+?) on {URL}[?.! ]*',

@@ -31,7 +31,7 @@ Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
 - Unit suite: `743 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `77/77` checks.
+- Live feature pass: `78/78` checks.
 - Ruff: clean.
 
 ## Live feature pass
@@ -50,7 +50,7 @@ Latest results:
 | MCP client | official-SDK stdio and Streamable-HTTP tools/list/tools-call; room discovery and call against Talos and `mcp-server-apple-events` |
 | Identity | `Who am I?` resolves the Contacts Me card from `Sources/` without a placeholder name |
 | Design | poster SVG, real `.pages` via AppleScript, PDF export from Pages, Pages-compatible `.docx` fallback, OpenSCAD nameplate and parametric box + STL, headless Blender PNG |
-| Browser | local page read, text click, field typing, and private screenshot through headless Chrome CDP |
+| Browser | local page read, text click, field typing, form search/submit, and private screenshot through headless Chrome CDP |
 | Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; HID click verified on Tk and Calculator; click/hover/scroll/press/clipboard/window move-resize-focus routes verified |
 | Terminal | `talos ask` one-shot and interactive chat reach the same room routes, including pointer moves and design |
 | Policy | profiles, per-app grants, destructive confirmation, content-free audit |

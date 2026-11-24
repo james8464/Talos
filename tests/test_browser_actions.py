@@ -104,6 +104,30 @@ class BrowserActionsTests(unittest.TestCase):
         self.assertIn("typed talos", reply)
         self.assertIn("search", reply)
 
+    def test_searches_a_form_and_returns_results(self):
+        class SearchPage(FakePage):
+            def eval_js(self, script):
+                return {"ok": True}
+
+            def snapshot(self):
+                class After:
+                    url = "https://example.com/results"
+                    title = "Results"
+                    text = "results for talos"
+                    truncated = False
+                return After()
+
+        class SearchBrowser(FakeBrowser):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.page = SearchPage()
+
+        with patch.object(browser_actions, "Browser", SearchBrowser):
+            reply = browser_actions.command("Search talos on https://example.com.",
+                                            self.state)
+        self.assertIn("results for talos", reply)
+        self.assertIn("Results", reply)
+
     def test_only_http_urls_are_accepted(self):
         for text in ("Read file:///etc/passwd", "Read example.com", "Open Safari."):
             self.assertIsNone(browser_actions.command(text, self.state))
