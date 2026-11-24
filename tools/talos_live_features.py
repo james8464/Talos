@@ -75,6 +75,18 @@ def run() -> dict:
     check(checks, "task", task.get("action") == "applied" and task.get("tool") == "create_task",
           task.get("reply", ""))
 
+    tasks = ask(token, "List my tasks.")["reply"]
+    check(checks, "task_list", task_text in tasks, tasks)
+
+    goals = ask(token, "Show my goals.")["reply"]
+    check(checks, "goals", "goal" in goals.casefold(), goals)
+
+    health = ask(token, "Check your health.")["reply"]
+    check(checks, "health", "Audio is muted" in health, health)
+
+    code = ask(token, "Search the code graph for Room.")["reply"]
+    check(checks, "code_graph", "Code results for Room" in code, code)
+
     note = ask(token, f"Save a note that the live feature pass is {stamp}.")
     check(checks, "note", note.get("action") == "applied" and note.get("tool") == "save_note",
           note.get("reply", ""))

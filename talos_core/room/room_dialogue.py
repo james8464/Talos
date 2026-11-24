@@ -212,8 +212,23 @@ def compact_decision(generate, messages, model, lookups, *, can_search=False, re
         if (action not in choices or not isinstance(detail, str) or len(detail) > 400
                 or (action != "ignore" and not detail.strip()) or not valid_minutes):
             raise ValueError
-    except (KeyError, ValueError, TypeError) as error:
-        raise RuntimeError("Talos returned an invalid room response.") from error
+    except (KeyError, ValueError, TypeError):
+        messages = with_spoken_instructions(
+            messages,
+            "Your previous reply was rejected. Return exactly one JSON object with action and text. "
+            "Use calculate only for a numeric arithmetic expression.",
+        )
+        try:
+            obj = json.loads(generate(messages, model=model, schema=schema, max_tokens=180))
+            action, detail = obj["action"], obj["text"]
+            minutes = obj.get("minutes", 0)
+            valid_minutes = (type(minutes) is int and
+                             (1 <= minutes <= MAX_REMINDER_MINUTES if action == "set_reminder" else minutes == 0))
+            if (action not in choices or not isinstance(detail, str) or len(detail) > 400
+                    or (action != "ignore" and not detail.strip()) or not valid_minutes):
+                raise ValueError
+        except (KeyError, ValueError, TypeError) as retry_error:
+            raise RuntimeError("Talos returned an invalid room response.") from retry_error
     if action == "calculate":
         operand = r"(-?[0-9]{1,12}(?:\.[0-9]{1,8})?)"
         if re.fullmatch(operand, detail.strip()):

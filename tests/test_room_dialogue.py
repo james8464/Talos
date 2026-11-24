@@ -96,6 +96,12 @@ class RoomDialogueTests(unittest.TestCase):
                 '{"action":"set_reminder","text":"bad","minutes":false}'), self.assertRaises(RuntimeError):
             self.turn("Set a reminder for the call.")
 
+    def test_malformed_reply_is_retried_once(self):
+        with patch("agent.check_ollama_model"), patch("agent.model_text", side_effect=[
+                "not json", '{"action":"reply","text":"Recovered."}']) as model:
+            self.assertEqual(self.turn("Tell me something.", source="text")["reply"], "Recovered.")
+            self.assertEqual(model.call_count, 2)
+
     def test_explicit_lookup_only_sends_query_and_surfaces_sources(self):
         sources = [{"title": "Example", "url": "https://example.org", "excerpt": "A statement."}]
         with patch("talos_core.room.room_service.search_web", return_value=sources) as search, patch(
