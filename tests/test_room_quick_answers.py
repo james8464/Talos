@@ -64,6 +64,11 @@ class QuickTextAnswerTests(unittest.TestCase):
             self.assertEqual(self.ask("Are you there?")["reply"], "Yes, I'm here.")
             self.assertIn("Online weather lookups are off", self.ask("What's the weather?")["reply"])
 
+    def test_mute_questions_are_answered_locally(self):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertIn("audio is muted", self.ask("Are you muted?")["reply"])
+            self.assertIn("already muted", self.ask("Stop speaking.")["reply"])
+
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")
         reply = self.ask("Search your memory for live code.")["reply"]

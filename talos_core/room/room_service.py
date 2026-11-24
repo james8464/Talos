@@ -268,6 +268,12 @@ class Room:
         state = self.db_path.parent
         if re.fullmatch(r"(?:thanks|thank you|cheers)[.!, ]*", text, re.I):
             return decision("reply", "You're welcome.")
+        if re.fullmatch(r"(?:(?:are you|is this|is talos) (?:muted|silent)|"
+                        r"what is your audio status)[?.! ]*", text, re.I):
+            return decision("reply", "Yes, audio is muted. Every reply stays in text.")
+        if re.fullmatch(r"(?:be quiet|stop speaking|don't speak|do not speak|mute yourself)[.!, ]*",
+                        text, re.I):
+            return decision("reply", "I'm already muted; I won't produce audio.")
         if re.fullmatch(r"(?:are you there|you there|are you awake|are you online)[?.! ]*",
                         text, re.I):
             return decision("reply", "Yes, I'm here.")

@@ -38,6 +38,17 @@ python3 -m talos_core.self_improvement.improve_talos --cycle
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
+## Silent mode
+
+Talos can run without producing any sound. Start the launcher with `--mute`, or export `TALOS_MUTE=1` for any entry point:
+
+```sh
+python3 run_talos.py --mute
+TALOS_MUTE=1 python3 -m talos_core.interfaces.telegram_gateway --owner YOUR_NUMERIC_ID
+```
+
+In silent mode the room drops its voice object, disables proactive speech, and returns HTTP 503 from `POST /v1/voice`. Kokoro and Telegram voice-note synthesis raise a clear error before loading models, so callers fall back to text. Typed turns, memory, reminders, Mac control, maintenance and the local model continue to work. The installed launchd service uses `--mute` and `TALOS_MUTE=1` by default.
+
 ## Terminal sessions and Telegram
 
 In `python3 agent.py chat`, use `/new project` for a fresh conversation, `/sessions` to list saved sessions and `/resume project` to reopen one. Use `/save FILE.jsonl` to export every turn of the active session to a new private file. Use `/branch project-b` (or `/fork`) to continue from the current conversation. A branch inherits turns up to that point and writes its own subsequent turns. Branches share stored transcript rows. Named sessions use recent turns and can retrieve older matching turns from their visible history, including inherited turns up to the fork. Use `/search QUERY` to search only the current conversation. Automatic recall in the default console excludes named-session turns. Explicit `/recall QUERY` searches the local archive. The console opens in the original `text` session by default.
