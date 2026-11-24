@@ -691,7 +691,11 @@ class Room:
         if re.fullmatch(r"(?:what|which) windows are open[?.! ]*", text, re.I):
             try:
                 computer = ComputerUse(state, cursor=False)
-                rows = computer.windows()
+                app = str(computer.frontmost().get("app") or "") or None
+                try:
+                    rows = computer.windows(app) if app else computer.windows()
+                except TypeError:
+                    rows = computer.windows()
             except (OSError, RuntimeError, ValueError) as error:
                 return decision("reply", f"I couldn't list windows: {error}")
             if not rows:

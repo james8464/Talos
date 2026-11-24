@@ -193,7 +193,7 @@ class QuickTextAnswerTests(unittest.TestCase):
             "ok": True, "path": "/tmp/shot.png", "detail": "", "metadata": {"bytes": 12}})()
         computer.see = lambda app: {"app": app, "text": "Untitled window"}
         computer.frontmost = lambda: {"app": "TextEdit"}
-        computer.windows = lambda: [{"raw": "Untitled — TextEdit"}]
+        computer.windows = lambda *args: [{"raw": "Untitled — TextEdit"}]
         computer.apps = lambda: [{"name": "TextEdit"}, {"name": "Safari"}]
         computer.find_controls = lambda app, query: [{"ref": "abc123", "label": "Search"}]
         computer.ocr = lambda app: {"text": "Hello from TextEdit"}
