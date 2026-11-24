@@ -72,10 +72,10 @@ def install(plist, domain, *, respan=False, sections=False, force=False):
             stream.write(data)
         Path(stream.name).replace(plist)
     if loaded:
-        launchctl("bootout", service)
+        launchctl("bootout", service, capture=True)
         wait_for_release()
     for attempt in range(4):
-        result = launchctl("bootstrap", domain, str(plist))
+        result = launchctl("bootstrap", domain, str(plist), capture=True)
         if result.returncode == 0:
             return
         time.sleep(0.5 * (attempt + 1))
@@ -102,7 +102,7 @@ def restart(plist, domain, *, respan=False, sections=False):
     """Stop the current room, wait for its port, then start the installed version."""
     service = f"{domain}/{LABEL}"
     if launchctl("print", service, capture=True).returncode == 0:
-        launchctl("bootout", service, check=True)
+        launchctl("bootout", service, capture=True)
         wait_for_release()
     for attempt in range(5):
         try:
