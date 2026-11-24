@@ -99,6 +99,7 @@ class RoomDialogueTests(unittest.TestCase):
             "Remind me at 3pm to call Sam.": ("call Sam", 300),
             "Remind me tomorrow to call Sam.": ("call Sam", 1380),
             "Remind me at 9 to call Sam.": ("call Sam", 1380),
+            "Remind me at 9 tomorrow to call Sam.": ("call Sam", 1380),
         }
         for text, (detail, minutes) in cases.items():
             with self.subTest(text=text):
@@ -106,6 +107,14 @@ class RoomDialogueTests(unittest.TestCase):
                 self.assertEqual(result["tool"], "set_reminder")
                 self.assertEqual(result["detail"], detail)
                 self.assertEqual(result["remind_in_minutes"], minutes)
+
+    def test_simple_timers_are_local(self):
+        from talos_core.room.room_dialogue import timer_request
+
+        result = timer_request("Set a timer for 10 minutes.")
+        self.assertEqual(result["tool"], "set_reminder")
+        self.assertEqual(result["detail"], "Timer")
+        self.assertEqual(result["remind_in_minutes"], 10)
 
     def test_invalid_short_tool_output_cannot_apply(self):
         with patch("agent.check_ollama_model"), patch("agent.model_text", return_value=

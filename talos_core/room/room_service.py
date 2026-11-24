@@ -59,6 +59,7 @@ from talos_core.room.room_dialogue import (
     sensor_answer,
     spoken_problem,
     spoken_reply,
+    timer_request,
 )
 from talos_core.room.room_quantities import quantity_answer
 from talos_core.room.room_queue import enqueue, next_event, observe_presence, presence, retry_event
@@ -261,6 +262,8 @@ class Room:
             return reminder
         elif absolute := absolute_reminder(text):
             return absolute
+        elif timer := timer_request(text):
+            return timer
         elif task := explicit_task(text):
             return task
         elif re.fullmatch(r"(?:what(?:'s| is) on my (?:to[ -]?do|task) list|list my tasks)[?.!]?",
@@ -331,6 +334,14 @@ class Room:
             text, re.I,
         ):
             return decision("reply", CAPABILITIES)
+        if re.fullmatch(r"(?:(?:what|which) version (?:are you|is talos)|what is your version)[?.! ]*",
+                        text, re.I):
+            from talos_core import VERSION
+            return decision("reply", f"Talos version {VERSION}.")
+        if re.fullmatch(r"(?:what(?:'s| is) on my calendar|show my calendar|my calendar)[?.! ]*",
+                        text, re.I):
+            return decision("reply", "Calendar details are available from the room app's meeting brief. "
+                                     "I don't have a calendar connection in this text session.")
         if re.fullmatch(
             r"(?:what(?:'s| is) (?:the )?time(?: is it)?|what time is it|current time|"
             r"what(?:'s| is) (?:today'?s )?(?:date|day)(?: today)?|what day is (?:it|today)|"
@@ -418,6 +429,14 @@ class Room:
                 "OpenCode Go is configured." if cloud_model.configured()
                 else "OpenCode Go is not configured.",
             )
+        count_request = re.fullmatch(r"how many (reminders|tasks) do i have[?.! ]*", text, re.I)
+        if count_request:
+            kind = "reminder" if count_request.group(1).casefold() == "reminders" else "task"
+            count = db.execute(
+                "SELECT COUNT(*) FROM inbox WHERE kind=? AND acknowledged_at IS NULL", (kind,),
+            ).fetchone()[0]
+            label = kind if count == 1 else kind + "s"
+            return decision("reply", f"You have {count} pending {label}.")
         if re.fullmatch(r"(?:(?:list|show)(?: me)? (?:my )?approvals|what needs my approval)[?.! ]*",
                         text, re.I):
             items = inbox_items(db, limit=50)
@@ -597,6 +616,9 @@ class Room:
     def quick_mac_answer(self, text):
         """Handle read-only macOS requests without asking the language model."""
         state = self.db_path.parent
+        if re.fullmatch(r"(?:what(?:'s| is) on my screen|what is on the screen|show me my screen)[?.! ]*",
+                        text, re.I):
+            return self.quick_mac_answer("Take a screenshot and tell me what's on screen.")
         if re.fullmatch(
             r"(?:(?:check|show) (?:the )?(?:mac )?permissions|"
             r"(?:do you have|is) (?:accessibility|screen recording)(?: access)?)[?.! ]*",

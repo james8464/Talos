@@ -130,6 +130,16 @@ class QuickTextAnswerTests(unittest.TestCase):
         with patch("talos_core.cognition.cloud_model.configured", return_value=False):
             self.assertIn("not configured", self.ask("Is the cloud available?")["reply"])
 
+    def test_version_timer_counts_and_calendar_are_local(self):
+        with patch("talos_core.room.room_service.plan", side_effect=AssertionError("planner should not run")):
+            self.assertEqual(self.ask("What is your version?")["reply"], "Talos version 0.2.0.")
+            self.assertIn("calendar connection", self.ask("What's on my calendar?")["reply"])
+        timer = self.ask("Set a timer for 10 minutes.")
+        self.assertEqual(timer["action"], "applied")
+        self.assertEqual(timer["tool"], "set_reminder")
+        self.assertIn("Timer", timer["reply"])
+        self.assertIn("1 pending reminder", self.ask("How many reminders do I have?")["reply"])
+
     def test_memory_search_includes_saved_personal_facts(self):
         self.ask("Remember that my live code is cobalt.")
         reply = self.ask("Search your memory for live code.")["reply"]
@@ -169,6 +179,7 @@ class QuickTextAnswerTests(unittest.TestCase):
             ocr = self.ask("Read text in TextEdit.")["reply"]
             compound = self.ask("Open Safari and search for Talos.")["reply"]
             shot_compound = self.ask("Take a screenshot and tell me what's on screen.")["reply"]
+            screen = self.ask("What's on my screen?")["reply"]
         self.assertIn("/tmp/shot.png", shot)
         self.assertEqual(seen, "TextEdit: Untitled window")
         self.assertEqual(opened, "Opened TextEdit.")
@@ -182,6 +193,8 @@ class QuickTextAnswerTests(unittest.TestCase):
         self.assertIn("/tmp/shot.png", shot_compound)
         self.assertIn("Frontmost app: TextEdit", shot_compound)
         self.assertIn("Untitled window", shot_compound)
+        self.assertIn("/tmp/shot.png", screen)
+        self.assertIn("Frontmost app: TextEdit", screen)
 
     def test_permission_question_reports_both_grants(self):
         with patch("talos_core.room.room_service.permissions",

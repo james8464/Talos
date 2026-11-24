@@ -127,6 +127,8 @@ def absolute_reminder(message, *, now=None):
     """Resolve a named clock time such as "tomorrow at 9" without a model."""
     text = message.strip()
     patterns = (
+        (_REQUEST_PREFIX + r"remind me at " + _ABSOLUTE_TIME + r" " + _ABSOLUTE_DATE
+         + r" to (?P<task>.+?)[.!?]?", "task"),
         (_REQUEST_PREFIX + r"remind me " + _ABSOLUTE_DATE
          + r"(?: at " + _ABSOLUTE_TIME + r")? to (?P<task>.+?)[.!?]?", "task"),
         (_REQUEST_PREFIX + r"remind me at " + _ABSOLUTE_TIME
@@ -155,6 +157,23 @@ def absolute_reminder(message, *, now=None):
             return None
         return decision("set_reminder", task, minutes)
     return None
+
+
+def timer_request(message):
+    """Resolve a simple countdown timer without the planner."""
+    match = re.fullmatch(
+        _REQUEST_PREFIX + r"(?:set |start )?(?:a )?timer(?: for)? " + _DURATION + r"[.!?]?",
+        message.strip(), re.I,
+    )
+    if not match:
+        return None
+    number, unit = match.groups()
+    number = number.lower().replace("-", " ")
+    amount = int(number) if number.isdecimal() else _NUMBERS.get(number, 0)
+    minutes = amount * {"minute": 1, "hour": 60, "day": 1440}[unit.lower().rstrip("s")]
+    if not 1 <= minutes <= MAX_REMINDER_MINUTES:
+        return None
+    return decision("set_reminder", "Timer", minutes)
 
 
 def decision(action, detail, minutes=0):
