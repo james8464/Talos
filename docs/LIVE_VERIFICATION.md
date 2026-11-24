@@ -30,7 +30,7 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `747 tests`, `OK` (`17` skipped by design).
+- Unit suite: `748 tests`, `OK` (`17` skipped by design).
 - Live feature pass: `67/67` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control` and are never run automatically.
 - Ruff: clean.
 
@@ -51,7 +51,7 @@ Latest results:
 | Identity | `Who am I?` resolves the Contacts Me card from `Sources/` without a placeholder name |
 | Design | poster SVG, real `.pages` create/append/PDF via AppleScript, Pages-compatible `.docx` fallback, OpenSCAD nameplate and parametric box + STL, headless Blender PNG |
 | Browser | local page read, text click, field typing, form search/submit, and private screenshot through headless Chrome CDP |
-| Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; HID click verified on Tk and Calculator; click/hover/scroll/press/clipboard/window move-resize-focus routes verified |
+| Control feedback | native agent cursor, click ripple, screen border and “TALOS IS CONTROLLING THIS MAC” pill; click-through and focus-safe; HID click verified on Tk and Calculator; click/hover/scroll/press/clipboard/window move-resize-focus and confirmed quit/close routes |
 | Terminal | `talos ask` one-shot and interactive chat reach the same room routes, including pointer moves and design |
 | Policy | profiles, per-app grants, destructive confirmation, content-free audit |
 | Safety | `/v1/voice` 503, no audio processes, speech/music requests blocked, unverified app writes refused |

@@ -58,3 +58,9 @@ code and avoid reimplementing input, cursor, and status UI.
 - Pages: AppleScript created a real `.pages` file and opened it with Pages
   frontmost.
 - No audio process ran during any of these checks.
+
+## Live-test safety
+
+The default live pass is read-only for the user UI. Intrusive mouse/keyboard
+checks are behind `tools/talos_live_features.py --control`; the default pass does
+not click Calculator or move the pointer.

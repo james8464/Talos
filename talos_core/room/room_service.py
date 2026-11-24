@@ -322,6 +322,31 @@ class Room:
                         text, re.I):
             return decision("reply", "I'm already muted; I won't produce audio.")
         if match := re.fullmatch(
+                r"(?:please )?(quit|close) (?:the )?(.+?)(?: (?:app|window))?[.! ]*",
+                text, re.I):
+            verb, app = match.group(1).casefold(), match.group(2).strip()
+            if app.casefold() in {"talos", "terminal", "iterm", "finder"}:
+                return decision("reply", f"I won't {verb} {app}.")
+            return decision("reply", f"That needs explicit confirmation. Say 'confirm {verb} {app}'.")
+        if match := re.fullmatch(
+                r"confirm (quit|close) (?:the )?(.+?)(?: (?:app|window))?[.! ]*",
+                text, re.I):
+            verb, app = match.group(1).casefold(), match.group(2).strip()
+            if app.casefold() in {"talos", "terminal", "iterm", "finder"}:
+                return decision("reply", f"I won't {verb} {app}.")
+            try:
+                computer = ComputerUse(state)
+                receipt = (computer.press("cmd+q", app=app, confirm=True)
+                           if verb == "quit" else
+                           computer.window("close", app=app, confirm=True))
+                data = receipt.to_dict() if hasattr(receipt, "to_dict") else receipt
+                if isinstance(data, dict) and data.get("ok") is False:
+                    return decision("reply", f"I couldn't {verb} {app}: "
+                                    f"{str(data.get('detail') or 'the app refused')[:200]}")
+            except (OSError, RuntimeError, ValueError) as error:
+                return decision("reply", f"I couldn't {verb} {app}: {error}")
+            return decision("reply", f"{'Quit' if verb == 'quit' else 'Closed'} {app}.")
+        if match := re.fullmatch(
                 r"press (?:the )?(.+?) (?:in|on) ([A-Za-z][^.!?]{0,60})[.! ]*",
                 text, re.I):
             combo, app = match.group(1).strip(), match.group(2).strip()
