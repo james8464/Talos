@@ -61,15 +61,24 @@ Exercised through `talos computer` against TextEdit and Calculator:
 - MCP stdio `initialize`, `tools/list` (4 tools) and a `talos_graph_query` call
 - launchd service remains running after quiet restart and repeated checks
 
+## Local protocol checks
+
+- Slack and Discord clients were configured and sent to a local self-signed
+  HTTPS webhook. The server received `{"text": "live test"}` and
+  `{"content": "live test"}` with HTTP 200.
+- ACP was exercised against a local JSON-RPC fixture after fixing its
+  `--command` parser collision; `initialize`, `session/new` and
+  `session/prompt` returned `pong`.
+
 ## Not live-verified here
 
 These require external credentials, endpoints, hardware or operator input that
 were not available in this environment:
 
 - Telegram pairing/bot polling (no owner token configured)
-- Slack and Discord sends (no webhook URLs configured)
+- Real Slack/Discord workspace webhooks (only a local HTTPS receiver was used)
 - Feishu document/drive calls (no app credentials)
-- ACP command sessions (no external ACP command selected)
+- External ACP agents (only a local protocol fixture was used)
 - Camera-based vision (no camera frame supplied)
 - Microphone dictation/playback (silent environment, no audio hardware use)
 
