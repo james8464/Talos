@@ -92,6 +92,22 @@ class NativeAppsTests(unittest.TestCase):
         self.assertIn("MCP", replies[3])
         self.assertIn("confirmation", replies[4])
 
+    def test_open_installed_app_and_frontmost(self):
+        from pathlib import Path
+        from unittest.mock import patch
+
+        with patch("talos_core.mac.native_apps.installed_app",
+                   return_value=Path("/Applications/Calculator.app")), \
+             patch("talos_core.mac.native_apps._run") as run:
+            self.assertEqual(native_apps.command("Open Calculator.", self.state),
+                             "Opened Calculator.")
+            run.assert_called_once()
+        with patch("talos_core.mac.native_apps.installed_app", return_value=None):
+            self.assertIsNone(native_apps.command("Open the last design in Pages.", self.state))
+        with patch("talos_core.mac.computer_use.ComputerUse.frontmost",
+                   return_value={"app": "Calculator"}):
+            self.assertIn("Calculator", native_apps.command("Which app is in front?", self.state))
+
     def test_only_http_urls_are_opened(self):
         with self.assertRaises(native_apps.NativeAppError):
             native_apps.open_url("file:///etc/passwd")

@@ -228,6 +228,10 @@ def run(keep: bool = False) -> dict:
     app_status = ask(token, "Check app status.")["reply"]
     check(checks, "app_status", "Accessibility" in app_status and "EventKit exports" in app_status,
           app_status)
+    opened = ask(token, "Open Calculator.")["reply"]
+    check(checks, "open_app", "Opened Calculator" in opened, opened)
+    front = ask(token, "Which app is in front?")["reply"]
+    check(checks, "frontmost_app", "Calculator" in front, front)
 
     app_search = ask(token, "Search my notes for zzzznomatch.")["reply"]
     check(checks, "native_app_search", "No matching" in app_search or "disabled" in app_search,

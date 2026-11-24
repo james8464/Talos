@@ -212,16 +212,31 @@ def _apps(args) -> int:
 def _ask(args) -> int:
     from talos_core.interfaces import room_client
 
-    try:
-        result = room_client.turn(args.state, " ".join(args.text), timeout=args.timeout)
-    except room_client.RoomClientError as error:
-        print(f"Talos ask: {error}", file=sys.stderr)
-        return 1
-    if args.json:
-        print(json.dumps(result, indent=2, ensure_ascii=False))
-    else:
-        print(result.get("reply") or "(no reply)")
-    return 0
+    def one(text: str) -> bool:
+        try:
+            result = room_client.turn(args.state, text, timeout=args.timeout)
+        except room_client.RoomClientError as error:
+            print(f"Talos ask: {error}", file=sys.stderr)
+            return False
+        if args.json:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            print(result.get("reply") or "(no reply)")
+        return True
+
+    if args.text:
+        return 0 if one(" ".join(args.text)) else 1
+    print("Talos room · type /quit to leave. Text only; audio stays muted.")
+    while True:
+        try:
+            line = input("You> ")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if line.strip() in {"/quit", "/exit", "/q"}:
+            return 0
+        if line.strip():
+            one(line)
 
 
 def _design(args) -> int:
@@ -994,7 +1009,7 @@ def build_parser() -> argparse.ArgumentParser:
     apps.set_defaults(func=_apps)
 
     ask = commands.add_parser("ask", help="Ask the running Talos room and print its reply.")
-    ask.add_argument("text", nargs="+")
+    ask.add_argument("text", nargs="*")
     ask.add_argument("--state", type=Path, default=ROOT / "state")
     ask.add_argument("--timeout", type=float, default=240)
     ask.add_argument("--json", action="store_true")

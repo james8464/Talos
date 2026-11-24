@@ -160,6 +160,38 @@ def run_shortcut(name):
     return f"Ran shortcut {name}."
 
 
+APP_DIRS = (Path("/Applications"), Path("/System/Applications"),
+            Path.home() / "Applications")
+
+
+def installed_app(name):
+    """Resolve an installed .app bundle without accepting paths or shell text."""
+    clean = " ".join(str(name).split())[:80]
+    if not clean or "/" in clean or clean in (".", ".."):
+        return None
+    for base in APP_DIRS:
+        candidate = base / f"{clean}.app"
+        if candidate.is_dir():
+            return candidate
+    lowered = clean.casefold()
+    for base in APP_DIRS:
+        if not base.is_dir():
+            continue
+        for candidate in base.glob("*.app"):
+            if candidate.stem.casefold() == lowered:
+                return candidate
+    return None
+
+
+def open_application(name):
+    """Open an installed application, or return None for an unknown name."""
+    app = installed_app(name)
+    if app is None:
+        return None
+    _run([OPEN, "-a", str(app)], timeout=15)
+    return f"Opened {app.stem}."
+
+
 def open_path(path):
     target = Path(str(path)).expanduser()
     if not target.exists():
@@ -326,11 +358,23 @@ def command(text, state):
     path = re.fullmatch(r"open folder (.+?)[.!]?", words, re.I)
     if path:
         return open_path(path.group(1).strip())
+    app_open = re.fullmatch(r"(?:open|launch) (?:the )?(.+?)(?: app)?[.!]?", words, re.I)
+    if app_open:
+        opened = open_application(app_open.group(1).strip())
+        if opened:
+            return opened
     directions = re.fullmatch(r"(?:directions|navigate) to (.+?)[.!]?", words, re.I)
     if directions:
         return maps_directions(directions.group(1))
     if re.fullmatch(r"(?:what(?:'s| is) playing|music status)[?.! ]*", words, re.I):
         return music_state()
+    if re.fullmatch(
+        r"(?:what(?:'s| is) (?:the )?frontmost app|which app is in front|"
+        r"what app is in front)[?.! ]*", words, re.I,
+    ):
+        from talos_core.mac.computer_use import ComputerUse
+        front = ComputerUse(state, cursor=False).frontmost()
+        return f"The frontmost app is {front.get('app') or 'unknown'}."
     if re.fullmatch(
         r"(?:(?:check )?(?:app|mac) status|which apps can you (?:control|use)|"
         r"what apps can you use)[?.! ]*", words, re.I,

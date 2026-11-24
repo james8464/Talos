@@ -147,6 +147,18 @@ class CliTests(unittest.TestCase):
         self.assertEqual(args.command, "acp")
         self.assertEqual(args.acp_command, "python fixture.py")
 
+    def test_ask_repl_reads_turns_from_the_terminal(self):
+        state = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        output = io.StringIO()
+        with patch("builtins.input", side_effect=["hello", "/quit"]), \
+             patch("talos_core.interfaces.room_client.turn",
+                   return_value={"reply": "hi there"}), \
+             redirect_stdout(output):
+            code = cli.main(["ask", "--state", str(state)])
+        self.assertEqual(code, 0)
+        self.assertIn("Talos room", output.getvalue())
+        self.assertIn("hi there", output.getvalue())
+
     def test_design_command_creates_artifacts(self):
         state = Path(self.enterContext(tempfile.TemporaryDirectory()))
         output = io.StringIO()
