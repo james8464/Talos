@@ -1156,7 +1156,7 @@ class Room:
             elif name := visitor_memory.introduced_name(text):
                 reply = f"Nice to meet you, {name}."
             elif room_vision.visual_question(text):
-                reply = room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"))
+                reply = room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent)
             elif quick := sensor_answer(text, "voice", body.get("occupied")):
                 reply = quick
             elif words in ("what needs my attention", "what still needs my attention"):
@@ -1245,7 +1245,7 @@ class Room:
             elif source == "voice" and re.fullmatch(r"(hello|hi|hey|uh+|um+|hmm+)[.!,? ]*", text.strip(), re.I):
                 proposal = decision("ignore", "")
             elif room_vision.visual_question(text):
-                proposal = decision("reply", room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people")))
+                proposal = decision("reply", room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent))
             elif quick:
                 proposal = decision("reply", quick)
             elif (quantity := quantity_answer(text, dialogue)) is not None:

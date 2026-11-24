@@ -27,6 +27,14 @@ class CameraVisionTests(unittest.TestCase):
         self.assertIn("more than one person", room_vision.answer("What am I wearing?", self.frame, 2))
         self.assertIn("can't see a person", room_vision.answer("What am I wearing?", self.frame, 0))
 
+    def test_presence_questions_use_scene_counts_without_identity(self):
+        self.assertTrue(room_vision.visual_question("Is anyone there?"))
+        self.assertIn("empty", room_vision.answer("Is anyone there?", self.frame, 0))
+        self.assertIn("one person", room_vision.answer("Is the room occupied?", self.frame, 1))
+        self.assertIn("2 people", room_vision.answer("How many people are here?", self.frame, 2))
+        with patch.object(room_vision, "_scene_people", return_value=1):
+            self.assertIn("one person", room_vision.answer("Is anyone there?", self.frame))
+
     def test_bad_or_missing_frames_fail_closed(self):
         self.assertIn("fresh camera frame", room_vision.answer("What do you see?", None))
         with self.assertRaises(ValueError):

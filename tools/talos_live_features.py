@@ -441,6 +441,17 @@ Path(sys.argv[1]).write_bytes(raw)
 
     vision = ask(token, "What can you see right now?")["reply"]
     check(checks, "camera_handshake", "camera frame" in vision or "can't see" in vision, vision)
+    from PIL import Image
+    empty_frame = Path(tempfile.mkdtemp()) / "empty-room.jpg"
+    Image.new("RGB", (320, 240), (20, 30, 40)).save(empty_frame)
+    status, presence = post("/v1/turn", {"text": "Is anyone there?",
+                                         "source": "text",
+                                         "camera_jpeg": base64.b64encode(
+                                             empty_frame.read_bytes()).decode()}, token)
+    check(checks, "vision_presence",
+          status == 200 and "empty" in (presence.get("reply") or "").casefold(),
+          (presence.get("reply") or "")[:160])
+    empty_frame.unlink(missing_ok=True)
 
     status, voice = post("/v1/voice", {"text": "This must never play."}, token, timeout=30)
     check(checks, "voice_disabled", status == 503 and "wav" not in voice,

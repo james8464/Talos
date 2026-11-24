@@ -42,3 +42,11 @@ remains muted.
 - A blank frame: `{"people": 0, "faces": 0, "empty": true}`.
 - Kokoro produced a valid 5.12 s, 24 kHz mono WAV; the player path was
   exercised at volume 0 and the running service stayed muted.
+
+## Room presence
+
+`/v1/turn` accepts a `camera_jpeg` plus `Is anyone there?` / `Is the room empty?`.
+The room runs the Vision detector on that frame and answers from the count:
+an empty frame → `The room looks empty.`; one person → `I see one person.`
+It deliberately does not identify the person without an explicit face
+enrollment feature.
