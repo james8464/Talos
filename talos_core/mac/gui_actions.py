@@ -94,7 +94,16 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
             result = {"click": None, "type": typed}
         else:
             clicked = computer.click_ref(app, choice["ref"])
-            typed = computer.type_ref(app, choice["ref"], str(_required(value, "value")))
+            if _failed(clicked):
+                _activate(computer, app)
+                clicked = _click(computer, x, y)
+                typed = computer.type_text(str(_required(value, "value")))
+            else:
+                typed = computer.type_ref(app, choice["ref"], str(_required(value, "value")))
+                if _failed(typed):
+                    _activate(computer, app)
+                    _click(computer, x, y)
+                    typed = computer.type_text(str(_required(value, "value")))
             result = {"click": clicked, "type": typed}
     elif action == "double_click":
         _activate(computer, app)
@@ -117,6 +126,9 @@ def target(computer: ComputerUse, app: str, action: str, description: str,
             result = _click(computer, x, y).to_dict()
     else:
         result = computer.click_ref(app, choice["ref"])
+        if _failed(result):
+            _activate(computer, app)
+            result = _click(computer, x, y)
     return {"ok": True, "app": app, "description": description,
             "ref": choice.get("ref"), "label": choice.get("label", ""),
             "center": [x, y], "action": action, "source": source, "result": result}
@@ -130,6 +142,13 @@ def _click(computer, x: int, y: int, *, button: str = "left", count: int = 1,
     if button == "right":
         return computer.right_click(x, y, confirm=confirm, app=app)
     return computer.click(x, y, count=count, confirm=confirm, app=app)
+
+
+def _failed(result) -> bool:
+    if not isinstance(result, dict):
+        return False
+    return result.get("ok") is False or "did not change" in str(
+        result.get("hint", "")).casefold()
 
 
 def _activate(computer, app: str) -> None:

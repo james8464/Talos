@@ -119,6 +119,17 @@ class GuiActionTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertEqual([call for call in self.computer.calls if call[0] != "ocr"], [])
 
+    def test_accessibility_click_falls_back_to_hid(self):
+        with patch.object(self.computer, "choose",
+                          return_value={"ref": "7", "center": [80, 90]}), \
+             patch.object(self.computer, "click_ref",
+                          return_value={"ok": False, "hint": "did not change"}):
+            result = gui_actions.target(self.computer, "App", "click", "the button")
+        self.assertTrue(result["ok"])
+        self.assertIn(("hid_click", (80, 90), {"button": "left", "count": 1,
+                                              "confirm": False, "app": None}),
+                      self.computer.calls)
+
     def test_ocr_fallback_clicks_a_custom_drawn_control(self):
         with patch.object(self.computer, "choose", return_value={}), \
              patch.object(self.computer, "ocr", return_value={"matches": [

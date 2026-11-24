@@ -36,7 +36,8 @@ code and avoid reimplementing input, cursor, and status UI.
 
 ## Decisions
 
-- Keep AX first (`perception.choose`/`click_ref`).
+- Keep AX first (`perception.choose`/`click_ref`), and automatically retry an
+  AX action that reports no change as an activated HID click (AX-to-HID fallback).
 - Fall back to OCR-visible text when a control has no AX node.
 - Use `computer_harness.engine.click` (then `post_click_to_pid`) for coordinate
   clicks; never add `cliclick` as a required dependency.
