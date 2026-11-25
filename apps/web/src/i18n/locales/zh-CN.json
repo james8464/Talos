@@ -44,6 +44,9 @@
     "interfaceLanguage": "界面语言",
     "interfaceLanguageHint": "仅保存在这台设备上。Agent 和其他人写的内容保持原样，不会被翻译。",
     "languageUnavailable": "无法加载这种语言，请检查网络后重试。",
+    "captureCheck": "测试摄像头和麦克风",
+    "captureCheckDone": "已捕获 {frame} 字节的画面和 {audio} 字节的音频；媒体已删除。",
+    "captureCheckFailed": "捕获失败。请检查 macOS 的摄像头和麦克风权限。",
     "saveDiagnostics": "保存诊断信息…",
     "saveDiagnosticsFailed": "无法保存诊断信息，请重试。"
   },
@@ -77,8 +80,12 @@
     "noMessages": "暂无消息",
     "deleted": "已删除",
     "deletedChat": "{name}，已删除",
-    "unreadMentions": { "other": "{count} 条未读提及" },
-    "unreadMessages": { "other": "{count} 条未读消息" },
+    "unreadMentions": {
+      "other": "{count} 条未读提及"
+    },
+    "unreadMessages": {
+      "other": "{count} 条未读消息"
+    },
     "pinned": "已置顶",
     "pin": "置顶",
     "unpin": "取消置顶",
@@ -288,8 +295,12 @@
     "fileUnavailable": "{name} 不可用",
     "loadingFile": "正在加载 {name}",
     "loadingImage": "正在加载图片…",
-    "fileCount": { "other": "{count} 个文件" },
-    "folderCount": { "other": "{count} 个文件夹" },
+    "fileCount": {
+      "other": "{count} 个文件"
+    },
+    "folderCount": {
+      "other": "{count} 个文件夹"
+    },
     "fileTypeArchive": "压缩包",
     "fileTypeAudio": "音频",
     "fileTypeCode": "代码",
@@ -323,7 +334,9 @@
     "showChanges": "显示更改",
     "instructionsUpdated": "指令已更新",
     "viewInAgentInfo": "在 Agent 信息中查看",
-    "replyCount": { "other": "{count} 条回复" },
+    "replyCount": {
+      "other": "{count} 条回复"
+    },
     "backgroundFailedIncompatible": {
       "other": "后台任务已连续失败 {count} 次：Runtime 不兼容，或你的账号不能使用它的模型。请更新本地的 CLI 或 Talos，或检查它的模型设置。"
     },
@@ -509,7 +522,9 @@
     "addAppFromAccount": "从 {account} 添加 {app}",
     "connectedAs": "已连接：{account}",
     "unnamedAccount": "账号",
-    "connectedAccountsCount": { "other": "已连接 {count} 个账号" },
+    "connectedAccountsCount": {
+      "other": "已连接 {count} 个账号"
+    },
     "unavailable": "不可用",
     "connectionNeedsAttention": "连接需要在连接器中处理",
     "authorizationInProgress": "授权进行中",
@@ -535,10 +550,18 @@
     "addGitHubProfileAndRepositories": {
       "other": "添加 GitHub 个人资料和 {count} 个仓库"
     },
-    "addCalendars": { "other": "添加 {count} 个日历" },
-    "addNotionItems": { "other": "添加 {count} 项 Notion 内容" },
-    "addSlackChannels": { "other": "添加 {count} 个 Slack 频道" },
-    "addDiscordChannels": { "other": "添加 {count} 个 Discord 频道" },
+    "addCalendars": {
+      "other": "添加 {count} 个日历"
+    },
+    "addNotionItems": {
+      "other": "添加 {count} 项 Notion 内容"
+    },
+    "addSlackChannels": {
+      "other": "添加 {count} 个 Slack 频道"
+    },
+    "addDiscordChannels": {
+      "other": "添加 {count} 个 Discord 频道"
+    },
     "filesHint": "支持 PDF、Word 或文本文件，最多五个。",
     "profileFiles": "个人资料文件",
     "chooseFiles": "选择文件",
@@ -646,8 +669,12 @@
     "newAgent": "新建 Agent {name}",
     "changeAgent": "修改 {name}",
     "newRoom": "新建 Room {name}",
-    "memberCount": { "other": "{count} 位成员" },
-    "memberCountWithNames": { "other": "{count} 位成员 · {names}" },
+    "memberCount": {
+      "other": "{count} 位成员"
+    },
+    "memberCountWithNames": {
+      "other": "{count} 位成员 · {names}"
+    },
     "fieldDescription": "描述",
     "fieldName": "名称",
     "newInstructions": "新指令",
@@ -696,8 +723,12 @@
     "ownAnswerTo": "填写你对“{question}”的回答",
     "ownAnswer": "填写你的回答",
     "labelAnotherMeSetup": "Another Me 设置",
-    "linkCount": { "other": "{count} 个链接" },
-    "fileCount": { "other": "{count} 个文件" },
+    "linkCount": {
+      "other": "{count} 个链接"
+    },
+    "fileCount": {
+      "other": "{count} 个文件"
+    },
     "sharedItems": "已分享 {items}",
     "sharedLinksAndFiles": "已分享 {links}和 {files}",
     "nothingShared": "没有分享内容",
@@ -1024,10 +1055,14 @@
     "noAgents": "这台电脑上还没有 Agent，可以在“消息”中创建。",
     "less": "收起",
     "more": "更多",
-    "tasksRunning": { "other": "{count} 个任务运行中" },
+    "tasksRunning": {
+      "other": "{count} 个任务运行中"
+    },
     "appSignInNeeded": "需要登录 {app}",
     "statusUnavailable": "无法获取状态",
-    "agentsNeedAttention": { "other": "{count} 个需要处理" },
+    "agentsNeedAttention": {
+      "other": "{count} 个需要处理"
+    },
     "agentsOffline": "{count} 个离线",
     "agentsStatusUnavailable": "{count} 个无法获取状态",
     "computerOffline": "{computer} 已离线",
@@ -1079,7 +1114,9 @@
     "removeTitle": "移除本地电脑",
     "removeDescription": "这会撤销 <strong>{computer}</strong> 的授权，并把它从这个工作区移除。之后要重新连接，需要再设置一次。",
     "noOtherComputer": "没有其他电脑可以接收这些 Agent，请先连接新电脑。",
-    "moveAndRemove": { "other": "移动 {count} 个 Agent 并移除" },
+    "moveAndRemove": {
+      "other": "移动 {count} 个 Agent 并移除"
+    },
     "moveDeleteAndRemove": "移动、删除并移除",
     "deleteAndRemove": "删除并移除",
     "deleteAgentHint": "这会把这个 Agent 从所有 Room 中移除，并删除你和它的私聊。",
@@ -1211,7 +1248,9 @@
     "contextTokens": "{tokens} tokens",
     "contextKiloTokens": "{thousands}K tokens",
     "contextCompact": "{thousands}K",
-    "agentCount": { "other": "{count} 个 Agent" },
+    "agentCount": {
+      "other": "{count} 个 Agent"
+    },
     "activeParameters": "{parameters} 激活",
     "parametersWithArchitecture": "{scale}（{architecture}）",
     "secondsLeft": "剩余 {seconds} 秒",
@@ -1253,8 +1292,12 @@
     "loadedMemoryHybrid": "{vram} 显存 + {ram} 内存",
     "sectionOnComputer": "在这台电脑上",
     "sectionAvailable": "可供下载",
-    "sectionNeedsMoreMemory": { "other": "{count} 个模型需要更大内存" },
-    "sectionUnavailable": { "other": "{count} 个模型当前无法在此电脑运行" },
+    "sectionNeedsMoreMemory": {
+      "other": "{count} 个模型需要更大内存"
+    },
+    "sectionUnavailable": {
+      "other": "{count} 个模型当前无法在此电脑运行"
+    },
     "chooseVersion": "选择 {name} 的版本",
     "variantLabelWithEngine": "{quant} · {engine}",
     "variantOptionDetail": "{label} · {detail}",
@@ -1312,7 +1355,9 @@
     "factEndpoint": "端点",
     "factFreeDisk": "可用磁盘空间",
     "memoryOn": "{size}（{place}）",
-    "idleUsedWarning": { "other": "{names} 在使用这个模型，加载后才能回复。" },
+    "idleUsedWarning": {
+      "other": "{names} 在使用这个模型，加载后才能回复。"
+    },
     "downloadNeedsRoom": "这个模型现在可以下载，不过可用内存只有 {free}（{pool}）。加载前请关闭占用内存多的应用，再重新检测内存。",
     "noAgentYet": "暂无 Agent",
     "switchAgentTo": "把 Agent 切换到 {name}",
@@ -1364,8 +1409,12 @@
     "byokExplanation": "BYOK 即自带密钥：使用你自己的 OpenAI 兼容或 Anthropic API 端点，由这台电脑上的网关提供给你的 Agent。",
     "switched": "已切换。",
     "agentsNowUse": "Agent 现在使用：{source}。",
-    "agentsMoved": { "other": "已移动 {count} 个 Agent。" },
-    "tasksEnded": { "other": "已结束 {count} 个任务。" },
+    "agentsMoved": {
+      "other": "已移动 {count} 个 Agent。"
+    },
+    "tasksEnded": {
+      "other": "已结束 {count} 个任务。"
+    },
     "terminateTitle": "结束正在运行的任务？",
     "terminateDescription": {
       "other": "{names} 正在 {computer} 上执行任务。现在切换会结束这些任务，且无法恢复。"
@@ -1407,7 +1456,9 @@
     "model": "模型",
     "listModels": "获取模型列表",
     "byokListingFrom": "正在从 {url} 获取模型列表…",
-    "byokModelsListedFrom": { "other": "已从 {url} 列出 {count} 个模型。" },
+    "byokModelsListedFrom": {
+      "other": "已从 {url} 列出 {count} 个模型。"
+    },
     "byokModelHint": "获取端点的模型列表，或者直接输入模型 ID。",
     "byokContextTokens": "{tokens} token 上下文",
     "byokContextKilo": "{thousands}K 上下文",
@@ -1674,7 +1725,9 @@
     "nothingToResend": "没有需要重新发送的消息",
     "resendFailed": "重新发送失败，请重试。",
     "backgroundTasks": "后台任务",
-    "backgroundTasksRunning": { "other": "{count} 个任务正在后台运行" },
+    "backgroundTasksRunning": {
+      "other": "{count} 个任务正在后台运行"
+    },
     "openTask": "打开任务 {title}",
     "cancelTask": "取消 {title}",
     "cancelTaskNotConfirmed": "取消 {title} 未确认，点击重试",
@@ -1738,7 +1791,9 @@
     "workingWithImages": "正在处理图片",
     "recoveringTask": "正在恢复任务",
     "reviewingResults": "正在检查结果",
-    "workingThroughSteps": { "other": "正在完成 {count} 个步骤" },
+    "workingThroughSteps": {
+      "other": "正在完成 {count} 个步骤"
+    },
     "workingThroughTask": "正在逐步完成任务",
     "phraseRead": "正在读取文件",
     "phraseEdit": "正在编辑文件",
@@ -1889,9 +1944,15 @@
     "connectorsTitle": "它需要的账号",
     "instructions": "指令",
     "instructionsTitle": "它如何工作",
-    "skillCount": { "other": "{count} 个 Skill" },
-    "routineCount": { "other": "{count} 个 Routine" },
-    "connectorCount": { "other": "{count} 个连接器" },
+    "skillCount": {
+      "other": "{count} 个 Skill"
+    },
+    "routineCount": {
+      "other": "{count} 个 Routine"
+    },
+    "connectorCount": {
+      "other": "{count} 个连接器"
+    },
     "instructionsOnly": "仅含指令",
     "publishTitle": "发布为模板",
     "publishDescription": "当前部署中的所有人都可以用它创建 Agent。",
@@ -2003,7 +2064,9 @@
     "uploadProgress": "上传进度",
     "uploadingFile": "正在上传 {filename}",
     "preparingUpload": "正在准备上传…",
-    "filesLeft": { "other": "还剩 {count} 个文件" },
+    "filesLeft": {
+      "other": "还剩 {count} 个文件"
+    },
     "currentFileUpload": "当前文件的上传进度",
     "uploadBusy": "请等当前上传完成后再添加文件。",
     "noSupportedFiles": "拖入的内容里没有支持的文件。",
@@ -2124,8 +2187,12 @@
     "summaryNotion": "页面和数据库",
     "summarySlack": "工作区和频道",
     "connected": "已连接",
-    "accountCount": { "other": "{count} 个账号" },
-    "connectedNeedsReconnecting": { "other": "已连接，{count} 个需要重新连接" },
+    "accountCount": {
+      "other": "{count} 个账号"
+    },
+    "connectedNeedsReconnecting": {
+      "other": "已连接，{count} 个需要重新连接"
+    },
     "accountsNeedReconnecting": {
       "other": "{accounts} 个账号，{count} 个需要重新连接"
     },
@@ -2298,10 +2365,18 @@
     "companies": "公司",
     "loadingTimeline": "正在加载时间线…",
     "collectionUnavailable": "这组 Wiki 页面不可用。",
-    "projectCount": { "other": "{count} 个项目" },
-    "topicCount": { "other": "{count} 个主题" },
-    "peopleCount": { "other": "{count} 位人物" },
-    "companyCount": { "other": "{count} 家公司" },
+    "projectCount": {
+      "other": "{count} 个项目"
+    },
+    "topicCount": {
+      "other": "{count} 个主题"
+    },
+    "peopleCount": {
+      "other": "{count} 位人物"
+    },
+    "companyCount": {
+      "other": "{count} 家公司"
+    },
     "searchProjects": "搜索项目",
     "searchTopics": "搜索主题",
     "searchPeople": "搜索人物",
@@ -2441,7 +2516,9 @@
     "launcherBodyWithAgent": "Agent 设置、Routine、活动和共享文档，都在对话旁边。",
     "launcherBody": "共享文档和消息话题，都在对话旁边。",
     "agentInfoHint": "{name} · 设置与活动",
-    "sharedDocumentCount": { "other": "{count} 个共享文档" },
+    "sharedDocumentCount": {
+      "other": "{count} 个共享文档"
+    },
     "browseSharedFiles": "浏览这个对话中共享的文件",
     "collaborationHint": "Agent 的职责与关系",
     "launcherFooter": "打开消息话题、文档或 Routine，就会显示在这里，对话保持原位。",
@@ -2468,7 +2545,9 @@
     "sendAnothermeMessage": "发送 Anotherme 消息",
     "send": "发送",
     "editRoom": "编辑 Room",
-    "memberCount": { "other": "{count} 位成员" },
+    "memberCount": {
+      "other": "{count} 位成员"
+    },
     "roomInfoSections": "Room 信息分区",
     "sectionAgents": "Agent",
     "sectionFiles": "文件",
@@ -2487,7 +2566,9 @@
     "agentName": "Agent 名称",
     "editName": "编辑名称 {name}",
     "online": "在线",
-    "tasksInProgress": { "other": "{count} 个任务进行中" },
+    "tasksInProgress": {
+      "other": "{count} 个任务进行中"
+    },
     "openStatus": "打开 {name} 的状态",
     "openProfile": "打开 {name} 的个人资料",
     "viewActivity": "查看活动",
@@ -2513,7 +2594,9 @@
     "agentActions": "Agent 操作",
     "profileUnavailable": "无法获取 Agent 资料。",
     "skills": "Skill",
-    "skillCount": { "other": "{count} 个 Skill" },
+    "skillCount": {
+      "other": "{count} 个 Skill"
+    },
     "add": "添加",
     "upload": "上传",
     "uploadSkill": "上传 Skill",
@@ -2525,7 +2608,9 @@
     "noSkillsTitle": "还没有添加 Skill",
     "noSkillsBody": "添加一个 Skill，让这个 Agent 用固定的方法处理某类任务。",
     "showFewerSkills": "收起",
-    "showAllSkills": { "other": "显示全部 {count} 个 Skill" },
+    "showAllSkills": {
+      "other": "显示全部 {count} 个 Skill"
+    },
     "addSkill": "添加 Skill",
     "searchSkills": "搜索 Skill",
     "loadingSkills": "正在加载 Skill…",
@@ -2633,7 +2718,9 @@
     "sharedSnapshotsHint": "每一项都是对话在当时的一份定格副本。",
     "loadingSnapshots": "正在加载已分享的快照…",
     "snapshotsLoadFailed": "无法加载已分享的快照。",
-    "messageCount": { "other": "{count} 条消息" },
+    "messageCount": {
+      "other": "{count} 条消息"
+    },
     "openSharedLink": "打开分享链接",
     "openSharedLinkFrom": "打开 {date} 的分享链接",
     "revoke": "撤销",
@@ -2650,7 +2737,9 @@
     "backToAllNotes": "返回全部笔记",
     "closeNotes": "关闭笔记",
     "readOnly": "只读",
-    "pageCount": { "other": "{count} 页" },
+    "pageCount": {
+      "other": "{count} 页"
+    },
     "pageCountOrMore": "{count}+ 页",
     "nothingWritten": "还没有写内容",
     "loadEarlier": "加载更早的笔记",
@@ -2705,8 +2794,12 @@
     "loading": "正在加载会议…",
     "couldNotLoad": "无法加载会议。",
     "calendar": "会议日历",
-    "dayCount": { "other": "{date}：{count} 场会议" },
-    "dayCountTip": { "other": "{date} · {count} 场会议" },
+    "dayCount": {
+      "other": "{date}：{count} 场会议"
+    },
+    "dayCountTip": {
+      "other": "{date} · {count} 场会议"
+    },
     "today": "今天",
     "dayToday": "{day} · 今天",
     "search": "搜索会议",
@@ -2763,7 +2856,9 @@
   "wikiTimeline": {
     "dailyReport": "日报",
     "weeklyReport": "周报",
-    "reportCount": { "other": "{count} 份报告 · 按天浏览" },
+    "reportCount": {
+      "other": "{count} 份报告 · 按天浏览"
+    },
     "generating": "正在生成 Wiki…",
     "unavailable": "时间线不可用。",
     "graphUnavailable": "个人知识图谱暂不可用",
@@ -2900,13 +2995,17 @@
     "upcomingDetailDistance": "{day} · {time} · {distance}",
     "today": "今天",
     "tomorrow": "明天",
-    "inDays": { "other": "{count} 天后" },
+    "inDays": {
+      "other": "{count} 天后"
+    },
     "enabledRoutine": "已启用“{name}”",
     "pausedRoutine": "已暂停“{name}”",
     "undo": "撤销",
     "undoFailed": "无法撤销。",
     "everyMinutes": "每 {count} 分钟",
-    "everyHours": { "other": "每 {count} 小时" },
+    "everyHours": {
+      "other": "每 {count} 小时"
+    },
     "once": "一次",
     "onceAt": "一次 · {when}",
     "dailyAt": "每天 · {time}",
@@ -2951,7 +3050,9 @@
   "roomDocuments": {
     "title": "文件",
     "noDocumentsYet": "这个 Room 还没有文档",
-    "fileCount": { "other": "{count} 个文件" },
+    "fileCount": {
+      "other": "{count} 个文件"
+    },
     "roomFiles": "Room 文件",
     "openFile": "打开 {name}",
     "downloadFile": "下载 {name}",
@@ -2969,7 +3070,9 @@
   },
   "collaboration": {
     "roomCollaboration": "Room 协作",
-    "agentCount": { "other": "{count} 个 Agent" },
+    "agentCount": {
+      "other": "{count} 个 Agent"
+    },
     "refresh": "刷新协作",
     "accessLost": "你已失去这项协作的访问权限。",
     "loadFailed": "无法加载协作。",
