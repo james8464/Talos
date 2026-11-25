@@ -76,3 +76,5 @@ Status meanings: **ported** (works here and is tested here), **present**
    | Real model call through the Codex Runtime on local Ollama | **partial** | `ollama-codex-model` runs Codex against `qwen3:4b-8k`; daemon catalog placement is still open. |
    | Room Thread create, reply, summary and search | **present** | `TestRoomThreadJourneyLive` covers the full path and the live harness runs it. |
    | Real model-generated Agent conversation | **partial** | `qwen3:4b-8k` generated a reply through the Agent Service; the reply guard blocked persisting it because the model did not answer the inbox. |
+   | Tenant message search journey | **present** | `room-search-journey` covers visibility, pagination and case-insensitive hits. |
+   | Direct Room lifecycle and Agent visibility | **present** | `room-direct-journey` covers opening, visibility and deletion. |

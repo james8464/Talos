@@ -269,3 +269,10 @@ agent.model_request model=qwen3:4b-8k duration_ms=41234
 The run was then stopped by the Room reply guard because the local model did not
 answer the inbox item, so no reply was persisted. That is a tool-use limitation
 of the small model, not a missing model call.
+
+## Search and Direct Room journeys
+
+The live harness also runs `TestGlobalSearchMessagesPublicHTTP`
+(`room-search-journey`: visibility, pagination and case-insensitive search) and
+`TestPrivateAgentVisibilityAndDirectRoomLifecycle` (`room-direct-journey`:
+Direct Room lifecycle and Agent visibility).

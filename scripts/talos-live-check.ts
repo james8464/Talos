@@ -370,6 +370,36 @@ async function main(): Promise<number> {
     }
   }
 
+  if (process.env.TEST_DATABASE_URL && process.env.TEAMHUB_TEST_RUN_TOKEN) {
+    for (const [name, testName, detail] of [
+      [
+        "room-search-journey",
+        "TestGlobalSearchMessagesPublicHTTP",
+        "visibility, pagination and case-insensitive search",
+      ],
+      [
+        "room-direct-journey",
+        "TestPrivateAgentVisibilityAndDirectRoomLifecycle",
+        "direct Room lifecycle and Agent visibility",
+      ],
+    ] as const) {
+      try {
+        await exec(
+          process.env.GO_BIN ?? "go",
+          ["test", "./tests/integration", "-run", testName, "-count=1"],
+          {
+            cwd: path.join(ROOT, "apps/teamhub"),
+            env: process.env,
+            timeout: 300_000,
+          },
+        );
+        check(name, true, detail);
+      } catch (error) {
+        check(name, false, (error as Error).message);
+      }
+    }
+  }
+
   if (process.env.TALOS_LIVE_AGENT === "1") {
     try {
       await exec("node", [path.join(ROOT, "scripts/talos-agent-live.mjs")], {
