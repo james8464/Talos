@@ -4,8 +4,8 @@
  * Starts only the identity, perception and coding roles with TALOS_MUTE=1,
  * proves the voice runtime refuses to start, captures one frame/clip and
  * deletes it, classifies both over HTTP, asks the on-device vision model,
- * exercises identity and coding commands, then verifies no voice/audio
- * process is left behind.
+ * exercises identity and coding commands, runs the browser Room Document
+ * journeys, then verifies no voice/audio process is left behind.
  *
  * Run: pnpm exec tsx scripts/talos-live-check.ts
  */
@@ -262,6 +262,43 @@ async function main(): Promise<number> {
       );
     } catch (error) {
       check("room-commands", false, (error as Error).message);
+    }
+  }
+
+  if (
+    process.env.TALOS_LIVE_DOCUMENT_E2E !== "0" &&
+    process.env.TEST_DATABASE_URL &&
+    process.env.TEAMHUB_TEST_RUN_TOKEN
+  ) {
+    try {
+      await exec(
+        "pnpm",
+        [
+          "exec",
+          "playwright",
+          "test",
+          "--config",
+          "e2e/playwright.room-document.config.ts",
+          "-g",
+          "persists an anchored comment|renames the Document from its title",
+        ],
+        {
+          cwd: ROOT,
+          env: {
+            ...process.env,
+            TEAMHUB_ALLOW_EXTERNAL_TEST_DATABASE: "1",
+          },
+          timeout: 900_000,
+          maxBuffer: 20 * 1024 * 1024,
+        },
+      );
+      check(
+        "room-document-e2e",
+        true,
+        "create, edit, comment and reopen in a real browser",
+      );
+    } catch (error) {
+      check("room-document-e2e", false, (error as Error).message);
     }
   }
 

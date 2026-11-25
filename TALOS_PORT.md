@@ -174,3 +174,11 @@ failure-identity match. The Room coding worker stores one hash per sandbox
 failure; when two identical failures repeat it stops instead of retrying and
 reports that the same failure repeated. `TestRoomCodingWorkerStopsRepeatedSandboxFailures`
 covers the Postgres path and the live harness runs it.
+
+## Room Document journey
+
+`pnpm talos:live` also runs two real browser journeys against TeamHub, the
+Document Runtime and Web: it renames a Document and edits its body, then adds
+an anchored comment and reopens the Thread in another session. The check is
+`room-document-e2e`; it is skipped when `TALOS_LIVE_DOCUMENT_E2E=0` or no test
+database is configured.
