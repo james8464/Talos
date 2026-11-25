@@ -431,6 +431,29 @@ def _av_readiness(args) -> int:
     return 0
 
 
+def _capture_check(args) -> int:
+    from talos_core.mac import capture_check
+
+    if not args.consent_capture:
+        print("Talos capture-check: refusing without --consent-capture.", file=sys.stderr)
+        return 2
+    try:
+        result = capture_check.check(args.state, consent=True,
+                                     seconds=args.seconds, timeout=args.timeout)
+    except PermissionError as error:
+        print(f"Talos capture-check: {error}", file=sys.stderr)
+        return 2
+    except capture_check.CaptureError as error:
+        print(f"Talos capture-check: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"Captured {result['seconds']:.1f}s; {result['scene_description']}; "
+              f"{result['sound_event_count']} sound events; media deleted.")
+    return 0
+
+
 def _design(args) -> int:
     from talos_core import design_studio
 
@@ -1260,6 +1283,16 @@ def build_parser() -> argparse.ArgumentParser:
     av.add_argument("--timeout", type=float, default=60)
     av.add_argument("--json", action="store_true")
     av.set_defaults(func=_av_readiness)
+
+    capture_check = commands.add_parser(
+        "capture-check", help="Capture one frame and clip only with explicit consent.")
+    capture_check.add_argument("--consent-capture", action="store_true",
+                               help="Required: confirm you consent to one local capture.")
+    capture_check.add_argument("--seconds", type=float, default=1.0)
+    capture_check.add_argument("--timeout", type=float, default=180)
+    capture_check.add_argument("--state", type=Path, default=ROOT / "state")
+    capture_check.add_argument("--json", action="store_true")
+    capture_check.set_defaults(func=_capture_check)
 
     design = commands.add_parser("design", help="Create a poster, nameplate or Pages document.")
     design.add_argument("--kind", choices=("poster", "nameplate", "document"), default="poster")

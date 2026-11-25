@@ -71,3 +71,12 @@ never creates a capture session, records media, or triggers a permission
 prompt: `not_determined` is reported as-is. The response includes
 `capture_started` and `recording_started`, both `false`, and `ready` only when
 both permissions are authorized and both devices exist.
+
+## Consent-gated capture check
+
+`talos capture-check` is off unless `--consent-capture` is passed. With the
+flag it requests camera/microphone access, captures one JPEG frame and a short
+WAV clip, sends them to `/v1/vision/scene` and `/v1/sound`, and deletes the
+temporary media even when verification fails. Without the flag it exits `2`
+before compiling or capturing anything. The native helper is only invoked on
+the consented path.

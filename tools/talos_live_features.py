@@ -799,6 +799,16 @@ print(json.dumps({"start": start, "run": run, "result": result,
           f"devices {av_local.get('camera_device')}/{av_local.get('microphone_device')} "
           f"endpoint {av_status}")
 
+    guard = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "capture-check", "--state", str(ROOT / "state")],
+        capture_output=True, text=True, timeout=60,
+    )
+    check(checks, "capture_consent_guard",
+          guard.returncode == 2
+          and "consent" in guard.stderr.casefold()
+          and not list((ROOT / "state").glob(".capture-*")),
+          (guard.stderr or guard.stdout).strip()[:200])
+
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 
