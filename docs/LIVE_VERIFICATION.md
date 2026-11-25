@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `826 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `87/87` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
+- Unit suite: `827 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `88/88` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
 - Ruff: clean.
 
 ## Live feature pass
@@ -53,6 +53,7 @@ Latest results:
 | Browser | local page read, text click, field typing, form search/submit, and private screenshot through headless Chrome CDP |
 | Self-reported identity | After an introduction, recognition questions answer with the self-reported name and an explicit cannot-verify caveat; the claim expires after 30 minutes and "forget my name" clears it |
 | Capture consent guard | `talos capture-check` exits 2 without `--consent-capture`, starts no capture and leaves no media |
+| Capture guidance | Camera/microphone requests in the room explain the consent flag instead of implying capture already happens |
 | AV readiness | `talos av-readiness` and `GET /v1/av/readiness` report camera/mic permission and device presence with `capture_started=false`; no permission prompt or recording |
 | Sound/scene | SoundAnalysis labels; Vision people/face counts; room presence; `/v1/sound` and `/v1/vision/scene` live endpoint checks |
 | Processes | `talos processes`/status report room, workers, listeners, stale and audio processes |

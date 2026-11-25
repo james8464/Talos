@@ -828,6 +828,15 @@ print(json.dumps({"start": start, "run": run, "result": result,
           and "haven't confirmed" in after_forget.casefold(),
           after_forget[:200])
 
+    capture_photo = ask(token, "Can you take a photo?")["reply"]
+    capture_mic = ask(token, "Can you record my voice?")["reply"]
+    check(checks, "capture_guidance",
+          "consent" in capture_photo.casefold()
+          and "capture-check" in capture_photo
+          and "consent" in capture_mic.casefold()
+          and "capture-check" in capture_mic,
+          capture_photo[:200])
+
     capability = ask(token, "In one short sentence, what can you run in the background?")["reply"]
     check(checks, "capability_reply",
           "muted" in capability.casefold() and "can't play" in capability.casefold(),

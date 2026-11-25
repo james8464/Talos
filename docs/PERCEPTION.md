@@ -79,7 +79,8 @@ flag it requests camera/microphone access, captures one JPEG frame and a short
 WAV clip, sends them to `/v1/vision/scene` and `/v1/sound`, and deletes the
 temporary media even when verification fails. Without the flag it exits `2`
 before compiling or capturing anything. The native helper is only invoked on
-the consented path.
+the consented path. Asking the room "can you take a photo?" or "can you record
+my voice?" explains this consent flow rather than implying capture is active.
 
 ## Self-reported identity
 

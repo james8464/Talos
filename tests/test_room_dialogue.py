@@ -162,6 +162,18 @@ class RoomDialogueTests(unittest.TestCase):
         self.assertIn("forgot", self.turn("Forget my name.", source="text")["reply"])
         self.assertEqual(self.turn("Do you recognize me?", source="text")["reply"], IDENTITY)
 
+    def test_capture_requests_explain_consent(self):
+        from talos_core.room.room_dialogue import capability_answer
+
+        for question in ("Can you take a photo?", "Can you record my voice?"):
+            reply = capability_answer(question, audio=False)
+            self.assertIn("consent", reply.casefold())
+            self.assertIn("capture-check", reply)
+        with patch("talos_core.room.room_service.plan",
+                   side_effect=AssertionError("unexpected planner call")):
+            reply = self.turn("Can you take a picture?", source="text")["reply"]
+        self.assertIn("consent", reply.casefold())
+
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
         for proposal in (decision("ignore", ""), decision("reply", "Hello.")):
             with patch("talos_core.room.room_service.plan", return_value=proposal):

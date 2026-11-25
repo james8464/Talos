@@ -236,6 +236,17 @@ def capability_answer(message, *, audio):
             re.search(r"what (?:runs|works) in the background\s*$", words):
         return ("I can queue background work such as reminders and notes, and run "
                 "bounded coding jobs in a sandbox. " + audio_state)
+    if re.search(r"(?:can|could|do) you (?:take|grab|capture) (?:a )?"
+                 r"(?:photo|picture|frame|snapshot|image)\s*$", words):
+        return ("I don't open the camera without explicit consent. Run "
+                "`talos capture-check --consent-capture` to allow one frame; "
+                "otherwise I only classify media you provide.")
+    if re.search(r"(?:can|could|do) you (?:record|listen to) (?:my )?"
+                 r"(?:voice|audio|microphone|mic)\s*$", words) or \
+            re.search(r"(?:are you|can you) (?:recording|listening)\s*$", words):
+        return ("I don't record the microphone without explicit consent. "
+                "`talos capture-check --consent-capture` records one short clip, "
+                "verifies it, and deletes it.")
     if re.search(r"(?:can|could|do) you (?:play|make) (?:some )?(?:music|audio|sound|sounds|noise)\s*$", words) or \
             re.search(r"can you (?:talk|speak) (?:out loud|aloud)\s*$", words):
         return audio_state
