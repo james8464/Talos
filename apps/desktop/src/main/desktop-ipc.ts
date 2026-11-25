@@ -28,6 +28,11 @@ import {
   type DesktopPermissionHost,
 } from "./system-permissions.js";
 import { TalosMediaCapture } from "./talos-media-capture.js";
+import { TalosPerception } from "./talos-perception.js";
+import {
+  classifySceneBase64,
+  classifySoundBase64,
+} from "./talos-perception-endpoint.js";
 import type { UpdaterModule, UpdateState } from "./updater.js";
 import type { WindowManagerModule } from "./window-manager.js";
 import type { WorkspaceGrantsModule } from "./workspace-grants.js";
@@ -114,6 +119,7 @@ export class DesktopIpcModule implements Module {
   readonly #permissions: DesktopPermissionHost | undefined;
   readonly #driverUpdater: DriverUpdaterHost | undefined;
   readonly #unsubscribe: (() => void)[] = [];
+  #perceptionInstance: TalosPerception | undefined;
 
   constructor(options: {
     defaultDisplayName: string;
@@ -123,6 +129,25 @@ export class DesktopIpcModule implements Module {
     this.#defaultDisplayName = options.defaultDisplayName;
     this.#permissions = options.permissions;
     this.#driverUpdater = options.driverUpdater;
+  }
+
+  #perception(): TalosPerception {
+    if (this.#perceptionInstance) return this.#perceptionInstance;
+    const sourceDir = [
+      path.join(process.resourcesPath, "talos"),
+      path.join(app.getAppPath(), "resources/talos"),
+      path.join(app.getAppPath(), "dist/talos"),
+    ].find((candidate) =>
+      existsSync(path.join(candidate, "vision_scene.swift")),
+    );
+    if (!sourceDir)
+      throw new Error("The native perception helpers are missing.");
+    this.#perceptionInstance = new TalosPerception({
+      sourceDir,
+      runtimeDir: path.join(app.getPath("userData"), "native"),
+      compiler: "swiftc",
+    });
+    return this.#perceptionInstance;
   }
 
   async start(ctx: ModuleContext): Promise<void> {
@@ -292,6 +317,16 @@ export class DesktopIpcModule implements Module {
         frameBytes: Buffer.from(receipt.frameBase64, "base64").length,
         audioBytes: Buffer.from(receipt.audioBase64, "base64").length,
       };
+    });
+
+    handle(IPC.perceptionScene, (image) => {
+      if (typeof image !== "string") throw new Error("Provide a base64 image.");
+      return classifySceneBase64(this.#perception(), image);
+    });
+    handle(IPC.perceptionSound, (audio) => {
+      if (typeof audio !== "string")
+        throw new Error("Provide base64 WAV audio.");
+      return classifySoundBase64(this.#perception(), audio);
     });
 
     const driverUpdater = this.#driverUpdater;

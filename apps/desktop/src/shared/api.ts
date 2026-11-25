@@ -50,6 +50,18 @@ export type LocalAccountSignIn =
   | { readonly ok: true }
   | { readonly ok: false; readonly message: string };
 
+export interface TalosScene {
+  readonly people: number;
+  readonly faces: number;
+  readonly empty: boolean;
+  readonly window?: number;
+}
+
+export interface TalosSoundEvent {
+  readonly label: string;
+  readonly confidence: number;
+}
+
 export interface TalosCaptureCheck {
   readonly ok: true;
   readonly seconds: number;
@@ -214,6 +226,11 @@ export interface TalosDesktopApi {
   readonly capture?: {
     check(): Promise<TalosCaptureCheck>;
   };
+  // File-free Vision and SoundAnalysis classification for supplied media.
+  readonly perception?: {
+    scene(image: string): Promise<TalosScene>;
+    sound(audio: string): Promise<TalosSoundEvent[]>;
+  };
   // Native NVIDIA driver update helpers (Windows / Linux). Older desktop apps
   // lack it, so the page falls back to direct browser links and copyable steps.
   readonly driverUpdate?: {
@@ -245,6 +262,8 @@ export const IPC = {
   settingsEvent: "settings.event",
   permissionAct: "permission.act",
   captureCheck: "capture.check",
+  perceptionScene: "perception.scene",
+  perceptionSound: "perception.sound",
   driverUpdateCapabilities: "driver-update.capabilities",
   driverUpdateOpenNvidiaApp: "driver-update.open-nvidia-app",
   driverUpdateOpenDownload: "driver-update.open-download",

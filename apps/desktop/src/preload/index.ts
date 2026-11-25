@@ -50,6 +50,15 @@ const api: TalosDesktopApi = {
     process.platform === "darwin"
       ? { check: () => ipcRenderer.invoke(IPC.captureCheck) }
       : undefined,
+  perception:
+    process.platform === "darwin"
+      ? {
+          scene: (image: string) =>
+            ipcRenderer.invoke(IPC.perceptionScene, image),
+          sound: (audio: string) =>
+            ipcRenderer.invoke(IPC.perceptionSound, audio),
+        }
+      : undefined,
   localAccount: {
     available: () => ipcRenderer.invoke(IPC.localAccountAvailable),
     signIn: () => ipcRenderer.invoke(IPC.localAccountSignIn),
