@@ -302,3 +302,10 @@ body="Hello! I'm Talos, your AI assistant here to help with onboarding and tasks
 
 `scripts/talos-agent-live.mjs` waits for that persisted Agent-authored reply;
 `pnpm talos:live` runs it when `TALOS_LIVE_AGENT=1` points at a running stack.
+
+## Proactive check-in journey
+
+The live harness runs `TestProactiveWindowsAndQuietWakes`
+(`room-proactive-journey`): a twenty-message proactive window opens once and is
+judged once, queued wakes wait for three quiet minutes, deliver in Room order,
+and mention AnotherMe without interrupting the conversation.

@@ -382,6 +382,11 @@ async function main(): Promise<number> {
         "TestPrivateAgentVisibilityAndDirectRoomLifecycle",
         "direct Room lifecycle and Agent visibility",
       ],
+      [
+        "room-proactive-journey",
+        "TestProactiveWindowsAndQuietWakes",
+        "proactive windows, quiet wakes and ordered delivery",
+      ],
     ] as const) {
       try {
         await exec(

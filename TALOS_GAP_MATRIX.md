@@ -78,3 +78,4 @@ Status meanings: **ported** (works here and is tested here), **present**
    | Real model-generated Agent conversation | **partial** | `qwen3:4b-8k` generated a reply through the Agent Service; the reply guard blocked persisting it because the model did not answer the inbox. |
    | Tenant message search journey | **present** | `room-search-journey` covers visibility, pagination and case-insensitive hits. |
    | Direct Room lifecycle and Agent visibility | **present** | `room-direct-journey` covers opening, visibility and deletion. |
+   | Proactive check-in windows and quiet wakes | **present** | `room-proactive-journey` runs the Postgres proactive window, quiet-wake and delivery suite. |
