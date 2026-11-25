@@ -734,6 +734,28 @@ class WordTest(unittest.TestCase):
           catalog_detail)
     shutil.rmtree(catalog_root, ignore_errors=True)
 
+    conflict_root = Path(tempfile.mkdtemp())
+    (conflict_root / "talos_core").mkdir()
+    (conflict_root / "talos_core" / "__init__.py").write_text("")
+    conflict_target = conflict_root / "talos_core" / "shared.py"
+    conflict_target.write_text("VALUE = 1\n")
+    conflict_plan = json.dumps({"steps": [
+        {"id": "one", "targets": ["talos_core/shared.py"], "request": "first"},
+        {"id": "two", "targets": ["talos_core/shared.py"], "request": "second"},
+    ]})
+    try:
+        plan_generator.generate("edit twice", root=conflict_root,
+                                infer=lambda prompt: conflict_plan, attempts=1)
+        conflict_blocked = False
+        conflict_detail = "generator accepted independent same-file steps"
+    except ValueError as error:
+        conflict_blocked = "both target talos_core/shared.py" in str(error)
+        conflict_detail = str(error)[:200]
+    check(checks, "plan_conflict_guard",
+          conflict_blocked and conflict_target.read_text() == "VALUE = 1\n",
+          conflict_detail)
+    shutil.rmtree(conflict_root, ignore_errors=True)
+
     cli_root = Path(tempfile.mkdtemp())
     cli_state = cli_root / "state"
     (cli_root / "a.py").write_text("A = 1\n")

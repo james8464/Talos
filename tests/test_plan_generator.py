@@ -65,6 +65,24 @@ class PlanGeneratorTests(unittest.TestCase):
                 failed={"id": "dead", "targets": ["state/secret.py"], "request": "x"},
                 completed=[], error="failed", infer=lambda prompt: raw)
 
+    def test_independent_steps_cannot_share_a_target(self):
+        raw = self.plan([
+            {"id": "a", "targets": ["talos_core/example.py"], "request": "x"},
+            {"id": "b", "targets": ["talos_core/example.py"], "request": "y"},
+        ])
+        with self.assertRaises(ValueError) as caught:
+            plan_generator.generate("x", root=self.root, infer=lambda prompt: raw)
+        self.assertIn("both target talos_core/example.py", str(caught.exception))
+
+    def test_sequential_steps_may_share_a_target(self):
+        raw = self.plan([
+            {"id": "a", "targets": ["talos_core/example.py"], "request": "x"},
+            {"id": "b", "targets": ["talos_core/example.py"], "request": "y",
+             "needs": ["a"]},
+        ])
+        result = plan_generator.generate("x", root=self.root, infer=lambda prompt: raw)
+        self.assertEqual([step["id"] for step in result["steps"]], ["a", "b"])
+
     def test_cycle_is_retried_with_feedback(self):
         prompts = []
         bad = self.plan([{"id": "a", "targets": ["talos_core/example.py"],

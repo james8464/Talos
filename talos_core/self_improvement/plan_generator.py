@@ -103,8 +103,38 @@ def _parse_plan(raw, *, root: Path, completed=(),
         step.clear()
         step.update({"id": ident, "targets": targets,
                      "request": request, "needs": needs})
-    return coding_jobs.validate_steps(steps, root=root, max_steps=max_steps,
-                                      completed=completed)
+    clean = coding_jobs.validate_steps(steps, root=root, max_steps=max_steps,
+                                       completed=completed)
+    _reject_independent_conflicts(clean)
+    return clean
+
+
+def _reject_independent_conflicts(steps: list[dict]) -> None:
+    """Two unrelated steps must not edit the same file; sequential edits may."""
+    needs = {step["id"]: set(step.get("needs") or []) for step in steps}
+
+    def depends_on(start: str, target: str) -> bool:
+        seen, stack = set(), list(needs[start])
+        while stack:
+            current = stack.pop()
+            if current == target:
+                return True
+            if current in needs and current not in seen:
+                seen.add(current)
+                stack.extend(needs[current])
+        return False
+
+    by_target: dict[str, list[str]] = {}
+    for step in steps:
+        for target in step["targets"]:
+            by_target.setdefault(target, []).append(step["id"])
+    for target, ids in by_target.items():
+        for left in range(len(ids)):
+            for right in range(left + 1, len(ids)):
+                first, second = ids[left], ids[right]
+                if not depends_on(first, second) and not depends_on(second, first):
+                    raise ValueError(
+                        f"independent steps {first} and {second} both target {target}")
 
 
 def generate(request: str, *, root: Path | str, infer, attempts: int = 2) -> dict:

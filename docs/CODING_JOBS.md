@@ -85,7 +85,9 @@ job or plan status, per-step statuses for plans, and whether every target stayed
 unchanged. A `coding plan:` request without a JSON file generates a plan from
 the source catalog: at most three steps, three targets per step, validated for
 unsafe paths, cycles, unknown dependencies and targets outside the catalog
-before anything runs. Private state and arbitrary files are rejected. Voice input is not routed to these commands, and a room request can
+before anything runs. Private state and arbitrary files are rejected, and two
+independent steps cannot edit the same file; a step may edit a file that an
+earlier step it depends on also edited. Voice input is not routed to these commands, and a room request can
 never apply a patch.
 
 ## Plan-level repair
