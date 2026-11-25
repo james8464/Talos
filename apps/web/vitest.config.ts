@@ -19,9 +19,9 @@ export default defineConfig({
     unstubGlobals: true,
     unstubEnvs: true,
     restoreMocks: true,
-    // Two workers keep focus and streaming DOM tests deterministic when the
+    // One worker keeps focus and streaming DOM tests deterministic when the
     // full repository checks run every package in parallel.
-    maxWorkers: 2,
+    maxWorkers: 1,
     // Threads share one process: about half the system CPU of forks.
     pool: "threads",
     // Logic tests (.ts) skip the jsdom environment; a .ts file that needs the
