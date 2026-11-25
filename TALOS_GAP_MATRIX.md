@@ -75,3 +75,4 @@ Status meanings: **ported** (works here and is tested here), **present**
    | Typed Room pin and unpin commands | **present** | `pin this room` / `unpin this room` update the requester’s private pin and reply as the Agent. |
    | Real model call through the Codex Runtime on local Ollama | **partial** | `ollama-codex-model` runs Codex against `qwen3:4b-8k`; daemon catalog placement is still open. |
    | Room Thread create, reply, summary and search | **present** | `TestRoomThreadJourneyLive` covers the full path and the live harness runs it. |
+   | Real model-generated Agent conversation | **partial** | `qwen3:4b-8k` generated a reply through the Agent Service; the reply guard blocked persisting it because the model did not answer the inbox. |

@@ -5,8 +5,9 @@
  * proves the voice runtime refuses to start, captures one frame/clip and
  * deletes it, classifies both over HTTP, asks the on-device vision model,
  * exercises identity and coding commands, runs the browser Room Document
- * journeys, runs one Codex call backed by local Ollama, then verifies no
- * voice/audio process is left behind.
+ * journeys, runs one Codex call backed by local Ollama, optionally runs a
+ * live Agent conversation, then verifies no voice/audio process is left
+ * behind.
  *
  * Run: pnpm exec tsx scripts/talos-live-check.ts
  */
@@ -367,6 +368,36 @@ async function main(): Promise<number> {
     } catch (error) {
       check("room-thread-journey", false, (error as Error).message);
     }
+  }
+
+  if (process.env.TALOS_LIVE_AGENT === "1") {
+    try {
+      await exec("node", [path.join(ROOT, "scripts/talos-agent-live.mjs")], {
+        cwd: ROOT,
+        env: {
+          ...process.env,
+          TEAMHUB_BASE_URL:
+            process.env.TALOS_LIVE_AGENT_BASE_URL ??
+            process.env.TEAMHUB_BASE_URL ??
+            "http://127.0.0.1:8080",
+        },
+        timeout: 900_000,
+        maxBuffer: 4 * 1024 * 1024,
+      });
+      check(
+        "agent-conversation",
+        true,
+        "model-generated Agent reply persisted in a Direct Room",
+      );
+    } catch (error) {
+      check("agent-conversation", false, (error as Error).message);
+    }
+  } else {
+    check(
+      "agent-conversation",
+      true,
+      "skipped: set TALOS_LIVE_AGENT=1 with a running stack",
+    );
   }
 
   const codexModel = process.env.TALOS_OLLAMA_CODEX_MODEL ?? "qwen3:4b-8k";

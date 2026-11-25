@@ -246,3 +246,26 @@ limitation from the call path.
 The live harness creates a Thread from a Room message, replies in it, reads the
 parent reply count, reopens the Thread messages and finds the reply through
 tenant search (`TestRoomThreadJourneyLive`, `room-thread-journey`).
+
+## Live Agent conversation
+
+With TeamHub, the Agent Service and a Local Computer running, this sends a
+Direct Room message and waits for the Agent's reply:
+
+```bash
+TEAMHUB_BASE_URL=http://127.0.0.1:8090 node scripts/talos-agent-live.mjs
+```
+
+The same check is available in `pnpm talos:live` when
+`TALOS_LIVE_AGENT=1` and `TALOS_LIVE_AGENT_BASE_URL` point at that stack.
+
+On the Ollama-backed Codex stack the Agent did make a real model request:
+
+```text
+agent.model_request model=qwen3:4b-8k duration_ms=41234
+  usage_input=2961 usage_output=1172
+```
+
+The run was then stopped by the Room reply guard because the local model did not
+answer the inbox item, so no reply was persisted. That is a tool-use limitation
+of the small model, not a missing model call.
