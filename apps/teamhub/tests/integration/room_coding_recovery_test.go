@@ -107,13 +107,22 @@ func TestRoomCodingWorkerRetriesTransportFailures(t *testing.T) {
 	}
 	var status, result string
 	var attempts int
-	if err := env.pool.QueryRow(ctx, `SELECT status,result,attempts FROM room_coding_jobs WHERE id=$1`, "codingjob_retry").
-		Scan(&status, &result, &attempts); err != nil || status != "queued" || attempts != 1 ||
-		!strings.Contains(result, "connection refused") {
-		t.Fatalf("after retry status=%q result=%q attempts=%d err=%v", status, result, attempts, err)
+	var retryIn float64
+	if err := env.pool.QueryRow(ctx, `SELECT status,result,attempts,
+		EXTRACT(EPOCH FROM (next_attempt_at - clock_timestamp())) FROM room_coding_jobs WHERE id=$1`, "codingjob_retry").
+		Scan(&status, &result, &attempts, &retryIn); err != nil || status != "queued" || attempts != 1 ||
+		!strings.Contains(result, "connection refused") || retryIn < 10 {
+		t.Fatalf("after retry status=%q result=%q attempts=%d retry_in=%v err=%v", status, result, attempts, retryIn, err)
 	}
 	if published != 0 {
 		t.Fatalf("retry published %d replies", published)
+	}
+	// The persisted retry time gates the next claim.
+	if processed, err := worker.RunOnce(ctx); err != nil || processed {
+		t.Fatalf("claim before the retry time processed=%v err=%v", processed, err)
+	}
+	if _, err := env.pool.Exec(ctx, `UPDATE room_coding_jobs SET next_attempt_at=clock_timestamp() - interval '1 second' WHERE id=$1`, "codingjob_retry"); err != nil {
+		t.Fatalf("release retry: %v", err)
 	}
 	if processed, err := worker.RunOnce(ctx); err != nil || !processed {
 		t.Fatalf("second attempt processed=%v err=%v", processed, err)

@@ -1452,6 +1452,7 @@ type RoomCodingJob struct {
 	CompletedAt      pgtype.Timestamptz `json:"completed_at"`
 	Attempts         int32              `json:"attempts"`
 	LeaseExpiresAt   pgtype.Timestamptz `json:"lease_expires_at"`
+	NextAttemptAt    pgtype.Timestamptz `json:"next_attempt_at"`
 }
 
 type RoomDocumentComment struct {

@@ -6,8 +6,13 @@ import { hasBearerToken } from "../service-bearer-auth.js";
 import type { HttpHost } from "../http-host.js";
 import type { JsonLogger } from "@talos/service-kit/node";
 import { NativePerception } from "./native.js";
+import { OllamaVision, type VisionModel } from "./vision-model.js";
 
-const PREFIXES = ["/talos/vision/scene", "/talos/sound"] as const;
+const PREFIXES = [
+  "/talos/vision/scene",
+  "/talos/vision/describe",
+  "/talos/sound",
+] as const;
 const JPEG = [0xff, 0xd8, 0xff];
 const PNG = [0x89, 0x50, 0x4e, 0x47];
 
@@ -40,9 +45,16 @@ export async function startPerceptionService(options: {
   logger: JsonLogger;
   environment?: NodeJS.ProcessEnv;
   client?: PerceptionClient;
+  vision?: VisionModel;
 }): Promise<{ stop(): Promise<void> }> {
   const env = options.environment ?? process.env;
   const token = serviceCredential("node-services-internal", env);
+  const vision =
+    options.vision ??
+    new OllamaVision({
+      baseUrl: env.TALOS_OLLAMA_URL ?? "http://127.0.0.1:11434",
+      model: env.TALOS_VISION_MODEL ?? "qwen2.5vl:3b",
+    });
   const client =
     options.client ??
     new NativePerception({
@@ -70,6 +82,32 @@ export async function startPerceptionService(options: {
         return new Response(null, { status: 405, headers: { allow: "POST" } });
       try {
         const body = (await request.json()) as Record<string, unknown>;
+        if (url.pathname === "/talos/vision/describe") {
+          const bytes = decode(body.image, "image");
+          if (!startsWith(bytes, JPEG) && !startsWith(bytes, PNG))
+            throw new Error("Send a JPEG or PNG image.");
+          const question =
+            typeof body.question === "string" && body.question.trim() !== ""
+              ? body.question.trim().slice(0, 500)
+              : "What do you see?";
+          try {
+            const described = await vision.describe(
+              bytes.toString("base64"),
+              question,
+            );
+            return Response.json(described);
+          } catch (error) {
+            return Response.json(
+              {
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "The local vision model is unavailable.",
+              },
+              { status: 503 },
+            );
+          }
+        }
         if (url.pathname === "/talos/vision/scene") {
           const bytes = decode(body.image, "image");
           if (!startsWith(bytes, JPEG) && !startsWith(bytes, PNG))

@@ -79,15 +79,54 @@ same safety checks.
 
 ## Prerequisites on this machine
 
-- Node 26.13.1: present
-- Docker 29.6.2: present
-- Go: missing
-- pnpm: missing
-- LiveKit server: not verified
-- PostgreSQL 17: not verified
+- Node 26.5.0: present
+- Go 1.26.11: present
+- pnpm 11.7.0: present
+- PostgreSQL 17 with pgvector: present on port 5433
+- Ollama with `qwen3:4b` and `qwen2.5vl:3b`: present
+- Playwright Chromium: installed
+- Docker: not required for the local proof
 
 ## Open decision
 
 Full replatform on Talos (Electron/web, Go/Postgres) versus incremental
 integration that keeps the verified Python/Swift Talos running and ports
 selected Talos services. The phases above assume the full replatform.
+
+## Live Room coding proof
+
+The local model path costs nothing per job, so it can run 24/7. It drafts the
+patch, the Computer verifies it in a sandbox, and the Room's Agent reports the
+result. Without an Agent Runtime, `qwen3:4b` through Ollama is the drafter; with
+a Runtime configured, the coding role uses it instead and names that model.
+
+```bash
+# 1. One database and owner for this checkout.
+TEAMHUB_DATABASE_URL='postgres://simplexai@127.0.0.1:5433/talos_dev_live?sslmode=disable'   pnpm dev:prepare
+
+# 2. TeamHub owns the queue and the Agent reply.
+TEAMHUB_DATABASE_URL='postgres://simplexai@127.0.0.1:5433/talos_dev_live?sslmode=disable' TEAMHUB_CODING_WORKER=1 pnpm dev:teamhub
+
+# 3. Coding on this Computer; the local model drafts and go test verifies.
+NODE_SERVICES_ROLES='coding,identity,perception' \
+TALOS_CODING_ROOT="$PWD" \
+TALOS_CODING_VERIFY='["sh","-c","cd apps/teamhub && go test ./internal/roomsenses"]' \
+  pnpm dev:node-services
+
+# 4. Ask Talos in a real Room and wait for the Agent's completion reply.
+node scripts/talos-room-live.mjs
+```
+
+A successful run prints, for example:
+
+```text
+reply[Talos]: Coding job codingjob_… verified in a sandbox with qwen3:4b: sandbox passed. No change was applied.
+```
+
+Override the target and request with `TALOS_LIVE_CODING_TARGET` and
+`TALOS_LIVE_CODING_REQUEST`. The script exits non-zero unless the reply reports
+a sandbox verification, so it can gate a check.
+
+Codex is an alternative drafter, but a ChatGPT plan with exhausted usage fails
+the job honestly ("You've hit your usage limit…"). The local model path needs
+no quota or network.

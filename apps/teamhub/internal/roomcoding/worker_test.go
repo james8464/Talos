@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
@@ -32,6 +33,19 @@ func TestReportNamesTheOutcome(t *testing.T) {
 			}
 		} else if rowStatus != "failed" {
 			t.Fatalf("%s row status=%q", status, rowStatus)
+		}
+	}
+}
+
+func TestRetryDelayMatchesTheBoundedSchedule(t *testing.T) {
+	cases := map[int32]time.Duration{
+		1: 15 * time.Second, 2: 30 * time.Second, 3: 60 * time.Second,
+		4: 120 * time.Second, 5: 240 * time.Second, 6: 480 * time.Second,
+		7: 600 * time.Second, 20: 600 * time.Second,
+	}
+	for attempts, want := range cases {
+		if got := RetryDelay(attempts); got != want {
+			t.Fatalf("attempts=%d delay=%s want=%s", attempts, got, want)
 		}
 	}
 }

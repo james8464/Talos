@@ -13,7 +13,7 @@ SET status='claimed', claimed_by=sqlc.arg(claimed_by), claimed_at=clock_timestam
     attempts=attempts+1
 WHERE id = (
   SELECT id FROM room_coding_jobs
-  WHERE status='queued'
+  WHERE (status='queued' AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp()))
      OR (status='claimed' AND lease_expires_at IS NOT NULL AND lease_expires_at < clock_timestamp())
   ORDER BY created_at
   FOR UPDATE SKIP LOCKED LIMIT 1
@@ -22,15 +22,18 @@ RETURNING *;
 
 -- name: RequeueRoomCodingJob :execrows
 UPDATE room_coding_jobs
-SET status='queued', claimed_by='', claimed_at=NULL, lease_expires_at=NULL, result=$2
+SET status='queued', claimed_by='', claimed_at=NULL, lease_expires_at=NULL,
+    result=$2, next_attempt_at=$3
 WHERE id=$1 AND status='claimed';
 
 -- name: CompleteRoomCodingJob :execrows
 UPDATE room_coding_jobs
-SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL
+SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL,
+    next_attempt_at=NULL
 WHERE id=$1 AND status='claimed';
 
 -- name: CancelRoomCodingJob :execrows
 UPDATE room_coding_jobs
-SET status='cancelled', result=$4, completed_at=clock_timestamp(), lease_expires_at=NULL
+SET status='cancelled', result=$4, completed_at=clock_timestamp(), lease_expires_at=NULL,
+    next_attempt_at=NULL
 WHERE id=$1 AND room_id=$2 AND requester_actor_id=$3 AND status IN ('queued','claimed');

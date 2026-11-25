@@ -29,7 +29,26 @@ async function workspace(): Promise<string> {
   return root;
 }
 
-async function fixture(root: string, modelCall?: () => ModelCall) {
+async function fixture(
+  root: string,
+  modelCall?: () => ModelCall,
+  localDrafter?: (input: {
+    target: string;
+    request: string;
+    source: string;
+  }) => Promise<{
+    draft: {
+      patches: { target: string; before: string; after: string }[];
+      regressionPath: string;
+      regression: string;
+    };
+    model: string;
+  }>,
+  verify: { file: string; args: readonly string[] } | null = {
+    file: "sh",
+    args: ["-c", 'test "$(cat src/value.txt)" = "two"'],
+  },
+) {
   let route: HttpRoute | undefined;
   const service = await startCodingService({
     http: {
@@ -41,11 +60,13 @@ async function fixture(root: string, modelCall?: () => ModelCall) {
     logger: { log: vi.fn() } as unknown as JsonLogger,
     environment,
     workspace: root,
-    verify: {
-      file: "sh",
-      args: ["-c", 'test "$(cat src/value.txt)" = "two"'],
-    },
+    ...(verify ? { verify } : {}),
     ...(modelCall ? { modelCall } : {}),
+    localDrafter:
+      localDrafter ??
+      (async () => {
+        throw new Error("no local drafter in tests");
+      }),
   });
   return { route: route!, service };
 }
@@ -58,8 +79,13 @@ const send = (body: unknown, auth = `Bearer ${token}`) =>
   });
 
 describe("coding route", () => {
-  it("plans a job without inventing a patch", async () => {
-    const { route } = await fixture(await workspace());
+  it("declines a patch when no verify command is configured", async () => {
+    const { route } = await fixture(
+      await workspace(),
+      undefined,
+      undefined,
+      null,
+    );
     const response = await route.fetch(
       send({
         kind: "job",
@@ -69,10 +95,46 @@ describe("coding route", () => {
     );
     expect(response.status).toBe(200);
     const body = await response.json();
+    expect(body.status).toBe("declined");
+    expect(body.message).toContain("No verify command");
+  });
+
+  it("plans a request that has no target", async () => {
+    const { route } = await fixture(await workspace());
+    const response = await route.fetch(
+      send({ kind: "plan", request: "clarify the helper" }),
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
     expect(body.status).toBe("planned");
     expect(body.steps).toEqual([
-      { id: "step_1", target: "src/value.txt", request: "add a short comment" },
+      { id: "step_1", target: "", request: "clarify the helper" },
     ]);
+  });
+
+  it("verifies a patch from the local drafter", async () => {
+    const root = await workspace();
+    const { route } = await fixture(root, undefined, async () => ({
+      draft: {
+        patches: [{ target: "src/value.txt", before: "one\n", after: "two\n" }],
+        regressionPath: "tests/test_value.txt",
+        regression: "expect two\n",
+      },
+      model: "qwen3:4b",
+    }));
+    const response = await route.fetch(
+      send({
+        kind: "job",
+        target: "src/value.txt",
+        request: "change one to two",
+      }),
+    );
+    const body = await response.json();
+    expect(body.status).toBe("verified");
+    expect(body.model).toBe("qwen3:4b");
+    expect(await readFile(path.join(root, "src", "value.txt"), "utf8")).toBe(
+      "one\n",
+    );
   });
 
   it("verifies a drafted patch in a sandbox and leaves the source alone", async () => {

@@ -20,26 +20,26 @@ Status meanings: **ported** (works here and is tested here), **present**
 
 ## Perception and identity
 
-| Talos behaviour                                                            | Talos status | Where / next step                                                                                      |
-| -------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
-| `/v1/vision/scene` people/face counts                                      | **present**  | `POST /talos/vision/scene` classifies a frame with the native Vision helper.                           |
-| `/v1/sound` non-word SoundAnalysis labels                                  | **present**  | `POST /talos/sound` classifies a clip with SoundAnalysis.                                              |
-| Presence answers from a camera frame                                       | **missing**  | Depends on vision helper.                                                                              |
-| One-frame + short-clip consented check with media deletion                 | **present**  | `TalosMediaCapture` captures one frame and a 1s clip, then deletes the media.                          |
-| Self-reported name, 30-minute expiry, “forget my name”, no biometric claim | **present**  | TeamHub answers identity text with a deterministic Agent-authored Room reply.                          |
-| Camera/mic capability answers that explain consent                         | **partial**  | `roomsenses` answers hear/see questions without inventing a camera reading; no live consent probe yet. |
+| Talos behaviour                                                            | Talos status | Where / next step                                                                                                                                  |
+| -------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/v1/vision/scene` people/face counts                                      | **present**  | `POST /talos/vision/scene` uses native Vision; `POST /talos/vision/describe` answers free-form questions with local `qwen2.5vl:3b` through Ollama. |
+| `/v1/sound` non-word SoundAnalysis labels                                  | **present**  | `POST /talos/sound` classifies a clip with SoundAnalysis.                                                                                          |
+| Presence answers from a camera frame                                       | **missing**  | Depends on vision helper.                                                                                                                          |
+| One-frame + short-clip consented check with media deletion                 | **present**  | `TalosMediaCapture` captures one frame and a 1s clip, then deletes the media.                                                                      |
+| Self-reported name, 30-minute expiry, “forget my name”, no biometric claim | **present**  | TeamHub answers identity text with a deterministic Agent-authored Room reply.                                                                      |
+| Camera/mic capability answers that explain consent                         | **partial**  | `roomsenses` answers hear/see questions without inventing a camera reading; no live consent probe yet.                                             |
 
 ## Coding autonomy
 
-| Talos behaviour                                                            | Talos status | Where / next step                                                                                      |
-| -------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
-| One-file coding job with model draft, sandbox verify, apply/rollback       | **partial**  | The coding role drafts through the Agent model seam and verifies in a sandbox; no live model call yet. |
-| Retry once on failed sandbox test with failure output                      | **present**  | `runCodingJob` retries once with the failure text as feedback.                                         |
-| Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.                       |
-| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.                 |
-| Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                          |
-| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | TeamHub stores accepted commands durably; a worker claims them and reports as the Agent.               |
-| Receipts: diff, regression, hashes, attempts, remaining budget             | **partial**  | The job row keeps status and result; a diff/hash receipt is not stored yet.                            |
+| Talos behaviour                                                            | Talos status | Where / next step                                                                                                                           |
+| -------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| One-file coding job with model draft, sandbox verify, apply/rollback       | **present**  | Live Room proof: `qwen3:4b` drafted a patch, the sandbox verified it, and the Agent reported it; the Agent Runtime is used when configured. |
+| Retry once on failed sandbox test with failure output                      | **present**  | `runCodingJob` retries once with the failure text as feedback.                                                                              |
+| Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.                                                            |
+| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.                                                      |
+| Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                                                               |
+| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | TeamHub stores accepted commands durably; a worker claims them and reports as the Agent.                                                    |
+| Receipts: diff, regression, hashes, attempts, remaining budget             | **partial**  | The job row keeps status and result; a diff/hash receipt is not stored yet.                                                                 |
 
 ## Control and UI
 

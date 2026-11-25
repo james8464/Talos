@@ -102,6 +102,86 @@ export function modelDrafter(
   };
 }
 
+/**
+ * Drafts the same one-file patch through a local Ollama model. This keeps
+ * Room coding jobs free and available when no Agent Runtime can serve them.
+ */
+export function ollamaDrafter(options: {
+  readonly baseUrl: string;
+  readonly model: string;
+  readonly timeoutMs?: number;
+  readonly fetch?: typeof fetch;
+}): CodingDrafter {
+  const baseUrl = options.baseUrl.replace(/\/+$/, "");
+  const doFetch = options.fetch ?? fetch;
+  const timeoutMs = options.timeoutMs ?? 180_000;
+  return async ({ target, request, source }) => {
+    let feedback = "";
+    let lastReason = "";
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const response = await doFetch(`${baseUrl}/api/chat`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        signal: AbortSignal.timeout(timeoutMs),
+        body: JSON.stringify({
+          model: options.model,
+          stream: false,
+          think: false,
+          format: "json",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You edit one file. Return one JSON object with string keys before, after, regression_path and regression. `before` must occur exactly once in the file; `after` replaces it. Add a small regression file under a relative path. Make the smallest change that satisfies the request.",
+            },
+            {
+              role: "user",
+              content: `Request: ${request}\nTarget: ${target}\n\n<file path="${target}">\n${source}\n</file>${feedback}`,
+            },
+          ],
+          options: { temperature: 0, num_predict: 900 },
+        }),
+      });
+      if (!response.ok)
+        throw new Error(`The local coding model answered ${response.status}.`);
+      const body = (await response.json()) as {
+        message?: { content?: unknown };
+      };
+      const raw =
+        typeof body.message?.content === "string" ? body.message.content : "";
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        lastReason = "The answer was not a JSON object.";
+        feedback = `\nYour previous answer was rejected: ${lastReason}`;
+        continue;
+      }
+      const reason = validateDraft(parsed, target, source);
+      if (reason) {
+        lastReason = reason;
+        feedback = `\nYour previous answer was rejected: ${reason}`;
+        continue;
+      }
+      return {
+        draft: {
+          patches: [
+            {
+              target,
+              before: parsed.before as string,
+              after: parsed.after as string,
+            },
+          ],
+          regressionPath: parsed.regression_path as string,
+          regression: parsed.regression as string,
+        },
+        model: options.model,
+      };
+    }
+    throw new Error(lastReason || "The local coding model returned no patch.");
+  };
+}
+
 function validateDraft(
   output: Record<string, unknown>,
   target: string,
@@ -165,25 +245,27 @@ export async function executeCodingJob(
         message: `${job.target} is not a file in the workspace.`,
       };
   }
-  const plan = createPlan(
-    job.kind === "plan" ? "plan_room" : "job_room",
-    [
-      {
-        id: "step_1",
-        ...(job.target ? { target: job.target } : {}),
-        request: job.request,
-      },
-    ],
-    { now, apply: false, request: job.request },
-  );
-  const steps = plan.steps.map((step) => ({
-    id: step.id,
-    target: step.targets.join(", "),
-    request: step.request,
-  }));
+  // A request-only plan has no file to guard; it still names its one step.
+  const steps = job.target
+    ? createPlan(
+        job.kind === "plan" ? "plan_room" : "job_room",
+        [{ id: "step_1", target: job.target, request: job.request }],
+        { now, apply: false, request: job.request },
+      ).steps.map((step) => ({
+        id: step.id,
+        target: step.targets.join(", "),
+        request: step.request,
+      }))
+    : [{ id: "step_1", target: "", request: job.request }];
   let draft = job.draft;
   let draftedBy = "";
-  if (!draft && job.kind === "job" && job.target && options.drafter && verify) {
+  if (!draft && job.kind === "job" && job.target && !verify)
+    return {
+      status: "declined",
+      message: "No verify command is configured on this Computer.",
+      steps,
+    };
+  if (!draft && job.kind === "job" && job.target && options.drafter) {
     const source = await readFile(
       workspaceTarget(workspace, job.target),
       "utf8",
@@ -251,8 +333,10 @@ export async function startCodingService(options: {
   environment?: NodeJS.ProcessEnv;
   workspace?: string;
   verify?: { file: string; args: readonly string[] };
-  /** The Agent role's model seam; absent, jobs return a bounded plan. */
+  /** The Agent role's model seam; absent, the local model drafts. */
   modelCall?: () => ModelCall | undefined;
+  /** Overrides the local model drafter in tests. */
+  localDrafter?: CodingDrafter;
 }): Promise<{ stop(): Promise<void> }> {
   const env = options.environment ?? process.env;
   const verify = options.verify ?? readVerify(env);
@@ -298,7 +382,11 @@ export async function startCodingService(options: {
                   : `coding:${body.target ?? "request"}`,
               ...(owner ? { owner } : {}),
             })
-          : undefined;
+          : (options.localDrafter ??
+            ollamaDrafter({
+              baseUrl: env.TALOS_OLLAMA_URL ?? "http://127.0.0.1:11434",
+              model: env.TALOS_CODING_MODEL ?? "qwen3:4b",
+            }));
         return Response.json(
           await executeCodingJob(
             workspace,
@@ -312,10 +400,7 @@ export async function startCodingService(options: {
                 ? { draft: body.draft as PatchDraft }
                 : {}),
             },
-            {
-              ...(verify ? { verify } : {}),
-              ...(drafter ? { drafter } : {}),
-            },
+            { ...(verify ? { verify } : {}), drafter },
           ),
         );
       } catch (error) {

@@ -3,8 +3,9 @@
  *
  * Starts only the identity, perception and coding roles with TALOS_MUTE=1,
  * proves the voice runtime refuses to start, captures one frame/clip and
- * deletes it, classifies both over HTTP, exercises identity and coding
- * commands, then verifies no voice/audio process is left behind.
+ * deletes it, classifies both over HTTP, asks the on-device vision model,
+ * exercises identity and coding commands, then verifies no voice/audio
+ * process is left behind.
  *
  * Run: pnpm exec tsx scripts/talos-live-check.ts
  */
@@ -178,6 +179,33 @@ async function main(): Promise<number> {
       JSON.stringify(sound).slice(0, 200),
     );
 
+    const describeStarted = Date.now();
+    const described = await fetch(`${BASE}/talos/vision/describe`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        image: media.frameBase64,
+        question: "What do you see?",
+      }),
+    });
+    const describedBody = (await described.json()) as {
+      answer?: string;
+      model?: string;
+      error?: string;
+    };
+    check(
+      "vision-describe",
+      described.status === 200 &&
+        typeof describedBody.answer === "string" &&
+        describedBody.answer.length > 0,
+      `${describedBody.model ?? "model"} ${Date.now() - describeStarted}ms · ${
+        describedBody.answer ?? describedBody.error ?? ""
+      }`.slice(0, 200),
+    );
+
     const coding = await fetch(`${BASE}/talos/coding/execute`, {
       method: "POST",
       headers: {
@@ -185,9 +213,8 @@ async function main(): Promise<number> {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        kind: "job",
-        target: "package.json",
-        request: "add a short comment",
+        kind: "plan",
+        request: "review the coding route",
       }),
     });
     const codingBody = (await coding.json()) as {
@@ -198,7 +225,7 @@ async function main(): Promise<number> {
       "coding-execute",
       coding.status === 200 &&
         codingBody.status === "planned" &&
-        codingBody.steps?.[0]?.target === "package.json",
+        codingBody.steps?.[0]?.id === "step_1",
       JSON.stringify(codingBody).slice(0, 200),
     );
   } finally {

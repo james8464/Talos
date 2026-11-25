@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
@@ -23,6 +24,8 @@ type Outcome struct {
 	Message string `json:"message"`
 	// Model names the model that drafted the verified patch, when one did.
 	Model string `json:"model,omitempty"`
+	// Failure is the sandbox output when verification failed.
+	Failure string `json:"failure,omitempty"`
 }
 
 // Executor runs one accepted job on the Computer that owns the workspace.
@@ -46,7 +49,7 @@ type Worker struct {
 	// may take the job. Zero uses fifteen minutes.
 	LeaseSeconds int
 	// MaxAttempts bounds transport failures before the job is reported as
-	// failed. Zero uses three.
+	// failed. Zero uses four, the old Talos bound.
 	MaxAttempts int
 }
 
@@ -70,25 +73,31 @@ func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
 	if err != nil {
 		maxAttempts := w.MaxAttempts
 		if maxAttempts <= 0 {
-			maxAttempts = 3
+			maxAttempts = 4
 		}
 		message := "The Computer could not run the job: " + err.Error()
 		if int(job.Attempts) < maxAttempts {
+			delay := RetryDelay(job.Attempts)
 			if _, requeueErr := w.Queries.RequeueRoomCodingJob(ctx, store.RequeueRoomCodingJobParams{
 				ID: job.ID, Result: message,
+				NextAttemptAt: pgtype.Timestamptz{Time: time.Now().Add(delay), Valid: true},
 			}); requeueErr != nil {
 				return true, requeueErr
 			}
 			if w.Logger != nil {
-				w.Logger.Warn("room_coding.requeued", "job_id", job.ID, "attempts", job.Attempts, "error", err)
+				w.Logger.Warn("room_coding.requeued", "job_id", job.ID, "attempts", job.Attempts, "retry_in", delay.String(), "error", err)
 			}
 			return true, nil
 		}
 		outcome = Outcome{Status: "failed", Message: message}
 	}
 	status, reply := w.report(job, outcome)
+	result := outcome.Message
+	if outcome.Failure != "" {
+		result += ": " + outcome.Failure
+	}
 	completed, err := w.Queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
-		ID: job.ID, Status: status, Result: outcome.Message,
+		ID: job.ID, Status: status, Result: result,
 	})
 	if err != nil {
 		return true, err
@@ -140,10 +149,39 @@ func (w *Worker) report(job store.RoomCodingJob, outcome Outcome) (string, strin
 	case "planned":
 		return "done", fmt.Sprintf("Coding job %s planned; no patch was applied: %s", job.ID, outcome.Message)
 	case "declined":
-		return "failed", fmt.Sprintf("Coding job %s declined: %s", job.ID, outcome.Message)
+		return "failed", fmt.Sprintf("Coding job %s declined: %s%s", job.ID, outcome.Message, failureHint(outcome.Failure))
 	default:
-		return "failed", fmt.Sprintf("Coding job %s failed: %s", job.ID, outcome.Message)
+		return "failed", fmt.Sprintf("Coding job %s failed: %s%s", job.ID, outcome.Message, failureHint(outcome.Failure))
 	}
+}
+
+func failureHint(failure string) string {
+	failure = strings.TrimSpace(failure)
+	if failure == "" {
+		return ""
+	}
+	const limit = 300
+	if len(failure) > limit {
+		failure = failure[:limit]
+	}
+	return " (" + failure + ")"
+}
+
+// RetryDelay is OpenClaw's bounded exponential retry schedule: 15s for the
+// first failure, doubling, and never more than ten minutes.
+func RetryDelay(attempts int32) time.Duration {
+	exponent := attempts - 1
+	if exponent < 0 {
+		exponent = 0
+	}
+	if exponent > 6 {
+		exponent = 6
+	}
+	seconds := 15 << exponent
+	if seconds > 600 {
+		seconds = 600
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 // HTTPExecutor calls the Computer's POST /talos/coding/execute.

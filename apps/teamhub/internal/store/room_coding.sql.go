@@ -7,11 +7,14 @@ package store
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const cancelRoomCodingJob = `-- name: CancelRoomCodingJob :execrows
 UPDATE room_coding_jobs
-SET status='cancelled', result=$4, completed_at=clock_timestamp(), lease_expires_at=NULL
+SET status='cancelled', result=$4, completed_at=clock_timestamp(), lease_expires_at=NULL,
+    next_attempt_at=NULL
 WHERE id=$1 AND room_id=$2 AND requester_actor_id=$3 AND status IN ('queued','claimed')
 `
 
@@ -42,12 +45,12 @@ SET status='claimed', claimed_by=$1, claimed_at=clock_timestamp(),
     attempts=attempts+1
 WHERE id = (
   SELECT id FROM room_coding_jobs
-  WHERE status='queued'
+  WHERE (status='queued' AND (next_attempt_at IS NULL OR next_attempt_at <= clock_timestamp()))
      OR (status='claimed' AND lease_expires_at IS NOT NULL AND lease_expires_at < clock_timestamp())
   ORDER BY created_at
   FOR UPDATE SKIP LOCKED LIMIT 1
 )
-RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at
+RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at
 `
 
 type ClaimNextRoomCodingJobParams struct {
@@ -74,13 +77,15 @@ func (q *Queries) ClaimNextRoomCodingJob(ctx context.Context, arg ClaimNextRoomC
 		&i.CompletedAt,
 		&i.Attempts,
 		&i.LeaseExpiresAt,
+		&i.NextAttemptAt,
 	)
 	return i, err
 }
 
 const completeRoomCodingJob = `-- name: CompleteRoomCodingJob :execrows
 UPDATE room_coding_jobs
-SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL
+SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL,
+    next_attempt_at=NULL
 WHERE id=$1 AND status='claimed'
 `
 
@@ -101,7 +106,7 @@ func (q *Queries) CompleteRoomCodingJob(ctx context.Context, arg CompleteRoomCod
 const createRoomCodingJob = `-- name: CreateRoomCodingJob :one
 INSERT INTO room_coding_jobs(id,tenant_id,room_id,requester_actor_id,kind,target_path,request)
 VALUES($1,$2,$3,$4,$5,$6,$7)
-RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at
+RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at
 `
 
 type CreateRoomCodingJobParams struct {
@@ -141,12 +146,13 @@ func (q *Queries) CreateRoomCodingJob(ctx context.Context, arg CreateRoomCodingJ
 		&i.CompletedAt,
 		&i.Attempts,
 		&i.LeaseExpiresAt,
+		&i.NextAttemptAt,
 	)
 	return i, err
 }
 
 const listRoomCodingJobsForRoom = `-- name: ListRoomCodingJobsForRoom :many
-SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at FROM room_coding_jobs WHERE room_id=$1 ORDER BY created_at DESC LIMIT 20
+SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at FROM room_coding_jobs WHERE room_id=$1 ORDER BY created_at DESC LIMIT 20
 `
 
 func (q *Queries) ListRoomCodingJobsForRoom(ctx context.Context, roomID string) ([]RoomCodingJob, error) {
@@ -174,6 +180,7 @@ func (q *Queries) ListRoomCodingJobsForRoom(ctx context.Context, roomID string) 
 			&i.CompletedAt,
 			&i.Attempts,
 			&i.LeaseExpiresAt,
+			&i.NextAttemptAt,
 		); err != nil {
 			return nil, err
 		}
@@ -187,17 +194,19 @@ func (q *Queries) ListRoomCodingJobsForRoom(ctx context.Context, roomID string) 
 
 const requeueRoomCodingJob = `-- name: RequeueRoomCodingJob :execrows
 UPDATE room_coding_jobs
-SET status='queued', claimed_by='', claimed_at=NULL, lease_expires_at=NULL, result=$2
+SET status='queued', claimed_by='', claimed_at=NULL, lease_expires_at=NULL,
+    result=$2, next_attempt_at=$3
 WHERE id=$1 AND status='claimed'
 `
 
 type RequeueRoomCodingJobParams struct {
-	ID     string `json:"id"`
-	Result string `json:"result"`
+	ID            string             `json:"id"`
+	Result        string             `json:"result"`
+	NextAttemptAt pgtype.Timestamptz `json:"next_attempt_at"`
 }
 
 func (q *Queries) RequeueRoomCodingJob(ctx context.Context, arg RequeueRoomCodingJobParams) (int64, error) {
-	result, err := q.db.Exec(ctx, requeueRoomCodingJob, arg.ID, arg.Result)
+	result, err := q.db.Exec(ctx, requeueRoomCodingJob, arg.ID, arg.Result, arg.NextAttemptAt)
 	if err != nil {
 		return 0, err
 	}
