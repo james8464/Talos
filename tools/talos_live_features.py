@@ -671,6 +671,32 @@ class WordTest(unittest.TestCase):
           == "def flag():\n    return 0\n",
           f"{repair_result.get('status')}: revision {repair_result.get('revision')} "
           f"{repair_result.get('repair')}"[:200])
+    twice_plan = coding_jobs.start_plan(repair_state, [
+        {"id": "bad2", "target": "talos_core/delta.py", "request": "first"}],
+        root=repair_root)
+    twice_calls = []
+
+    def twice_repair(failed, completed, error):
+        twice_calls.append(failed["id"])
+        return [{"id": f"retry-{len(twice_calls)}",
+                 "targets": ["talos_core/epsilon.py"], "request": "retry"}]
+
+    twice_result = coding_jobs.run_plan(
+        repair_state, twice_plan["id"], root=repair_root,
+        infer=lambda prompt: "{}", repair=twice_repair)
+    twice_statuses = {step["id"]: step["status"] for step in twice_result["steps"]}
+    check(checks, "coding_plan_repair_twice",
+          twice_result.get("status") == "blocked"
+          and twice_result.get("revision") == 2
+          and twice_calls == ["bad2", "retry-1"]
+          and twice_statuses == {"bad2": "superseded", "retry-1": "superseded",
+                                 "retry-2": "declined"}
+          and twice_result.get("remaining_budget", -1) >= 0
+          and (repair_root / "talos_core" / "delta.py").read_text()
+          == "def flag():\n    return 0\n",
+          f"revision {twice_result.get('revision')}: {twice_statuses} "
+          f"budget {twice_result.get('remaining_budget')}"[:200])
+
     shutil.rmtree(repair_root, ignore_errors=True)
 
     cli_root = Path(tempfile.mkdtemp())
@@ -690,9 +716,15 @@ steps = {"steps": [
     {"id": "after", "target": "b.py", "request": "second", "needs": ["bad"]},
 ]}
 start_out, run_out = io.StringIO(), io.StringIO()
+calls = {"n": 0}
+
+def revise(*args, **kwargs):
+    calls["n"] += 1
+    return {"steps": [{"id": f"fixed-{calls['n']}", "targets": ["b.py"],
+                       "request": "second"}]}
+
 with patch("talos_core.self_improvement.plan_generator.repair",
-           return_value={"steps": [{"id": "fixed", "targets": ["b.py"],
-                                    "request": "second"}]}) as repair, \
+           side_effect=revise) as repair, \
         patch("talos_core.self_improvement.initiative_coder.local_infer",
               return_value=lambda prompt: "{}"):
     with redirect_stdout(start_out):
@@ -719,11 +751,13 @@ print(json.dumps({"start": start, "run": run, "result": result,
     statuses = {step["id"]: step["status"] for step in result.get("steps", [])}
     check(checks, "coding_plan_cli_repair",
           outcome.get("start") == 0
-          and result.get("revision") == 1
-          and result.get("repair", {}).get("failed") == "bad"
+          and result.get("revision") == 2
+          and result.get("repairs", [{}])[0].get("failed") == "bad"
+          and result.get("repair", {}).get("failed") == "fixed-1"
           and statuses.get("bad") == "superseded"
-          and statuses.get("fixed") == "declined"
-          and outcome.get("repair_calls") == 1
+          and statuses.get("fixed-1") == "superseded"
+          and statuses.get("fixed-2") == "declined"
+          and outcome.get("repair_calls") == 2
           and (cli_root / "a.py").read_text() == "A = 1\n"
           and (cli_root / "b.py").read_text() == "B = 2\n",
           f"revision {result.get('revision')}: {statuses} "

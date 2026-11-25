@@ -29,6 +29,8 @@ MAX_TARGET_BYTES = 1_500_000
 MIN_SECONDS = 5
 MAX_TARGETS = 4
 MAX_ATTEMPTS = 2
+MAX_REVISIONS = 2
+MAX_PLAN_SECONDS = 3600
 
 
 def _now() -> float:
@@ -597,17 +599,23 @@ def validate_steps(steps: list[dict], *, root: Path | str,
 
 def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
                budget: int = 300, apply: bool = False,
-               request: str | None = None) -> dict:
+               request: str | None = None,
+               total_budget: int | None = None) -> dict:
     """Validate and store a dependency-ordered plan without running it."""
     clean = validate_steps(steps, root=root)
     order = _order(clean)
     if not isinstance(budget, int) or not MIN_SECONDS <= budget <= 3600:
         raise ValueError("Budget must be between 5 and 3600 seconds.")
+    total = total_budget if total_budget is not None else min(
+        MAX_PLAN_SECONDS, budget * max(2, len(clean) + 1))
+    if not isinstance(total, int) or not MIN_SECONDS <= total <= MAX_PLAN_SECONDS:
+        raise ValueError("Total plan budget must be between 5 and 3600 seconds.")
     folder = _plan_folder(Path(state))
     folder.mkdir(mode=0o700, parents=True, exist_ok=True)
     plan_id = time.strftime("%Y%m%d-%H%M%S", time.gmtime()) + "-" + secrets.token_hex(3)
     record = {"id": plan_id, "created": time.time(), "status": "queued",
-              "apply": bool(apply), "budget": budget, "order": order,
+              "apply": bool(apply), "budget": budget, "total_budget": total,
+              "order": order,
               "request": (request or "").strip()[:800] or None,
               "revision": 0, "steps": clean, "folder": str(folder / plan_id)}
     (folder / plan_id).mkdir(mode=0o700)
@@ -653,14 +661,25 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
             return record
         record["status"] = "running"
         record["started"] = time.time()
+        if not record.get("deadline"):
+            record["deadline"] = record["started"] + record.get(
+                "total_budget", min(MAX_PLAN_SECONDS,
+                                    record["budget"] * max(2, len(record["steps"]) + 1)))
         by_id = {step["id"]: step for step in record["steps"]}
+
+        def remaining() -> float:
+            return max(0.0, float(record["deadline"]) - time.time())
 
         def save() -> None:
             _write(folder / "plan.json", record)
             _write(folder / "report.json", {
                 "id": record["id"], "status": record["status"],
                 "revision": record.get("revision", 0),
+                "revisions": record.get("revision", 0),
+                "total_budget": record.get("total_budget"),
+                "remaining_budget": round(remaining()),
                 "repair": record.get("repair"),
+                "repairs": record.get("repairs", []),
                 "repair_error": record.get("repair_error"),
                 "steps": [{key: step.get(key) for key in
                            ("id", "status", "job_id", "message", "needs", "target",
@@ -682,22 +701,28 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
                             message="dependency not verified: " + ", ".join(blocked))
                 save()
                 continue
+            if remaining() < MIN_SECONDS:
+                step.update(status="deferred", message="plan budget exhausted")
+                save()
+                continue
+            step_budget = min(record["budget"], int(remaining()))
             targets = step.get("targets") or [step["target"]]
             if len(targets) > 1:
                 job = start_many(state, step["request"], targets, root=root,
-                                 budget=record["budget"], apply=apply)
+                                 budget=step_budget, apply=apply)
                 result = run_many(state, job["id"], root=root,
                                   infer=infer_many or infer, apply=apply)
             else:
                 job = start(state, step["request"], step["target"], root=root,
-                            budget=record["budget"], apply=apply)
+                            budget=step_budget, apply=apply)
                 result = run(state, job["id"], root=root, infer=infer, apply=apply)
             step.update(status=result.get("status", "error"), job_id=job["id"],
                         message=result.get("message", ""),
                         attempts=result.get("attempts"),
                         failure=result.get("failure"))
             save()
-            if (repair is not None and record.get("revision", 0) == 0
+            if (repair is not None and record.get("revision", 0) < MAX_REVISIONS
+                    and remaining() >= MIN_SECONDS
                     and step["status"] in {"declined", "rolled_back", "error"}):
                 completed = [item for item in record["steps"]
                              if item["status"] in {"verified", "applied"}]
@@ -706,6 +731,10 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
                     revised = validate_steps(
                         repair(step, completed, detail), root=root,
                         completed={item["id"] for item in completed})
+                    clash = ({item["id"] for item in record["steps"]}
+                             & {item["id"] for item in revised})
+                    if clash:
+                        raise ValueError("revision reuses step id: " + ", ".join(sorted(clash)))
                 except (KeyError, TypeError, ValueError) as caught:
                     record["repair_error"] = str(caught)[:400]
                     save()
@@ -717,10 +746,16 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
                     record["order"] = (record["order"][:index]
                                        + _order(revised,
                                                 external={item["id"] for item in completed}))
-                    record["revision"] = 1
+                    record["revision"] = record.get("revision", 0) + 1
                     step["status"] = "superseded"
-                    record["repair"] = {"failed": step["id"], "dropped": dropped,
-                                        "replacement": [item["id"] for item in revised]}
+                    receipt = {
+                        "failed": step["id"], "dropped": dropped,
+                        "replacement": [item["id"] for item in revised],
+                        "revision": record["revision"],
+                        "remaining_budget": round(remaining()),
+                    }
+                    record["repair"] = receipt
+                    record.setdefault("repairs", []).append(receipt)
                     record["status"] = "running"
                     by_id = {item["id"]: item for item in record["steps"]}
                     save()
@@ -728,6 +763,7 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
             step["status"] in {"verified", "applied", "superseded"}
             for step in record["steps"]) else "blocked")
         record["finished"] = time.time()
+        record["remaining_budget"] = round(remaining())
         save()
         return record
 

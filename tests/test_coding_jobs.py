@@ -265,14 +265,14 @@ class CodingPlanTests(unittest.TestCase):
         self.assertEqual(result["repair"]["replacement"], ["fixed"])
         self.assertEqual(seen[0][0], "bad")
 
-    def test_plan_repair_runs_at_most_once(self):
+    def test_plan_repair_runs_at_most_twice(self):
         plan = self.plan([{"id": "bad", "target": "talos_core/example.py",
                            "request": "first"}])
         calls = []
 
         def repair(failed, completed, error):
             calls.append(failed["id"])
-            return [{"id": "again", "targets": ["talos_core/other.py"],
+            return [{"id": f"again-{len(calls)}", "targets": ["talos_core/other.py"],
                      "request": "retry"}]
 
         def infer(prompt):
@@ -281,9 +281,27 @@ class CodingPlanTests(unittest.TestCase):
         result = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp,
                                       infer=infer, repair=repair)
         self.assertEqual(result["status"], "blocked")
-        self.assertEqual(result["revision"], 1)
-        self.assertEqual(calls, ["bad"])
-        self.assertEqual(len(result["steps"]), 2)
+        self.assertEqual(result["revision"], 2)
+        self.assertEqual(calls, ["bad", "again-1"])
+        statuses = {step["id"]: step["status"] for step in result["steps"]}
+        self.assertEqual(statuses, {"bad": "superseded", "again-1": "superseded",
+                                    "again-2": "declined"})
+
+    def test_plan_shared_budget_defers_before_starting(self):
+        import time
+
+        plan = self.plan([{"id": "one", "target": "talos_core/example.py",
+                           "request": "x"}])
+        path = Path(plan["folder"]) / "plan.json"
+        record = json.loads(path.read_text())
+        record["deadline"] = time.time() - 1
+        path.write_text(json.dumps(record))
+        result = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp,
+                                      infer=lambda prompt: self.fail("must not run"))
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["steps"][0]["status"], "deferred")
+        self.assertEqual(result["remaining_budget"], 0)
+        self.assertEqual(len(coding_jobs.jobs(self.state)), 0)
 
     def test_plan_repair_error_is_recorded(self):
         plan = self.plan([{"id": "bad", "target": "talos_core/example.py",

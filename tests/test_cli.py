@@ -234,9 +234,15 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         plan = json.loads(output.getvalue())
         output = io.StringIO()
+        calls = {"n": 0}
+
+        def revise(*args, **kwargs):
+            calls["n"] += 1
+            return {"steps": [{"id": f"fixed-{calls['n']}", "targets": ["b.py"],
+                               "request": "second"}]}
+
         with patch("talos_core.self_improvement.plan_generator.repair",
-                   return_value={"steps": [{"id": "fixed", "targets": ["b.py"],
-                                            "request": "second"}]}) as repair, \
+                   side_effect=revise) as repair, \
                 patch("talos_core.self_improvement.initiative_coder.local_infer",
                       return_value=lambda prompt: "{}"), \
                 redirect_stdout(output):
@@ -244,12 +250,14 @@ class CliTests(unittest.TestCase):
                              "--state", str(state), "--model", "test"])
         self.assertEqual(code, 1)
         result = json.loads(output.getvalue())
-        self.assertEqual(result["revision"], 1)
-        self.assertEqual(result["repair"]["failed"], "bad")
+        self.assertEqual(result["revision"], 2)
+        self.assertEqual(result["repairs"][0]["failed"], "bad")
+        self.assertEqual(result["repair"]["failed"], "fixed-1")
         statuses = {step["id"]: step["status"] for step in result["steps"]}
         self.assertEqual(statuses["bad"], "superseded")
-        self.assertEqual(statuses["fixed"], "declined")
-        repair.assert_called_once()
+        self.assertEqual(statuses["fixed-1"], "superseded")
+        self.assertEqual(statuses["fixed-2"], "declined")
+        self.assertEqual(repair.call_count, 2)
 
     def test_codejob_detach_forwards_state_root_and_model(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))

@@ -90,9 +90,12 @@ never apply a patch.
 ## Plan-level repair
 
 For model-generated plans (and CLI plans created with `--request`), a step that
-still ends `declined` after its per-step retry triggers one plan-level revision. The failed step, the verified steps,
-and the captured failure output go back to the planner, which returns
+still ends `declined` after its per-step retry triggers up to two plan-level revisions. The failed step, the verified
+steps, and the captured failure output go back to the planner, which returns
 replacement steps for the remaining work. The failed step is marked
-`superseded`, queued steps it replaced are reported as dropped, and one revision
-is the cap. If the revision is invalid, `repair_error` is recorded and the plan
-ends `blocked`.
+`superseded`, queued steps it replaced are reported as dropped, and every
+revision is recorded under `repairs` with its remaining budget. Revisions share
+one wall-clock plan budget (`total_budget`, default `step budget × (steps + 1)`,
+capped at one hour); when it runs out the next step or revision is recorded as
+`deferred` instead of starting. If a revision is invalid, `repair_error` is
+recorded and the plan ends `blocked`.
