@@ -58,6 +58,7 @@ beforeEach(async () => {
   );
   Object.defineProperty(process, "platform", { value: "darwin" });
   vi.stubEnv("LANG", "de_DE.UTF-8");
+  vi.stubEnv("LC_ALL", "");
   ps.localized = `Mi 18 Nov 06:04:14 2026   ${ps.uid} 73285 Ss\n`;
   ps.environment = `node worker.mjs TALOS_NATIVE_PROCESS_LEASE=${lease}\n`;
 });
