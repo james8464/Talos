@@ -264,7 +264,7 @@ func NewHTTPExecutor(baseURL, token string) *HTTPExecutor {
 	return &HTTPExecutor{
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Token:   token,
-		Client:  &http.Client{Timeout: 6 * time.Minute},
+		Client:  &http.Client{Timeout: 15 * time.Minute},
 	}
 }
 

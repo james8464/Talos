@@ -11,7 +11,7 @@
  * Run: pnpm exec tsx scripts/talos-live-check.ts
  */
 import { execFile, spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -364,10 +364,17 @@ async function main(): Promise<number> {
       const started = Date.now();
       const output = await runCodex(codexHome, codexModel);
       const compact = output.replace(/\s+/gu, "");
+      const catalog = JSON.parse(
+        await readFile(path.join(codexHome, "model_catalog.json"), "utf8"),
+      ) as { models?: { slug?: string }[] };
+      const catalogued = (catalog.models ?? []).some(
+        (model) => model.slug === codexModel,
+      );
       check(
         "ollama-codex-model",
-        compact.includes('"ok":true') || compact.includes("'ok':true"),
-        `${codexModel} via Codex ${Date.now() - started}ms · ${output.slice(-120)}`,
+        catalogued &&
+          (compact.includes('"ok":true') || compact.includes("'ok':true")),
+        `${codexModel} catalogued and answered in ${Date.now() - started}ms · ${output.slice(-100)}`,
       );
     } catch (error) {
       check("ollama-codex-model", false, (error as Error).message);

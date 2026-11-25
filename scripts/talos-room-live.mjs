@@ -88,7 +88,9 @@ while (Date.now() < deadline) {
       typeof body === "string" &&
       /^Coding job /.test(body) &&
       !body.includes(" queued for ") &&
-      !body.includes(" queued (verify-only)")
+      !body.includes(" queued (verify-only)") &&
+      !body.includes("retrying in") &&
+      !body.includes("could not reach the Computer")
     ) {
       completion = {
         author: item.author?.display_name ?? item.author?.id,

@@ -222,5 +222,21 @@ export OLLAMA_API_KEY=dummy
 bash scripts/dev-local-computer.sh start
 ```
 
-Give the Agent the `qwen3:4b-8k` model. The daemon's Runtime catalog must list
-that model before placement accepts it; that catalog step is not covered yet.
+The script also writes `model_catalog.json` and points Codex at it, so the
+Local Computer daemon reports the model:
+
+```text
+codex  status=ready  models=["qwen3:4b-8k"]
+```
+
+Placement accepts it, and a real Agent Service model call completed through the
+daemon:
+
+```text
+model_call.invoked kind=coding runtime_type=codex mode=structured
+  outcome=completed model=qwen3:4b-8k
+```
+
+The patch that model returned was rejected by the exact-substring validator on
+its first attempt, so model quality for strict patches remains a separate
+limitation from the call path.

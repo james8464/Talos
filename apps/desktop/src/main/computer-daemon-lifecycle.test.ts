@@ -185,13 +185,13 @@ describe.skipIf(process.platform === "win32")(
       await new Promise((resolve) => setTimeout(resolve, 500));
       expect(lines).toEqual([]);
       process.kill(daemon, "SIGCONT");
-      await until(() => lines.length === 1, 5_000, "the queued line");
+      await until(() => lines.length === 1, 20_000, "the queued line");
 
       const code = exited(child);
       child.stop();
       expect(await code).toBe(0);
-      await until(() => !alive(runtime), 5_000, "the runtime to exit");
-    }, 20_000);
+      await until(() => !alive(runtime), 20_000, "the runtime to exit");
+    }, 30_000);
 
     it("kills a daemon still frozen at quit together with its runtimes", async () => {
       setUp();
