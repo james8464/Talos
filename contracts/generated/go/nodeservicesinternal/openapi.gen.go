@@ -473,7 +473,7 @@ func (e ComputerPermissionStatusPlatform) Valid() bool {
 // Defines values for ComputerPermissionSubject.
 const (
 	ComputerPermissionSubjectComputerUse ComputerPermissionSubject = "computer_use"
-	ComputerPermissionSubjectTalos      ComputerPermissionSubject = "talos"
+	ComputerPermissionSubjectTalos       ComputerPermissionSubject = "talos"
 )
 
 // Valid indicates whether the value is a known member of the ComputerPermissionSubject enum.
