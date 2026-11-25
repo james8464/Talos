@@ -1,3 +1,4 @@
+import { isMuted } from "@linger/service-kit";
 import { serviceCredential } from "@linger/service-kit/node";
 
 import { providerProxy, type ProviderProxy } from "./provider-proxy.js";
@@ -34,6 +35,19 @@ export const sonioxRealtimeModel = "stt-rt-v6";
 // Hints bias short openings that sound alike across languages (a Mandarin
 // greeting vs. "Hallo") without excluding other languages.
 export const sonioxLanguageHints = ["zh", "en"];
+
+/** Hard stop for the Talos mute policy: no LiveKit worker or audio is started. */
+export function refuseWhenMuted(
+  environment: NodeJS.ProcessEnv = process.env,
+  exit: (code: number) => void = process.exit,
+): boolean {
+  if (!isMuted(environment)) return false;
+  console.error(
+    "Talos mute is active (TALOS_MUTE); voice runtime will not start.",
+  );
+  exit(0);
+  return true;
+}
 
 export const loadConfig = (
   env: NodeJS.ProcessEnv = process.env,

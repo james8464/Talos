@@ -18,14 +18,14 @@ record the upstream commit in derived releases.
 
 ## Why this is a replatform, not a merge
 
-| Talos                    | Linger                                              |
-| ------------------------ | --------------------------------------------------- |
-| Python 3.12              | Go 1.26 + Node 26 + React 19                        |
-| Swift menu-bar app       | Electron desktop + React web                        |
-| SQLite state             | PostgreSQL 17 (TeamHub) + SQLite (Computer Daemon)  |
-| Ollama endpoint          | LLM Gateway, local models, PolyStrata               |
-| Custom room service      | TeamHub Rooms + Agent Service + LiveKit voice       |
-| No container runtime     | Docker Compose for Postgres, LiveKit, web, services |
+| Talos                | Linger                                              |
+| -------------------- | --------------------------------------------------- |
+| Python 3.12          | Go 1.26 + Node 26 + React 19                        |
+| Swift menu-bar app   | Electron desktop + React web                        |
+| SQLite state         | PostgreSQL 17 (TeamHub) + SQLite (Computer Daemon)  |
+| Ollama endpoint      | LLM Gateway, local models, PolyStrata               |
+| Custom room service  | TeamHub Rooms + Agent Service + LiveKit voice       |
+| No container runtime | Docker Compose for Postgres, LiveKit, web, services |
 
 The working Talos tree must stay untouched while this branch is evaluated: it
 is the only verified, muted implementation. Do not delete it, replace its
@@ -58,7 +58,10 @@ same safety checks.
 
 0. **Safety shell (no audio).** Add a Linger-level mute policy checked by
    TeamHub and the voice runtime; tests prove no worker starts under
-   `TALOS_MUTE=1`. No LiveKit server is launched.
+   `TALOS_MUTE=1`. No LiveKit server is launched. **Done:** shared
+   `isMuted()` in `@linger/service-kit`; the voice runtime exits before
+   `loadConfig`, and the Node voice supervisor starts no worker and mounts no
+   routes when muted. Focused tests and typecheck/lint pass.
 1. **Local baseline.** Install pnpm/Go, bring up Postgres + TeamHub + web
    without voice, and run the repository's fast checks. Record exact commands.
 2. **Capture/readiness parity.** Port the readiness probe and consent guard as

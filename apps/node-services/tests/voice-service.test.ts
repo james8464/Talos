@@ -120,6 +120,18 @@ function reconcileRequest() {
 }
 
 describe("voice worker reconcile", () => {
+  it("starts no worker when Talos mute is active", async () => {
+    const { service, spawned, log } = await harness({
+      env: { TALOS_MUTE: "1" },
+    });
+    expect(spawned).toHaveLength(0);
+    expect(await service.reconcile()).toBe(false);
+    expect(log).toHaveBeenCalledWith("info", "voice.muted", {
+      reason: "TALOS_MUTE",
+    });
+    await service.stop();
+  });
+
   it("starts no worker without keys", async () => {
     const { spawned, route, shutdown } = await harness();
     expect(spawned).toHaveLength(0);

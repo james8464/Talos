@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   asError,
   displayText,
+  isMuted,
   isNodeError,
   isRecord,
   orderByRegion,
@@ -11,6 +12,15 @@ import {
   sleep,
   sourceRegion,
 } from "./index.js";
+
+describe("isMuted", () => {
+  it("accepts only the documented truthy values", () => {
+    for (const value of ["1", "true", "TRUE", "yes", "on", " on "])
+      expect(isMuted({ TALOS_MUTE: value })).toBe(true);
+    for (const value of [undefined, "", "0", "false", "mute", "no", "off"])
+      expect(isMuted({ TALOS_MUTE: value })).toBe(false);
+  });
+});
 
 describe("isRecord", () => {
   it("accepts objects and rejects arrays, null, and primitives", () => {

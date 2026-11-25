@@ -4,6 +4,18 @@
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+const MUTED_VALUES = new Set(["1", "true", "yes", "on"]);
+
+/**
+ * Talos mute policy: when TALOS_MUTE is truthy the host must not start audio
+ * output or capture workers. Accepts only the documented truthy values so a
+ * typo such as "mute" is not mistaken for a safe state.
+ */
+export const isMuted = (
+  environment: Record<string, string | undefined> = process.env,
+): boolean =>
+  MUTED_VALUES.has((environment.TALOS_MUTE ?? "").trim().toLowerCase());
+
 interface ErrorWithCode extends Error {
   code?: string;
 }

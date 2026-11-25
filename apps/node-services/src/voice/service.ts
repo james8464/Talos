@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { createServer, type AddressInfo } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isRecord } from "@linger/service-kit";
+import { isMuted, isRecord } from "@linger/service-kit";
 import { sha256Hex, type JsonLogger } from "@linger/service-kit/node";
 import type { components } from "@linger/wire-contracts/teamhub-internal/types";
 import type { HttpHost } from "../http-host.js";
@@ -140,6 +140,10 @@ export async function startVoiceService(options: {
   allocatePort?: () => Promise<number>;
 }) {
   const env = options.environment ?? process.env;
+  if (isMuted(env)) {
+    options.logger.log("info", "voice.muted", { reason: "TALOS_MUTE" });
+    return { reconcile: async () => false, async stop() {} };
+  }
   const config = readVoiceConfig(env);
   const fetchImpl = options.fetch ?? fetch;
   const probeWorker = options.probeWorker ?? probeVoiceWorker;

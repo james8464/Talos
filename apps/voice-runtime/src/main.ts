@@ -7,8 +7,10 @@ import {
   healthPort,
   loadConfig,
   maxSessions,
+  refuseWhenMuted,
 } from "./config.js";
 
+refuseWhenMuted();
 const config = loadConfig();
 // Node Services supervises separate ASR, recorder and Live worker processes.
 const recorder = process.argv.includes("--recorder");

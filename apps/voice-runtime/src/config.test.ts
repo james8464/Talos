@@ -1,11 +1,31 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { calculateWorkerLoad, loadConfig } from "./config.js";
+import { calculateWorkerLoad, loadConfig, refuseWhenMuted } from "./config.js";
 
 const base = {
   TEAMHUB_BASE_URL: "http://127.0.0.1:8080",
   LINGER_SECRET_SEED: "test-seed-0123456789abcdef0123456789",
 };
+
+describe("refuseWhenMuted", () => {
+  it("stops the runtime before any LiveKit worker starts", () => {
+    const exit = vi.fn();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(refuseWhenMuted({ TALOS_MUTE: "1" }, exit)).toBe(true);
+    expect(exit).toHaveBeenCalledWith(0);
+    expect(error).toHaveBeenCalledWith(
+      "Talos mute is active (TALOS_MUTE); voice runtime will not start.",
+    );
+    error.mockRestore();
+  });
+
+  it("leaves the runtime alone when mute is unset or false", () => {
+    const exit = vi.fn();
+    expect(refuseWhenMuted({}, exit)).toBe(false);
+    expect(refuseWhenMuted({ TALOS_MUTE: "0" }, exit)).toBe(false);
+    expect(exit).not.toHaveBeenCalled();
+  });
+});
 
 describe("loadConfig", () => {
   it("requires TEAMHUB_BASE_URL instead of guessing a local TeamHub", () => {
