@@ -246,7 +246,7 @@ async function main(): Promise<number> {
           "test",
           "./tests/integration",
           "-run",
-          "TestIdentityTextWritesAgentReply|TestSensorQuestionsWriteAgentReplies|TestCodingCommandsWriteAgentReplies|TestRoomCodingWorkerReportsAsAgent|TestRoomCodingClaimsRecoverAfterTheLease|TestRoomCodingWorkerRetriesTransportFailures|TestDuplicateCodingCommandsShareOneJob|TestRoomRoutineFiresAsAgentMessage",
+          "TestIdentityTextWritesAgentReply|TestSensorQuestionsWriteAgentReplies|TestCodingCommandsWriteAgentReplies|TestRoomCodingWorkerReportsAsAgent|TestRoomCodingClaimsRecoverAfterTheLease|TestRoomCodingWorkerRetriesTransportFailures|TestDuplicateCodingCommandsShareOneJob|TestRoomRoutineFiresAsAgentMessage|TestRoomReminderCommandCreatesAndFires",
           "-count=1",
         ],
         {

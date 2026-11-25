@@ -157,3 +157,11 @@ edits and fires a routine from Agent details.
 The TeamHub CLI's `computer permissions request --wait` now uses OpenClaw's
 quiet-poll schedule (5s, 10s, 30s, 60s) and resets on any change, instead of a
 fixed two-second poll.
+
+## Typed Room reminders
+
+`reminder in 10 minutes: stretch` creates a one-shot Room Routine through the
+public reminder service and replies as the Agent. The live harness creates it,
+makes it due, runs the reminder worker and reads the delivered message
+(`TestRoomReminderCommandCreatesAndFires`). Accepted units are minutes, hours
+and days, from one minute to thirty days.

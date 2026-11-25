@@ -14,8 +14,10 @@ import (
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
 	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomreminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomsenses"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
@@ -270,6 +272,9 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 		reply = roomsenses.Answer(text, voice)
 	}
 	if reply == "" {
+		reply = a.roomReminderReply(c, roomID, text)
+	}
+	if reply == "" {
 		reply = a.roomCodingReply(c, roomID, text)
 	}
 	if reply == "" {
@@ -287,6 +292,27 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 	); err != nil && a.logger != nil {
 		a.logger.Warn("room_command.failed", "room_id", roomID, "error", err)
 	}
+}
+
+// roomReminderReply creates a one-shot Room reminder from the typed command.
+func (a *App) roomReminderReply(c *gin.Context, roomID, text string) string {
+	command, ok := roomreminder.Parse(text)
+	if !ok {
+		return ""
+	}
+	runAt := time.Now().UTC().Add(command.Delay)
+	if _, err := a.reminders.Create(c.Request.Context(),
+		reminder.HumanCaller(currentPrincipal(c).Session.AccountID), roomID, "", nil,
+		reminder.CreateInput{
+			Name: command.Task, Instruction: command.Task,
+			Cadence: reminder.Cadence{Kind: "once", Timezone: "UTC", RunAt: &runAt},
+		}); err != nil {
+		if a.logger != nil {
+			a.logger.Warn("room_command.reminder_failed", "room_id", roomID, "error", err)
+		}
+		return "I couldn't create that reminder."
+	}
+	return fmt.Sprintf("Okay. I'll remind you in %s to %s.", roomreminder.Describe(command.Delay), command.Task)
 }
 
 func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {
