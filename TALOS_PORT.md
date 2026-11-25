@@ -240,3 +240,9 @@ model_call.invoked kind=coding runtime_type=codex mode=structured
 The patch that model returned was rejected by the exact-substring validator on
 its first attempt, so model quality for strict patches remains a separate
 limitation from the call path.
+
+## Thread journey
+
+The live harness creates a Thread from a Room message, replies in it, reads the
+parent reply count, reopens the Thread messages and finds the reply through
+tenant search (`TestRoomThreadJourneyLive`, `room-thread-journey`).

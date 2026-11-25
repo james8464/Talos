@@ -342,6 +342,33 @@ async function main(): Promise<number> {
     }
   }
 
+  if (process.env.TEST_DATABASE_URL && process.env.TEAMHUB_TEST_RUN_TOKEN) {
+    try {
+      await exec(
+        process.env.GO_BIN ?? "go",
+        [
+          "test",
+          "./tests/integration",
+          "-run",
+          "TestRoomThreadJourneyLive",
+          "-count=1",
+        ],
+        {
+          cwd: path.join(ROOT, "apps/teamhub"),
+          env: process.env,
+          timeout: 300_000,
+        },
+      );
+      check(
+        "room-thread-journey",
+        true,
+        "create, reply, parent summary and search",
+      );
+    } catch (error) {
+      check("room-thread-journey", false, (error as Error).message);
+    }
+  }
+
   const codexModel = process.env.TALOS_OLLAMA_CODEX_MODEL ?? "qwen3:4b-8k";
   const hasCodex = await exec("which", ["codex"]).then(
     () => true,
