@@ -318,6 +318,7 @@ describe("active product development commands", () => {
     expect(nodeServicesPackage.dependencies).toEqual({
       "@hocuspocus/server": "^4.3.0",
       "@hono/node-server": "^1.19.14",
+      "@talos/coding-jobs": "workspace:*",
       "@talos/document-files": "workspace:*",
       "@talos/document-model": "workspace:*",
       "@talos/knowledge-format": "workspace:*",

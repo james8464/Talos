@@ -21,6 +21,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 RUN npm pkg delete scripts.prepare
 COPY patches ./patches
 COPY contracts/generated/typescript/package.json ./contracts/generated/typescript/package.json
+COPY packages/coding-jobs/package.json ./packages/coding-jobs/package.json
 COPY packages/document-files/package.json ./packages/document-files/package.json
 COPY packages/document-model/package.json ./packages/document-model/package.json
 COPY packages/knowledge-format/package.json ./packages/knowledge-format/package.json
@@ -49,6 +50,8 @@ FROM dependencies AS build
 COPY tsconfig.base.json ./
 COPY contracts/generated/typescript/tsconfig.json contracts/generated/typescript/tsconfig.build.json ./contracts/generated/typescript/
 COPY contracts/generated/typescript/src ./contracts/generated/typescript/src
+COPY packages/coding-jobs/tsconfig.json packages/coding-jobs/tsconfig.build.json ./packages/coding-jobs/
+COPY packages/coding-jobs/src ./packages/coding-jobs/src
 COPY packages/document-files/tsconfig.json packages/document-files/tsconfig.build.json ./packages/document-files/
 COPY packages/document-files/src ./packages/document-files/src
 COPY packages/document-model/tsconfig.json packages/document-model/tsconfig.build.json ./packages/document-model/
@@ -63,6 +66,7 @@ COPY apps/voice-runtime/tsconfig.json apps/voice-runtime/tsconfig.build.json ./a
 COPY apps/voice-runtime/src ./apps/voice-runtime/src
 COPY apps/node-services/scripts/generate-feature-catalog.ts ./apps/node-services/scripts/generate-feature-catalog.ts
 RUN pnpm --filter @talos/wire-contracts build \
+    && pnpm --filter @talos/coding-jobs build \
     && pnpm --filter @talos/document-files build \
     && pnpm --filter @talos/document-model build \
     && pnpm --filter @talos/knowledge-format build \
@@ -158,6 +162,8 @@ COPY --from=production-dependencies /app/packages/document-model/node_modules ./
 COPY --from=production-dependencies /app/packages/knowledge-format/node_modules ./packages/knowledge-format/node_modules
 COPY --from=build /app/contracts/generated/typescript/package.json ./contracts/generated/typescript/package.json
 COPY --from=build /app/contracts/generated/typescript/dist ./contracts/generated/typescript/dist
+COPY --from=build /app/packages/coding-jobs/package.json ./packages/coding-jobs/package.json
+COPY --from=build /app/packages/coding-jobs/dist ./packages/coding-jobs/dist
 COPY --from=build /app/packages/document-files/package.json ./packages/document-files/package.json
 COPY --from=build /app/packages/document-files/dist ./packages/document-files/dist
 COPY --from=build /app/packages/document-model/package.json ./packages/document-model/package.json

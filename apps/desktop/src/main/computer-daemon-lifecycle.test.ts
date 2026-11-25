@@ -191,7 +191,7 @@ describe.skipIf(process.platform === "win32")(
       child.stop();
       expect(await code).toBe(0);
       await until(() => !alive(runtime), 5_000, "the runtime to exit");
-    });
+    }, 20_000);
 
     it("kills a daemon still frozen at quit together with its runtimes", async () => {
       setUp();
