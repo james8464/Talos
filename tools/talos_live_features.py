@@ -673,6 +673,63 @@ class WordTest(unittest.TestCase):
           f"{repair_result.get('repair')}"[:200])
     shutil.rmtree(repair_root, ignore_errors=True)
 
+    cli_root = Path(tempfile.mkdtemp())
+    cli_state = cli_root / "state"
+    (cli_root / "a.py").write_text("A = 1\n")
+    (cli_root / "b.py").write_text("B = 2\n")
+    cli_script = r"""
+import io, json, sys
+from pathlib import Path
+from contextlib import redirect_stdout
+from unittest.mock import patch
+from talos_core import cli
+
+root, state = Path(sys.argv[1]), Path(sys.argv[2])
+steps = {"steps": [
+    {"id": "bad", "target": "a.py", "request": "first"},
+    {"id": "after", "target": "b.py", "request": "second", "needs": ["bad"]},
+]}
+start_out, run_out = io.StringIO(), io.StringIO()
+with patch("talos_core.self_improvement.plan_generator.repair",
+           return_value={"steps": [{"id": "fixed", "targets": ["b.py"],
+                                    "request": "second"}]}) as repair, \
+        patch("talos_core.self_improvement.initiative_coder.local_infer",
+              return_value=lambda prompt: "{}"):
+    with redirect_stdout(start_out):
+        start = cli.main(["codeplan", "start", "--json", json.dumps(steps),
+                          "--request", "goal", "--root", str(root), "--state", str(state)])
+    plan = json.loads(start_out.getvalue())
+    with redirect_stdout(run_out):
+        run = cli.main(["codeplan", "run", plan["id"], "--root", str(root),
+                        "--state", str(state), "--model", "test"])
+    result = json.loads(run_out.getvalue())
+print(json.dumps({"start": start, "run": run, "result": result,
+                  "repair_calls": repair.call_count}))
+"""
+    cli_repair = subprocess.run(
+        [sys.executable, "-c", cli_script, str(cli_root), str(cli_state)],
+        capture_output=True, text=True, timeout=180,
+        env={**os.environ, "PYTHONPATH": str(ROOT), "TALOS_MUTE": "1"},
+    )
+    try:
+        outcome = json.loads(cli_repair.stdout or "{}")
+    except ValueError:
+        outcome = {}
+    result = outcome.get("result", {})
+    statuses = {step["id"]: step["status"] for step in result.get("steps", [])}
+    check(checks, "coding_plan_cli_repair",
+          outcome.get("start") == 0
+          and result.get("revision") == 1
+          and result.get("repair", {}).get("failed") == "bad"
+          and statuses.get("bad") == "superseded"
+          and statuses.get("fixed") == "declined"
+          and outcome.get("repair_calls") == 1
+          and (cli_root / "a.py").read_text() == "A = 1\n"
+          and (cli_root / "b.py").read_text() == "B = 2\n",
+          f"revision {result.get('revision')}: {statuses} "
+          f"calls {outcome.get('repair_calls')}"[:200])
+    shutil.rmtree(cli_root, ignore_errors=True)
+
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 
