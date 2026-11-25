@@ -87,6 +87,10 @@ func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
 			if w.Logger != nil {
 				w.Logger.Warn("room_coding.requeued", "job_id", job.ID, "attempts", job.Attempts, "retry_in", delay.String(), "error", err)
 			}
+			notice := RetryNotice(job, delay, maxAttempts)
+			if err := w.Publish(ctx, job.RoomID, notice, fmt.Sprintf("coding:%s:retry:%d", job.ID, job.Attempts)); err != nil && w.Logger != nil {
+				w.Logger.Warn("room_coding.retry_notice_failed", "job_id", job.ID, "error", err)
+			}
 			return true, nil
 		}
 		outcome = Outcome{Status: "failed", Message: message}
@@ -165,6 +169,16 @@ func failureHint(failure string) string {
 		failure = failure[:limit]
 	}
 	return " (" + failure + ")"
+}
+
+// RetryNotice tells the Room that the Computer is unreachable and when the
+// next attempt runs, so a waiting person sees follow-through instead of
+// silence.
+func RetryNotice(job store.RoomCodingJob, delay time.Duration, maxAttempts int) string {
+	return fmt.Sprintf(
+		"Coding job %s could not reach the Computer; retrying in %s (attempt %d of %d).",
+		job.ID, delay.Round(time.Second), job.Attempts, maxAttempts,
+	)
 }
 
 // RetryDelay is OpenClaw's bounded exponential retry schedule: 15s for the

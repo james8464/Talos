@@ -38,7 +38,7 @@ Status meanings: **ported** (works here and is tested here), **present**
 | Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.                                                            |
 | Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.                                                      |
 | Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                                                               |
-| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | Durable commands, cancel, retry schedule, and duplicate suppression; the worker replies as the Agent.                                       |
+| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | Durable commands, cancel, visible retry schedule and duplicate suppression; every reply is Agent-authored.                                  |
 | Receipts: diff, regression, hashes, attempts, remaining budget             | **partial**  | The job row keeps status and result; a diff/hash receipt is not stored yet.                                                                 |
 
 ## Control and UI

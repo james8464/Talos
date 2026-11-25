@@ -87,7 +87,7 @@ func TestRoomCodingWorkerRetriesTransportFailures(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("create job: %v", err)
 	}
-	published := 0
+	published := []string{}
 	worker := &roomcoding.Worker{
 		Queries:      queries,
 		Executor:     transportFailureExecutor{},
@@ -95,10 +95,7 @@ func TestRoomCodingWorkerRetriesTransportFailures(t *testing.T) {
 		LeaseSeconds: 60,
 		MaxAttempts:  2,
 		Publish: func(ctx context.Context, roomID, text, key string) error {
-			published++
-			if !strings.Contains(text, "could not run the job") {
-				t.Errorf("reply=%q", text)
-			}
+			published = append(published, text)
 			return nil
 		},
 	}
@@ -114,8 +111,8 @@ func TestRoomCodingWorkerRetriesTransportFailures(t *testing.T) {
 		!strings.Contains(result, "connection refused") || retryIn < 10 {
 		t.Fatalf("after retry status=%q result=%q attempts=%d retry_in=%v err=%v", status, result, attempts, retryIn, err)
 	}
-	if published != 0 {
-		t.Fatalf("retry published %d replies", published)
+	if len(published) != 1 || !strings.Contains(published[0], "retrying in 15s (attempt 1 of 2)") {
+		t.Fatalf("retry notices=%q", published)
 	}
 	// The persisted retry time gates the next claim.
 	if processed, err := worker.RunOnce(ctx); err != nil || processed {
@@ -131,7 +128,7 @@ func TestRoomCodingWorkerRetriesTransportFailures(t *testing.T) {
 		Scan(&status, &attempts); err != nil || status != "failed" || attempts != 2 {
 		t.Fatalf("after failure status=%q attempts=%d err=%v", status, attempts, err)
 	}
-	if published != 1 {
-		t.Fatalf("failure published %d replies", published)
+	if len(published) != 2 || !strings.Contains(published[1], "could not run the job") {
+		t.Fatalf("failure notices=%q", published)
 	}
 }

@@ -133,6 +133,12 @@ no quota or network.
 
 ## Follow-through guards
 
+A transport failure is visible: the Room receives `retrying in 15s (attempt 1
+of 4)` before the next attempt, and one final failure reply when attempts run
+out, matching old Talos's retry report.
+
+## Duplicate work
+
 A repeated `coding job` with the same target and request joins the active job
 instead of starting a second one; the Agent replies with the existing ID and how
 to cancel it. `coding cancel <id>` releases the request. This is the Room-side

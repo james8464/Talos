@@ -50,6 +50,13 @@ func TestRetryDelayMatchesTheBoundedSchedule(t *testing.T) {
 	}
 }
 
+func TestRetryNoticeNamesTheAttemptAndDelay(t *testing.T) {
+	notice := RetryNotice(store.RoomCodingJob{ID: "codingjob_1", Attempts: 2}, 30*time.Second, 4)
+	if notice != "Coding job codingjob_1 could not reach the Computer; retrying in 30s (attempt 2 of 4)." {
+		t.Fatalf("notice=%q", notice)
+	}
+}
+
 func TestHTTPExecutorPostsTheJobAndReadsTheOutcome(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
