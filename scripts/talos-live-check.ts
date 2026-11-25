@@ -5,7 +5,8 @@
  * proves the voice runtime refuses to start, captures one frame/clip and
  * deletes it, classifies both over HTTP, asks the on-device vision model,
  * exercises identity and coding commands, runs the browser Room Document
- * journeys, then verifies no voice/audio process is left behind.
+ * journeys, runs one Codex call backed by local Ollama, then verifies no
+ * voice/audio process is left behind.
  *
  * Run: pnpm exec tsx scripts/talos-live-check.ts
  */
@@ -30,6 +31,45 @@ const checks: { name: string; ok: boolean; detail: string }[] = [];
 
 function check(name: string, ok: boolean, detail = "") {
   checks.push({ name, ok, detail: String(detail).slice(0, 300) });
+}
+
+// Codex reads stdin when it is open, so run it with stdin closed and collect
+// both streams ourselves.
+function runCodex(codexHome: string, model: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      "codex",
+      [
+        "exec",
+        "--skip-git-repo-check",
+        "-m",
+        model,
+        'Return exactly the JSON {"ok":true} and nothing else.',
+      ],
+      {
+        cwd: os.tmpdir(),
+        env: { ...process.env, CODEX_HOME: codexHome, OLLAMA_API_KEY: "dummy" },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      reject(new Error("codex timed out"));
+    }, 300_000);
+    child.stdout.on("data", (chunk) => (stdout += chunk));
+    child.stderr.on("data", (chunk) => (stderr += chunk));
+    child.once("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.once("close", (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve(stdout);
+      else reject(new Error(`codex exited ${code}: ${stderr.slice(-300)}`));
+    });
+  });
 }
 
 async function noProcess(pattern: string): Promise<boolean> {
@@ -300,6 +340,46 @@ async function main(): Promise<number> {
     } catch (error) {
       check("room-document-e2e", false, (error as Error).message);
     }
+  }
+
+  const codexModel = process.env.TALOS_OLLAMA_CODEX_MODEL ?? "qwen3:4b-8k";
+  const hasCodex = await exec("which", ["codex"]).then(
+    () => true,
+    () => false,
+  );
+  const hasOllama = await exec("which", ["ollama"]).then(
+    () => true,
+    () => false,
+  );
+  if (hasCodex && hasOllama) {
+    const codexHome = await mkdtemp(
+      path.join(os.tmpdir(), "talos-ollama-codex-"),
+    );
+    try {
+      await exec(
+        "bash",
+        [path.join(ROOT, "scripts/ollama-codex-home.sh"), codexHome],
+        { cwd: ROOT, timeout: 120_000 },
+      );
+      const started = Date.now();
+      const output = await runCodex(codexHome, codexModel);
+      const compact = output.replace(/\s+/gu, "");
+      check(
+        "ollama-codex-model",
+        compact.includes('"ok":true') || compact.includes("'ok':true"),
+        `${codexModel} via Codex ${Date.now() - started}ms · ${output.slice(-120)}`,
+      );
+    } catch (error) {
+      check("ollama-codex-model", false, (error as Error).message);
+    } finally {
+      await rm(codexHome, { recursive: true, force: true });
+    }
+  } else {
+    check(
+      "ollama-codex-model",
+      true,
+      "skipped: codex or ollama is not installed",
+    );
   }
 
   check(

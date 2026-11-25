@@ -73,3 +73,4 @@ Status meanings: **ported** (works here and is tested here), **present**
    | Room Document create, edit, comment and reopen | **present** | Browser e2e covers both journeys and `pnpm talos:live` runs them as `room-document-e2e`. |
    | Stale Agent one-shot follow-up grace | **present** | Hermes-style two-minute grace retires a late Agent follow-up; Human reminders still fire. |
    | Typed Room pin and unpin commands | **present** | `pin this room` / `unpin this room` update the requester’s private pin and reply as the Agent. |
+   | Real model call through the Codex Runtime on local Ollama | **partial** | `ollama-codex-model` runs Codex against `qwen3:4b-8k`; daemon catalog placement is still open. |

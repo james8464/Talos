@@ -204,3 +204,23 @@ provider bill. The response names the model that actually drafted the patch.
 and reply as the Agent. The pin is per Human, so another member's list is
 unaffected. `TestRoomPinCommandPinsForTheRequester` covers both commands and the
 stored state; the live harness runs it.
+
+## Local model through the Codex Runtime
+
+`scripts/ollama-codex-home.sh` writes a private Codex home whose provider is
+Ollama's Responses API, backed by `qwen3:4b-8k` (the 4B model with an 8k
+context). The live harness runs `codex exec` against that home
+(`ollama-codex-model`), proving a real model call through the Codex Runtime with
+no provider bill.
+
+To use it with a Local Computer, export the home and a dummy provider key
+before starting the daemon:
+
+```bash
+export CODEX_HOME="$(bash scripts/ollama-codex-home.sh)"
+export OLLAMA_API_KEY=dummy
+bash scripts/dev-local-computer.sh start
+```
+
+Give the Agent the `qwen3:4b-8k` model. The daemon's Runtime catalog must list
+that model before placement accepts it; that catalog step is not covered yet.
