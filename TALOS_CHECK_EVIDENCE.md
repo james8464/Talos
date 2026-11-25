@@ -1,6 +1,7 @@
 # Full check evidence
 
-The full repository gate ran on this branch with audio muted.
+The full repository gate ran on this branch with audio muted, from the final
+`/Users/james/Developer/Talos` checkout.
 
 ```bash
 TALOS_MUTE=1 LC_ALL=C NODE_OPTIONS=--max-old-space-size=8192 \
@@ -49,10 +50,10 @@ Test Files  1 passed (1)
 Tests  22 passed (22)
 Test Files  62 passed | 3 skipped (65)
 Tests  721 passed | 21 skipped (742)
-Test Files  65 passed | 3 skipped (68)
-Tests  989 passed | 15 skipped (1004)
 Test Files  26 passed (26)
 Tests  302 passed | 6 skipped (308)
+Test Files  65 passed | 3 skipped (68)
+Tests  989 passed | 15 skipped (1004)
 Test Files  28 passed (28)
 Tests  221 passed (221)
 Test Files  49 passed | 1 skipped (50)
@@ -83,7 +84,7 @@ Tests  12 passed (12)
 
  Test Files  1 passed (1)
       Tests  12 passed (12)
-   Start at  17:38:39
-   Duration  19.68s (transform 370ms, setup 12ms, import 564ms, tests 19.03s, environment 0ms)
+   Start at  18:01:59
+   Duration  23.94s (transform 400ms, setup 15ms, import 614ms, tests 23.24s, environment 0ms)
 
 ```
