@@ -387,6 +387,11 @@ async function main(): Promise<number> {
         "TestProactiveWindowsAndQuietWakes",
         "proactive windows, quiet wakes and ordered delivery",
       ],
+      [
+        "room-memory-journey",
+        "TestAgentMemoryScopePublication|TestAgentMemoryReadUsesRevisionColumn",
+        "Agent memory publish, revision conflict and read",
+      ],
     ] as const) {
       try {
         await exec(

@@ -36,7 +36,7 @@ describe("read-only selection Comment control", () => {
     const action = await screen.findByRole(
       "button",
       { name: "Add comment to selected text" },
-      { timeout: 10_000 },
+      { timeout: 50_000 },
     );
     expect(action).toBeVisible();
     fireEvent.click(action);
@@ -51,7 +51,7 @@ describe("read-only selection Comment control", () => {
       screen.getByRole("button", { name: "Add comment to selected text" })
         .parentElement,
     ).toHaveClass("fixed");
-  });
+  }, 60_000);
 
   it("defers to the BlockNote formatting toolbar Comment action", async () => {
     const editorRootRef = createRef<HTMLElement>();

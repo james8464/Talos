@@ -309,3 +309,9 @@ The live harness runs `TestProactiveWindowsAndQuietWakes`
 (`room-proactive-journey`): a twenty-message proactive window opens once and is
 judged once, queued wakes wait for three quiet minutes, deliver in Room order,
 and mention AnotherMe without interrupting the conversation.
+
+## Agent Memory journey
+
+The live harness runs `TestAgentMemoryScopePublication` and
+`TestAgentMemoryReadUsesRevisionColumn` as `room-memory-journey`: publish memory,
+reject a stale revision, publish the next revision and read it back.
