@@ -115,7 +115,7 @@ func TestBuiltinCatalogLoadsVersionedPackages(t *testing.T) {
 	}
 	lev8Search := findBuiltinSkill(t, catalog, "simplexai_lev8_search")
 	if lev8Search.Name != "lev8-search" ||
-		lev8Search.BootstrapManifestID != "skill_manifest_simplexai_lev8_search_1_0_1" ||
+		lev8Search.BootstrapManifestID != "skill_manifest_simplexai_lev8_search_1_0_2" ||
 		len(lev8Search.DefaultAgentTypes) != 0 {
 		t.Fatalf("Lev8 search catalog entry=%+v", lev8Search)
 	}
@@ -150,9 +150,9 @@ func TestBuiltinCatalogLoadsVersionedPackages(t *testing.T) {
 		skillID, name, newest string
 		versions              int
 	}{
-		{"simplexai_impeccable", "impeccable", "1.0.1", 2},
+		{"simplexai_impeccable", "impeccable", "1.0.2", 3},
 		{"simplexai_superpowers", "superpowers", "1.0.0", 1},
-		{"simplexai_taste", "taste", "1.0.1", 2},
+		{"simplexai_taste", "taste", "1.0.2", 3},
 	} {
 		skill := findBuiltinSkill(t, catalog, want.skillID)
 		if skill.Name != want.name ||
