@@ -10,9 +10,7 @@ import {
 it.each(["linux-x64", "darwin-arm64"])(
   "rejects %s on a Windows host before creating a release",
   async (target) => {
-    const root = await mkdtemp(
-      path.join(os.tmpdir(), "talos-release-policy-"),
-    );
+    const root = await mkdtemp(path.join(os.tmpdir(), "talos-release-policy-"));
     try {
       await expect(
         prepareLocalComputerRelease(

@@ -27,8 +27,7 @@ export async function prepareManagedToolsRuntime(
         ".local/share/simplexai/tools",
       ),
   );
-  const requiredLev8Version =
-    environment.TALOS_LEV8_VERSION?.trim() || "0.6.0";
+  const requiredLev8Version = environment.TALOS_LEV8_VERSION?.trim() || "0.6.0";
   if (!/^\d+\.\d+\.\d+$/u.test(requiredLev8Version))
     throw new Error("Invalid TALOS_LEV8_VERSION");
   const configuration = { root, baseUrl, releaseId, requiredLev8Version };

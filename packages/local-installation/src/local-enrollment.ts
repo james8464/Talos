@@ -63,10 +63,9 @@ export async function prepareLocalEnrollment(
     if (!/^talos-connect-v1\.[A-Za-z0-9_-]+$/.test(text))
       throw new Error("Invalid local connection credential format.");
     const previous = parseJson(
-      Buffer.from(
-        text.slice("talos-connect-v1.".length),
-        "base64url",
-      ).toString("utf8"),
+      Buffer.from(text.slice("talos-connect-v1.".length), "base64url").toString(
+        "utf8",
+      ),
     );
     if (
       previous.origin !== instance.origin ||

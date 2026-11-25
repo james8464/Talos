@@ -51,9 +51,9 @@ it("reports nonzero exit without exposing argv in errors", async () => {
   expect(
     (await runProcess(process.execPath, ["-e", "process.exit(7)"])).code,
   ).toBe(7);
-  await expect(
-    runProcess("/missing-talos-private-secret", []),
-  ).rejects.toThrow(/unavailable/i);
+  await expect(runProcess("/missing-talos-private-secret", [])).rejects.toThrow(
+    /unavailable/i,
+  );
 });
 it("bounds captured output rather than buffering forever", async () => {
   await expect(

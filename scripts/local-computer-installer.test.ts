@@ -656,10 +656,7 @@ talos-computer login`,
     });
     await runInstaller(fixture);
     const installedBundle = await activeBundleName(fixture.installRoot);
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
     await rm(fixture.artifact!.app);
     await rm(fixture.artifact!.deps);
 
@@ -851,10 +848,7 @@ esac
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
     const installedBundle = await activeBundleName(fixture.installRoot);
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
     await rm(fixture.launcher);
 
     await runInstaller(fixture);
@@ -881,10 +875,7 @@ esac
       installedBundle,
       "cli/talos-computer",
     );
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
     await writeFile(cliEntry, "corrupted\n");
 
     await expect(runInstaller(fixture)).rejects.toMatchObject({
@@ -1569,10 +1560,7 @@ esac
   it("commits install metadata before starting the new Daemon", async () => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
     await runInstaller({
       ...fixture,
       artifact: sharedArtifact("1.2.4"),
@@ -1589,10 +1577,7 @@ esac
   }) => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
     await expect(
       runInstaller({
         ...fixture,
@@ -1649,10 +1634,7 @@ esac
         stat(path.join(fixture.installRoot, previousBundle)),
       ).resolves.toBeDefined();
       expect(
-        await readFile(
-          fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-          "utf8",
-        ),
+        await readFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "utf8"),
       ).toBe("1");
       expect(await readFile(fixture.invocations, "utf8")).not.toContain(
         "unsafe-active-stop",
@@ -2232,10 +2214,7 @@ esac
   }) => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
 
     await execFileAsync("bash", [uninstaller], {
       env: fixture.environment,
@@ -2469,10 +2448,7 @@ esac
   }) => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
     const stateFile = path.join(fixture.installRoot, "state.json");
     await writeFile(stateFile, "state", { mode: 0o600 });
 
@@ -2497,10 +2473,7 @@ esac
   }) => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    await writeFile(
-      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
-      "running",
-    );
+    await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "running");
     await chmod(fixture.launcher, 0o600);
 
     await expect(
@@ -3067,9 +3040,7 @@ const installerFixture = async (
 ) => {
   const startedAt = performance.now();
   try {
-    const root = await mkdtemp(
-      path.join(os.tmpdir(), "talos-installer-test-"),
-    );
+    const root = await mkdtemp(path.join(os.tmpdir(), "talos-installer-test-"));
     temporaryRoots.push(root);
     const home = path.join(root, "home");
     const invocations = path.join(root, "invocations.log");
@@ -3241,10 +3212,7 @@ else process.exitCode = 1;
       "#!/bin/sh\nexit 0\n",
       { mode: 0o755 },
     );
-    await copyFile(
-      installer,
-      path.join(staged, "installer/talos-computer.sh"),
-    );
+    await copyFile(installer, path.join(staged, "installer/talos-computer.sh"));
     if (options.extraFileContent) {
       await writeFile(
         path.join(staged, "artifact-marker.txt"),

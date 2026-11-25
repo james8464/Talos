@@ -37,9 +37,7 @@ it("keeps the person's NO_PROXY entries under the name they used", () => {
 
 it("adds nothing without a system proxy or when the person set HTTPS_PROXY", () => {
   expect(systemProxyEnvironment({})).toEqual({});
-  expect(systemProxyEnvironment({ TALOS_SYSTEM_HTTPS_PROXY: " " })).toEqual(
-    {},
-  );
+  expect(systemProxyEnvironment({ TALOS_SYSTEM_HTTPS_PROXY: " " })).toEqual({});
   expect(
     systemProxyEnvironment({
       TALOS_SYSTEM_HTTPS_PROXY: "http://system:1",

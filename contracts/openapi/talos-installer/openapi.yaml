@@ -1240,8 +1240,7 @@ components:
           $ref: "#/components/schemas/SetupChoice"
         environment:
           type: object
-          description:
-            Absolute paths only, never credentials. TALOS_CODEX_PATH,
+          description: Absolute paths only, never credentials. TALOS_CODEX_PATH,
             TALOS_CLAUDE_PATH and TALOS_PI_PATH name the executable;
             CODEX_HOME, CLAUDE_CONFIG_DIR and PI_CODING_AGENT_DIR its profile
             when it is not the user's default. TALOS_LOCALMODELS_PYTHON,

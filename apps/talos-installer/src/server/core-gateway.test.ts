@@ -24,13 +24,10 @@ vi.mock("@talos/local-installation/managed-codex", () => ({
 vi.mock("@talos/local-installation/local-models", () => ({
   localModelsEnvironment: mocks.localModelsEnvironment,
 }));
-vi.mock(
-  "@talos/local-installation/localmodels-computer",
-  async (original) => ({
-    ...(await original<object>()),
-    localmodelsComputerTool: mocks.localmodelsTool,
-  }),
-);
+vi.mock("@talos/local-installation/localmodels-computer", async (original) => ({
+  ...(await original<object>()),
+  localmodelsComputerTool: mocks.localmodelsTool,
+}));
 vi.mock("@talos/local-installation/model-gateway", () => ({
   prepareModelGateway: mocks.prepare,
   stopModelGateway: mocks.stopGateway,

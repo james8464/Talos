@@ -1135,8 +1135,8 @@ verified asset.
 
 Real desktop probes run on demand and are skipped by default:
 
-| Test                         | Switch                                                | Covers                                                                                                                   |
-| ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Test                         | Switch                                               | Covers                                                                                                                   |
+| ---------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `TestMacDesktopLive`         | `TALOS_MAC_DESKTOP_PROBE=1`                          | Non-Latin background input in TextEdit, whole-screen screenshot, separate browser                                        |
 | `TestWindowsDesktopLive`     | `TALOS_WINDOWS_EXPECT=ready\|locked\|noninteractive` | Three lines of non-Latin text in Notepad, keys, whole-screen tools, lock screen, session 0, separate browser             |
 | `TestUserChromeLive`         | `TALOS_USER_CHROME_PROBE=1`                          | Wrong token, connect, reconnect after restart, private storage, disconnect                                               |

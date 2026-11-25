@@ -149,8 +149,8 @@ For one person on one computer. Choose your platform below. The app
 opens Talos, connects this computer and runs its agents. **Quick Install** on its
 setup screen sets up a Talos server on this computer too.
 
-| Platform                                                                                       | Package                                                                                            |
-| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Platform                                                                                      | Package                                                                                           |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | [macOS 14.0 or later, Apple silicon](https://github.com/simplexai-labs/talos/releases/latest) | `Talos-<version>-macos-arm64.dmg`                                                                 |
 | [Windows x64](https://github.com/simplexai-labs/talos/releases/latest)                        | `Talos-<version>-windows-x64-setup.exe`, or `-windows-x64-portable.zip` to run without installing |
 | [Linux x64](https://github.com/simplexai-labs/talos/releases/latest)                          | `Talos-<version>-linux-x64.tar.gz` (glibc 2.35 or newer)                                          |

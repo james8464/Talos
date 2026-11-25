@@ -29,8 +29,6 @@ describe("readMemoryConfig", () => {
     ).toBe("/srv/mirror/agent-manager/workspaces/context-host");
   });
   it("requires the secret seed", () => {
-    expect(() => readMemoryConfig({})).toThrow(
-      "TALOS_SECRET_SEED is required",
-    );
+    expect(() => readMemoryConfig({})).toThrow("TALOS_SECRET_SEED is required");
   });
 });

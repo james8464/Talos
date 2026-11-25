@@ -621,8 +621,7 @@ describe("desktop-release.sh package Docker images", () => {
         PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
         DESKTOP_VERSION: version,
         RELEASE_OUT: fixture.out,
-        DESKTOP_PACKAGING_IMAGE_PREFIX:
-          "ghcr.io/simplexai-labs/talos/desktop/",
+        DESKTOP_PACKAGING_IMAGE_PREFIX: "ghcr.io/simplexai-labs/talos/desktop/",
       },
       fixture.script,
     );

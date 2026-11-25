@@ -40,7 +40,7 @@ A passing layer does not cover the layers above it.
 | Deterministic          | `pnpm smoke:local-runner`                                                   | Agent Service, Go Daemon, Gateway, process cleanup | TeamHub, Runtime, model   |
 | Offline Agent removal  | `LOCAL_RUNNER_SMOKE_SCENARIO=offline-agent-removal pnpm smoke:local-runner` | Same as deterministic                              | Same as deterministic     |
 | Go Daemon soak         | `pnpm smoke:local-runner:soak`                                              | Go Daemon, Gateway, Context View, Operation ledger | Codex app-server, TeamHub |
-| Real Runtime (Stage C) | `TALOS_LIVE_LOCAL_CODEX=1 pnpm smoke:local-runner:live`                    | Codex app-server and model                         | TeamHub and MCP           |
+| Real Runtime (Stage C) | `TALOS_LIVE_LOCAL_CODEX=1 pnpm smoke:local-runner:live`                     | Codex app-server and model                         | TeamHub and MCP           |
 | Real Claude lifecycle  | see [Claude live test](#claude-live-lifecycle)                              | Claude Code and model through the Go executor      | Gateway, Web, TeamHub     |
 | Windows native         | see [Windows native](#windows-native)                                       | CLI, installer, named pipes, ACLs on Windows       | Runtime and model         |
 
@@ -247,7 +247,7 @@ The browser has three targets:
 
 | Target                 | When                                                                                   | What to check                                                                                                                                                             |
 | ---------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Isolated Agent browser | Linux (always), or macOS/Windows when the default browser is not Chrome                | Profile under `computer-tools/browser-profiles/` (Linux Snap Chrome/Chromium: `~/snap/<name>/common/talos-browser-profiles/`); no user sign-ins                          |
+| Isolated Agent browser | Linux (always), or macOS/Windows when the default browser is not Chrome                | Profile under `computer-tools/browser-profiles/` (Linux Snap Chrome/Chromium: `~/snap/<name>/common/talos-browser-profiles/`); no user sign-ins                           |
 | Agent browser window   | `launch_app` with `agent_browser: true` on macOS                                       | Computer's own window in the user's Chrome (Edge and Firefox use their own profile). Works behind other windows on the current Space; off-Space refusal tested separately |
 | User's everyday Chrome | Default browser is Chrome on macOS/Windows and user connected via Playwright Extension | Tasks use the user's sign-ins; when disconnected, browser calls return `BROWSER_CONNECTION_REQUIRED` instead of silently falling back to the isolated browser             |
 

@@ -70,7 +70,10 @@ export interface Plan {
 }
 
 export interface StepResult {
-  readonly status: Exclude<StepStatus, "queued" | "running" | "blocked" | "superseded">;
+  readonly status: Exclude<
+    StepStatus,
+    "queued" | "running" | "blocked" | "superseded"
+  >;
   readonly attempts?: number;
   readonly message?: string;
   readonly failure?: string;
@@ -145,14 +148,16 @@ export function orderSteps(
   external: ReadonlySet<string> = new Set(),
 ): string[] {
   const ids = steps.map((step) => step.id);
-  if (new Set(ids).size !== ids.length) throw new Error("Step ids must be unique.");
+  if (new Set(ids).size !== ids.length)
+    throw new Error("Step ids must be unique.");
   const needs = new Map(steps.map((step) => [step.id, step.needs]));
   for (const [id, dependencies] of needs)
     for (const dependency of dependencies) {
       if (external.has(dependency)) continue;
       if (!needs.has(dependency))
         throw new Error(`Step ${id} needs unknown step ${dependency}.`);
-      if (dependency === id) throw new Error(`Step ${id} cannot depend on itself.`);
+      if (dependency === id)
+        throw new Error(`Step ${id} cannot depend on itself.`);
     }
   const order: string[] = [];
   const placed = new Set<string>();
@@ -219,11 +224,17 @@ export function createPlan(
   const budget = options.budget ?? 300;
   if (!Number.isInteger(budget) || budget < MIN_SECONDS || budget > 3600)
     throw new Error("Budget must be between 5 and 3600 seconds.");
-  const steps = normalizeSteps(inputs, { allowedTargets: options.allowedTargets });
+  const steps = normalizeSteps(inputs, {
+    allowedTargets: options.allowedTargets,
+  });
   const totalBudget =
     options.totalBudget ??
     Math.min(MAX_PLAN_SECONDS, budget * Math.max(2, steps.length + 1));
-  if (!Number.isInteger(totalBudget) || totalBudget < MIN_SECONDS || totalBudget > MAX_PLAN_SECONDS)
+  if (
+    !Number.isInteger(totalBudget) ||
+    totalBudget < MIN_SECONDS ||
+    totalBudget > MAX_PLAN_SECONDS
+  )
     throw new Error("Total plan budget must be between 5 and 3600 seconds.");
   return {
     id,

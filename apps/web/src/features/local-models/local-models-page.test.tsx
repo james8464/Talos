@@ -5715,8 +5715,7 @@ describe("Featured Inkling 2 Mini spotlight", () => {
 
   it("shows post-reboot driver completion banner with direct model download and dismisses cleanly", async () => {
     const clearInstallState = vi.fn(async () => {});
-    const previousDesktop = (window as { talosDesktop?: unknown })
-      .talosDesktop;
+    const previousDesktop = (window as { talosDesktop?: unknown }).talosDesktop;
     (window as { talosDesktop?: unknown }).talosDesktop = {
       computer: {
         enroll: vi.fn(),

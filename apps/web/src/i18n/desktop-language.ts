@@ -10,8 +10,8 @@ interface DesktopLanguage {
 function desktopLanguage(): DesktopLanguage | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { talosDesktop?: { language?: DesktopLanguage } })
-        .talosDesktop?.language;
+    : (window as { talosDesktop?: { language?: DesktopLanguage } }).talosDesktop
+        ?.language;
 }
 
 /**

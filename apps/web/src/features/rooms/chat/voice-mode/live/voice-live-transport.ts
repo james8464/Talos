@@ -353,8 +353,7 @@ export async function openVoiceLive(input: {
       [...media.remoteParticipants.values()].some(
         (participant) =>
           participant.isAgent &&
-          participant.attributes["talos.voice_ready_generation"] ===
-            generation,
+          participant.attributes["talos.voice_ready_generation"] === generation,
       );
     let wakeReady: (() => void) | undefined;
     media.on(RoomEvent.ParticipantAttributesChanged, () => {

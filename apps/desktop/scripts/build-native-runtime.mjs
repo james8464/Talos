@@ -257,10 +257,7 @@ async function listFiles(root) {
 
 // Shared with scripts/prepare-local-computer-release.mjs so both the Native
 // runtime and Computer tools reuse one pinned Node.js download per target.
-const nodeCache = path.join(
-  desktop,
-  "../../.talos-runtime/node-distributions",
-);
+const nodeCache = path.join(desktop, "../../.talos-runtime/node-distributions");
 
 async function downloadNode(target, output) {
   const release = NODE_RUNTIME_RELEASES[target];

@@ -15,9 +15,7 @@ it.skipIf(!executable)(
     // Native Codex refuses to create Linux sandbox helpers beneath /tmp.
     // Keep Go's disposable runtime homes under an owned private directory,
     // without reading the user's actual Codex home or disabling the sandbox.
-    const home = await mkdtemp(
-      path.join(os.homedir(), ".talos-codex-compat-"),
-    );
+    const home = await mkdtemp(path.join(os.homedir(), ".talos-codex-compat-"));
     const requests: Record<string, unknown>[] = [];
     const server = createServer((request, response) => {
       void (async () => {

@@ -90,9 +90,7 @@ export async function loadComputerRelease(
     root,
     version,
     targets,
-    installerTemplate: await readTemplate(
-      path.join(root, "talos-computer.sh"),
-    ),
+    installerTemplate: await readTemplate(path.join(root, "talos-computer.sh")),
     uninstallerTemplate: await readTemplate(
       path.join(root, "uninstall-talos-computer.sh"),
     ),

@@ -144,11 +144,7 @@ const run = (script, args, failure) =>
 
 // The local installer that "Run on this computer" opens. It runs under a
 // pinned Node 26 that the desktop downloads, not the app's own Node.
-await run(
-  "../talos-installer/scripts/build.mjs",
-  [],
-  "installer build failed",
-);
+await run("../talos-installer/scripts/build.mjs", [], "installer build failed");
 await rm("dist/installer", { recursive: true, force: true });
 await cp("../talos-installer/dist", "dist/installer", { recursive: true });
 if (bundledSource) {

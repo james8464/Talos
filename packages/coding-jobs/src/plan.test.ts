@@ -14,7 +14,11 @@ import {
   stepById,
 } from "./plan.js";
 
-const first = { id: "first", targets: ["talos_core/example.py"], request: "first" };
+const first = {
+  id: "first",
+  targets: ["talos_core/example.py"],
+  request: "first",
+};
 const second = {
   id: "second",
   targets: ["talos_core/other.py"],
@@ -48,7 +52,11 @@ describe("normalizeSteps", () => {
     ).toThrow("both target and targets");
     expect(() =>
       normalizeSteps([
-        { id: "a", targets: ["talos_core/a.py", "talos_core/a.py"], request: "a" },
+        {
+          id: "a",
+          targets: ["talos_core/a.py", "talos_core/a.py"],
+          request: "a",
+        },
       ]),
     ).toThrow("duplicate targets");
     expect(() =>
@@ -59,7 +67,12 @@ describe("normalizeSteps", () => {
     ).toThrow("cycle");
     expect(() =>
       normalizeSteps([
-        { id: "a", targets: ["talos_core/a.py"], request: "a", needs: ["gone"] },
+        {
+          id: "a",
+          targets: ["talos_core/a.py"],
+          request: "a",
+          needs: ["gone"],
+        },
       ]),
     ).toThrow("unknown step");
   });
@@ -134,12 +147,21 @@ describe("plan lifecycle", () => {
     );
     expect(p.revision).toBe(1);
     expect(stepById(p, "first").status).toBe("superseded");
-    expect(p.repairs[0]).toMatchObject({ failed: "first", replacement: ["fixed-1"] });
+    expect(p.repairs[0]).toMatchObject({
+      failed: "first",
+      replacement: ["fixed-1"],
+    });
     p = enterStep(p, "fixed-1", 111);
     p = recordStepResult(p, "fixed-1", { status: "declined" });
     p = applyRepair(
       p,
-      [{ id: "fixed-2", targets: ["talos_core/other.py"], request: "retry again" }],
+      [
+        {
+          id: "fixed-2",
+          targets: ["talos_core/other.py"],
+          request: "retry again",
+        },
+      ],
       120,
     );
     expect(p.revision).toBe(2);
@@ -156,10 +178,18 @@ describe("plan lifecycle", () => {
     let p = enterStep(plan(), "first", 101);
     p = recordStepResult(p, "first", { status: "declined" });
     expect(() =>
-      applyRepair(p, [{ id: "second", targets: ["talos_core/other.py"], request: "x" }], 110),
+      applyRepair(
+        p,
+        [{ id: "second", targets: ["talos_core/other.py"], request: "x" }],
+        110,
+      ),
     ).toThrow("reuses step id");
     expect(() =>
-      applyRepair(p, [{ id: "fixed", targets: ["talos_core/other.py"], request: "x" }], 400),
+      applyRepair(
+        p,
+        [{ id: "fixed", targets: ["talos_core/other.py"], request: "x" }],
+        400,
+      ),
     ).toThrow("budget exhausted");
     expect(recordRepairError(p, "no safe revision").repairError).toBe(
       "no safe revision",

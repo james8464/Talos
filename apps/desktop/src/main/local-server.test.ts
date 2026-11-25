@@ -3779,8 +3779,7 @@ describe("LocalServerModule after a restart", () => {
 
   it("takes the runtime and localmodels paths a resume reports, restarting the Computer once", async () => {
     const tool = {
-      TALOS_LOCALMODELS_PYTHON:
-        "/home/u/.talos/tools/localmodels/kit/python3",
+      TALOS_LOCALMODELS_PYTHON: "/home/u/.talos/tools/localmodels/kit/python3",
       TALOS_LOCALMODELS_MODULE_DIR: "/home/u/.talos/tools/localmodels/kit",
       TALOS_LOCALMODELS_STATE: "/home/u/.talos/runtime/localmodels/state",
       TALOS_LOCALMODELS_BASE_DIR: "/home/u/.talos/runtime/localmodels/models",
@@ -5421,9 +5420,7 @@ describe("LocalServerModule owner account", () => {
     const f = fixture(
       {
         serverIdentity: async () => {
-          throw new Error(
-            "Talos on this computer has no server identity yet.",
-          );
+          throw new Error("Talos on this computer has no server identity yet.");
         },
       },
       enrolled,

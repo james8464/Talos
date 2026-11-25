@@ -23,13 +23,7 @@ export const defaultBridgeStateDirectory = (
   // Talos name before this runs; elsewhere the bridge's own folder keeps the
   // old name, which names only the migration source here.
   if (platform === "darwin") {
-    return path.join(
-      home,
-      "Library",
-      "Application Support",
-      "Talos",
-      "bridge",
-    );
+    return path.join(home, "Library", "Application Support", "Talos", "bridge");
   }
   if (platform === "win32") {
     return path.win32.join(

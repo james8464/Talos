@@ -193,9 +193,7 @@ describe("useLogout", () => {
       window.localStorage.getItem("global-search-recent.v2:tenant-northstar"),
     ).toBeNull();
     expect(
-      window.localStorage.getItem(
-        "talos.models.lastComputer:tenant-northstar",
-      ),
+      window.localStorage.getItem("talos.models.lastComputer:tenant-northstar"),
     ).toBeNull();
     expect(clearOutbox).toHaveBeenCalledWith(identity.account.id);
   });

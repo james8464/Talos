@@ -82,10 +82,7 @@ const fixtures = {
     await writeFile(executable, `#!/bin/sh\n# Go daemon ${target}\n`);
     await chmod(executable, 0o755);
     // The installer smoke-tests version, help, and daemon status.
-    const cli = path.join(
-      bundle,
-      `cli/talos-computer${windows ? ".exe" : ""}`,
-    );
+    const cli = path.join(bundle, `cli/talos-computer${windows ? ".exe" : ""}`);
     await writeFile(
       cli,
       `#!/bin/sh\n# Go CLI ${target}\ncase "$1" in\n  version) echo "talos-computer ${version}" ;;\n  daemon) echo '{"version":1,"config":{"configured":false},"daemon":{"state":"stopped"}}' ;;\nesac\n`,
@@ -391,10 +388,7 @@ describe("Local Computer release", () => {
       "win32-x64",
     ]);
     // node-services fills the release metadata line of these at startup.
-    for (const name of [
-      "talos-computer.ps1",
-      "uninstall-talos-computer.ps1",
-    ]) {
+    for (const name of ["talos-computer.ps1", "uninstall-talos-computer.ps1"]) {
       await expect(
         readFile(path.join(output, name), "utf8"),
       ).resolves.toContain("__TALOS_RELEASE_METADATA_BASE64__");

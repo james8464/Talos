@@ -522,9 +522,7 @@ export function updateInstallFor(
   }
   if (
     platform === "win32" &&
-    exists(
-      path.win32.join(path.win32.dirname(execPath), "Uninstall Talos.exe"),
-    )
+    exists(path.win32.join(path.win32.dirname(execPath), "Uninstall Talos.exe"))
   )
     return { kind: "windows-setup" };
   return { kind: "download" };

@@ -1634,9 +1634,7 @@ export class LocalServerModule implements Module {
   async signInWithAccount(): Promise<void> {
     const record = await this.#windowRecord();
     if (!record)
-      throw new Error(
-        "This window is not showing the Talos on this computer.",
-      );
+      throw new Error("This window is not showing the Talos on this computer.");
     const account = await this.account();
     try {
       await this.#signInAs(

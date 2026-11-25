@@ -128,9 +128,7 @@ describe("homeRedactor", () => {
         ].join("\n"),
       ),
     ).toBe(
-      ["~\\.talos\\job.log", '{"path":"~\\\\.talos"}', "~/AppData"].join(
-        "\n",
-      ),
+      ["~\\.talos\\job.log", '{"path":"~\\\\.talos"}', "~/AppData"].join("\n"),
     );
   });
 

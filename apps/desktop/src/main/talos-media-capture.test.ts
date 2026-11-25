@@ -8,7 +8,9 @@ import { TalosMediaCapture } from "./talos-media-capture.js";
 const dirs: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+  await Promise.all(
+    dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })),
+  );
 });
 
 async function runtime(): Promise<string> {
@@ -40,7 +42,9 @@ describe("TalosMediaCapture", () => {
     });
     const receipt = await capture.capture(1.5);
     expect(receipt.frameBase64).toMatch(/^\/9j\//);
-    expect(Buffer.from(receipt.audioBase64, "base64").subarray(0, 4).toString()).toBe("RIFF");
+    expect(
+      Buffer.from(receipt.audioBase64, "base64").subarray(0, 4).toString(),
+    ).toBe("RIFF");
     expect(receipt.cameraPermission).toBe("authorized");
     expect(receipt.mediaDeleted).toBe(true);
     expect(await readdir(runtimeDir)).toEqual([]);

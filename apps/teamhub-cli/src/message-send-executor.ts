@@ -1,9 +1,6 @@
 import { lstat, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
-import {
-  bundleDocumentImages,
-  inferFileMetadata,
-} from "@talos/document-files";
+import { bundleDocumentImages, inferFileMetadata } from "@talos/document-files";
 import {
   readExactHostFile,
   windowsWslPathIsAlias,

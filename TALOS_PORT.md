@@ -18,7 +18,7 @@ record the upstream commit in derived releases.
 
 ## Why this is a replatform, not a merge
 
-| Talos                | Talos                                              |
+| Talos                | Talos                                               |
 | -------------------- | --------------------------------------------------- |
 | Python 3.12          | Go 1.26 + Node 26 + React 19                        |
 | Swift menu-bar app   | Electron desktop + React web                        |

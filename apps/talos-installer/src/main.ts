@@ -201,8 +201,7 @@ async function resume(options: ReturnType<typeof parseInstallerArguments>) {
 // as the last JSON line on stdout. Before it, {"event":"download"} lines
 // count the bytes while the check first downloads the localmodels tool.
 async function inspect(options: ReturnType<typeof parseInstallerArguments>) {
-  const { inspectSetup } =
-    await import("@talos/local-installation/setup-plan");
+  const { inspectSetup } = await import("@talos/local-installation/setup-plan");
   const startedAt = Date.now();
   let counted = 0;
   let refusal: WindowsPrivateRefusal | undefined;

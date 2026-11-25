@@ -168,10 +168,7 @@ describe("Computer install route", () => {
     for (const target of ["darwin_arm64", "darwin_x64", "linux_arm64"]) {
       expect(lines).toContain(`release_${target}=""`);
     }
-    const uninstaller = await raw(
-      host,
-      "/install/uninstall-talos-computer.sh",
-    );
+    const uninstaller = await raw(host, "/install/uninstall-talos-computer.sh");
     expect(uninstaller.body.toString().split("\n")).toContain(
       'web_origin="${TALOS_WEB_URL:-https://app.example.test}"',
     );

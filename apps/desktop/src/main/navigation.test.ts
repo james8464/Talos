@@ -104,9 +104,7 @@ describe("window policy", () => {
   it("accepts only plain http(s) server addresses", () => {
     expect(parseServerUrl(" https://talos.example.com/path ")).toBe(server);
     expect(parseServerUrl("javascript:alert(1)")).toBeUndefined();
-    expect(
-      parseServerUrl("https://user:pw@talos.example.com"),
-    ).toBeUndefined();
+    expect(parseServerUrl("https://user:pw@talos.example.com")).toBeUndefined();
   });
 
   it("accepts plain http only on loopback and private networks", () => {
