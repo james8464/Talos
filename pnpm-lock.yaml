@@ -193,6 +193,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.19.14
         version: 1.19.15(hono@4.12.32)
+      '@talos/coding-jobs':
+        specifier: workspace:*
+        version: link:../../packages/coding-jobs
       '@talos/document-files':
         specifier: workspace:*
         version: link:../../packages/document-files

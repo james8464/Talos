@@ -94,6 +94,11 @@ const roles = {
       logger: host.logger,
       http: requireHttp(host),
     }),
+  coding: async (host) =>
+    (await import("./coding/service.js")).startCodingService({
+      http: requireHttp(host),
+      logger: host.logger,
+    }),
   identity: async (host) =>
     (await import("./identity/service.js")).startIdentityService({
       http: requireHttp(host),
@@ -121,6 +126,7 @@ const HTTP_ROLES: ReadonlySet<RoleName> = new Set([
   "agent",
   "identity",
   "perception",
+  "coding",
   "voice",
 ]);
 

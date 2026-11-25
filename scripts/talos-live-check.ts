@@ -1,10 +1,10 @@
 /**
  * Safe live acceptance for the Talos replatform.
  *
- * Starts only the identity and perception roles with TALOS_MUTE=1, proves the
- * voice runtime refuses to start, captures one frame/clip and deletes it,
- * classifies both over HTTP, exercises identity commands, then verifies no
- * voice/audio process is left behind.
+ * Starts only the identity, perception and coding roles with TALOS_MUTE=1,
+ * proves the voice runtime refuses to start, captures one frame/clip and
+ * deletes it, classifies both over HTTP, exercises identity and coding
+ * commands, then verifies no voice/audio process is left behind.
  *
  * Run: pnpm exec tsx scripts/talos-live-check.ts
  */
@@ -119,8 +119,9 @@ async function main(): Promise<number> {
       ...process.env,
       TALOS_MUTE: "1",
       TALOS_SECRET_SEED: SEED,
-      NODE_SERVICES_ROLES: "identity,perception",
+      NODE_SERVICES_ROLES: "identity,perception,coding",
       TALOS_NATIVE_HELPERS_DIR: path.join(ROOT, "apps/desktop/resources/talos"),
+      TALOS_CODING_ROOT: ROOT,
     },
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
@@ -176,6 +177,30 @@ async function main(): Promise<number> {
       sound.status === 200 && Array.isArray(sound.body.events),
       JSON.stringify(sound).slice(0, 200),
     );
+
+    const coding = await fetch(`${BASE}/talos/coding/execute`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        kind: "job",
+        target: "package.json",
+        request: "add a short comment",
+      }),
+    });
+    const codingBody = (await coding.json()) as {
+      status?: string;
+      steps?: { target?: string }[];
+    };
+    check(
+      "coding-execute",
+      coding.status === 200 &&
+        codingBody.status === "planned" &&
+        codingBody.steps?.[0]?.target === "package.json",
+      JSON.stringify(codingBody).slice(0, 200),
+    );
   } finally {
     try {
       if (child.pid) process.kill(-child.pid, "SIGTERM");
@@ -194,7 +219,7 @@ async function main(): Promise<number> {
           "test",
           "./tests/integration",
           "-run",
-          "TestIdentityTextWritesAgentReply|TestCodingCommandsWriteAgentReplies",
+          "TestIdentityTextWritesAgentReply|TestCodingCommandsWriteAgentReplies|TestRoomCodingWorkerReportsAsAgent",
           "-count=1",
         ],
         {
@@ -215,7 +240,7 @@ async function main(): Promise<number> {
 
   check(
     "service-stopped",
-    await noProcess("NODE_SERVICES_ROLES=identity,perception"),
+    await noProcess("NODE_SERVICES_ROLES=identity,perception,coding"),
   );
   check(
     "no-audio-process",

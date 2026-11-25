@@ -1,38 +1,31 @@
 package roomcoding
 
-import (
-	"strings"
-	"testing"
-)
+import "testing"
 
-func TestQueueHandlesJobPlanAndList(t *testing.T) {
-	q := New()
-	if got := q.Handle("r1", "coding job internal/app/app.go: add a short comment"); got != "Coding job #1 queued for internal/app/app.go (verify-only)." {
-		t.Fatalf("job=%q", got)
+func TestParseJobAndPlan(t *testing.T) {
+	job, ok, err := Parse("coding job internal/app/app.go: add a short comment")
+	if err != nil || !ok || job.Kind != "job" || job.Target != "internal/app/app.go" {
+		t.Fatalf("job=%+v ok=%v err=%v", job, ok, err)
 	}
-	if got := q.Handle("r1", "coding plan: clarify the helper"); got != "Coding plan #2 queued (verify-only)." {
-		t.Fatalf("plan=%q", got)
-	}
-	if got := q.Handle("r1", "coding jobs"); !strings.Contains(got, "#1 job internal/app/app.go") ||
-		!strings.Contains(got, "#2 plan") {
-		t.Fatalf("list=%q", got)
+	plan, ok, err := Parse("coding plan: clarify the helper")
+	if err != nil || !ok || plan.Kind != "plan" || plan.Request != "clarify the helper" {
+		t.Fatalf("plan=%+v ok=%v err=%v", plan, ok, err)
 	}
 }
 
-func TestQueueRejectsUnsafeTargetsAndIgnoresText(t *testing.T) {
-	q := New()
+func TestParseRejectsUnsafeTargets(t *testing.T) {
 	for _, text := range []string{
 		"coding job /etc/passwd: read this",
 		"coding job ../outside.go: edit this",
 	} {
-		if got := q.Handle("r1", text); !strings.Contains(got, "rejected") {
-			t.Fatalf("%q => %q", text, got)
+		if _, ok, err := Parse(text); !ok || err == nil {
+			t.Fatalf("%q ok=%v err=%v", text, ok, err)
 		}
 	}
-	if got := q.Handle("r1", "Please clarify the helper."); got != "" {
-		t.Fatalf("ordinary text=%q", got)
+	if _, ok, err := Parse("Please clarify the helper."); ok || err != nil {
+		t.Fatalf("ordinary text ok=%v err=%v", ok, err)
 	}
-	if got := q.Handle("r1", "coding jobs"); got != "No coding jobs have been queued." {
-		t.Fatalf("empty list=%q", got)
+	if !IsList("coding jobs") || IsList("coding job x: y") {
+		t.Fatal("IsList mismatch")
 	}
 }

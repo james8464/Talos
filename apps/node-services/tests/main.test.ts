@@ -9,6 +9,7 @@ describe("selectRoles", () => {
       "llm-wiki",
       "agent",
       "voice",
+      "coding",
       "identity",
       "perception",
       "document",

@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -163,7 +164,7 @@ type App struct {
 	documents                      *document.Service
 	collaboration                  *collaboration.Service
 	roomIdentity                   *roomidentity.Claims
-	roomCoding                     *roomcoding.Queue
+	roomCodingWorker               *roomcoding.Worker
 	sessions                       *account.Sessions
 	agents                         *agentregistry.Service
 	agentMessages                  *agentmessages.Service
@@ -518,7 +519,7 @@ func newApp(cfg config.Config, deps Deps, pool *pgxpool.Pool, signingKey []byte,
 	}
 	workerContext, stopWorkers := context.WithCancel(context.Background())
 	return &App{
-		cfg: cfg, pool: pool, queries: store.New(pool), logger: slog.Default(), roomIdentity: roomidentity.New(), roomCoding: roomcoding.New(),
+		cfg: cfg, pool: pool, queries: store.New(pool), logger: slog.Default(), roomIdentity: roomidentity.New(),
 		broker: broker, streamsDone: streamsDone, stopStreams: stopStreams,
 		workerContext: workerContext, stopWorkers: stopWorkers,
 		artifacts: core.artifacts, documentPreviews: document.NewPreviewService(pool, core.artifacts, cfg.DocumentPreviewPublicOrigin, signingKey), signingKey: signingKey, agentManagement: deps.AgentManagement,
@@ -640,6 +641,15 @@ func (a *App) registerCollaboration(runtimeState *agentruntimestate.Service) {
 	a.agentRuntimeState = runtimeState
 	a.typedCards = typedcard.New(a.pool)
 	a.collaboration = collaboration.New(a.pool, a.artifacts, a.documents, a.typedCards, a.signingKey, a.logger)
+	if a.cfg.NodeServicesURL != "" && a.cfg.NodeServicesInternalToken != "" && os.Getenv("TEAMHUB_CODING_WORKER") == "1" {
+		a.roomCodingWorker = &roomcoding.Worker{
+			Queries:   a.queries,
+			Executor:  roomcoding.NewHTTPExecutor(a.cfg.NodeServicesURL, a.cfg.NodeServicesInternalToken),
+			Publish:   a.publishAgentMessage,
+			Logger:    a.logger,
+			ClaimedBy: "teamhub",
+		}
+	}
 	a.agents = agentregistry.New(a.pool, a.artifacts, a.collaboration, a.agentManagement, a.logger)
 	runtimeState.OnLocalComputerOnline(a.agents.EnsureAnotherMe)
 	a.typedCards.SetConnectionAuthorizer(a.externalSources)
@@ -745,6 +755,13 @@ func (a *App) StartWorkers(ctx context.Context, skip ...Worker) error {
 		}()
 	} else {
 		a.skillPackageAuditState.Store(skillPackageAuditReady)
+	}
+	if a.roomCodingWorker != nil {
+		a.workerWG.Add(1)
+		go func() {
+			defer a.workerWG.Done()
+			a.roomCodingWorker.Run(a.workerContext, 15*time.Second)
+		}()
 	}
 	if runs(PresentationLoop) {
 		a.workerWG.Add(1)
@@ -1278,4 +1295,17 @@ func parsePage(c *gin.Context) (cursor string, limit int32, ok bool) {
 func tokenDigest(token []byte) []byte {
 	digest := sha256.Sum256(token)
 	return digest[:]
+}
+
+// publishAgentMessage writes one reply as the Room's active Agent.
+func (a *App) publishAgentMessage(ctx context.Context, roomID, text, key string) error {
+	agents, err := a.queries.ListRoomAgentActors(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	if len(agents) == 0 {
+		return errors.New("the Room has no active Agent")
+	}
+	_, err = a.collaboration.CreateAgentMessage(ctx, roomID, agents[0].ID, text, key)
+	return err
 }

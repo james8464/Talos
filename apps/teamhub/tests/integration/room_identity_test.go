@@ -37,6 +37,22 @@ func TestIdentityTextWritesAgentReply(t *testing.T) {
 		WHERE message.room_id=$1 AND message.body='I forgot the name you introduced. I still can''t verify identity.'`, roomID).Scan(&forgot); err != nil || forgot != 1 {
 		t.Fatalf("forget reply count=%d err=%v", forgot, err)
 	}
+	var agentMessages int
+	if err := env.pool.QueryRow(ctx, `SELECT count(*) FROM messages message
+		JOIN actors actor ON actor.id=message.author_actor_id AND actor.tenant_id=message.tenant_id
+		WHERE message.room_id=$1 AND actor.kind='agent'`, roomID).Scan(&agentMessages); err != nil {
+		t.Fatalf("agent message count: %v", err)
+	}
+	createHumanMessage(t, env, alice, roomID, "Play some music.", "identity-ordinary")
+	var afterOrdinary int
+	if err := env.pool.QueryRow(ctx, `SELECT count(*) FROM messages message
+		JOIN actors actor ON actor.id=message.author_actor_id AND actor.tenant_id=message.tenant_id
+		WHERE message.room_id=$1 AND actor.kind='agent'`, roomID).Scan(&afterOrdinary); err != nil {
+		t.Fatalf("agent message count after ordinary text: %v", err)
+	}
+	if afterOrdinary != agentMessages {
+		t.Fatalf("ordinary text drew an Agent reply: %d -> %d", agentMessages, afterOrdinary)
+	}
 	createHumanMessage(t, env, alice, roomID, "Do you recognize me?", "identity-after")
 	var after int
 	if err := env.pool.QueryRow(ctx, `

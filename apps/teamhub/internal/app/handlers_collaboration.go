@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,7 +13,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
 	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
@@ -256,12 +260,12 @@ func (a *App) createMessage(c *gin.Context) {
 // replyToIdentityMessage writes one Agent-authored reply for a deterministic
 // identity command. A failure never changes the accepted Human message.
 func (a *App) replyToIdentityMessage(c *gin.Context, roomID, text, key string) {
-	if (a.roomIdentity == nil && a.roomCoding == nil) || strings.TrimSpace(text) == "" || key == "" {
+	if a.roomIdentity == nil || strings.TrimSpace(text) == "" || key == "" {
 		return
 	}
 	reply := a.roomIdentity.Answer(roomID, text, time.Now())
-	if reply == "" && a.roomCoding != nil {
-		reply = a.roomCoding.Handle(roomID, text)
+	if reply == "" {
+		reply = a.roomCodingReply(c, roomID, text)
 	}
 	if reply == "" {
 		return
@@ -278,6 +282,56 @@ func (a *App) replyToIdentityMessage(c *gin.Context, roomID, text, key string) {
 	); err != nil && a.logger != nil {
 		a.logger.Warn("identity_reply.failed", "room_id", roomID, "error", err)
 	}
+}
+
+func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {
+	ctx := c.Request.Context()
+	if roomcoding.IsList(text) {
+		jobs, err := a.queries.ListRoomCodingJobsForRoom(ctx, roomID)
+		if err != nil {
+			return ""
+		}
+		if len(jobs) == 0 {
+			return "No coding jobs have been queued."
+		}
+		lines := make([]string, 0, len(jobs))
+		for _, item := range jobs {
+			label := item.Kind
+			if item.TargetPath != "" {
+				label += " " + item.TargetPath
+			}
+			lines = append(lines, fmt.Sprintf("%s %s %s", item.ID, label, item.Status))
+		}
+		return "Coding jobs: " + strings.Join(lines, "; ") + "."
+	}
+	command, ok, err := roomcoding.Parse(text)
+	if !ok {
+		return ""
+	}
+	if err != nil {
+		return err.Error()
+	}
+	tenantID, err := a.queries.GetRoomTenantID(ctx, roomID)
+	if err != nil {
+		return ""
+	}
+	actor, err := a.queries.GetHumanActor(ctx, store.GetHumanActorParams{
+		TenantID: tenantID, AccountID: textValue(currentPrincipal(c).Session.AccountID),
+	})
+	if err != nil {
+		return ""
+	}
+	id := idgen.New("codingjob")
+	if _, err := a.queries.CreateRoomCodingJob(ctx, store.CreateRoomCodingJobParams{
+		ID: id, TenantID: tenantID, RoomID: roomID, RequesterActorID: actor.ID,
+		Kind: command.Kind, TargetPath: command.Target, Request: command.Request,
+	}); err != nil {
+		return ""
+	}
+	if command.Kind == "plan" {
+		return fmt.Sprintf("Coding plan %s queued (verify-only).", id)
+	}
+	return fmt.Sprintf("Coding job %s queued for %s (verify-only).", id, command.Target)
 }
 
 func (a *App) recordMessageCommitTiming(c *gin.Context) {

@@ -1436,6 +1436,22 @@ type RoomAgentRun struct {
 	AgentActorID      string             `json:"agent_actor_id"`
 }
 
+type RoomCodingJob struct {
+	ID               string             `json:"id"`
+	TenantID         string             `json:"tenant_id"`
+	RoomID           string             `json:"room_id"`
+	RequesterActorID string             `json:"requester_actor_id"`
+	Kind             string             `json:"kind"`
+	TargetPath       string             `json:"target_path"`
+	Request          string             `json:"request"`
+	Status           string             `json:"status"`
+	Result           string             `json:"result"`
+	ClaimedBy        string             `json:"claimed_by"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	ClaimedAt        pgtype.Timestamptz `json:"claimed_at"`
+	CompletedAt      pgtype.Timestamptz `json:"completed_at"`
+}
+
 type RoomDocumentComment struct {
 	ID              string             `json:"id"`
 	TenantID        string             `json:"tenant_id"`
