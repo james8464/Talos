@@ -721,7 +721,7 @@ describe("ComputerDaemonModule permission requests", () => {
       type: "permission.request",
       id: "r3",
       op: "prompt",
-      permission: "camera",
+      permission: "bluetooth",
     });
     child.send({ type: "permission.request", id: "r4", op: "relaunch" });
     const written = await answered(child, 5);

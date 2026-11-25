@@ -37,6 +37,7 @@ const WAV = Buffer.from("RIFF");
 const defaultRunner: CaptureRunner = async (binary, args) => {
   const { stdout, stderr } = await execFile(binary, [...args], {
     timeout: 180_000,
+    windowsHide: true,
   });
   return { stdout, stderr };
 };
@@ -72,6 +73,7 @@ export class TalosMediaCapture {
       return target;
     await execFile(compiler, ["-O", this.#options.source, "-o", target], {
       timeout: 180_000,
+      windowsHide: true,
     });
     return target;
   }

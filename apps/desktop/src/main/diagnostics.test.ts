@@ -220,10 +220,10 @@ describe("collectDiagnostics", () => {
     expect([...entries.keys()].sort()).toEqual([
       "desktop/logs/computer-daemon.log",
       "desktop/logs/main.log",
+      "summary.json",
       "talos-home/installer/jobs/job_1.json",
       "talos-home/instances/desktop/instance.json",
       "talos-home/instances/desktop/native/logs/teamhub.log",
-      "summary.json",
     ]);
     expect(entries.get("desktop/logs/main.log")).not.toContain("t-secret");
     expect(JSON.parse(entries.get("summary.json")!)).toMatchObject({
@@ -372,11 +372,11 @@ describe("collectDiagnostics", () => {
     });
     const entries = unzip(file);
     expect([...entries.keys()].sort()).toEqual([
+      "summary.json",
       "talos-home/runtime/localmodels/models/deployments/qwen-llm/server.log",
       "talos-home/runtime/localmodels/state/deployments/local/qwen-llm.json",
       "talos-home/runtime/localmodels/state/stacks/abcdef123456.progress",
       "talos-home/runtime/localmodels/state/stacks/abcdef123456.run.json",
-      "summary.json",
     ]);
     const joined = [...entries.values()].join("\n");
     expect(joined).not.toContain(userHome);

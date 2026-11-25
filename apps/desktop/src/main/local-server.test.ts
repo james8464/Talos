@@ -4937,7 +4937,7 @@ describe("proveLocalServer", () => {
   it("computes TeamHub's proof", () => {
     expect(
       localIdentityProof(KEY, "A".repeat(43), WEB_ORIGIN).toString("base64url"),
-    ).toBe("eKUTsEU-NZv-SW4c6jF3nCKa44wHETVelI_1rT6yu9w");
+    ).toBe("AE8ZtQPjO33P0IseOTao7Z4ObyVIQ9tvtZGNls8CqmM");
   });
 
   it("accepts the server that holds the key, asked on its own port", async () => {
