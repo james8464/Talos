@@ -479,7 +479,7 @@ Path(sys.argv[1]).write_bytes(raw)
     job = json.loads(started.stdout or "{}")
     ran = subprocess.run(
         [sys.executable, "-m", "talos_core.cli", "codejob", "run", "--id", job.get("id", "-"),
-         "--model", "qwen2.5:1.5b", "--state", str(job_state), "--root", str(ROOT)],
+         "--model", "qwen3:4b", "--state", str(job_state), "--root", str(ROOT)],
         capture_output=True, text=True, timeout=240,
     )
     record = json.loads(ran.stdout or "{}")
@@ -494,6 +494,11 @@ Path(sys.argv[1]).write_bytes(raw)
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
+
+    capability = ask(token, "In one short sentence, what can you run in the background?")["reply"]
+    check(checks, "capability_reply",
+          "muted" in capability.casefold() and "can't play" in capability.casefold(),
+          capability)
 
     music = ask(token, "Play music.")["reply"]
     check(checks, "music_blocked", "disabled" in music.casefold() or "muted" in music.casefold(),

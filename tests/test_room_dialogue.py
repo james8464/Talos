@@ -58,6 +58,23 @@ class RoomDialogueTests(unittest.TestCase):
             self.assertEqual(self.turn("Can you tell who I am?")["reply"], IDENTITY)
         self.assertIsNone(sensor_answer("Am I coming through the right door?", "voice", True))
 
+    def test_capability_questions_are_answered_from_room_state(self):
+        from talos_core.room.room_dialogue import capability_answer
+
+        muted = capability_answer("Can you play music?", audio=False)
+        self.assertIn("muted", muted.casefold())
+        self.assertIn("can't play", muted.casefold())
+        self.room.speak = False
+        with patch("talos_core.room.room_service.plan",
+                   side_effect=AssertionError("unexpected planner call")):
+            reply = self.turn("What can you run in the background?", source="text")["reply"]
+        self.assertIn("muted", reply.casefold())
+        self.assertNotIn("audio playback", reply.casefold())
+        self.assertIn("speak and play sound",
+                      capability_answer("What can you do?", audio=True))
+        self.assertIn("muted", capability_answer(
+            "In one short sentence, what can you run in the background?", audio=False).casefold())
+
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
         for proposal in (decision("ignore", ""), decision("reply", "Hello.")):
             with patch("talos_core.room.room_service.plan", return_value=proposal):

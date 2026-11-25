@@ -50,6 +50,7 @@ from talos_core.memory.transcript_memory import (
 from talos_core.room import room_checkins, room_vision
 from talos_core.room.room_dialogue import (
     absolute_reminder,
+    capability_answer,
     compact_decision,
     conversational_correction,
     corrected_recollection,
@@ -1170,6 +1171,8 @@ class Room:
                 reply = room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent)
             elif quick := sensor_answer(text, "voice", body.get("occupied")):
                 reply = quick
+            elif (capability := capability_answer(text, audio=self.speak)):
+                reply = capability
             elif words in ("what needs my attention", "what still needs my attention"):
                 goals = db.execute("SELECT observation FROM goals WHERE status='active'").fetchall()
                 blocked = sum(bool(json.loads(row[0]).get("risks")) for row in goals)
@@ -1182,6 +1185,9 @@ class Room:
                 else:
                     messages = [{"role":"system", "content": SPOKEN_STYLE + " You can converse, but this response cannot "
                                  "take actions or check live information. You have no image in this conversation. Never guess appearances. Never claim an action unless its receipt is supplied."}]
+                    if not self.speak:
+                        messages[0]["content"] += (" Audio output is muted in this room. "
+                                                   "Never claim you can play music, sound, or speak aloud.")
                     if profile:
                         quotes = visitor_memory.recall(db, profile, text)
                         if quotes:
@@ -1259,6 +1265,8 @@ class Room:
                 proposal = decision("reply", room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent))
             elif quick:
                 proposal = decision("reply", quick)
+            elif (capability := capability_answer(text, audio=self.speak)):
+                proposal = decision("reply", capability)
             elif (quantity := quantity_answer(text, dialogue)) is not None:
                 proposal = decision("reply", quantity)
             elif (recollection := immediate_recall(text, self.voice_window if source == "voice" else dialogue)) is not None:

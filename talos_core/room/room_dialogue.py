@@ -225,6 +225,28 @@ def corrected_recollection(text, history):
     return None
 
 
+def capability_answer(message, *, audio):
+    """Answer capability questions from the room's real state, not the model."""
+    words = re.sub(r"[^\w ]+", " ", (message or "").lower())
+    words = " ".join(words.split())
+    words = re.sub(r"^(?:(?:hey|ok|okay) )?(?:talos|tell us) ", "", words)
+    audio_state = ("I can speak and play sound." if audio else
+                   "Audio is muted, so I can't play sound or speak out loud.")
+    if re.search(r"(?:what|which) (?:can|could) you (?:run|do) (?:in|on) the background\s*$", words) or \
+            re.search(r"what (?:runs|works) in the background\s*$", words):
+        return ("I can queue background work such as reminders and notes, and run "
+                "bounded coding jobs in a sandbox. " + audio_state)
+    if re.search(r"(?:can|could|do) you (?:play|make) (?:some )?(?:music|audio|sound|sounds|noise)\s*$", words) or \
+            re.search(r"can you (?:talk|speak) (?:out loud|aloud)\s*$", words):
+        return audio_state
+    if re.search(r"(?:^| )(?:what can you do|what are you able to do|what are your capabilities|"
+                 r"what can you help with|how can you help)\s*$", words):
+        return ("I can answer questions, track reminders and notes, look things up, "
+                "control Mac apps when asked, and verify small code changes in a sandbox. "
+                + audio_state)
+    return None
+
+
 def spoken_problem(reply, text, prior):
     def words(value):
         return re.findall(r"\w+", value.casefold())

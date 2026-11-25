@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `777 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `74/74` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
+- Unit suite: `778 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `75/75` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
 - Ruff: clean.
 
 ## Live feature pass
@@ -54,6 +54,7 @@ Latest results:
 | Sound/scene | SoundAnalysis labels; Vision people/face counts; room presence; `/v1/sound` and `/v1/vision/scene` live endpoint checks |
 | Processes | `talos processes`/status report room, workers, listeners, stale and audio processes |
 | Streaming | `talos stream` emits local-model text deltas with no audio; live check asserts a clean answer and no reasoning block |
+| Capability answers | Muted rooms answer background/audio-capability questions from `Room.speak`; the live check requires the muted clause |
 | Coding jobs | `talos codejob start/run/status` queues a bounded one-file job, sandbox-verifies it, reports status and leaves the target unchanged in verify-only mode |
 | Native capture | room menu calls native `RoomClient.scene`/`sound`; Swift replay passes against an isolated room; live camera/mic capture remains opt-in |
 | Guidance | on-screen ring and label without click, including a direct coordinate highlight CLI |
