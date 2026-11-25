@@ -9,37 +9,37 @@ Status meanings: **ported** (works here and is tested here), **present**
 
 ## Safety and operations
 
-| Talos behaviour                                           | Talos status | Where / next step                                                                                                                              |
-| --------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hard mute: `TALOS_MUTE=1` stops speech, voice returns 503 | **ported**   | `isMuted()` in `@talos/service-kit`; voice runtime exits before config; Node voice supervisor starts no worker. Tests at all three boundaries. |
-| No capture without consent                                | **missing**  | Add a camera/mic consent gate before Electron `getUserMedia` or any helper.                                                                    |
-| Camera/mic readiness without capture                      | **missing**  | Electron only reports screen recording and accessibility. Extend `SystemPermissions`.                                                          |
-| Process inventory + label-scoped cleanup                  | **partial**  | `apps/computer/local-daemon/internal/process` and diagnostics exist; no Talos-style `stale/audio` inventory. Compare and port.                 |
-| Safe live acceptance harness                              | **present**  | `pnpm talos:live` checks mute, voice refusal, identity, capture deletion, vision/sound HTTP, coding execution and no audio/LiveKit processes.  |
-| Never launch audible checks by default                    | **present**  | `TALOS_MUTE=1` is set by the harness and the voice role exits before starting under mute.                                                      |
+| Talos behaviour                                           | Talos status | Where / next step                                                                                                                                              |
+| --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hard mute: `TALOS_MUTE=1` stops speech, voice returns 503 | **ported**   | `isMuted()` in `@talos/service-kit`; voice runtime exits before config; Node voice supervisor starts no worker. Tests at all three boundaries.                 |
+| No capture without consent                                | **missing**  | Add a camera/mic consent gate before Electron `getUserMedia` or any helper.                                                                                    |
+| Camera/mic readiness without capture                      | **missing**  | Electron only reports screen recording and accessibility. Extend `SystemPermissions`.                                                                          |
+| Process inventory + label-scoped cleanup                  | **partial**  | `apps/computer/local-daemon/internal/process` and diagnostics exist; no Talos-style `stale/audio` inventory. Compare and port.                                 |
+| Safe live acceptance harness                              | **present**  | `pnpm talos:live` covers mute, voice refusal, identity, capture, vision/sound and coding; the Room e2e suite sends identity and sensing messages in a browser. |
+| Never launch audible checks by default                    | **present**  | `TALOS_MUTE=1` is set by the harness and the voice role exits before starting under mute.                                                                      |
 
 ## Perception and identity
 
-| Talos behaviour                                                            | Talos status | Where / next step                                                             |
-| -------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------- |
-| `/v1/vision/scene` people/face counts                                      | **present**  | `POST /talos/vision/scene` classifies a frame with the native Vision helper.  |
-| `/v1/sound` non-word SoundAnalysis labels                                  | **present**  | `POST /talos/sound` classifies a clip with SoundAnalysis.                     |
-| Presence answers from a camera frame                                       | **missing**  | Depends on vision helper.                                                     |
-| One-frame + short-clip consented check with media deletion                 | **present**  | `TalosMediaCapture` captures one frame and a 1s clip, then deletes the media. |
-| Self-reported name, 30-minute expiry, “forget my name”, no biometric claim | **present**  | TeamHub answers identity text with a deterministic Agent-authored Room reply. |
-| Camera/mic capability answers that explain consent                         | **missing**  | Add deterministic replies, not model prose.                                   |
+| Talos behaviour                                                            | Talos status | Where / next step                                                                                      |
+| -------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| `/v1/vision/scene` people/face counts                                      | **present**  | `POST /talos/vision/scene` classifies a frame with the native Vision helper.                           |
+| `/v1/sound` non-word SoundAnalysis labels                                  | **present**  | `POST /talos/sound` classifies a clip with SoundAnalysis.                                              |
+| Presence answers from a camera frame                                       | **missing**  | Depends on vision helper.                                                                              |
+| One-frame + short-clip consented check with media deletion                 | **present**  | `TalosMediaCapture` captures one frame and a 1s clip, then deletes the media.                          |
+| Self-reported name, 30-minute expiry, “forget my name”, no biometric claim | **present**  | TeamHub answers identity text with a deterministic Agent-authored Room reply.                          |
+| Camera/mic capability answers that explain consent                         | **partial**  | `roomsenses` answers hear/see questions without inventing a camera reading; no live consent probe yet. |
 
 ## Coding autonomy
 
-| Talos behaviour                                                            | Talos status | Where / next step                                                                              |
-| -------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------- |
-| One-file coding job with model draft, sandbox verify, apply/rollback       | **partial**  | `@talos/coding-jobs` verifies a supplied draft in a sandbox; a model drafter is not wired yet. |
-| Retry once on failed sandbox test with failure output                      | **present**  | `runCodingJob` retries once with the failure text as feedback.                                 |
-| Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.               |
-| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.         |
-| Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                  |
-| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | TeamHub stores accepted commands durably; a worker claims them and reports as the Agent.       |
-| Receipts: diff, regression, hashes, attempts, remaining budget             | **partial**  | The job row keeps status and result; a diff/hash receipt is not stored yet.                    |
+| Talos behaviour                                                            | Talos status | Where / next step                                                                                      |
+| -------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| One-file coding job with model draft, sandbox verify, apply/rollback       | **partial**  | The coding role drafts through the Agent model seam and verifies in a sandbox; no live model call yet. |
+| Retry once on failed sandbox test with failure output                      | **present**  | `runCodingJob` retries once with the failure text as feedback.                                         |
+| Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.                       |
+| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.                 |
+| Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                          |
+| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | TeamHub stores accepted commands durably; a worker claims them and reports as the Agent.               |
+| Receipts: diff, regression, hashes, attempts, remaining budget             | **partial**  | The job row keeps status and result; a diff/hash receipt is not stored yet.                            |
 
 ## Control and UI
 
