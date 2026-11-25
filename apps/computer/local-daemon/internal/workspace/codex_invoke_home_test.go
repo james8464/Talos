@@ -14,6 +14,7 @@ func TestCodexInvokeHomeKeepsOnlyProviderSelectionAndLinksAuthentication(t *test
 	home, opts := projectionFixture(t)
 	projectionWrite(t, filepath.Join(opts.SharedHome, "config.toml"), `model = "fixture-model"
 model_provider = "custom"
+model_catalog_json = "/models/catalog.json"
 model_reasoning_effort = "xhigh"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
@@ -53,8 +54,9 @@ enabled = true
 		t.Fatal(err)
 	}
 	want := map[string]any{
-		"model":          "fixture-model",
-		"model_provider": "custom",
+		"model":              "fixture-model",
+		"model_provider":     "custom",
+		"model_catalog_json": "/models/catalog.json",
 		"model_providers": map[string]any{"custom": map[string]any{
 			"base_url": "https://models.example.invalid/v1", "requires_openai_auth": true,
 		}},

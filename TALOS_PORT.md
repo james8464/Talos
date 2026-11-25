@@ -266,9 +266,15 @@ agent.model_request model=qwen3:4b-8k duration_ms=41234
   usage_input=2961 usage_output=1172
 ```
 
-The run was then stopped by the Room reply guard because the local model did not
-answer the inbox item, so no reply was persisted. That is a tool-use limitation
-of the small model, not a missing model call.
+The catalog now enables the shell tool (`shell_type: "shell_command"`), and the
+one-shot Codex home keeps `model_catalog_json`. A direct Codex check proves the
+tool path: the model read a random token from a file and replied with it.
+
+The Room run still failed with `reply_not_sent` (`failedMessageWrites=0`,
+`finalResponseLength=98`): the 4B model wrote text instead of running
+`teamhub message send`, even after the reply guard's reminder. The model call and
+tool plumbing work; following the Room reply contract is the remaining small-model
+limitation. A larger local model or a reviewed product fallback would be needed.
 
 ## Search and Direct Room journeys
 

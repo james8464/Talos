@@ -18,6 +18,7 @@ var codexInvokeConfigKeys = []string{
 	"model",
 	"model_provider",
 	"model_providers",
+	"model_catalog_json",
 	"profile",
 	"profiles",
 	"cli_auth_credentials_store",
