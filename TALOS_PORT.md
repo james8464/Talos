@@ -65,7 +65,9 @@ same safety checks.
 1. **Local baseline.** Install pnpm/Go, bring up Postgres + TeamHub + web
    without voice, and run the repository's fast checks. Record exact commands.
 2. **Capture/readiness parity.** Port the readiness probe and consent guard as
-   macOS-side helpers, reusing the Swift binaries where practical.
+   macOS-side helpers, reusing the Swift binaries where practical. **Done:**
+   readiness, direct capture, IPC/preload and Settings button; a live capture
+   produced a frame and clip and deleted both. Endpoint verification remains.
 3. **Coding jobs parity.** Port the job/plan state machine and sandbox checks
    into the Agent Service or Computer Daemon, with the same guards and reports.
 4. **Identity and room commands.** Self-reported claims with expiry in the
