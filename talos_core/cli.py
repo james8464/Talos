@@ -209,6 +209,46 @@ def _codejob(args) -> int:
         item.get("status") in {"verified", "applied"} for item in results) else 1
 
 
+def _codeplan(args) -> int:
+    from talos_core.self_improvement import coding_jobs, initiative_coder
+
+    if args.action == "start":
+        try:
+            if args.file:
+                payload = json.loads(Path(args.file).read_text(encoding="utf-8"))
+            else:
+                payload = json.loads(args.json_text or "{}")
+            steps = payload.get("steps") if isinstance(payload, dict) else payload
+            plan = coding_jobs.start_plan(args.state, steps, root=args.root,
+                                          budget=args.budget, apply=args.apply)
+        except (OSError, ValueError, TypeError, AttributeError) as error:
+            print(json.dumps({"ok": False, "error": str(error)}))
+            return 1
+        print(json.dumps(plan, indent=2))
+        return 0
+
+    if args.action == "status":
+        if args.id:
+            try:
+                print(json.dumps(coding_jobs.load_plan(args.state, args.id), indent=2))
+            except ValueError as error:
+                print(json.dumps({"ok": False, "error": str(error)}))
+                return 1
+        else:
+            print(json.dumps(coding_jobs.plans(args.state), indent=2))
+        return 0
+
+    infer = initiative_coder.local_infer(args.model)
+    try:
+        result = coding_jobs.run_plan(args.state, args.id, root=args.root, infer=infer)
+    except ValueError as error:
+        print(json.dumps({"ok": False, "error": str(error)}))
+        return 1
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0 if result.get("status") == "done" else 1
+
+
+
 def _reflect(args) -> int:
     from talos_core.knowledge_reflection import reflect, summary
     from talos_core.memory.agent_memory import open_memory
@@ -1321,6 +1361,28 @@ def build_parser() -> argparse.ArgumentParser:
     status_job.add_argument("--id", dest="job_id")
     status_job.add_argument("--state", type=Path, default=ROOT / "state")
     status_job.set_defaults(func=_codejob)
+
+    codeplan = commands.add_parser("codeplan", help="Run a dependency-ordered coding plan.")
+    plan_actions = codeplan.add_subparsers(dest="action", required=True)
+    plan_start = plan_actions.add_parser("start", help="Validate and queue a plan.")
+    plan_start.add_argument("--file", type=Path, help="JSON file with a steps list.")
+    plan_start.add_argument("--json", dest="json_text", help="Inline JSON plan.")
+    plan_start.add_argument("--state", type=Path, default=ROOT / "state")
+    plan_start.add_argument("--root", type=Path, default=ROOT)
+    plan_start.add_argument("--budget", type=int, default=300)
+    plan_start.add_argument("--apply", action="store_true",
+                            help="Allow verified steps to write (default verify-only).")
+    plan_start.set_defaults(func=_codeplan)
+    plan_run = plan_actions.add_parser("run", help="Run a queued plan in dependency order.")
+    plan_run.add_argument("id")
+    plan_run.add_argument("--model", default="qwen3:4b")
+    plan_run.add_argument("--state", type=Path, default=ROOT / "state")
+    plan_run.add_argument("--root", type=Path, default=ROOT)
+    plan_run.set_defaults(func=_codeplan)
+    plan_status = plan_actions.add_parser("status", help="Show one plan or all plans.")
+    plan_status.add_argument("id", nargs="?")
+    plan_status.add_argument("--state", type=Path, default=ROOT / "state")
+    plan_status.set_defaults(func=_codeplan)
 
     reflect = commands.add_parser("reflect", help="Recompute related context from conversations and knowledge.")
     reflect.add_argument("--state", type=Path, default=ROOT / "state")

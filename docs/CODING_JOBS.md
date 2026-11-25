@@ -29,3 +29,28 @@ root and model. A detached qwen3:4b job was observed going `queued` to
 verify-only mode. A model server failure (for example an Ollama token repeat
 limit) is recorded as `error` with the server message and leaves the source
 untouched.
+
+## Dependency-ordered plans
+
+```sh
+python3 -m talos_core.cli codeplan start --file plan.json
+python3 -m talos_core.cli codeplan run PLAN_ID --model qwen3:4b
+python3 -m talos_core.cli codeplan status PLAN_ID
+```
+
+`plan.json` holds up to eight steps, each with `id`, `target`, `request` and
+optional `needs`:
+
+```json
+{"steps": [
+  {"id": "first", "target": "talos_core/example.py", "request": "Clarify the helper."},
+  {"id": "second", "target": "talos_core/other.py", "request": "Update the caller.",
+   "needs": ["first"]}
+]}
+```
+
+Plans are verify-only unless `start --apply` is given. Steps run in a stable
+topological order; a step whose dependency did not end `verified` or `applied`
+is recorded as `blocked` and never starts. The plan report lives at
+`state/coding-plans/<id>/report.json`. Cycles, unknown dependencies, duplicate
+ids and unsafe targets are rejected before any model call.

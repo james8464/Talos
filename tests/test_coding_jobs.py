@@ -98,3 +98,94 @@ class CodingJobTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+OTHER = '''"""Other module."""
+
+
+def label():
+    return "one"
+'''
+
+OTHER_REGRESSION = '''"""Regression for the second step."""
+
+import unittest
+
+from talos_core.other import label
+
+
+class LabelTest(unittest.TestCase):
+    def test_label(self):
+        self.assertEqual(label(), "two")
+'''
+
+
+class CodingPlanTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+        (self.tmp / "talos_core").mkdir()
+        (self.tmp / "talos_core" / "__init__.py").write_text("")
+        (self.tmp / "talos_core" / "example.py").write_text(EXAMPLE)
+        (self.tmp / "talos_core" / "other.py").write_text(OTHER)
+        (self.tmp / "tests").mkdir()
+        (self.tmp / "tests" / "__init__.py").write_text("")
+        self.state = self.tmp / "state"
+
+    def infer(self, prompt):
+        if "TARGET: talos_core/example.py" in prompt:
+            values = {"before": "    return a + b\n", "after": "    return b + a\n",
+                      "regression_test": REGRESSION}
+        else:
+            values = {"before": '    return "one"\n', "after": '    return "two"\n',
+                      "regression_test": OTHER_REGRESSION}
+        return json.dumps(values)
+
+    def plan(self, steps, **kwargs):
+        return coding_jobs.start_plan(self.state, steps, root=self.tmp, **kwargs)
+
+    def test_plan_rejects_cycles_and_unknown_dependencies(self):
+        with self.assertRaises(ValueError):
+            self.plan([{"id": "a", "target": "talos_core/example.py", "request": "x",
+                        "needs": ["b"]},
+                       {"id": "b", "target": "talos_core/other.py", "request": "y",
+                        "needs": ["a"]}])
+        with self.assertRaises(ValueError):
+            self.plan([{"id": "a", "target": "talos_core/example.py", "request": "x",
+                        "needs": ["missing"]}])
+
+    def test_dependent_step_is_blocked_when_dependency_declines(self):
+        plan = self.plan([
+            {"id": "first", "target": "talos_core/example.py", "request": "first"},
+            {"id": "second", "target": "talos_core/other.py", "request": "second",
+             "needs": ["first"]},
+        ])
+        result = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp,
+                                      infer=lambda prompt: "{}")
+        steps = {step["id"]: step for step in result["steps"]}
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(steps["first"]["status"], "declined")
+        self.assertEqual(steps["second"]["status"], "blocked")
+        self.assertIsNone(steps["second"]["job_id"])
+
+    def test_plan_runs_dependency_order_and_verifies_each_step(self):
+        plan = self.plan([
+            {"id": "second", "target": "talos_core/other.py", "request": "second",
+             "needs": ["first"]},
+            {"id": "first", "target": "talos_core/example.py", "request": "first"},
+        ])
+        result = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp, infer=self.infer)
+        self.assertEqual(result["status"], "done")
+        self.assertEqual(result["order"], ["first", "second"])
+        steps = {step["id"]: step for step in result["steps"]}
+        self.assertTrue(all(steps[key]["status"] == "verified" for key in ("first", "second")))
+        self.assertEqual((self.tmp / "talos_core" / "example.py").read_text(), EXAMPLE)
+        self.assertEqual((self.tmp / "talos_core" / "other.py").read_text(), OTHER)
+
+    def test_plan_does_not_rerun_after_terminal(self):
+        plan = self.plan([{"id": "only", "target": "talos_core/example.py", "request": "x"}])
+        first = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp, infer=self.infer)
+        second = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp,
+                                      infer=lambda prompt: self.fail("must not rerun"))
+        self.assertEqual(first["status"], second["status"])
+        self.assertEqual(len(coding_jobs.jobs(self.state)), 1)

@@ -191,6 +191,32 @@ class CliTests(unittest.TestCase):
             self.assertEqual(cli.main(["codejob", "status", "--state", str(state)]), 0)
         self.assertEqual(json.loads(output.getvalue())[0]["status"], "declined")
 
+
+    def test_codeplan_validates_and_lists_plans(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (root / "example.py").write_text("VALUE = 1\n")
+        state = root / "state"
+        plan = {"steps": [{"id": "one", "target": "example.py", "request": "Add a note."}]}
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["codeplan", "start", "--json", json.dumps(plan),
+                             "--root", str(root), "--state", str(state)])
+        self.assertEqual(code, 0)
+        stored = json.loads(output.getvalue())
+        self.assertEqual(stored["status"], "queued")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(cli.main(["codeplan", "status", stored["id"],
+                                       "--state", str(state)]), 0)
+        self.assertEqual(json.loads(output.getvalue())["id"], stored["id"])
+        bad = {"steps": [{"id": "one", "target": "example.py", "request": "x",
+                          "needs": ["two"]},
+                         {"id": "two", "target": "example.py", "request": "y",
+                          "needs": ["one"]}]}
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(cli.main(["codeplan", "start", "--json", json.dumps(bad),
+                                       "--root", str(root), "--state", str(state)]), 1)
+
     def test_codejob_detach_forwards_state_root_and_model(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         (root / "example.py").write_text("VALUE = 1\n")

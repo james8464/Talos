@@ -492,6 +492,45 @@ Path(sys.argv[1]).write_bytes(raw)
           f"{record.get('status')}: {record.get('message', '')}"[:200])
     shutil.rmtree(job_state, ignore_errors=True)
 
+    plan_state = Path(tempfile.mkdtemp())
+    plan_targets = [ROOT / "talos_core" / "runtime" / "text_stream.py",
+                    ROOT / "talos_core" / "runtime" / "background_work.py"]
+    plan_hashes = [hashlib.sha256(path.read_bytes()).hexdigest() for path in plan_targets]
+    plan_steps = {"steps": [
+        {"id": "first", "target": "talos_core/runtime/text_stream.py",
+         "request": "Add one clarifying sentence to the module docstring."},
+        {"id": "second", "target": "talos_core/runtime/background_work.py",
+         "request": "Add one clarifying sentence to the module docstring.",
+         "needs": ["first"]},
+    ]}
+    plan_start = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "codeplan", "start",
+         "--json", json.dumps(plan_steps), "--state", str(plan_state),
+         "--root", str(ROOT), "--budget", "120"],
+        capture_output=True, text=True, timeout=30,
+    )
+    plan = json.loads(plan_start.stdout or "{}")
+    plan_run = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "codeplan", "run", plan.get("id", "-"),
+         "--model", "qwen3:4b", "--state", str(plan_state), "--root", str(ROOT)],
+        capture_output=True, text=True, timeout=360,
+    )
+    record = json.loads(plan_run.stdout or "{}")
+    statuses = {step["id"]: step["status"] for step in record.get("steps", [])}
+    first_ok = statuses.get("first") in {"verified", "applied"}
+    dependency_ok = (statuses.get("second") == "blocked" if not first_ok else
+                     statuses.get("second") in {"verified", "applied", "declined",
+                                                "deferred", "error"})
+    unchanged = [hashlib.sha256(path.read_bytes()).hexdigest() for path in plan_targets] == plan_hashes
+    check(checks, "coding_plan",
+          plan_start.returncode == 0
+          and record.get("status") in {"done", "blocked"}
+          and dependency_ok
+          and unchanged
+          and (Path(plan.get("folder", plan_state)) / "report.json").is_file(),
+          f"{record.get('status')}: {statuses}"[:200])
+    shutil.rmtree(plan_state, ignore_errors=True)
+
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 
