@@ -42,6 +42,9 @@ type MessageContent struct {
 // PlainText is the normalized text a deterministic Room command reads.
 func (content MessageContent) PlainText() string { return content.rawMessage }
 
+// FromVoice reports that this turn arrived as a Voice Live transcript.
+func (content MessageContent) FromVoice() bool { return content.voiceLiveTurn != nil }
+
 func NormalizeMessageCreateRequest(request httpapi.MessageCreateRequest) (MessageContent, error) {
 	if request.MessageKind != nil && *request.MessageKind != httpapi.Conversation {
 		return MessageContent{}, errors.New("Human messages must use conversation kind")

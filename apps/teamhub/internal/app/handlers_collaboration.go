@@ -254,20 +254,20 @@ func (a *App) createMessage(c *gin.Context) {
 		return
 	}
 	a.recordMessageCommitTiming(c)
-	a.replyToRoomCommand(c, c.Param("roomId"), content.PlainText(), key)
+	a.replyToRoomCommand(c, c.Param("roomId"), content.PlainText(), content.FromVoice(), key)
 	writeResultResponse(c, result)
 }
 
 // replyToRoomCommand writes one Agent-authored reply for a deterministic
 // identity, sensing or coding command. A failure never changes the accepted
 // Human message.
-func (a *App) replyToRoomCommand(c *gin.Context, roomID, text, key string) {
+func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool, key string) {
 	if a.roomIdentity == nil || strings.TrimSpace(text) == "" || key == "" {
 		return
 	}
 	reply := a.roomIdentity.Answer(roomID, text, time.Now())
 	if reply == "" {
-		reply = roomsenses.Answer(text)
+		reply = roomsenses.Answer(text, voice)
 	}
 	if reply == "" {
 		reply = a.roomCodingReply(c, roomID, text)

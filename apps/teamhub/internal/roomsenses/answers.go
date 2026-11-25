@@ -24,18 +24,22 @@ var (
 )
 
 // Answer returns a deterministic reply, or "" when text asks nothing about
-// hearing or seeing.
-func Answer(text string) string {
+// hearing or seeing. voice reports that the turn arrived as speech.
+func Answer(text string, voice bool) string {
 	words := normalize(text)
 	if words == "" {
 		return ""
 	}
+	hearingAnswer := Typed
+	if voice {
+		hearingAnswer = Heard
+	}
 	if match := combined.FindStringSubmatch(words); match != nil && match[1] != match[2] {
-		answers := map[string]string{"hear": Typed, "see": Unknown}
+		answers := map[string]string{"hear": hearingAnswer, "see": Unknown}
 		return answers[match[1]] + " " + answers[match[2]]
 	}
 	if hearing.MatchString(words) {
-		return Typed
+		return hearingAnswer
 	}
 	if seeing.MatchString(words) {
 		return Unknown

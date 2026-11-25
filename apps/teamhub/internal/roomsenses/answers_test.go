@@ -12,15 +12,21 @@ func TestAnswerHearingAndSeeing(t *testing.T) {
 		"Can you hear me and see me?":      Typed + " " + Unknown,
 	}
 	for text, want := range cases {
-		if got := Answer(text); got != want {
+		if got := Answer(text, false); got != want {
 			t.Fatalf("%q => %q, want %q", text, got, want)
 		}
+	}
+	if got := Answer("Can you hear me?", true); got != Heard {
+		t.Fatalf("voice hearing=%q", got)
+	}
+	if got := Answer("Can you hear me and see me?", true); got != Heard+" "+Unknown {
+		t.Fatalf("voice combined=%q", got)
 	}
 }
 
 func TestAnswerIgnoresOrdinaryText(t *testing.T) {
 	for _, text := range []string{"Play music.", "Who am I?", "Can you hear the rain?", ""} {
-		if got := Answer(text); got != "" {
+		if got := Answer(text, false); got != "" {
 			t.Fatalf("%q => %q", text, got)
 		}
 	}
