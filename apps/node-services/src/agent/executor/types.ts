@@ -22,7 +22,12 @@ export type LocalTurnStatus =
 
 export type LocalTurnTerminal =
   | { readonly type: "succeeded"; readonly finalResponse?: string }
-  | { readonly type: "failed"; readonly error: string }
+  | {
+      readonly type: "failed";
+      readonly error: string;
+      /** Reviewed fallback text for a Room run that sent no message. */
+      readonly finalResponse?: string;
+    }
   | { readonly type: "canceled" };
 
 export interface LocalTurnObservation {

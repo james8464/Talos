@@ -2052,6 +2052,7 @@ export class RunLoop {
         type: "failed",
         error: "Agent ended its turn without sending a reply to the Room",
         failure: runFailure("reply_not_sent", this.#runtimeType),
+        finalResponse,
       };
     }
     return { type: "succeeded", finalResponse };

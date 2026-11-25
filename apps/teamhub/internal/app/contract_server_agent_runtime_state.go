@@ -308,6 +308,7 @@ func (a *App) finishAgentLocalRun(c *gin.Context) {
 	if a.writeAgentRuntimeStateError(c, "finish Local Run", err) {
 		return
 	}
+	a.postReviewedTextReply(c, request, result)
 	run, err := agentLocalRunToContract(result.Run)
 	if a.writeAgentRuntimeStateProjectionError(c, "project finished Local Run", err) {
 		return
@@ -321,6 +322,35 @@ func (a *App) finishAgentLocalRun(c *gin.Context) {
 		response.Session = &session
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+// postReviewedTextReply is the opt-in fallback for a Room Run that produced
+// text but never called the message tool. It posts only a bounded, non-empty
+// final response, and only when TALOS_AGENT_TEXT_REPLY is enabled.
+func (a *App) postReviewedTextReply(c *gin.Context, request teamhubinternal.FinishAgentLocalRunRequest, result agentruntimestate.FinishLocalRunResult) {
+	if !a.cfg.TextReplyFallback || request.Terminal.Failure == nil ||
+		string(request.Terminal.Failure.Code) != "reply_not_sent" {
+		return
+	}
+	text, ok := reviewedAgentTextReply(request.Terminal.AdditionalProperties["finalResponse"])
+	if !ok {
+		return
+	}
+	context, err := a.agentRuntimeState.GetContext(c.Request.Context(), request.ContextKey)
+	if err != nil || context.Ref.RoomID == "" || context.AgentActorID == "" {
+		return
+	}
+	if _, err := a.collaboration.CreateAgentMessage(c.Request.Context(),
+		context.Ref.RoomID, context.AgentActorID, text, "text-reply:"+request.RunId); err != nil {
+		if a.logger != nil {
+			a.logger.Warn("local_run.text_reply_failed", "run_id", request.RunId, "error", err)
+		}
+		return
+	}
+	if a.logger != nil {
+		a.logger.Info("local_run.text_reply_posted", "run_id", request.RunId, "room_id", context.Ref.RoomID)
+	}
+	_ = result
 }
 
 func (a *App) cancelAgentLocalRun(c *gin.Context) {

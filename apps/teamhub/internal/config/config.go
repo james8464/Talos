@@ -52,6 +52,9 @@ type Config struct {
 	// Runtime verifies when a collaboration connection opens.
 	DocumentConnectionTokenKey string
 	AgentRunTokenSecret        string
+	// TextReplyFallback is TALOS_AGENT_TEXT_REPLY: post a Room Run's final
+	// text when it sent no message. Off by default.
+	TextReplyFallback bool
 	// RunnerGatewayURL is the public Runner Gateway address an enrolled
 	// Computer receives; enrollment is off while it is empty.
 	RunnerGatewayURL string
@@ -155,6 +158,9 @@ func Load() (Config, error) {
 	cfg := Default()
 	applyEnvironment(&cfg)
 	if err := applyPermissionReview(&cfg); err != nil {
+		return Config{}, err
+	}
+	if err := applyTextReplyFallback(&cfg); err != nil {
 		return Config{}, err
 	}
 	if err := applyVoiceMedia(&cfg); err != nil {
@@ -467,6 +473,20 @@ func applyPermissionReview(cfg *Config) error {
 		return errors.New("TEAMHUB_PERMISSION_REVIEW must be true or false")
 	}
 	cfg.PermissionReview.Enabled = enabled
+	return nil
+}
+
+// applyTextReplyFallback reads TALOS_AGENT_TEXT_REPLY; unset keeps it off.
+func applyTextReplyFallback(cfg *Config) error {
+	value := strings.TrimSpace(os.Getenv("TALOS_AGENT_TEXT_REPLY"))
+	if value == "" {
+		return nil
+	}
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		return errors.New("TALOS_AGENT_TEXT_REPLY must be true or false")
+	}
+	cfg.TextReplyFallback = enabled
 	return nil
 }
 

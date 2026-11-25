@@ -548,7 +548,11 @@ describe("RunLoop", () => {
           failure: { code: "reply_not_sent", runtime_type: "pi" },
         },
       });
-      expect(JSON.stringify(run?.terminal)).not.toContain("Doing well");
+      // The terminal carries the final text only so TeamHub can apply its
+      // reviewed, opt-in fallback; the strict guard still posts nothing.
+      expect(JSON.stringify(run?.terminal)).toContain(
+        '"finalResponse":"Doing well, you?"',
+      );
       expect(log).toHaveBeenCalledWith(
         "warn",
         "local_run.reply_not_sent",

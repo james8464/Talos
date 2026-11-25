@@ -283,16 +283,22 @@ The live harness also runs `TestGlobalSearchMessagesPublicHTTP`
 `TestPrivateAgentVisibilityAndDirectRoomLifecycle` (`room-direct-journey`:
 Direct Room lifecycle and Agent visibility).
 
-### 8B retry
+### Reviewed text-reply fallback
 
-`qwen3:8b-16k` also passes the direct shell-tool check, but the Room run still
-ended `reply_not_sent`:
+Both 4B and 8B write text instead of running `teamhub message send`. With
+`TALOS_AGENT_TEXT_REPLY=1`, TeamHub posts that final text as the Agent reply when
+the Run finishes `reply_not_sent`. The review trims whitespace, strips one
+`<response>…</response>` wrapper, rejects empty or over-2000-rune text and NUL
+bytes, and is off by default. Cloud runtimes can keep the strict guard.
+
+Verified live with `qwen3:8b-16k`:
 
 ```text
-model=qwen3:8b-16k sequence=1 output=327
-model=qwen3:8b-16k sequence=2 output=366
-failedMessageWrites=0 deliveredMessageWrites=0 finalResponseLength=98
+agent.model_request model=qwen3:8b-16k (3158/167, 152/205 tokens)
+local_run.text_reply_posted run_id=local-run-6da7bd12e729443a908986957187a241
+message author=agent
+body="Hello! I'm Talos, your AI assistant here to help with onboarding and tasks."
 ```
 
-Both 4B and 8B write text instead of running `teamhub message send`, so a
-larger model alone does not satisfy the reply contract.
+`scripts/talos-agent-live.mjs` waits for that persisted Agent-authored reply;
+`pnpm talos:live` runs it when `TALOS_LIVE_AGENT=1` points at a running stack.
