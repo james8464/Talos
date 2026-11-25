@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `793 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `78/78` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
+- Unit suite: `795 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `79/79` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
 - Ruff: clean.
 
 ## Live feature pass
@@ -55,6 +55,7 @@ Latest results:
 | Processes | `talos processes`/status report room, workers, listeners, stale and audio processes |
 | Streaming | `talos stream` emits local-model text deltas with no audio; live check asserts a clean answer and no reasoning block |
 | Capability answers | Muted rooms answer background/audio-capability questions from `Room.speak`; the live check requires the muted clause |
+| Room coding commands | Typed `coding job <path>: <request>` and `coding plan <file>` queue, run verify-only, and report status plus unchanged targets |
 | Retry on test failure | A failed sandbox unit test feeds its output into one revised model attempt within the same budget; attempts are recorded and capped at two |
 | Multi-file steps | A plan step may list 2–4 `targets`; the model must patch every file and the combined diff is verified in one sandbox |
 | Coding plans | `talos codeplan start/run/status` runs steps in dependency order; dependents of a failed step are blocked and verify-only leaves targets unchanged |

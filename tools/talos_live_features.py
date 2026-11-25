@@ -628,6 +628,13 @@ class TotalTest(unittest.TestCase):
           "muted" in capability.casefold() and "can't play" in capability.casefold(),
           capability)
 
+    room_coding = ask(token, "coding job talos_core/runtime/text_stream.py: "
+                             "Add one clarifying sentence to the module docstring.")["reply"]
+    check(checks, "room_coding_job",
+          ("verified" in room_coding.casefold() or "declined" in room_coding.casefold())
+          and "target unchanged: yes" in room_coding.casefold(),
+          room_coding)
+
     music = ask(token, "Play music.")["reply"]
     check(checks, "music_blocked", "disabled" in music.casefold() or "muted" in music.casefold(),
           music)

@@ -68,3 +68,18 @@ failure output appended to the prompt. The same wall-clock budget applies,
 reported as `declined` rather than retried indefinitely. Invalid JSON, an
 abstained patch, or a candidate that does not apply stops immediately without a
 retry.
+
+## From the room
+
+Typed messages can run the same verify-only path without a terminal:
+
+```text
+coding job talos_core/runtime/text_stream.py: Add one clarifying sentence to the module docstring.
+coding plan state/plan.json
+coding jobs
+```
+
+The room queues the work, runs it with the local model, and replies with the
+job or plan status, per-step statuses for plans, and whether every target stayed
+unchanged. Voice input is not routed to these commands, and a room request can
+never apply a patch.

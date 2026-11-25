@@ -47,7 +47,7 @@ from talos_core.memory.transcript_memory import (
     recent_messages,
     search_transcripts,
 )
-from talos_core.room import room_checkins, room_vision
+from talos_core.room import room_checkins, room_coding, room_vision
 from talos_core.room.room_dialogue import (
     absolute_reminder,
     capability_answer,
@@ -1257,7 +1257,12 @@ class Room:
             quick = sensor_answer(text, source, current)
             lookup = None if follow_up else external_request(text)
             local = self.local_request(db, text, session, archive, started, follow_up=follow_up)
-            if local:
+            coding = (None if source != "text" else
+                      room_coding.handle(text, state=self.db_path.parent,
+                                         root=self.db_path.parent.parent, model=self.model))
+            if coding:
+                proposal = decision("reply", coding["reply"])
+            elif local:
                 proposal = local
             elif source == "voice" and re.fullmatch(r"(hello|hi|hey|uh+|um+|hmm+)[.!,? ]*", text.strip(), re.I):
                 proposal = decision("ignore", "")

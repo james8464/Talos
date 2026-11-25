@@ -58,6 +58,39 @@ class RoomDialogueTests(unittest.TestCase):
             self.assertEqual(self.turn("Can you tell who I am?")["reply"], IDENTITY)
         self.assertIsNone(sensor_answer("Am I coming through the right door?", "voice", True))
 
+    def test_typed_coding_job_queues_runs_and_reports_unchanged(self):
+        state = self.root / "state"
+        state.mkdir()
+        (self.root / "talos_core").mkdir()
+        target = self.root / "talos_core" / "example.py"
+        target.write_text("VALUE = 1\n")
+        room = Room(state / "memory.sqlite", "local")
+        with patch("talos_core.room.room_coding.local_infer",
+                   return_value=lambda prompt: "{}"):
+            reply = room.route("POST", "/v1/turn", {
+                "text": "coding job talos_core/example.py: Add a note.",
+                "source": "text"})[1]["reply"]
+        self.assertIn("declined", reply)
+        self.assertIn("Target unchanged: yes", reply)
+        self.assertEqual(target.read_text(), "VALUE = 1\n")
+
+    def test_typed_coding_plan_runs_verify_only(self):
+        state = self.root / "state"
+        state.mkdir()
+        (self.root / "talos_core").mkdir()
+        target = self.root / "talos_core" / "example.py"
+        target.write_text("VALUE = 1\n")
+        (state / "plan.json").write_text(json.dumps({"steps": [
+            {"id": "one", "target": "talos_core/example.py", "request": "Add a note."}]}))
+        room = Room(state / "memory.sqlite", "local")
+        with patch("talos_core.room.room_coding.local_infer",
+                   return_value=lambda prompt: "{}"):
+            reply = room.route("POST", "/v1/turn", {
+                "text": "coding plan state/plan.json", "source": "text"})[1]["reply"]
+        self.assertIn("declined", reply)
+        self.assertIn("Targets unchanged: yes", reply)
+        self.assertEqual(target.read_text(), "VALUE = 1\n")
+
     def test_capability_questions_are_answered_from_room_state(self):
         from talos_core.room.room_dialogue import capability_answer
 
