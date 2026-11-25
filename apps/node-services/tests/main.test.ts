@@ -4,7 +4,7 @@ import { readHttpAddress, selectRoles } from "../src/main.js";
 
 describe("selectRoles", () => {
   it("starts every role when NODE_SERVICES_ROLES is unset or empty", () => {
-    const all = ["memory", "llm-wiki", "agent", "voice", "document"];
+    const all = ["memory", "llm-wiki", "agent", "voice", "perception", "document"];
     expect(selectRoles(undefined)).toEqual(all);
     expect(selectRoles(" , ")).toEqual(all);
   });
