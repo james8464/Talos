@@ -274,7 +274,6 @@ Talos is built on these open-source projects:
 - **[Cua](https://github.com/trycua/cua):** Lets agents use the apps on your desktop.
 - **[LiveKit](https://github.com/livekit/livekit):** Carries the audio for voice and meetings.
 - **[River](https://github.com/riverqueue/river):** Runs TeamHub's background jobs.
-- **[NOTICE](NOTICE):** Lists every third-party component, what we adapted from it, and the license that applies.
 
 Thank you to the open-source community for libraries this powerful and this simple: they let us focus on the product itself, and we hope our projects will in turn give everyone an easier-to-use knowledge base.
 
@@ -294,6 +293,6 @@ Have an idea? [Open a feature request](https://github.com/simplexai-labs/talos/i
 
 ## License
 
-This repository is licensed under the [Talos Open Source License](LICENSE),
-based on Apache 2.0 with additional conditions. [NOTICE](NOTICE) lists
-third-party code and the logos and images that this license does not cover.
+This repository is a private, local-use build. It has no license file: the
+owner holds the rights to the Talos code and keeps third-party components under
+their own licenses, which travel with those components.

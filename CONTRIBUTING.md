@@ -118,6 +118,6 @@ successful Wiki publication.
 
 ## License of contributions
 
-By contributing, you agree to the contributor terms in [LICENSE](LICENSE): the
-producer may make the license stricter or more relaxed, and your contributed
-code may be used commercially, including in its cloud business.
+This is a private, local-use repository. By contributing you agree that the
+repository owner may use, change and distribute your contribution without
+further terms.

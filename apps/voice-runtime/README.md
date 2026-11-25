@@ -7,7 +7,6 @@ The models inside `@livekit/local-inference` are also bound by a proprietary mod
 they may be used only with LiveKit Agents,
 and neither the models nor their output may be used to develop other models.
 The image keeps the notices and full license texts in `/app/NOTICE` and `/app/third_party/licenses/`.
-The components and their sources are listed in the root [NOTICE](../../NOTICE).
 
 Commands, conventions and boundaries are in [AGENTS.md](./AGENTS.md).
 

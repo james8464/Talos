@@ -13,8 +13,8 @@ started from this checkout.
 Talos is Apache-2.0 with two extra conditions: no hosted/managed service for
 third parties without permission, and the `apps/web/` logo/copyright notice
 must stay intact. Talos-on-Talos is a personal local install, so neither
-condition is triggered. Keep `LICENSE`, `NOTICE` and the web branding, and
-record the upstream commit in derived releases.
+condition is triggered. The owner removed `LICENSE` and `NOTICE` for this
+private local build; third-party components keep their own licenses.
 
 ## Why this is a replatform, not a merge
 
