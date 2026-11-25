@@ -240,7 +240,9 @@ def _codeplan(args) -> int:
 
     infer = initiative_coder.local_infer(args.model)
     try:
-        result = coding_jobs.run_plan(args.state, args.id, root=args.root, infer=infer)
+        result = coding_jobs.run_plan(
+            args.state, args.id, root=args.root, infer=infer,
+            infer_many=coding_jobs.local_infer_many(args.model))
     except ValueError as error:
         print(json.dumps({"ok": False, "error": str(error)}))
         return 1

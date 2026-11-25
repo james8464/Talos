@@ -189,3 +189,71 @@ class CodingPlanTests(unittest.TestCase):
                                       infer=lambda prompt: self.fail("must not rerun"))
         self.assertEqual(first["status"], second["status"])
         self.assertEqual(len(coding_jobs.jobs(self.state)), 1)
+
+
+MULTI_REGRESSION = '''"""Regression for a two-file step."""
+
+import unittest
+
+from talos_core.example import add
+from talos_core.other import label
+
+
+class CombinedTest(unittest.TestCase):
+    def test_both_files(self):
+        self.assertEqual(add(2, 3), 5)
+        self.assertEqual(label(), "two")
+'''
+
+
+class MultiFileStepTests(CodingPlanTests):
+    def multi(self):
+        return {
+            "targets": ["talos_core/example.py", "talos_core/other.py"],
+            "request": "Update both files together.",
+        }
+
+    def test_multi_file_step_verifies_together(self):
+        plan = self.plan([{"id": "both", **self.multi()}])
+        patches = [
+            {"target": "talos_core/example.py", "before": "    return a + b\n",
+             "after": "    return b + a\n"},
+            {"target": "talos_core/other.py", "before": '    return "one"\n',
+             "after": '    return "two"\n'},
+        ]
+        result = coding_jobs.run_plan(
+            self.state, plan["id"], root=self.tmp,
+            infer=lambda prompt: self.fail("single-file model must not run"),
+            infer_many=lambda prompt: json.dumps(
+                {"patches": patches, "regression_test": MULTI_REGRESSION}))
+        step = result["steps"][0]
+        self.assertEqual(result["status"], "done")
+        self.assertEqual(step["status"], "verified", step.get("message"))
+        self.assertEqual((self.tmp / "talos_core" / "example.py").read_text(), EXAMPLE)
+        self.assertEqual((self.tmp / "talos_core" / "other.py").read_text(), OTHER)
+        report = json.loads((Path(result["folder"]) / "report.json").read_text())
+        self.assertEqual(set(report["steps"][0]["targets"]),
+                         {"talos_core/example.py", "talos_core/other.py"})
+
+    def test_multi_file_step_rejects_partial_patch(self):
+        plan = self.plan([{"id": "both", **self.multi()}])
+        partial = [{"target": "talos_core/example.py", "before": "    return a + b\n",
+                    "after": "    return b + a\n"}]
+        result = coding_jobs.run_plan(
+            self.state, plan["id"], root=self.tmp,
+            infer=lambda prompt: self.fail("single-file model must not run"),
+            infer_many=lambda prompt: json.dumps(
+                {"patches": partial, "regression_test": MULTI_REGRESSION}))
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["steps"][0]["status"], "declined")
+        self.assertIn("every target", result["steps"][0]["message"])
+        self.assertEqual((self.tmp / "talos_core" / "other.py").read_text(), OTHER)
+
+    def test_multi_file_targets_are_validated(self):
+        with self.assertRaises(ValueError):
+            coding_jobs.start_many(self.state, "x", ["talos_core/example.py"],
+                                   root=self.tmp)
+        with self.assertRaises(ValueError):
+            coding_jobs.start_many(
+                self.state, "x", ["talos_core/example.py", "talos_core/example.py"],
+                root=self.tmp)

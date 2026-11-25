@@ -12,6 +12,7 @@ used by the room.
 
 from __future__ import annotations
 
+import ast
 import fcntl
 import hashlib
 import json
@@ -26,6 +27,7 @@ FOLDER = "coding-jobs"
 MAX_REQUEST = 800
 MAX_TARGET_BYTES = 1_500_000
 MIN_SECONDS = 5
+MAX_TARGETS = 4
 
 
 def _now() -> float:
@@ -227,6 +229,225 @@ def run_due(state: Path | str, *, root: Path | str, infer, apply: bool | None = 
                 for job in pending[:max(1, limit)]]
 
 
+def _valid_regression(test: str, job_id: str) -> str:
+    if not isinstance(test, str) or not test.strip() or len(test) > 12000:
+        raise ValueError("Regression test is empty or oversized.")
+    test = test.rstrip() + "\n"
+    path = f"tests/test_section_{job_id}.py"
+    tree = ast.parse(test)
+    if not any(
+        isinstance(node, ast.ClassDef)
+        and any(isinstance(method, ast.FunctionDef) and method.name.startswith("test_")
+                for method in node.body)
+        and any((isinstance(base, ast.Attribute) and base.attr == "TestCase")
+                or (isinstance(base, ast.Name) and base.id == "TestCase")
+                for base in node.bases)
+        for node in tree.body
+    ):
+        raise ValueError("Regression needs a unittest case.")
+    if not any(isinstance(node, ast.Assert)
+               or (isinstance(node, ast.Attribute) and node.attr.startswith("assert"))
+               for node in ast.walk(tree)):
+        raise ValueError("Regression needs an assertion.")
+    compile(test, path, "exec", dont_inherit=True)
+    return test
+
+
+def start_many(state: Path | str, request: str, targets: list[str], *,
+               root: Path | str, budget: int = 300, apply: bool = True) -> dict:
+    """Queue one job that edits and verifies several files as a single patch."""
+    request = (request or "").strip()
+    if not request or len(request) > MAX_REQUEST:
+        raise ValueError(f"Keep the request under {MAX_REQUEST} characters.")
+    if not isinstance(targets, list) or not 2 <= len(targets) <= MAX_TARGETS:
+        raise ValueError(f"A multi-file job needs between 2 and {MAX_TARGETS} targets.")
+    if len(set(targets)) != len(targets):
+        raise ValueError("Targets must be unique.")
+    if not isinstance(budget, int) or not MIN_SECONDS <= budget <= 3600:
+        raise ValueError("Budget must be between 5 and 3600 seconds.")
+    for target in targets:
+        _safe_target(Path(root), target)
+    folder = _folder(Path(state))
+    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+    job_id = time.strftime("%Y%m%d-%H%M%S", time.gmtime()) + "-" + secrets.token_hex(3)
+    record = {
+        "id": job_id,
+        "request": request,
+        "targets": list(targets),
+        "apply": bool(apply),
+        "budget": budget,
+        "status": "queued",
+        "created": time.time(),
+        "folder": str(folder / job_id),
+    }
+    (folder / job_id).mkdir(mode=0o700)
+    _write(folder / job_id / "job.json", record)
+    return record
+
+
+def local_infer_many(model: str):
+    """Return a multi-file JSON callable for plan steps with several targets."""
+    from agent import model_text
+
+    patch = {
+        "type": "object",
+        "required": ["target", "before", "after"],
+        "properties": {key: {"type": "string"} for key in ("target", "before", "after")},
+        "additionalProperties": False,
+    }
+    schema = {
+        "type": "object",
+        "required": ["patches", "regression_test"],
+        "properties": {"patches": {"type": "array", "items": patch},
+                       "regression_test": {"type": "string"}},
+        "additionalProperties": False,
+    }
+
+    def infer(prompt: str) -> str:
+        return model_text(
+            [{"role": "system",
+              "content": "Implement the requested small change across the supplied files. Return only JSON."},
+             {"role": "user", "content": prompt}],
+            model=model, max_tokens=1800, schema=schema,
+        )
+
+    return infer
+
+
+def _prompt_many(record: dict, sources: dict[str, str]) -> str:
+    blocks = "".join(
+        f"\n=== FILE: {target} ===\n{sources[target][:6000]}" for target in record["targets"])
+    return (
+        section_patches.PATCH_INSTRUCTION
+        + "\nThis step edits several files together. Return JSON with a patches array "
+          "(one object per target containing target, before and after) and one "
+          "regression_test covering the combined change.\n"
+        + f"\nREQUEST: {record['request']}\n"
+        + f"TARGETS: {', '.join(record['targets'])}\n"
+        + blocks[:18000]
+    )
+
+
+def run_many(state: Path | str, job_id: str, *, root: Path | str, infer,
+             apply: bool | None = None, budget: int | None = None, clock=_now) -> dict:
+    """Run one queued multi-file job. Every file must be in the returned patch."""
+    state, root = Path(state), Path(root)
+    record = load(state, job_id)
+    if record.get("status") != "queued":
+        return record
+    folder = Path(record["folder"])
+    targets = record["targets"]
+    apply = record.get("apply", True) if apply is None else apply
+    limit = int(budget if budget is not None else record.get("budget", 300))
+    deadline = clock() + max(MIN_SECONDS, limit)
+
+    with (folder / "job.lock").open("a") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return record
+        record.update({"status": "running", "started": time.time()})
+        _write(folder / "job.json", record)
+
+        def finish(status: str, message: str, **extra) -> dict:
+            record.update({"status": status, "message": message[:400],
+                           "finished": time.time(), **extra})
+            _write(folder / "job.json", record)
+            _write(folder / "report.json", {
+                "id": record["id"], "status": status, "message": message[:400],
+                "targets": targets, "apply": bool(apply), **extra,
+            })
+            return record
+
+        try:
+            sources = {}
+            before = {}
+            for target in targets:
+                path = _safe_target(root, target)
+                sources[target] = path.read_text(encoding="utf-8")
+                before[target] = hashlib.sha256(sources[target].encode()).hexdigest()
+
+            if deadline - clock() < MIN_SECONDS:
+                return finish("deferred", "budget exhausted before drafting")
+            raw = infer(_prompt_many(record, sources))
+            if isinstance(raw, str):
+                try:
+                    values = json.loads(raw)
+                except ValueError:
+                    return finish("declined", "model returned no valid patch")
+            else:
+                values = raw
+            if not isinstance(values, dict) or set(values) != {"patches", "regression_test"}:
+                return finish("declined", "model returned no valid patch")
+            patches = values["patches"]
+            if not isinstance(patches, list) or len(patches) != len(targets):
+                return finish("declined", "model did not patch every target")
+            by_target = {}
+            for patch in patches:
+                if not isinstance(patch, dict) or set(patch) != {"target", "before", "after"}:
+                    return finish("declined", "model returned a malformed patch")
+                if not all(isinstance(patch[key], str) and len(patch[key]) <= 8000
+                           for key in patch):
+                    return finish("declined", "model returned an oversized patch")
+                by_target[patch["target"]] = patch
+            if set(by_target) != set(targets):
+                return finish("declined", "model patched the wrong targets")
+            try:
+                regression = _valid_regression(values["regression_test"], job_id)
+                pieces = []
+                for target in targets:
+                    patch = by_target[target]
+                    source = sources[target]
+                    before_text, after_text = patch["before"], patch["after"]
+                    if (not before_text.strip() or before_text not in source
+                            or source.count(before_text) != 1 or before_text == after_text):
+                        raise ValueError(f"{target}: candidate does not uniquely apply")
+                    changed = source.replace(before_text, after_text, 1)
+                    if ast.dump(ast.parse(source)) == ast.dump(ast.parse(changed)):
+                        raise ValueError(f"{target}: no executable change")
+                    compile(changed, target, "exec", dont_inherit=True)
+                    pieces.append(section_patches.unified(
+                        source, changed, "a/" + target, "b/" + target))
+            except (SyntaxError, ValueError) as error:
+                return finish("declined", f"patch rejected: {error}")
+            test_path = f"tests/test_section_{job_id}.py"
+            diff = "".join(pieces) + section_patches.unified(
+                "", regression, "/dev/null", "b/" + test_path)
+            (folder / "change.diff").write_text(diff, encoding="utf-8")
+            (folder / "regression.py").write_text(regression, encoding="utf-8")
+
+            timeout = max(MIN_SECONDS, min(60, int(deadline - clock())))
+            if apply:
+                outcome = section_patches.apply_verified_patch(
+                    root, state, diff, extra_regression=regression, timeout=timeout)
+                verification = outcome.get("verification", {})
+                status = "applied" if outcome.get("applied") else (
+                    "rolled_back" if outcome.get("rolled_back") else "declined")
+                return finish(status, outcome.get("error") or f"multi-file patch {status}",
+                              diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                              tests_run=verification.get("tests_run", []),
+                              stage=verification.get("stage"),
+                              before_sha256=before,
+                              after_sha256={target: hashlib.sha256(
+                                  (root / target).read_bytes()).hexdigest() for target in targets},
+                              test_path=test_path)
+            verification = section_patches.verify_patch_in_sandbox(
+                root, diff, extra_regression=regression, timeout=timeout)
+            status = "verified" if verification.get("ok") else "declined"
+            outcome = "passed" if verification.get("ok") else "rejected"
+            return finish(status, f"sandbox {outcome} at {verification.get('stage')}",
+                          diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                          tests_run=verification.get("tests_run", []),
+                          stage=verification.get("stage"),
+                          before_sha256=before,
+                          after_sha256={target: hashlib.sha256(
+                              (root / target).read_bytes()).hexdigest() for target in targets},
+                          test_path=test_path)
+        except Exception as error:  # a failed job must never take down the worker
+            return finish("error", f"{type(error).__name__}: {error}")
+
+
+
 PLANS = "coding-plans"
 MAX_STEPS = 8
 
@@ -271,14 +492,26 @@ def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
         request = (step.get("request") or "").strip()
         if not request or len(request) > MAX_REQUEST:
             raise ValueError(f"Step {step['id']} needs a request under {MAX_REQUEST} characters.")
-        target = step.get("target")
-        if not isinstance(target, str):
-            raise ValueError(f"Step {step['id']} needs a target file.")
-        _safe_target(root, target)
+        if step.get("targets") is not None and step.get("target") is not None:
+            raise ValueError(f"Step {step['id']} cannot set both target and targets.")
+        if step.get("targets") is not None:
+            targets = step["targets"]
+            if (not isinstance(targets, list) or not 2 <= len(targets) <= MAX_TARGETS
+                    or not all(isinstance(item, str) for item in targets)
+                    or len(set(targets)) != len(targets)):
+                raise ValueError(f"Step {step['id']} needs 2-{MAX_TARGETS} unique targets.")
+        else:
+            target = step.get("target")
+            if not isinstance(target, str):
+                raise ValueError(f"Step {step['id']} needs a target file.")
+            targets = [target]
+        for target in targets:
+            _safe_target(root, target)
         needs = step.get("needs") or []
         if not isinstance(needs, list) or not all(isinstance(item, str) for item in needs):
             raise ValueError(f"Step {step['id']} needs a list of step ids.")
-        clean.append({"id": step["id"], "request": request, "target": target,
+        clean.append({"id": step["id"], "request": request, "target": targets[0],
+                      "targets": list(targets),
                       "needs": list(dict.fromkeys(needs)), "status": "queued",
                       "message": "", "job_id": None})
     order = _order(clean)
@@ -318,7 +551,7 @@ def plans(state: Path | str) -> list[dict]:
 
 
 def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
-             apply: bool | None = None) -> dict:
+             infer_many=None, apply: bool | None = None) -> dict:
     """Run ready steps in dependency order; block anything with a failed dependency."""
     state, root = Path(state), Path(root)
     record = load_plan(state, plan_id)
@@ -340,7 +573,7 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
             _write(folder / "report.json", {
                 "id": record["id"], "status": record["status"],
                 "steps": [{key: step.get(key) for key in
-                           ("id", "status", "job_id", "message", "needs", "target")}
+                           ("id", "status", "job_id", "message", "needs", "target", "targets")}
                           for step in record["steps"]],
             })
 
@@ -356,9 +589,16 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
                             message="dependency not verified: " + ", ".join(blocked))
                 save()
                 continue
-            job = start(state, step["request"], step["target"], root=root,
-                        budget=record["budget"], apply=apply)
-            result = run(state, job["id"], root=root, infer=infer, apply=apply)
+            targets = step.get("targets") or [step["target"]]
+            if len(targets) > 1:
+                job = start_many(state, step["request"], targets, root=root,
+                                 budget=record["budget"], apply=apply)
+                result = run_many(state, job["id"], root=root,
+                                  infer=infer_many or infer, apply=apply)
+            else:
+                job = start(state, step["request"], step["target"], root=root,
+                            budget=record["budget"], apply=apply)
+                result = run(state, job["id"], root=root, infer=infer, apply=apply)
             step.update(status=result.get("status", "error"), job_id=job["id"],
                         message=result.get("message", ""))
             save()

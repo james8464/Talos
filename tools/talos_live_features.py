@@ -531,6 +531,56 @@ Path(sys.argv[1]).write_bytes(raw)
           f"{record.get('status')}: {statuses}"[:200])
     shutil.rmtree(plan_state, ignore_errors=True)
 
+    from talos_core.self_improvement import coding_jobs
+
+    multi_root = Path(tempfile.mkdtemp())
+    (multi_root / "talos_core").mkdir()
+    (multi_root / "talos_core" / "__init__.py").write_text("")
+    (multi_root / "talos_core" / "alpha.py").write_text("def value():\n    return 1\n")
+    (multi_root / "talos_core" / "beta.py").write_text("def label():\n    return 'a'\n")
+    (multi_root / "tests").mkdir()
+    (multi_root / "tests" / "__init__.py").write_text("")
+    multi_state = multi_root / "state"
+    multi_plan = coding_jobs.start_plan(multi_state, [{
+        "id": "both", "targets": ["talos_core/alpha.py", "talos_core/beta.py"],
+        "request": "Update both helpers together."}], root=multi_root)
+    regression = """import unittest
+
+from talos_core.alpha import value
+from talos_core.beta import label
+
+
+class CombinedTest(unittest.TestCase):
+    def test_both(self):
+        self.assertEqual(value(), 2)
+        self.assertEqual(label(), "b")
+"""
+    multi_patches = [
+        {"target": "talos_core/alpha.py", "before": "    return 1\n",
+         "after": "    return 2\n"},
+        {"target": "talos_core/beta.py", "before": "    return 'a'\n",
+         "after": "    return 'b'\n"},
+    ]
+    multi_result = coding_jobs.run_plan(
+        multi_state, multi_plan["id"], root=multi_root,
+        infer=lambda prompt: "{}",
+        infer_many=lambda prompt: json.dumps(
+            {"patches": multi_patches, "regression_test": regression}))
+    multi_step = multi_result["steps"][0]
+    multi_unchanged = ((multi_root / "talos_core" / "alpha.py").read_text()
+                       == "def value():\n    return 1\n"
+                       and (multi_root / "talos_core" / "beta.py").read_text()
+                       == "def label():\n    return 'a'\n")
+    check(checks, "coding_plan_multi",
+          multi_result.get("status") == "done"
+          and multi_step.get("status") == "verified"
+          and multi_unchanged
+          and set(multi_step.get("targets", [])) == {"talos_core/alpha.py",
+                                                     "talos_core/beta.py"},
+          f"{multi_result.get('status')}: {multi_step.get('status')} "
+          f"{multi_step.get('message', '')}"[:200])
+    shutil.rmtree(multi_root, ignore_errors=True)
+
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 

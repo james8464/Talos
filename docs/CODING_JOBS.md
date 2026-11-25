@@ -38,14 +38,14 @@ python3 -m talos_core.cli codeplan run PLAN_ID --model qwen3:4b
 python3 -m talos_core.cli codeplan status PLAN_ID
 ```
 
-`plan.json` holds up to eight steps, each with `id`, `target`, `request` and
-optional `needs`:
+`plan.json` holds up to eight steps, each with `id`, a `target` or a `targets`
+list (2–4 files), `request` and optional `needs`:
 
 ```json
 {"steps": [
   {"id": "first", "target": "talos_core/example.py", "request": "Clarify the helper."},
-  {"id": "second", "target": "talos_core/other.py", "request": "Update the caller.",
-   "needs": ["first"]}
+  {"id": "second", "targets": ["talos_core/other.py", "talos_core/caller.py"],
+   "request": "Update the caller and its call site.", "needs": ["first"]}
 ]}
 ```
 
@@ -54,3 +54,8 @@ topological order; a step whose dependency did not end `verified` or `applied`
 is recorded as `blocked` and never starts. The plan report lives at
 `state/coding-plans/<id>/report.json`. Cycles, unknown dependencies, duplicate
 ids and unsafe targets are rejected before any model call.
+
+Multi-file steps ask the model for one before/after per target plus a single
+regression test. Every target must appear exactly once; a partial or extra
+patch is declined before verification. The combined diff is applied and tested
+as one change, so a step cannot leave half of its files edited.

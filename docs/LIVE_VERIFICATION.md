@@ -30,8 +30,8 @@ python3 -m tools.talos_live_features --json
 Latest results:
 
 - `doctor --quick`: healthy; syntax, imports and Ruff pass.
-- Unit suite: `783 tests`, `OK` (`17` skipped by design).
-- Live feature pass: `76/76` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
+- Unit suite: `790 tests`, `OK` (`17` skipped by design).
+- Live feature pass: `77/77` safe checks. Intrusive mouse/keyboard checks are opt-in with `--control`; Kokoro synthesis is checked to WAV only and no audio playback runs.
 - Ruff: clean.
 
 ## Live feature pass
@@ -55,6 +55,7 @@ Latest results:
 | Processes | `talos processes`/status report room, workers, listeners, stale and audio processes |
 | Streaming | `talos stream` emits local-model text deltas with no audio; live check asserts a clean answer and no reasoning block |
 | Capability answers | Muted rooms answer background/audio-capability questions from `Room.speak`; the live check requires the muted clause |
+| Multi-file steps | A plan step may list 2–4 `targets`; the model must patch every file and the combined diff is verified in one sandbox |
 | Coding plans | `talos codeplan start/run/status` runs steps in dependency order; dependents of a failed step are blocked and verify-only leaves targets unchanged |
 | Coding jobs | `talos codejob start/run/status` queues a bounded one-file job, sandbox-verifies it, reports status and leaves the target unchanged in verify-only mode |
 | Native capture | room menu calls native `RoomClient.scene`/`sound`; Swift replay passes against an isolated room; live camera/mic capture remains opt-in |
