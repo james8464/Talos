@@ -52,6 +52,17 @@ class ProcessInventoryTests(unittest.TestCase):
         self.assertEqual(stopped, [11, 12])
         self.assertEqual([call.args[0] for call in kill.call_args_list], [11, 12])
 
+    def test_stop_stale_can_target_only_headless_browsers(self):
+        data = {"processes": [
+            {"pid": 20, "label": "headless browser"},
+            {"pid": 21, "label": "live harness"},
+            {"pid": 22, "label": "room service"},
+        ]}
+        with patch("talos_core.runtime.processes.os.kill") as kill:
+            stopped = processes.stop_stale(data, labels={"headless browser"})
+        self.assertEqual(stopped, [20])
+        self.assertEqual([call.args[0] for call in kill.call_args_list], [20])
+
 
 if __name__ == "__main__":
     unittest.main()

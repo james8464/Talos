@@ -89,11 +89,13 @@ def inventory(*, runner=subprocess.run) -> dict:
     }
 
 
-def stop_stale(inventory_data: dict | None = None) -> list[int]:
+def stop_stale(inventory_data: dict | None = None, *,
+               labels: set[str] | None = None) -> list[int]:
     data = inventory_data or inventory()
+    allowed = STOPPABLE if labels is None else STOPPABLE & set(labels)
     stopped = []
     for item in data.get("processes", []):
-        if item.get("label") not in STOPPABLE:
+        if item.get("label") not in allowed:
             continue
         try:
             os.kill(int(item["pid"]), signal.SIGTERM)

@@ -1777,6 +1777,9 @@ class Room:
             match method, path:
                 case "POST", ("/v1/turn" | "/v1/voice/facing"):
                     return 200, self.handle_room_turn(db, body, facing=path.endswith("/facing"))
+                case "GET", "/v1/av/readiness":
+                    from talos_core.mac import av_readiness
+                    return 200, {"readiness": av_readiness.readiness(self.db_path.parent)}
                 case "POST", "/v1/vision/scene":
                     from talos_core.mac import scene
                     raw = body.get("image")

@@ -62,3 +62,12 @@ one of those menu actions is chosen. The native `RoomClient.scene`/`sound`
 methods are exercised by `tests/NativeSenseReplay.swift` against an isolated
 room with synthetic media. Actual camera/mic capture was not run automatically
 to avoid recording the sleeping user.
+
+## Camera and microphone readiness
+
+`talos av-readiness --json` and `GET /v1/av/readiness` compile and run a small
+AVFoundation probe that reads `authorizationStatus` and device presence. It
+never creates a capture session, records media, or triggers a permission
+prompt: `not_determined` is reported as-is. The response includes
+`capture_started` and `recording_started`, both `false`, and `ready` only when
+both permissions are authorized and both devices exist.

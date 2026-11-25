@@ -44,6 +44,13 @@ def post(path: str, body: dict, token: str, timeout: int = 180) -> tuple[int, di
         return error.code, json.loads(error.read() or b"{}")
 
 
+def get(path: str, token: str, timeout: int = 180) -> tuple[int, dict]:
+    request = urllib.request.Request(
+        BASE + path, headers={"Authorization": "Bearer " + token}, method="GET")
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.status, json.loads(response.read() or b"{}")
+
+
 def ask(token: str, text: str) -> dict:
     status, body = post("/v1/turn", {"text": text, "source": "text"}, token)
     if status != 200:
@@ -363,6 +370,10 @@ def run(keep: bool = False, control: bool = False) -> dict:
         check(checks, "browser_search", "searched talos" in searched, searched)
     finally:
         server.shutdown()
+    # The browser checks spawn short-lived headless browsers; close only those
+    # known processes so the pass does not leave them behind.
+    from talos_core.runtime import processes as process_inventory
+    process_inventory.stop_stale(labels={"headless browser"})
 
     status, voice_reply = post("/v1/turn", {"text": "Hello Talos, how are you?",
                                              "source": "voice"}, token)
@@ -763,6 +774,30 @@ print(json.dumps({"start": start, "run": run, "result": result,
           f"revision {result.get('revision')}: {statuses} "
           f"calls {outcome.get('repair_calls')}"[:200])
     shutil.rmtree(cli_root, ignore_errors=True)
+
+    av = subprocess.run(
+        [sys.executable, "-m", "talos_core.cli", "av-readiness", "--json"],
+        capture_output=True, text=True, timeout=180,
+    )
+    try:
+        av_local = json.loads(av.stdout or "{}")
+    except ValueError:
+        av_local = {}
+    av_status, av_body = get("/v1/av/readiness", token)
+    av_remote = av_body.get("readiness", {})
+    permissions = {"authorized", "denied", "restricted", "not_determined", "unknown"}
+    check(checks, "av_readiness",
+          av.returncode == 0
+          and av_local.get("camera_permission") in permissions
+          and av_local.get("microphone_permission") in permissions
+          and av_local.get("capture_started") is False
+          and av_local.get("recording_started") is False
+          and av_status == 200
+          and av_remote.get("capture_started") is False
+          and av_remote.get("recording_started") is False,
+          f"cli {av_local.get('camera_permission')}/{av_local.get('microphone_permission')} "
+          f"devices {av_local.get('camera_device')}/{av_local.get('microphone_device')} "
+          f"endpoint {av_status}")
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)

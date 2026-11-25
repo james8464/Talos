@@ -416,6 +416,21 @@ def _sound(args) -> int:
     return 0
 
 
+def _av_readiness(args) -> int:
+    from talos_core.mac import av_readiness
+
+    try:
+        payload = av_readiness.readiness(args.state, timeout=args.timeout)
+    except av_readiness.AVReadinessError as error:
+        print(f"Talos AV readiness: {error}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(av_readiness.describe(payload))
+    return 0
+
+
 def _design(args) -> int:
     from talos_core import design_studio
 
@@ -1239,6 +1254,12 @@ def build_parser() -> argparse.ArgumentParser:
     sound.add_argument("--timeout", type=float, default=120)
     sound.add_argument("--json", action="store_true")
     sound.set_defaults(func=_sound)
+
+    av = commands.add_parser("av-readiness", help="Report camera/mic permissions and devices without capture.")
+    av.add_argument("--state", type=Path, default=ROOT / "state")
+    av.add_argument("--timeout", type=float, default=60)
+    av.add_argument("--json", action="store_true")
+    av.set_defaults(func=_av_readiness)
 
     design = commands.add_parser("design", help="Create a poster, nameplate or Pages document.")
     design.add_argument("--kind", choices=("poster", "nameplate", "document"), default="poster")

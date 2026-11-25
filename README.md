@@ -27,6 +27,7 @@ python3 -m talos_core.cli capabilities                   # tools, tests and upst
 python3 -m talos_core.cli apps                           # native app, permission and MCP status
 python3 -m talos_core.cli sound --file clip.wav           # classify non-word sounds (no playback)
 python3 -m talos_core.cli scene --file frame.png          # count people/faces (no capture)
+python3 -m talos_core.cli av-readiness --json             # camera/mic permissions, no capture
 python3 -m talos_core.cli stream "Explain the plan."     # stream local-model text (silent)
 python3 -m talos_core.cli codejob start "Clarify this helper" --file PATH --verify-only  # bounded job
 # See docs/PERCEPTION.md for the /v1/sound and /v1/vision/scene endpoints.
