@@ -23,7 +23,10 @@ export interface SystemPermission {
 export const SYSTEM_PERMISSION_IDS: readonly SystemPermissionId[] = [
   "screen_recording",
   "accessibility",
+  "camera",
+  "microphone",
 ];
+export type MediaPermissionKind = "camera" | "microphone";
 
 export const SYSTEM_SETTINGS_URL: Readonly<Record<SystemPermissionId, string>> =
   {
@@ -31,12 +34,20 @@ export const SYSTEM_SETTINGS_URL: Readonly<Record<SystemPermissionId, string>> =
       "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
     accessibility:
       "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+    camera:
+      "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera",
+    microphone:
+      "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
   };
 
 // The Electron calls this needs; tests use fakes.
 export interface SystemPermissionApi {
   // systemPreferences.getMediaAccessStatus("screen")
   screenAccessStatus(): string;
+  // systemPreferences.getMediaAccessStatus("camera" | "microphone")
+  mediaAccessStatus(kind: MediaPermissionKind): string;
+  // systemPreferences.askForMediaAccess("camera" | "microphone")
+  askForMediaAccess(kind: MediaPermissionKind): Promise<boolean>;
   // systemPreferences.isTrustedAccessibilityClient(prompt)
   isTrustedAccessibilityClient(prompt: boolean): boolean;
   // desktopCapturer.getSources for screens; the first call shows the system
@@ -84,6 +95,16 @@ export class SystemPermissions {
           : "denied",
         relaunch_required: false,
       },
+      {
+        id: "camera",
+        state: screenState(this.#api.mediaAccessStatus("camera")),
+        relaunch_required: false,
+      },
+      {
+        id: "microphone",
+        state: screenState(this.#api.mediaAccessStatus("microphone")),
+        relaunch_required: false,
+      },
     ];
   }
 
@@ -91,8 +112,10 @@ export class SystemPermissions {
     if (id === "screen_recording") {
       this.#screenAsked = true;
       await this.#api.captureScreens();
-    } else {
+    } else if (id === "accessibility") {
       this.#api.isTrustedAccessibilityClient(true);
+    } else {
+      await this.#api.askForMediaAccess(id);
     }
     return this.status();
   }

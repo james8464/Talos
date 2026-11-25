@@ -50,7 +50,11 @@ export type LocalAccountSignIn =
   | { readonly ok: true }
   | { readonly ok: false; readonly message: string };
 
-export type DesktopPermissionId = "screen_recording" | "accessibility";
+export type DesktopPermissionId =
+  | "screen_recording"
+  | "accessibility"
+  | "camera"
+  | "microphone";
 
 // A permission step this app takes on its own Mac. Linger is this app, so
 // every step for it runs here; CuaDriver's own prompt and restart belong to

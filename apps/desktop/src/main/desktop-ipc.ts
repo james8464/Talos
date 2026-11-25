@@ -40,7 +40,12 @@ const settingsPatchInput = z
   })
   .strict();
 
-const permissionId = z.enum(["screen_recording", "accessibility"]);
+const permissionId = z.enum([
+  "screen_recording",
+  "accessibility",
+  "camera",
+  "microphone",
+]);
 const permissionStepInput = z.discriminatedUnion("action", [
   z
     .object({

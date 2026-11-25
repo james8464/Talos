@@ -7,11 +7,30 @@ import {
   type SystemPermissionApi,
 } from "./system-permissions.js";
 
-const setup = (screen: string, trusted = false) => {
+const setup = (
+  screen: string,
+  trusted = false,
+  camera = "not-determined",
+  microphone = "not-determined",
+) => {
   const calls: string[] = [];
-  const api: SystemPermissionApi & { screen: string } = {
+  const api: SystemPermissionApi & {
+    screen: string;
+    camera: string;
+    microphone: string;
+  } = {
     screen,
+    camera,
+    microphone,
     screenAccessStatus: () => api.screen,
+    mediaAccessStatus: (kind) =>
+      kind === "camera" ? api.camera : api.microphone,
+    askForMediaAccess: async (kind) => {
+      calls.push(`ask ${kind}`);
+      if (kind === "camera") api.camera = "granted";
+      else api.microphone = "granted";
+      return true;
+    },
     isTrustedAccessibilityClient: (prompt) => {
       calls.push(`trusted ${prompt}`);
       return trusted;
@@ -33,10 +52,17 @@ describe("SystemPermissions", () => {
       setup(screen, trusted)
         .permissions.status()
         .map((p) => p.state);
-    expect(states("granted", true)).toEqual(["granted", "granted"]);
+    expect(states("granted", true)).toEqual([
+      "granted",
+      "granted",
+      "not_determined",
+      "not_determined",
+    ]);
     expect(states("not-determined", false)).toEqual([
       "not_determined",
       "denied",
+      "not_determined",
+      "not_determined",
     ]);
     expect(states("restricted", false)[0]).toBe("denied");
     expect(states("denied", false)[0]).toBe("denied");
@@ -53,9 +79,13 @@ describe("SystemPermissions", () => {
     const { permissions, calls } = setup("not-determined");
     await permissions.prompt("screen_recording");
     await permissions.prompt("accessibility");
+    await permissions.prompt("camera");
+    await permissions.prompt("microphone");
     expect(calls.filter((c) => c !== "trusted false")).toEqual([
       "capture",
       "trusted true",
+      "ask camera",
+      "ask microphone",
     ]);
   });
 

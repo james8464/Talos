@@ -307,6 +307,10 @@ async function main(): Promise<void> {
               systemPreferences.getMediaAccessStatus("screen"),
             isTrustedAccessibilityClient: (prompt) =>
               systemPreferences.isTrustedAccessibilityClient(prompt),
+            mediaAccessStatus: (kind) =>
+              systemPreferences.getMediaAccessStatus(kind),
+            askForMediaAccess: (kind) =>
+              systemPreferences.askForMediaAccess(kind),
             captureScreens: () =>
               desktopCapturer.getSources({
                 types: ["screen"],
