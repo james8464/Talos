@@ -15,31 +15,31 @@ Status meanings: **ported** (works here and is tested here), **present**
 | No capture without consent                                | **missing**  | Add a camera/mic consent gate before Electron `getUserMedia` or any helper.                                                                    |
 | Camera/mic readiness without capture                      | **missing**  | Electron only reports screen recording and accessibility. Extend `SystemPermissions`.                                                          |
 | Process inventory + label-scoped cleanup                  | **partial**  | `apps/computer/local-daemon/internal/process` and diagnostics exist; no Talos-style `stale/audio` inventory. Compare and port.                 |
-| Safe live acceptance harness                              | **missing**  | Add a Talos live pass that checks muted voice, no audio processes, consent refusal and the ported features.                                    |
-| Never launch audible checks by default                    | **missing**  | Encode in the live harness and CI path.                                                                                                        |
+| Safe live acceptance harness                              | **present**  | `pnpm talos:live` checks mute, voice refusal, identity, capture deletion, vision/sound HTTP, coding execution and no audio/LiveKit processes.   |
+| Never launch audible checks by default                    | **present**  | `TALOS_MUTE=1` is set by the harness and the voice role exits before starting under mute.                                                      |
 
 ## Perception and identity
 
 | Talos behaviour                                                            | Talos status | Where / next step                                                                        |
 | -------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
-| `/v1/vision/scene` people/face counts                                      | **missing**  | Talos has screen capture, not camera frame classification. Add a Vision helper and tool. |
-| `/v1/sound` non-word SoundAnalysis labels                                  | **missing**  | ASR/dictation exists; no sound-event classifier.                                         |
+| `/v1/vision/scene` people/face counts                                      | **present**  | `POST /talos/vision/scene` classifies a frame with the native Vision helper.             |
+| `/v1/sound` non-word SoundAnalysis labels                                  | **present**  | `POST /talos/sound` classifies a clip with SoundAnalysis.                                |
 | Presence answers from a camera frame                                       | **missing**  | Depends on vision helper.                                                                |
-| One-frame + short-clip consented check with media deletion                 | **missing**  | Port `talos capture-check` semantics.                                                    |
-| Self-reported name, 30-minute expiry, “forget my name”, no biometric claim | **missing**  | Add session-local claim handling to the Agent/Room path.                                 |
+| One-frame + short-clip consented check with media deletion                 | **present**  | `TalosMediaCapture` captures one frame and a 1s clip, then deletes the media.            |
+| Self-reported name, 30-minute expiry, “forget my name”, no biometric claim | **present**  | TeamHub answers identity text with a deterministic Agent-authored Room reply.             |
 | Camera/mic capability answers that explain consent                         | **missing**  | Add deterministic replies, not model prose.                                              |
 
 ## Coding autonomy
 
 | Talos behaviour                                                            | Talos status | Where / next step                                                                    |
 | -------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------ |
-| One-file coding job with model draft, sandbox verify, apply/rollback       | **missing**  | Agent runtime executes tasks but has no bounded patch job or sandbox patch verifier. |
-| Retry once on failed sandbox test with failure output                      | **missing**  | Port with the job state machine.                                                     |
-| Multi-file step verified as one patch                                      | **missing**  | Port.                                                                                |
-| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **missing**  | Port.                                                                                |
-| Catalog guard (source/tests only) and independent same-file conflict guard | **missing**  | Port.                                                                                |
-| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **missing**  | Add Room/Agent command routing.                                                      |
-| Receipts: diff, regression, hashes, attempts, remaining budget             | **missing**  | Persist alongside Agent work.                                                        |
+| One-file coding job with model draft, sandbox verify, apply/rollback       | **partial**  | `@talos/coding-jobs` verifies a supplied draft in a sandbox; a model drafter is not wired yet.          |
+| Retry once on failed sandbox test with failure output                      | **present**  | `runCodingJob` retries once with the failure text as feedback.                                          |
+| Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.                        |
+| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.                  |
+| Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                            |
+| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | TeamHub stores accepted commands durably; a worker claims them and reports as the Agent.                |
+| Receipts: diff, regression, hashes, attempts, remaining budget             | **partial**  | The job row keeps status and result; a diff/hash receipt is not stored yet.                              |
 
 ## Control and UI
 
