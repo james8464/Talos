@@ -6,6 +6,11 @@ RETURNING *;
 -- name: ListRoomCodingJobsForRoom :many
 SELECT * FROM room_coding_jobs WHERE room_id=$1 ORDER BY created_at DESC LIMIT 20;
 
+-- name: FindActiveRoomCodingJob :one
+SELECT * FROM room_coding_jobs
+WHERE room_id=$1 AND target_path=$2 AND request=$3 AND status IN ('queued','claimed')
+ORDER BY created_at DESC LIMIT 1;
+
 -- name: ClaimNextRoomCodingJob :one
 UPDATE room_coding_jobs
 SET status='claimed', claimed_by=sqlc.arg(claimed_by), claimed_at=clock_timestamp(),

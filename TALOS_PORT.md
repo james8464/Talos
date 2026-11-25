@@ -130,3 +130,12 @@ a sandbox verification, so it can gate a check.
 Codex is an alternative drafter, but a ChatGPT plan with exhausted usage fails
 the job honestly ("You've hit your usage limit…"). The local model path needs
 no quota or network.
+
+## Follow-through guards
+
+A repeated `coding job` with the same target and request joins the active job
+instead of starting a second one; the Agent replies with the existing ID and how
+to cancel it. `coding cancel <id>` releases the request. This is the Room-side
+counterpart to OpenClaw's no-progress detector: identical work is not enqueued
+twice while it is still running. Unit and Postgres integration coverage lives in
+`TestDuplicateCodingCommandsShareOneJob`.

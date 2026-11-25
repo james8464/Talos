@@ -83,12 +83,7 @@ Tests  12 passed (12)
 
  Test Files  1 passed (1)
       Tests  12 passed (12)
-   Start at  17:11:37
-   Duration  25.27s (transform 346ms, setup 12ms, import 531ms, tests 24.67s, environment 0ms)
+   Start at  17:27:35
+   Duration  26.95s (transform 349ms, setup 12ms, import 536ms, tests 26.34s, environment 0ms)
 
 ```
-
-The first attempt failed only on the pinned defaults list in
-`scripts/development-workflow.test.ts`, which did not yet include the three
-Ollama settings. The list was updated and the gate re-ran to exit 0. No test was
-skipped or filtered.

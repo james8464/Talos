@@ -151,6 +151,42 @@ func (q *Queries) CreateRoomCodingJob(ctx context.Context, arg CreateRoomCodingJ
 	return i, err
 }
 
+const findActiveRoomCodingJob = `-- name: FindActiveRoomCodingJob :one
+SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at FROM room_coding_jobs
+WHERE room_id=$1 AND target_path=$2 AND request=$3 AND status IN ('queued','claimed')
+ORDER BY created_at DESC LIMIT 1
+`
+
+type FindActiveRoomCodingJobParams struct {
+	RoomID     string `json:"room_id"`
+	TargetPath string `json:"target_path"`
+	Request    string `json:"request"`
+}
+
+func (q *Queries) FindActiveRoomCodingJob(ctx context.Context, arg FindActiveRoomCodingJobParams) (RoomCodingJob, error) {
+	row := q.db.QueryRow(ctx, findActiveRoomCodingJob, arg.RoomID, arg.TargetPath, arg.Request)
+	var i RoomCodingJob
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.RoomID,
+		&i.RequesterActorID,
+		&i.Kind,
+		&i.TargetPath,
+		&i.Request,
+		&i.Status,
+		&i.Result,
+		&i.ClaimedBy,
+		&i.CreatedAt,
+		&i.ClaimedAt,
+		&i.CompletedAt,
+		&i.Attempts,
+		&i.LeaseExpiresAt,
+		&i.NextAttemptAt,
+	)
+	return i, err
+}
+
 const listRoomCodingJobsForRoom = `-- name: ListRoomCodingJobsForRoom :many
 SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at FROM room_coding_jobs WHERE room_id=$1 ORDER BY created_at DESC LIMIT 20
 `

@@ -330,6 +330,17 @@ func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {
 	if err != nil {
 		return ""
 	}
+	if command.Kind != "cancel" {
+		existing, err := a.queries.FindActiveRoomCodingJob(ctx, store.FindActiveRoomCodingJobParams{
+			RoomID: roomID, TargetPath: command.Target, Request: command.Request,
+		})
+		if err == nil {
+			return fmt.Sprintf("Coding job %s is already queued for %s; not adding a duplicate. Say \"coding cancel %s\" to stop it.", existing.ID, command.Target, existing.ID)
+		}
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return ""
+		}
+	}
 	if command.Kind == "cancel" {
 		cancelled, err := a.queries.CancelRoomCodingJob(ctx, store.CancelRoomCodingJobParams{
 			ID: command.Target, RoomID: roomID, RequesterActorID: actor.ID,
