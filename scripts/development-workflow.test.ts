@@ -656,7 +656,7 @@ ${scripts[name].replace(/^node scripts\/with-local-env\.mjs -- sh -c '(.*)'$/s, 
       Object.keys(template)
         .filter((name) => template[name] === "")
         .sort(),
-    ).toEqual(["COMPOSIO_API_KEY", "SONIOX_API_KEY", "XAI_API_KEY"]);
+    ).toEqual(["COMPOSIO_API_KEY", "SONIOX_API_KEY", "TALOS_MUTE", "XAI_API_KEY"]);
     // Fixed local settings live in the defaults file the launcher loads first.
     expect(Object.keys(defaults).sort()).toEqual([
       "AGENT_HOME",
