@@ -315,3 +315,9 @@ and mention AnotherMe without interrupting the conversation.
 The live harness runs `TestAgentMemoryScopePublication` and
 `TestAgentMemoryReadUsesRevisionColumn` as `room-memory-journey`: publish memory,
 reject a stale revision, publish the next revision and read it back.
+
+## Personal Wiki journey
+
+The live harness runs the Personal Wiki Postgres suites as `room-wiki-journey`:
+the input tree and immutable versions, and a Markdown source upload that admits
+a refresh.

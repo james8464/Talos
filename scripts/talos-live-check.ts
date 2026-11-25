@@ -392,6 +392,11 @@ async function main(): Promise<number> {
         "TestAgentMemoryScopePublication|TestAgentMemoryReadUsesRevisionColumn",
         "Agent memory publish, revision conflict and read",
       ],
+      [
+        "room-wiki-journey",
+        "TestPersonalWikiInputTreeAndImmutableVersions|TestPersonalWikiMarkdownSourceUploadAdmitsRefresh",
+        "Personal Wiki input tree, immutable versions and upload refresh",
+      ],
     ] as const) {
       try {
         await exec(
