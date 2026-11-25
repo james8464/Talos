@@ -28,6 +28,7 @@ MAX_REQUEST = 800
 MAX_TARGET_BYTES = 1_500_000
 MIN_SECONDS = 5
 MAX_TARGETS = 4
+MAX_ATTEMPTS = 2
 
 
 def _now() -> float:
@@ -156,58 +157,89 @@ def run(state: Path | str, job_id: str, *, root: Path | str, infer, apply: bool 
             (folder / "source.sha256").write_text(before_sha + "\n")
 
             if deadline - clock() < MIN_SECONDS:
-                return finish("deferred", "budget exhausted before drafting")
+                return finish("deferred", "budget exhausted before drafting", attempts=0)
 
-            values = infer(_prompt(record, source))
-            if deadline - clock() < MIN_SECONDS:
-                return finish("deferred", "budget exhausted after drafting")
-            if isinstance(values, str):
+            attempts = 0
+            feedback = ""
+            while True:
+                attempts += 1
+                if deadline - clock() < MIN_SECONDS:
+                    return finish("deferred", "budget exhausted before an attempt",
+                                  attempts=attempts - 1)
+                values = infer(_prompt(record, source) + feedback)
+                if deadline - clock() < MIN_SECONDS:
+                    return finish("deferred", "budget exhausted after drafting",
+                                  attempts=attempts)
+                if isinstance(values, str):
+                    try:
+                        values = json.loads(values)
+                    except ValueError:
+                        return finish("declined", "model returned no valid patch",
+                                      attempts=attempts)
+                if not isinstance(values, dict) or set(values) != set(section_patches.PATCH_FIELDS):
+                    return finish("declined", "model returned no valid patch",
+                                  attempts=attempts)
+                if not any(isinstance(v, str) and v for v in values.values()):
+                    return finish("declined", "model abstained", attempts=attempts)
+
                 try:
-                    values = json.loads(values)
-                except ValueError:
-                    return finish("declined", "model returned no valid patch")
-            if not isinstance(values, dict) or set(values) != set(section_patches.PATCH_FIELDS):
-                return finish("declined", "model returned no valid patch")
-            if not any(isinstance(v, str) and v for v in values.values()):
-                return finish("declined", "model abstained")
+                    candidate = section_patches.checked_patch(
+                        root, {"id": record["id"], "source": record["target"]},
+                        source, source, {k: str(v) for k, v in values.items()})
+                except (OSError, ValueError, SyntaxError) as error:
+                    return finish("declined", f"patch rejected: {error}", attempts=attempts)
+                if candidate is None:
+                    return finish("declined", "model abstained", attempts=attempts)
+                diff, regression, test_path = candidate
+                (folder / "change.diff").write_text(diff, encoding="utf-8")
+                (folder / "regression.py").write_text(regression, encoding="utf-8")
 
-            try:
-                candidate = section_patches.checked_patch(
-                    root, {"id": record["id"], "source": record["target"]},
-                    source, source, {k: str(v) for k, v in values.items()})
-            except (OSError, ValueError, SyntaxError) as error:
-                return finish("declined", f"patch rejected: {error}")
-            if candidate is None:
-                return finish("declined", "model abstained")
-            diff, regression, test_path = candidate
-            (folder / "change.diff").write_text(diff, encoding="utf-8")
-            (folder / "regression.py").write_text(regression, encoding="utf-8")
-
-            timeout = max(MIN_SECONDS, min(60, int(deadline - clock())))
-            if apply:
-                outcome = section_patches.apply_verified_patch(
-                    root, state, diff, extra_regression=regression, timeout=timeout)
-                verification = outcome.get("verification", {})
-                status = "applied" if outcome.get("applied") else (
-                    "rolled_back" if outcome.get("rolled_back") else "declined")
-                return finish(status, outcome.get("error") or f"patch {status}",
-                              diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
-                              tests_run=verification.get("tests_run", []),
-                              stage=verification.get("stage"),
-                              before_sha256=before_sha,
-                              after_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
-                              test_path=test_path)
-            verification = section_patches.verify_patch_in_sandbox(
-                root, diff, extra_regression=regression, timeout=timeout)
-            status = "verified" if verification.get("ok") else "declined"
-            outcome = "passed" if verification.get("ok") else "rejected"
-            return finish(status, f"sandbox {outcome} at {verification.get('stage')}",
-                diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
-                tests_run=verification.get("tests_run", []),
-                stage=verification.get("stage"),
-                before_sha256=before_sha,
-                after_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
-                test_path=test_path)
+                timeout = max(MIN_SECONDS, min(60, int(deadline - clock())))
+                if apply:
+                    outcome = section_patches.apply_verified_patch(
+                        root, state, diff, extra_regression=regression, timeout=timeout)
+                    verification = outcome.get("verification", {})
+                    if outcome.get("applied") or verification.get("stage") != "unittest":
+                        status = "applied" if outcome.get("applied") else (
+                            "rolled_back" if outcome.get("rolled_back") else "declined")
+                        return finish(status, outcome.get("error") or f"patch {status}",
+                                      attempts=attempts,
+                                      diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                                      tests_run=verification.get("tests_run", []),
+                                      stage=verification.get("stage"),
+                                      before_sha256=before_sha,
+                                      after_sha256=hashlib.sha256(
+                                          target.read_bytes()).hexdigest(),
+                                      test_path=test_path)
+                else:
+                    verification = section_patches.verify_patch_in_sandbox(
+                        root, diff, extra_regression=regression, timeout=timeout)
+                    if verification.get("ok") or verification.get("stage") != "unittest":
+                        status = "verified" if verification.get("ok") else "declined"
+                        outcome_text = "passed" if verification.get("ok") else "rejected"
+                        return finish(status, f"sandbox {outcome_text} at {verification.get('stage')}",
+                                      attempts=attempts,
+                                      diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                                      tests_run=verification.get("tests_run", []),
+                                      stage=verification.get("stage"),
+                                      before_sha256=before_sha,
+                                      after_sha256=hashlib.sha256(
+                                          target.read_bytes()).hexdigest(),
+                                      test_path=test_path)
+                if attempts >= MAX_ATTEMPTS:
+                    return finish("declined", "sandbox tests failed after retry",
+                                  attempts=attempts,
+                                  diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                                  tests_run=verification.get("tests_run", []),
+                                  stage=verification.get("stage"),
+                                  before_sha256=before_sha,
+                                  after_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
+                                  test_path=test_path)
+                failure = (verification.get("stderr") or verification.get("stdout")
+                           or verification.get("error") or "unknown failure")
+                feedback = ("\nThe previous patch failed sandbox unit tests with:\n"
+                            + str(failure)[-1200:]
+                            + "\nReturn a corrected patch that makes the tests pass.")
         except Exception as error:  # a failed job must never take down the worker
             return finish("error", f"{type(error).__name__}: {error}")
 
@@ -367,82 +399,117 @@ def run_many(state: Path | str, job_id: str, *, root: Path | str, infer,
                 sources[target] = path.read_text(encoding="utf-8")
                 before[target] = hashlib.sha256(sources[target].encode()).hexdigest()
 
-            if deadline - clock() < MIN_SECONDS:
-                return finish("deferred", "budget exhausted before drafting")
-            raw = infer(_prompt_many(record, sources))
-            if isinstance(raw, str):
+            attempts = 0
+            feedback = ""
+            while True:
+                attempts += 1
+                if deadline - clock() < MIN_SECONDS:
+                    return finish("deferred", "budget exhausted before an attempt",
+                                  attempts=attempts - 1)
+                raw = infer(_prompt_many(record, sources) + feedback)
+                if isinstance(raw, str):
+                    try:
+                        values = json.loads(raw)
+                    except ValueError:
+                        return finish("declined", "model returned no valid patch",
+                                      attempts=attempts)
+                else:
+                    values = raw
+                if not isinstance(values, dict) or set(values) != {"patches", "regression_test"}:
+                    return finish("declined", "model returned no valid patch",
+                                  attempts=attempts)
+                patches = values["patches"]
+                if not isinstance(patches, list) or len(patches) != len(targets):
+                    return finish("declined", "model did not patch every target",
+                                  attempts=attempts)
+                by_target = {}
+                for patch in patches:
+                    if not isinstance(patch, dict) or set(patch) != {"target", "before", "after"}:
+                        return finish("declined", "model returned a malformed patch",
+                                      attempts=attempts)
+                    if not all(isinstance(patch[key], str) and len(patch[key]) <= 8000
+                               for key in patch):
+                        return finish("declined", "model returned an oversized patch",
+                                      attempts=attempts)
+                    by_target[patch["target"]] = patch
+                if set(by_target) != set(targets):
+                    return finish("declined", "model patched the wrong targets",
+                                  attempts=attempts)
                 try:
-                    values = json.loads(raw)
-                except ValueError:
-                    return finish("declined", "model returned no valid patch")
-            else:
-                values = raw
-            if not isinstance(values, dict) or set(values) != {"patches", "regression_test"}:
-                return finish("declined", "model returned no valid patch")
-            patches = values["patches"]
-            if not isinstance(patches, list) or len(patches) != len(targets):
-                return finish("declined", "model did not patch every target")
-            by_target = {}
-            for patch in patches:
-                if not isinstance(patch, dict) or set(patch) != {"target", "before", "after"}:
-                    return finish("declined", "model returned a malformed patch")
-                if not all(isinstance(patch[key], str) and len(patch[key]) <= 8000
-                           for key in patch):
-                    return finish("declined", "model returned an oversized patch")
-                by_target[patch["target"]] = patch
-            if set(by_target) != set(targets):
-                return finish("declined", "model patched the wrong targets")
-            try:
-                regression = _valid_regression(values["regression_test"], job_id)
-                pieces = []
-                for target in targets:
-                    patch = by_target[target]
-                    source = sources[target]
-                    before_text, after_text = patch["before"], patch["after"]
-                    if (not before_text.strip() or before_text not in source
-                            or source.count(before_text) != 1 or before_text == after_text):
-                        raise ValueError(f"{target}: candidate does not uniquely apply")
-                    changed = source.replace(before_text, after_text, 1)
-                    if ast.dump(ast.parse(source)) == ast.dump(ast.parse(changed)):
-                        raise ValueError(f"{target}: no executable change")
-                    compile(changed, target, "exec", dont_inherit=True)
-                    pieces.append(section_patches.unified(
-                        source, changed, "a/" + target, "b/" + target))
-            except (SyntaxError, ValueError) as error:
-                return finish("declined", f"patch rejected: {error}")
-            test_path = f"tests/test_section_{job_id}.py"
-            diff = "".join(pieces) + section_patches.unified(
-                "", regression, "/dev/null", "b/" + test_path)
-            (folder / "change.diff").write_text(diff, encoding="utf-8")
-            (folder / "regression.py").write_text(regression, encoding="utf-8")
+                    regression = _valid_regression(values["regression_test"], job_id)
+                    pieces = []
+                    for target in targets:
+                        patch = by_target[target]
+                        source = sources[target]
+                        before_text, after_text = patch["before"], patch["after"]
+                        if (not before_text.strip() or before_text not in source
+                                or source.count(before_text) != 1 or before_text == after_text):
+                            raise ValueError(f"{target}: candidate does not uniquely apply")
+                        changed = source.replace(before_text, after_text, 1)
+                        if ast.dump(ast.parse(source)) == ast.dump(ast.parse(changed)):
+                            raise ValueError(f"{target}: no executable change")
+                        compile(changed, target, "exec", dont_inherit=True)
+                        pieces.append(section_patches.unified(
+                            source, changed, "a/" + target, "b/" + target))
+                except (SyntaxError, ValueError) as error:
+                    return finish("declined", f"patch rejected: {error}", attempts=attempts)
+                test_path = f"tests/test_section_{job_id}.py"
+                diff = "".join(pieces) + section_patches.unified(
+                    "", regression, "/dev/null", "b/" + test_path)
+                (folder / "change.diff").write_text(diff, encoding="utf-8")
+                (folder / "regression.py").write_text(regression, encoding="utf-8")
 
-            timeout = max(MIN_SECONDS, min(60, int(deadline - clock())))
-            if apply:
-                outcome = section_patches.apply_verified_patch(
-                    root, state, diff, extra_regression=regression, timeout=timeout)
-                verification = outcome.get("verification", {})
-                status = "applied" if outcome.get("applied") else (
-                    "rolled_back" if outcome.get("rolled_back") else "declined")
-                return finish(status, outcome.get("error") or f"multi-file patch {status}",
-                              diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
-                              tests_run=verification.get("tests_run", []),
-                              stage=verification.get("stage"),
-                              before_sha256=before,
-                              after_sha256={target: hashlib.sha256(
-                                  (root / target).read_bytes()).hexdigest() for target in targets},
-                              test_path=test_path)
-            verification = section_patches.verify_patch_in_sandbox(
-                root, diff, extra_regression=regression, timeout=timeout)
-            status = "verified" if verification.get("ok") else "declined"
-            outcome = "passed" if verification.get("ok") else "rejected"
-            return finish(status, f"sandbox {outcome} at {verification.get('stage')}",
-                          diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
-                          tests_run=verification.get("tests_run", []),
-                          stage=verification.get("stage"),
-                          before_sha256=before,
-                          after_sha256={target: hashlib.sha256(
-                              (root / target).read_bytes()).hexdigest() for target in targets},
-                          test_path=test_path)
+                timeout = max(MIN_SECONDS, min(60, int(deadline - clock())))
+                if apply:
+                    outcome = section_patches.apply_verified_patch(
+                        root, state, diff, extra_regression=regression, timeout=timeout)
+                    verification = outcome.get("verification", {})
+                    if outcome.get("applied") or verification.get("stage") != "unittest":
+                        status = "applied" if outcome.get("applied") else (
+                            "rolled_back" if outcome.get("rolled_back") else "declined")
+                        return finish(status, outcome.get("error") or f"multi-file patch {status}",
+                                      attempts=attempts,
+                                      diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                                      tests_run=verification.get("tests_run", []),
+                                      stage=verification.get("stage"),
+                                      before_sha256=before,
+                                      after_sha256={target: hashlib.sha256(
+                                          (root / target).read_bytes()).hexdigest()
+                                          for target in targets},
+                                      test_path=test_path)
+                else:
+                    verification = section_patches.verify_patch_in_sandbox(
+                        root, diff, extra_regression=regression, timeout=timeout)
+                    if verification.get("ok") or verification.get("stage") != "unittest":
+                        status = "verified" if verification.get("ok") else "declined"
+                        outcome_text = "passed" if verification.get("ok") else "rejected"
+                        return finish(status,
+                                      f"sandbox {outcome_text} at {verification.get('stage')}",
+                                      attempts=attempts,
+                                      diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                                      tests_run=verification.get("tests_run", []),
+                                      stage=verification.get("stage"),
+                                      before_sha256=before,
+                                      after_sha256={target: hashlib.sha256(
+                                          (root / target).read_bytes()).hexdigest()
+                                          for target in targets},
+                                      test_path=test_path)
+                if attempts >= MAX_ATTEMPTS:
+                    return finish("declined", "sandbox tests failed after retry",
+                                  attempts=attempts,
+                                  diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
+                                  tests_run=verification.get("tests_run", []),
+                                  stage=verification.get("stage"),
+                                  before_sha256=before,
+                                  after_sha256={target: hashlib.sha256(
+                                      (root / target).read_bytes()).hexdigest()
+                                      for target in targets},
+                                  test_path=test_path)
+                failure = (verification.get("stderr") or verification.get("stdout")
+                           or verification.get("error") or "unknown failure")
+                feedback = ("\nThe previous patch failed sandbox unit tests with:\n"
+                            + str(failure)[-1200:]
+                            + "\nReturn a corrected patch that makes the tests pass.")
         except Exception as error:  # a failed job must never take down the worker
             return finish("error", f"{type(error).__name__}: {error}")
 
@@ -573,7 +640,8 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
             _write(folder / "report.json", {
                 "id": record["id"], "status": record["status"],
                 "steps": [{key: step.get(key) for key in
-                           ("id", "status", "job_id", "message", "needs", "target", "targets")}
+                           ("id", "status", "job_id", "message", "needs", "target",
+                            "targets", "attempts")}
                           for step in record["steps"]],
             })
 
@@ -600,7 +668,8 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
                             budget=record["budget"], apply=apply)
                 result = run(state, job["id"], root=root, infer=infer, apply=apply)
             step.update(status=result.get("status", "error"), job_id=job["id"],
-                        message=result.get("message", ""))
+                        message=result.get("message", ""),
+                        attempts=result.get("attempts"))
             save()
         record["status"] = ("done" if all(
             step["status"] in {"verified", "applied"} for step in record["steps"])

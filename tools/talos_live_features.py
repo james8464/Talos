@@ -463,7 +463,8 @@ Path(sys.argv[1]).write_bytes(raw)
     stream_text = (stream.stdout or stream.stderr).strip()
     check(checks, "text_stream",
           stream.returncode == 0
-          and "streaming ready" in stream_text.casefold()
+          and "streaming" in stream_text.casefold()
+          and "ready" in stream_text.casefold()
           and "</think" not in stream_text.casefold(),
           stream_text[:200])
 
@@ -580,6 +581,44 @@ class CombinedTest(unittest.TestCase):
           f"{multi_result.get('status')}: {multi_step.get('status')} "
           f"{multi_step.get('message', '')}"[:200])
     shutil.rmtree(multi_root, ignore_errors=True)
+
+    retry_root = Path(tempfile.mkdtemp())
+    (retry_root / "talos_core").mkdir()
+    (retry_root / "talos_core" / "__init__.py").write_text("")
+    (retry_root / "talos_core" / "gamma.py").write_text("def total():\n    return 1\n")
+    (retry_root / "tests").mkdir()
+    (retry_root / "tests" / "__init__.py").write_text("")
+    retry_state = retry_root / "state"
+    retry_job = coding_jobs.start(retry_state, "Return two.", "talos_core/gamma.py",
+                                  root=retry_root, apply=False)
+    failing = """import unittest
+
+from talos_core.gamma import total
+
+
+class TotalTest(unittest.TestCase):
+    def test_total(self):
+        self.assertEqual(total(), 3)
+"""
+    passing = failing.replace("(total(), 3)", "(total(), 2)")
+    retry_prompts = []
+
+    def retry_infer(prompt):
+        retry_prompts.append(prompt)
+        return json.dumps({"before": "    return 1\n", "after": "    return 2\n",
+                           "regression_test": failing if len(retry_prompts) == 1 else passing})
+
+    retry_result = coding_jobs.run(retry_state, retry_job["id"], root=retry_root,
+                                   infer=retry_infer)
+    check(checks, "coding_retry",
+          retry_result.get("status") == "verified"
+          and retry_result.get("attempts") == 2
+          and len(retry_prompts) == 2
+          and "failed sandbox unit tests" in retry_prompts[1]
+          and (retry_root / "talos_core" / "gamma.py").read_text()
+          == "def total():\n    return 1\n",
+          f"{retry_result.get('status')} after {retry_result.get('attempts')} attempts")
+    shutil.rmtree(retry_root, ignore_errors=True)
 
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)

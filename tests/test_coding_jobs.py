@@ -15,6 +15,18 @@ def add(a, b):
     return a + b
 '''
 
+FAILING_REGRESSION = '''"""A deliberately failing regression."""
+
+import unittest
+
+from talos_core.example import add
+
+
+class AddTest(unittest.TestCase):
+    def test_adds(self):
+        self.assertEqual(add(2, 3), 6)
+'''
+
 REGRESSION = '''"""Regression for the coding job."""
 
 import unittest
@@ -55,9 +67,43 @@ class CodingJobTests(unittest.TestCase):
         result = coding_jobs.run(self.tmp / "state", job["id"], root=self.tmp,
                                  infer=lambda prompt: "not json")
         self.assertEqual(result["status"], "declined")
+        self.assertEqual(result["attempts"], 1)
         self.assertEqual((self.tmp / "talos_core" / "example.py").read_text(), EXAMPLE)
         report = json.loads((Path(job["folder"]) / "report.json").read_text())
         self.assertEqual(report["status"], "declined")
+
+    def test_sandbox_test_failure_retries_once_with_feedback(self):
+        job = self.start(apply=False)
+        prompts = []
+
+        def infer(prompt):
+            prompts.append(prompt)
+            test = FAILING_REGRESSION if len(prompts) == 1 else REGRESSION
+            return json.dumps({"before": "    return a + b\n",
+                               "after": "    return b + a\n",
+                               "regression_test": test})
+
+        result = coding_jobs.run(self.tmp / "state", job["id"], root=self.tmp, infer=infer)
+        self.assertEqual(result["status"], "verified")
+        self.assertEqual(result["attempts"], 2)
+        self.assertEqual(len(prompts), 2)
+        self.assertIn("failed sandbox unit tests", prompts[1])
+        self.assertEqual((self.tmp / "talos_core" / "example.py").read_text(), EXAMPLE)
+
+    def test_retry_cap_stops_after_two_failing_attempts(self):
+        job = self.start(apply=False)
+        prompts = []
+
+        def infer(prompt):
+            prompts.append(prompt)
+            return json.dumps({"before": "    return a + b\n",
+                               "after": "    return b + a\n",
+                               "regression_test": FAILING_REGRESSION})
+
+        result = coding_jobs.run(self.tmp / "state", job["id"], root=self.tmp, infer=infer)
+        self.assertEqual(result["status"], "declined")
+        self.assertEqual(result["attempts"], 2)
+        self.assertEqual(len(prompts), 2)
 
     def test_verified_patch_leaves_source_untouched(self):
         job = self.start(apply=False)
@@ -191,6 +237,20 @@ class CodingPlanTests(unittest.TestCase):
         self.assertEqual(len(coding_jobs.jobs(self.state)), 1)
 
 
+MULTI_FAILING = '''"""A deliberately failing combined regression."""
+
+import unittest
+
+from talos_core.example import add
+from talos_core.other import label
+
+
+class CombinedTest(unittest.TestCase):
+    def test_both(self):
+        self.assertEqual(add(2, 3), 6)
+        self.assertEqual(label(), "two")
+'''
+
 MULTI_REGRESSION = '''"""Regression for a two-file step."""
 
 import unittest
@@ -234,6 +294,32 @@ class MultiFileStepTests(CodingPlanTests):
         report = json.loads((Path(result["folder"]) / "report.json").read_text())
         self.assertEqual(set(report["steps"][0]["targets"]),
                          {"talos_core/example.py", "talos_core/other.py"})
+
+    def test_multi_file_sandbox_failure_retries(self):
+        plan = self.plan([{"id": "both", **self.multi()}])
+        patches = [
+            {"target": "talos_core/example.py", "before": "    return a + b\n",
+             "after": "    return b + a\n"},
+            {"target": "talos_core/other.py", "before": '    return "one"\n',
+             "after": '    return "two"\n'},
+        ]
+        prompts = []
+
+        def infer_many(prompt):
+            prompts.append(prompt)
+            regression = MULTI_FAILING if len(prompts) == 1 else MULTI_REGRESSION
+            return json.dumps({"patches": patches, "regression_test": regression})
+
+        result = coding_jobs.run_plan(
+            self.state, plan["id"], root=self.tmp,
+            infer=lambda prompt: self.fail("single-file model must not run"),
+            infer_many=infer_many)
+        step = result["steps"][0]
+        self.assertEqual(result["status"], "done")
+        self.assertEqual(step["status"], "verified")
+        self.assertEqual(step["attempts"], 2)
+        self.assertEqual(len(prompts), 2)
+        self.assertIn("failed sandbox unit tests", prompts[1])
 
     def test_multi_file_step_rejects_partial_patch(self):
         plan = self.plan([{"id": "both", **self.multi()}])

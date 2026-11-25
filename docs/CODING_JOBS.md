@@ -59,3 +59,12 @@ Multi-file steps ask the model for one before/after per target plus a single
 regression test. Every target must appear exactly once; a partial or extra
 patch is declined before verification. The combined diff is applied and tested
 as one change, so a step cannot leave half of its files edited.
+
+## Retry on a failed test
+
+When the sandbox unit test fails, the runner makes one revised attempt with the
+failure output appended to the prompt. The same wall-clock budget applies,
+`attempts` is recorded in `job.json` and `report.json`, and a second failure is
+reported as `declined` rather than retried indefinitely. Invalid JSON, an
+abstained patch, or a candidate that does not apply stops immediately without a
+retry.
