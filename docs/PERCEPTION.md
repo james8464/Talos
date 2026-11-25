@@ -80,3 +80,11 @@ WAV clip, sends them to `/v1/vision/scene` and `/v1/sound`, and deletes the
 temporary media even when verification fails. Without the flag it exits `2`
 before compiling or capturing anything. The native helper is only invoked on
 the consented path.
+
+## Self-reported identity
+
+A name introduced in conversation is remembered for the running room process
+only. Asking "do you recognize me?" then answers with that self-reported name
+and the caveat that camera identity is not verified. A stored owner profile
+still answers "who am I?" with the saved name; nothing here is biometric
+identification, and the claim is lost on restart.

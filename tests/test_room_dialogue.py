@@ -142,6 +142,16 @@ class RoomDialogueTests(unittest.TestCase):
         self.assertIn("muted", capability_answer(
             "In one short sentence, what can you run in the background?", audio=False).casefold())
 
+    def test_self_reported_name_is_not_biometric_identity(self):
+        with patch("talos_core.room.room_service.plan",
+                   side_effect=AssertionError("unexpected planner call")):
+            self.assertIn("Nice to meet you, Ada",
+                          self.turn("My name is Ada.", source="text")["reply"])
+            reply = self.turn("Do you recognize me?", source="text")["reply"]
+        self.assertIn("introduced yourself as Ada", reply)
+        self.assertIn("self-reported", reply)
+        self.assertIn("can't verify", reply)
+
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
         for proposal in (decision("ignore", ""), decision("reply", "Hello.")):
             with patch("talos_core.room.room_service.plan", return_value=proposal):

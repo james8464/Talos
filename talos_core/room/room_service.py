@@ -167,6 +167,9 @@ class Room:
         self.review_after = monotonic() + 10
         self.voice_window: list[dict[str, str]] = []
         self.voice_window_updated = 0.0
+        # Self-reported name from an introduction in this process. This is not
+        # biometric identity and is never used to confirm who is speaking.
+        self.claimed_name: str | None = None
         self.facing_offer = None
         self.facing_exchange = None
         self.last_voice_reminder = None
@@ -1154,6 +1157,10 @@ class Room:
             if profile and words in ("who am i", "do you recognize me", "do you remember me"):
                 name = db.execute("SELECT name FROM visitors WHERE id=?", (profile,)).fetchone()[0]
                 reply = f"You confirmed your saved profile as {name}."
+            elif self.claimed_name and words in ("who am i", "do you recognize me", "do you recognize me?",
+                                                 "can you tell who i am", "do you know who is speaking"):
+                reply = (f"You introduced yourself as {self.claimed_name}. That is self-reported; "
+                         "I can't verify identity from the camera.")
             elif profile and re.fullmatch(r"what (?:do you (?:remember|know) about me|did i tell you(?: last time)?)", words):
                 recalled = visitor_memory.recall(db, profile)
                 reply = "Last time you said, " + recalled[0]["quote"][:400] if recalled else "I haven't reviewed a statement from you yet."
@@ -1166,6 +1173,7 @@ class Room:
             elif history and (recollection := corrected_recollection(text, history)):
                 reply = recollection
             elif name := visitor_memory.introduced_name(text):
+                self.claimed_name = name
                 reply = f"Nice to meet you, {name}."
             elif room_vision.visual_question(text):
                 reply = room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent)
@@ -1268,6 +1276,15 @@ class Room:
                 proposal = decision("ignore", "")
             elif room_vision.visual_question(text):
                 proposal = decision("reply", room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent))
+            elif self.claimed_name and re.fullmatch(
+                    r"(?:who am i|do you (?:recognize|remember) me|can you tell who i am|"
+                    r"do you know who is speaking)[?.! ]*", text.strip(), re.I):
+                proposal = decision("reply", (
+                    f"You introduced yourself as {self.claimed_name}. That is self-reported; "
+                    "I can't verify identity from the camera."))
+            elif (name := visitor_memory.introduced_name(text)):
+                self.claimed_name = name
+                proposal = decision("reply", f"Nice to meet you, {name}.")
             elif quick:
                 proposal = decision("reply", quick)
             elif (capability := capability_answer(text, audio=self.speak)):

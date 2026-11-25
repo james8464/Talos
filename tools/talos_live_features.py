@@ -812,6 +812,15 @@ print(json.dumps({"start": start, "run": run, "result": result,
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 
+    introduced = ask(token, "My name is Ada.")["reply"]
+    identity_claim = ask(token, "Do you recognize me?")["reply"]
+    check(checks, "identity_self_report",
+          "nice to meet you, ada" in introduced.casefold()
+          and "introduced yourself as ada" in identity_claim.casefold()
+          and "self-reported" in identity_claim.casefold()
+          and "can't verify" in identity_claim.casefold(),
+          identity_claim[:200])
+
     capability = ask(token, "In one short sentence, what can you run in the background?")["reply"]
     check(checks, "capability_reply",
           "muted" in capability.casefold() and "can't play" in capability.casefold(),
