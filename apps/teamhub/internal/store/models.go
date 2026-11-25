@@ -1450,6 +1450,8 @@ type RoomCodingJob struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 	ClaimedAt        pgtype.Timestamptz `json:"claimed_at"`
 	CompletedAt      pgtype.Timestamptz `json:"completed_at"`
+	Attempts         int32              `json:"attempts"`
+	LeaseExpiresAt   pgtype.Timestamptz `json:"lease_expires_at"`
 }
 
 type RoomDocumentComment struct {

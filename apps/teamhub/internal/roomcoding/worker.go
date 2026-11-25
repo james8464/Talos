@@ -40,12 +40,24 @@ type Worker struct {
 	Publish   Publish
 	Logger    *slog.Logger
 	ClaimedBy string
+	// LeaseSeconds bounds how long a claim is trusted before another worker
+	// may take the job. Zero uses fifteen minutes.
+	LeaseSeconds int
+	// MaxAttempts bounds transport failures before the job is reported as
+	// failed. Zero uses three.
+	MaxAttempts int
 }
 
 // RunOnce claims at most one job and reports it. It returns false when the
 // queue is empty.
 func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
-	job, err := w.Queries.ClaimNextRoomCodingJob(ctx, w.ClaimedBy)
+	lease := w.LeaseSeconds
+	if lease <= 0 {
+		lease = 900
+	}
+	job, err := w.Queries.ClaimNextRoomCodingJob(ctx, store.ClaimNextRoomCodingJobParams{
+		ClaimedBy: w.ClaimedBy, LeaseSeconds: int32(lease),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
@@ -54,7 +66,23 @@ func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
 	}
 	outcome, err := w.Executor.Execute(ctx, job)
 	if err != nil {
-		outcome = Outcome{Status: "failed", Message: "The Computer could not run the job: " + err.Error()}
+		maxAttempts := w.MaxAttempts
+		if maxAttempts <= 0 {
+			maxAttempts = 3
+		}
+		message := "The Computer could not run the job: " + err.Error()
+		if int(job.Attempts) < maxAttempts {
+			if _, requeueErr := w.Queries.RequeueRoomCodingJob(ctx, store.RequeueRoomCodingJobParams{
+				ID: job.ID, Result: message,
+			}); requeueErr != nil {
+				return true, requeueErr
+			}
+			if w.Logger != nil {
+				w.Logger.Warn("room_coding.requeued", "job_id", job.ID, "attempts", job.Attempts, "error", err)
+			}
+			return true, nil
+		}
+		outcome = Outcome{Status: "failed", Message: message}
 	}
 	status, reply := w.report(job, outcome)
 	if err := w.Queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
@@ -77,8 +105,19 @@ func (w *Worker) Run(ctx context.Context, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if _, err := w.RunOnce(ctx); err != nil && w.Logger != nil {
-				w.Logger.Warn("room_coding.worker_failed", "error", err)
+			// Drain what is queued so a burst does not wait one interval per
+			// job, but stop after a bounded batch to leave the tick free.
+			for processed := 0; processed < 10; processed++ {
+				more, err := w.RunOnce(ctx)
+				if err != nil {
+					if w.Logger != nil {
+						w.Logger.Warn("room_coding.worker_failed", "error", err)
+					}
+					break
+				}
+				if !more {
+					break
+				}
 			}
 		}
 	}

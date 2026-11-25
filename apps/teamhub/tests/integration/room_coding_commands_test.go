@@ -51,7 +51,9 @@ func TestCodingCommandsWriteAgentReplies(t *testing.T) {
 	}
 	// A worker claims one row and completes it; the other stays queued.
 	queries := store.New(env.pool)
-	claimed, err := queries.ClaimNextRoomCodingJob(ctx, "computer_test")
+	claimed, err := queries.ClaimNextRoomCodingJob(ctx, store.ClaimNextRoomCodingJobParams{
+		ClaimedBy: "computer_test", LeaseSeconds: 900,
+	})
 	if err != nil {
 		t.Fatalf("claim coding job: %v", err)
 	}

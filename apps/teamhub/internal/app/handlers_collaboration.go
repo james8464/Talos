@@ -300,7 +300,11 @@ func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {
 			if item.TargetPath != "" {
 				label += " " + item.TargetPath
 			}
-			lines = append(lines, fmt.Sprintf("%s %s %s", item.ID, label, item.Status))
+			line := fmt.Sprintf("%s %s %s", item.ID, label, item.Status)
+			if item.Attempts > 1 {
+				line += fmt.Sprintf(" (attempt %d)", item.Attempts)
+			}
+			lines = append(lines, line)
 		}
 		return "Coding jobs: " + strings.Join(lines, "; ") + "."
 	}
