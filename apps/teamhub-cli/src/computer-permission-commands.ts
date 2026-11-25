@@ -24,8 +24,10 @@ const subjectLabels: Readonly<Record<Subject, string>> = {
   computer_use: "Computer use (CuaDriver)",
 };
 // The card settles itself on the owner's Mac; polling only lets a short
-// --wait observe that without ending the turn.
-const pollIntervalMs = 2_000;
+// --wait observe that without ending the turn. Quiet polls slow down on
+// OpenClaw's command-poll schedule so a long wait does not hammer the API;
+// any change resets it.
+const pollScheduleMs = [5_000, 10_000, 30_000, 60_000] as const;
 const maxWaitSeconds = 120;
 const maxReasonLength = 200;
 
@@ -283,11 +285,18 @@ const computerPermissionsRequest: CommandDefinition = {
     )
       return result;
     const deadline = Date.now() + waitSeconds * 1_000;
+    let quietPolls = 0;
+    let previous = JSON.stringify(result.permissions);
     for (;;) {
       const remaining = deadline - Date.now();
       if (remaining <= 0) return result;
-      await sleep(Math.min(pollIntervalMs, remaining));
+      const delay =
+        pollScheduleMs[Math.min(quietPolls, pollScheduleMs.length - 1)]!;
+      await sleep(Math.min(delay, remaining));
       const current = await readStatus(context.client);
+      const signature = JSON.stringify(current.permissions);
+      quietPolls = signature === previous ? quietPolls + 1 : 0;
+      previous = signature;
       if (allGranted(current.permissions, subject, permissions))
         return { ...result, ...current, status: "granted" };
     }

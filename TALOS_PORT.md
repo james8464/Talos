@@ -145,3 +145,15 @@ to cancel it. `coding cancel <id>` releases the request. This is the Room-side
 counterpart to OpenClaw's no-progress detector: identical work is not enqueued
 twice while it is still running. Unit and Postgres integration coverage lives in
 `TestDuplicateCodingCommandsShareOneJob`.
+
+## Routine journey
+
+The live harness also creates a recurring Room routine through the public API,
+makes one occurrence overdue, runs the reminder worker, and asserts the wake
+message carries the instruction and mentions the Agent
+(`TestRoomRoutineFiresAsAgentMessage`). The browser suite separately creates,
+edits and fires a routine from Agent details.
+
+The TeamHub CLI's `computer permissions request --wait` now uses OpenClaw's
+quiet-poll schedule (5s, 10s, 30s, 60s) and resets on any change, instead of a
+fixed two-second poll.

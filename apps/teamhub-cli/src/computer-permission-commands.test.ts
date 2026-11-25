@@ -182,7 +182,7 @@ describe("computer permissions request", () => {
     expect(f.calls).toEqual([]);
   });
 
-  it("with --wait polls status every 2 seconds until the subject is granted", async () => {
+  it("with --wait backs off quiet status polls and resets on progress", async () => {
     vi.useFakeTimers();
     const f = fixture([
       requested,
@@ -202,9 +202,9 @@ describe("computer permissions request", () => {
       ],
       f.deps,
     );
-    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     expect(f.calls.map((call) => call.url)).toEqual([requestURL, statusURL]);
-    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(10_000);
     expect(await run).toBe(0);
     expect(f.calls.map((call) => call.url)).toEqual([
       requestURL,
@@ -238,11 +238,7 @@ describe("computer permissions request", () => {
     );
     await vi.advanceTimersByTimeAsync(3_000);
     expect(await run).toBe(0);
-    expect(f.calls.map((call) => call.url)).toEqual([
-      requestURL,
-      statusURL,
-      statusURL,
-    ]);
+    expect(f.calls.map((call) => call.url)).toEqual([requestURL, statusURL]);
     expect(f.output.join("")).toContain("End your turn now");
   });
 
