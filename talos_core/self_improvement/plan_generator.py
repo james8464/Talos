@@ -83,6 +83,7 @@ def _parse_plan(raw, *, root: Path, completed=(),
         raise ValueError("Return a steps array.")
     if len(steps) > max_steps:
         raise ValueError(f"Use at most {max_steps} steps.")
+    allowed = set(catalog(root))
     for step in steps:
         if not isinstance(step, dict):
             raise ValueError("Each step must be an object.")
@@ -94,6 +95,9 @@ def _parse_plan(raw, *, root: Path, completed=(),
             targets = [single] if isinstance(single, str) else None
         if not isinstance(targets, list) or not 1 <= len(targets) <= MAX_STEP_TARGETS:
             raise ValueError(f"Each step needs 1-{MAX_STEP_TARGETS} targets.")
+        for target in targets:
+            if not isinstance(target, str) or target not in allowed:
+                raise ValueError(f"{target} is not in the source catalog")
         ident, request, needs = (step.get("id"), step.get("request"),
                                  step.get("needs") or [])
         step.clear()

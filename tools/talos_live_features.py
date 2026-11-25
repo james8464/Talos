@@ -710,6 +710,30 @@ class WordTest(unittest.TestCase):
 
     shutil.rmtree(repair_root, ignore_errors=True)
 
+    from talos_core.self_improvement import plan_generator
+
+    catalog_root = Path(tempfile.mkdtemp())
+    (catalog_root / "talos_core").mkdir()
+    (catalog_root / "talos_core" / "__init__.py").write_text("")
+    (catalog_root / "talos_core" / "safe.py").write_text("VALUE = 1\n")
+    (catalog_root / "state").mkdir()
+    private = catalog_root / "state" / "private.py"
+    private.write_text("SECRET = 1\n")
+    outside = json.dumps({"steps": [{"id": "bad", "targets": ["state/private.py"],
+                                     "request": "read the private store"}]})
+    try:
+        plan_generator.generate("touch private state", root=catalog_root,
+                                infer=lambda prompt: outside, attempts=1)
+        catalog_blocked = False
+        catalog_detail = "generator accepted an out-of-catalog target"
+    except ValueError as error:
+        catalog_blocked = "not in the source catalog" in str(error)
+        catalog_detail = str(error)[:200]
+    check(checks, "plan_catalog_guard",
+          catalog_blocked and private.read_text() == "SECRET = 1\n",
+          catalog_detail)
+    shutil.rmtree(catalog_root, ignore_errors=True)
+
     cli_root = Path(tempfile.mkdtemp())
     cli_state = cli_root / "state"
     (cli_root / "a.py").write_text("A = 1\n")

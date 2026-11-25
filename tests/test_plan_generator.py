@@ -51,6 +51,20 @@ class PlanGeneratorTests(unittest.TestCase):
             infer=lambda prompt: raw)
         self.assertEqual(result["steps"][0]["needs"], ["first"])
 
+    def test_targets_outside_catalog_are_rejected(self):
+        (self.root / "state").mkdir()
+        (self.root / "state" / "secret.py").write_text("SECRET = 1\n")
+        raw = self.plan([{"id": "a", "targets": ["state/secret.py"],
+                          "request": "x"}])
+        with self.assertRaises(ValueError) as caught:
+            plan_generator.generate("x", root=self.root, infer=lambda prompt: raw)
+        self.assertIn("not in the source catalog", str(caught.exception))
+        with self.assertRaises(ValueError):
+            plan_generator.repair(
+                "x", root=self.root,
+                failed={"id": "dead", "targets": ["state/secret.py"], "request": "x"},
+                completed=[], error="failed", infer=lambda prompt: raw)
+
     def test_cycle_is_retried_with_feedback(self):
         prompts = []
         bad = self.plan([{"id": "a", "targets": ["talos_core/example.py"],

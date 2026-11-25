@@ -84,7 +84,8 @@ The room queues the work, runs it with the local model, and replies with the
 job or plan status, per-step statuses for plans, and whether every target stayed
 unchanged. A `coding plan:` request without a JSON file generates a plan from
 the source catalog: at most three steps, three targets per step, validated for
-unsafe paths, cycles and unknown dependencies before anything runs. Voice input is not routed to these commands, and a room request can
+unsafe paths, cycles, unknown dependencies and targets outside the catalog
+before anything runs. Private state and arbitrary files are rejected. Voice input is not routed to these commands, and a room request can
 never apply a patch.
 
 ## Plan-level repair
