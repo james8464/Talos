@@ -94,6 +94,11 @@ const roles = {
       logger: host.logger,
       http: requireHttp(host),
     }),
+  identity: async (host) =>
+    (await import("./identity/service.js")).startIdentityService({
+      http: requireHttp(host),
+      logger: host.logger,
+    }),
   perception: async (host) =>
     (await import("./perception/service.js")).startPerceptionService({
       http: requireHttp(host),
@@ -114,6 +119,7 @@ const HTTP_ROLES: ReadonlySet<RoleName> = new Set([
   "memory",
   "llm-wiki",
   "agent",
+  "identity",
   "perception",
   "voice",
 ]);
