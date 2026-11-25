@@ -275,7 +275,7 @@ func TestLoadAllExistingEnvironmentOverrides(t *testing.T) {
 		"TEAMHUB_HTTP_ADDRESS":                   "127.0.0.1:9091",
 		"TEAMHUB_DATABASE_URL":                   "postgres://environment.example/teamhub",
 		"TEAMHUB_NODE_SERVICES_URL":              "https://node-services.environment.test/",
-		"TALOS_SECRET_SEED":                     testSecretSeed,
+		"TALOS_SECRET_SEED":                      testSecretSeed,
 		"WEB_PUBLIC_ORIGIN":                      "https://teamhub.environment.test",
 		"TEAMHUB_ARTIFACT_STORAGE_ROOT":          "environment-artifacts",
 		"TEAMHUB_DOCUMENT_PREVIEW_PUBLIC_ORIGIN": "https://preview.environment.test",

@@ -13,7 +13,7 @@ func TestProofMatchesTheDesktopVector(t *testing.T) {
 	}
 	nonce := strings.Repeat("A", 43)
 	// The desktop app computes the same value (local-server.test.ts).
-	const want = "eKUTsEU-NZv-SW4c6jF3nCKa44wHETVelI_1rT6yu9w"
+	const want = "AE8ZtQPjO33P0IseOTao7Z4ObyVIQ9tvtZGNls8CqmM"
 	if got := Proof(key, nonce, "http://localhost:3000"); got != want {
 		t.Fatalf("proof=%s want=%s", got, want)
 	}

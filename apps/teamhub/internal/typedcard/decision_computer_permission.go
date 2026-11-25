@@ -15,7 +15,7 @@ import (
 // grants the permission to: Talos runs shell commands, CuaDriver runs the
 // computer-use tools.
 const (
-	ComputerPermissionSubjectTalos      = "talos"
+	ComputerPermissionSubjectTalos       = "talos"
 	ComputerPermissionSubjectComputerUse = "computer_use"
 
 	ComputerPermissionScreenRecording = "screen_recording"
