@@ -161,7 +161,7 @@ cmd_fetch_native() {
     part="$path.part.$$"
     echo "desktop-release: downloading $name"
     # The folder's address stays out of the log, which a public repository shows to anyone.
-    curl -fsSL --retry 3 "${header[@]}" -o "$part" "${base%/}/$name" 2>/dev/null ||
+    curl -fsSL --retry 3 ${header[@]+"${header[@]}"} -o "$part" "${base%/}/$name" 2>/dev/null ||
       { rm -f "$part"; die "cannot download $name from TALOS_NATIVE_DEPS_URL (upload it there; see docs/desktop-release.md)"; }
     if [[ "$(wc -c <"$part" | tr -d ' ')" != "$bytes" || "$(sha256_of "$part")" != "$sha" ]]; then
       rm -f "$part"
