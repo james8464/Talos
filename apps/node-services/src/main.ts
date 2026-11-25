@@ -94,6 +94,11 @@ const roles = {
       logger: host.logger,
       http: requireHttp(host),
     }),
+  perception: async (host) =>
+    (await import("./perception/service.js")).startPerceptionService({
+      http: requireHttp(host),
+      logger: host.logger,
+    }),
   // The Document Runtime keeps its own port on its own worker thread and logs
   // from that thread; the host logger only records the thread's restarts.
   document: async (host: RoleHost) =>
@@ -109,6 +114,7 @@ const HTTP_ROLES: ReadonlySet<RoleName> = new Set([
   "memory",
   "llm-wiki",
   "agent",
+  "perception",
   "voice",
 ]);
 
