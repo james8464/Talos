@@ -620,6 +620,59 @@ class TotalTest(unittest.TestCase):
           f"{retry_result.get('status')} after {retry_result.get('attempts')} attempts")
     shutil.rmtree(retry_root, ignore_errors=True)
 
+    repair_root = Path(tempfile.mkdtemp())
+    (repair_root / "talos_core").mkdir()
+    (repair_root / "talos_core" / "__init__.py").write_text("")
+    (repair_root / "talos_core" / "delta.py").write_text("def flag():\n    return 0\n")
+    (repair_root / "talos_core" / "epsilon.py").write_text("def word():\n    return 'x'\n")
+    (repair_root / "tests").mkdir()
+    (repair_root / "tests" / "__init__.py").write_text("")
+    repair_state = repair_root / "state"
+    repair_plan = coding_jobs.start_plan(repair_state, [
+        {"id": "bad", "target": "talos_core/delta.py", "request": "first"},
+        {"id": "after", "target": "talos_core/epsilon.py", "request": "second",
+         "needs": ["bad"]},
+    ], root=repair_root)
+    repair_regression = """import unittest
+
+from talos_core.epsilon import word
+
+
+class WordTest(unittest.TestCase):
+    def test_word(self):
+        self.assertEqual(word(), "y")
+"""
+
+    def repair_infer(prompt):
+        if "TARGET: talos_core/delta.py" in prompt:
+            return "{}"
+        return json.dumps({"before": "    return 'x'\n", "after": "    return 'y'\n",
+                           "regression_test": repair_regression})
+
+    repair_calls = []
+
+    def plan_repair(failed, completed, error):
+        repair_calls.append(failed["id"])
+        return [{"id": "fixed", "targets": ["talos_core/epsilon.py"],
+                 "request": "second"}]
+
+    repair_result = coding_jobs.run_plan(
+        repair_state, repair_plan["id"], root=repair_root,
+        infer=repair_infer, repair=plan_repair)
+    repair_steps = {step["id"]: step for step in repair_result["steps"]}
+    check(checks, "coding_plan_repair",
+          repair_result.get("status") == "done"
+          and repair_result.get("revision") == 1
+          and repair_calls == ["bad"]
+          and repair_steps.get("bad", {}).get("status") == "superseded"
+          and repair_steps.get("fixed", {}).get("status") == "verified"
+          and repair_steps.get("after") is None
+          and (repair_root / "talos_core" / "delta.py").read_text()
+          == "def flag():\n    return 0\n",
+          f"{repair_result.get('status')}: revision {repair_result.get('revision')} "
+          f"{repair_result.get('repair')}"[:200])
+    shutil.rmtree(repair_root, ignore_errors=True)
+
     speech = ask(token, "Say hello out loud.")["reply"]
     check(checks, "speech_blocked", "muted" in speech.casefold(), speech)
 

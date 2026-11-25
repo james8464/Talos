@@ -226,17 +226,18 @@ def run(state: Path | str, job_id: str, *, root: Path | str, infer, apply: bool 
                                       after_sha256=hashlib.sha256(
                                           target.read_bytes()).hexdigest(),
                                       test_path=test_path)
+                failure = (verification.get("stderr") or verification.get("stdout")
+                           or verification.get("error") or "unknown failure")
                 if attempts >= MAX_ATTEMPTS:
                     return finish("declined", "sandbox tests failed after retry",
                                   attempts=attempts,
+                                  failure=str(failure)[-1200:],
                                   diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
                                   tests_run=verification.get("tests_run", []),
                                   stage=verification.get("stage"),
                                   before_sha256=before_sha,
                                   after_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
                                   test_path=test_path)
-                failure = (verification.get("stderr") or verification.get("stdout")
-                           or verification.get("error") or "unknown failure")
                 feedback = ("\nThe previous patch failed sandbox unit tests with:\n"
                             + str(failure)[-1200:]
                             + "\nReturn a corrected patch that makes the tests pass.")
@@ -494,9 +495,12 @@ def run_many(state: Path | str, job_id: str, *, root: Path | str, infer,
                                           (root / target).read_bytes()).hexdigest()
                                           for target in targets},
                                       test_path=test_path)
+                failure = (verification.get("stderr") or verification.get("stdout")
+                           or verification.get("error") or "unknown failure")
                 if attempts >= MAX_ATTEMPTS:
                     return finish("declined", "sandbox tests failed after retry",
                                   attempts=attempts,
+                                  failure=str(failure)[-1200:],
                                   diff_sha256=hashlib.sha256(diff.encode()).hexdigest(),
                                   tests_run=verification.get("tests_run", []),
                                   stage=verification.get("stage"),
@@ -505,8 +509,6 @@ def run_many(state: Path | str, job_id: str, *, root: Path | str, infer,
                                       (root / target).read_bytes()).hexdigest()
                                       for target in targets},
                                   test_path=test_path)
-                failure = (verification.get("stderr") or verification.get("stdout")
-                           or verification.get("error") or "unknown failure")
                 feedback = ("\nThe previous patch failed sandbox unit tests with:\n"
                             + str(failure)[-1200:]
                             + "\nReturn a corrected patch that makes the tests pass.")
@@ -523,14 +525,17 @@ def _plan_folder(state: Path | str) -> Path:
     return Path(state) / PLANS
 
 
-def _order(steps: list[dict]) -> list[str]:
+def _order(steps: list[dict], external: set[str] | None = None) -> list[str]:
     """Return a stable topological order or raise for a bad graph."""
+    external = set(external or ())
     ids = [step["id"] for step in steps]
     if len(set(ids)) != len(ids):
         raise ValueError("Step ids must be unique.")
     needs = {step["id"]: list(step.get("needs") or []) for step in steps}
     for step_id, dependencies in needs.items():
         for dependency in dependencies:
+            if dependency in external:
+                continue
             if dependency not in needs:
                 raise ValueError(f"Step {step_id} needs unknown step {dependency}.")
             if dependency == step_id:
@@ -538,7 +543,8 @@ def _order(steps: list[dict]) -> list[str]:
     order, placed = [], set()
     while len(order) < len(steps):
         ready = [step_id for step_id in ids
-                 if step_id not in placed and all(dep in placed for dep in needs[step_id])]
+                 if step_id not in placed
+                 and all(dep in placed or dep in external for dep in needs[step_id])]
         if not ready:
             raise ValueError("Step dependencies contain a cycle.")
         order.append(ready[0])
@@ -547,7 +553,8 @@ def _order(steps: list[dict]) -> list[str]:
 
 
 def validate_steps(steps: list[dict], *, root: Path | str,
-                   max_steps: int = MAX_STEPS) -> list[dict]:
+                   max_steps: int = MAX_STEPS,
+                   completed: set[str] | tuple[str, ...] = ()) -> list[dict]:
     """Return normalized steps or raise before anything is written."""
     if not isinstance(steps, list) or not 1 <= len(steps) <= max_steps:
         raise ValueError(f"A plan needs between 1 and {max_steps} steps.")
@@ -584,12 +591,13 @@ def validate_steps(steps: list[dict], *, root: Path | str,
                       "targets": list(targets),
                       "needs": list(dict.fromkeys(needs)), "status": "queued",
                       "message": "", "job_id": None})
-    _order(clean)
+    _order(clean, external=set(completed))
     return clean
 
 
 def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
-               budget: int = 300, apply: bool = False) -> dict:
+               budget: int = 300, apply: bool = False,
+               request: str | None = None) -> dict:
     """Validate and store a dependency-ordered plan without running it."""
     clean = validate_steps(steps, root=root)
     order = _order(clean)
@@ -600,7 +608,8 @@ def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
     plan_id = time.strftime("%Y%m%d-%H%M%S", time.gmtime()) + "-" + secrets.token_hex(3)
     record = {"id": plan_id, "created": time.time(), "status": "queued",
               "apply": bool(apply), "budget": budget, "order": order,
-              "steps": clean, "folder": str(folder / plan_id)}
+              "request": (request or "").strip()[:800] or None,
+              "revision": 0, "steps": clean, "folder": str(folder / plan_id)}
     (folder / plan_id).mkdir(mode=0o700)
     _write(folder / plan_id / "plan.json", record)
     return record
@@ -629,7 +638,7 @@ def plans(state: Path | str) -> list[dict]:
 
 
 def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
-             infer_many=None, apply: bool | None = None) -> dict:
+             infer_many=None, apply: bool | None = None, repair=None) -> dict:
     """Run ready steps in dependency order; block anything with a failed dependency."""
     state, root = Path(state), Path(root)
     record = load_plan(state, plan_id)
@@ -650,15 +659,20 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
             _write(folder / "plan.json", record)
             _write(folder / "report.json", {
                 "id": record["id"], "status": record["status"],
+                "revision": record.get("revision", 0),
+                "repair": record.get("repair"),
+                "repair_error": record.get("repair_error"),
                 "steps": [{key: step.get(key) for key in
                            ("id", "status", "job_id", "message", "needs", "target",
-                            "targets", "attempts")}
+                            "targets", "attempts", "failure")}
                           for step in record["steps"]],
             })
 
         save()
-        for step_id in record["order"]:
-            step = by_id[step_id]
+        index = 0
+        while index < len(record["order"]):
+            step = by_id[record["order"][index]]
+            index += 1
             if step["status"] in {"verified", "applied"}:
                 continue
             blocked = [dep for dep in step["needs"]
@@ -680,11 +694,39 @@ def run_plan(state: Path | str, plan_id: str, *, root: Path | str, infer,
                 result = run(state, job["id"], root=root, infer=infer, apply=apply)
             step.update(status=result.get("status", "error"), job_id=job["id"],
                         message=result.get("message", ""),
-                        attempts=result.get("attempts"))
+                        attempts=result.get("attempts"),
+                        failure=result.get("failure"))
             save()
+            if (repair is not None and record.get("revision", 0) == 0
+                    and step["status"] in {"declined", "rolled_back", "error"}):
+                completed = [item for item in record["steps"]
+                             if item["status"] in {"verified", "applied"}]
+                detail = (step.get("message") or "") + "\n" + (step.get("failure") or "")
+                try:
+                    revised = validate_steps(
+                        repair(step, completed, detail), root=root,
+                        completed={item["id"] for item in completed})
+                except (KeyError, TypeError, ValueError) as caught:
+                    record["repair_error"] = str(caught)[:400]
+                    save()
+                else:
+                    dropped = [item["id"] for item in record["steps"]
+                               if item["status"] == "queued"]
+                    record["steps"] = [item for item in record["steps"]
+                                       if item["status"] != "queued"] + revised
+                    record["order"] = (record["order"][:index]
+                                       + _order(revised,
+                                                external={item["id"] for item in completed}))
+                    record["revision"] = 1
+                    step["status"] = "superseded"
+                    record["repair"] = {"failed": step["id"], "dropped": dropped,
+                                        "replacement": [item["id"] for item in revised]}
+                    record["status"] = "running"
+                    by_id = {item["id"]: item for item in record["steps"]}
+                    save()
         record["status"] = ("done" if all(
-            step["status"] in {"verified", "applied"} for step in record["steps"])
-            else "blocked")
+            step["status"] in {"verified", "applied", "superseded"}
+            for step in record["steps"]) else "blocked")
         record["finished"] = time.time()
         save()
         return record

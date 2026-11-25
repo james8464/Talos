@@ -71,13 +71,22 @@ def generate_plan(request: str, *, root: Path, model: str) -> dict:
                                    infer=plan_generator.default_infer(model))
 
 
-def _run_plan_reply(plan: dict, state: Path, root: Path, model: str) -> dict:
+def repair_plan(goal: str, *, root: Path, model: str, failed: dict,
+                completed: list[dict], error: str) -> dict:
+    from talos_core.self_improvement import plan_generator
+
+    return plan_generator.repair(goal, root=root, failed=failed, completed=completed,
+                                 error=error, infer=plan_generator.default_infer(model))
+
+
+def _run_plan_reply(plan: dict, state: Path, root: Path, model: str,
+                    repair=None) -> dict:
     targets = [step["target"] for step in plan["steps"]]
     paths = [root / target for target in targets if (root / target).is_file()]
     before = {str(path): _hash(path) for path in paths}
     result = coding_jobs.run_plan(
         state, plan["id"], root=root, infer=local_infer(model),
-        infer_many=local_infer_many(model),
+        infer_many=local_infer_many(model), repair=repair,
     )
     unchanged = all((root / target).is_file() and _hash(root / target) == before[str(root / target)]
                     for target in targets if str(root / target) in before)
@@ -98,7 +107,12 @@ def _plan_reply(body: str, state: Path, root: Path, model: str) -> dict:
                                           budget=PLAN_BUDGET, apply=False)
         except (OSError, ValueError, TypeError, AttributeError) as error:
             return {"reply": f"Plan rejected: {error}"}
-        return _run_plan_reply(plan, state, root, model)
+        goal = raw
+        return _run_plan_reply(
+            plan, state, root, model,
+            repair=lambda failed, completed, error: repair_plan(
+                goal, root=root, model=model, failed=failed,
+                completed=completed, error=error)["steps"])
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         steps = payload.get("steps") if isinstance(payload, dict) else payload

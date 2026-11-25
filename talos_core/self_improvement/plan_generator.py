@@ -75,6 +75,34 @@ def default_infer(model: str):
     return infer
 
 
+def _parse_plan(raw, *, root: Path, completed=(),
+                max_steps: int = MAX_GENERATED_STEPS) -> list[dict]:
+    payload = json.loads(raw) if isinstance(raw, str) else raw
+    steps = payload["steps"] if isinstance(payload, dict) else None
+    if not isinstance(steps, list):
+        raise ValueError("Return a steps array.")
+    if len(steps) > max_steps:
+        raise ValueError(f"Use at most {max_steps} steps.")
+    for step in steps:
+        if not isinstance(step, dict):
+            raise ValueError("Each step must be an object.")
+        targets = step.get("targets")
+        if isinstance(targets, str):
+            targets = [targets]
+        if targets is None:
+            single = step.get("target")
+            targets = [single] if isinstance(single, str) else None
+        if not isinstance(targets, list) or not 1 <= len(targets) <= MAX_STEP_TARGETS:
+            raise ValueError(f"Each step needs 1-{MAX_STEP_TARGETS} targets.")
+        ident, request, needs = (step.get("id"), step.get("request"),
+                                 step.get("needs") or [])
+        step.clear()
+        step.update({"id": ident, "targets": targets,
+                     "request": request, "needs": needs})
+    return coding_jobs.validate_steps(steps, root=root, max_steps=max_steps,
+                                      completed=completed)
+
+
 def generate(request: str, *, root: Path | str, infer, attempts: int = 2) -> dict:
     """Return a validated plan dict or raise ValueError after ``attempts`` tries."""
     request = (request or "").strip()
@@ -89,29 +117,35 @@ def generate(request: str, *, root: Path | str, infer, attempts: int = 2) -> dic
     for _ in range(max(1, attempts)):
         raw = infer(prompt if not error else prompt + "\nThe previous plan was rejected: " + error)
         try:
-            payload = json.loads(raw) if isinstance(raw, str) else raw
-            steps = payload["steps"] if isinstance(payload, dict) else None
-            if not isinstance(steps, list):
-                raise ValueError("Return a steps array.")
-            if len(steps) > MAX_GENERATED_STEPS:
-                raise ValueError(f"Use at most {MAX_GENERATED_STEPS} steps.")
-            for step in steps:
-                if isinstance(step, dict):
-                    targets = step.get("targets")
-                    if isinstance(targets, str):
-                        targets = [targets]
-                    if targets is None:
-                        single = step.get("target")
-                        targets = [single] if isinstance(single, str) else None
-                    if isinstance(targets, list) and len(targets) > MAX_STEP_TARGETS:
-                        raise ValueError(f"Use at most {MAX_STEP_TARGETS} targets per step.")
-                    ident, request, needs = (step.get("id"), step.get("request"),
-                                             step.get("needs") or [])
-                    step.clear()
-                    step.update({"id": ident, "targets": targets,
-                                 "request": request, "needs": needs})
-            cleaned = coding_jobs.validate_steps(steps, root=root)
-            return {"steps": cleaned}
+            return {"steps": _parse_plan(raw, root=root)}
         except (KeyError, TypeError, ValueError, SyntaxError) as caught:
             error = str(caught)[:300]
     raise ValueError(f"Plan generation failed: {error}")
+
+
+def repair(goal: str, *, root: Path | str, failed: dict, completed: list[dict],
+           error: str, infer, attempts: int = 2) -> dict:
+    """Revise only the remaining work after one step failed verification."""
+    root = Path(root)
+    files = catalog(root)
+    done = ", ".join(f"{item['id']} ({item.get('status')})" for item in completed) or "none"
+    prompt = (
+        "Revise the remaining steps of a coding plan. Do not repeat completed steps. "
+        f"The failed step was {failed['id']} on {failed.get('targets') or failed.get('target')} "
+        f"for this request: {failed.get('request', '')[:400]}.\n"
+        f"Completed steps: {done}.\n"
+        f"Failure output:\n{error[:1500]}\n"
+        f"Return JSON with 1-{MAX_GENERATED_STEPS} replacement steps using the same fields "
+        f"(id, targets, request, needs). They may depend on completed ids. Use only catalog paths.\n"
+        f"ORIGINAL REQUEST: {(goal or '')[:800]}\nCATALOG:\n"
+        f"{chr(10).join(files)[:12000]}"
+    )
+    failure = ""
+    for _ in range(max(1, attempts)):
+        raw = infer(prompt if not failure else prompt + "\nThe previous plan was rejected: " + failure)
+        try:
+            return {"steps": _parse_plan(raw, root=root,
+                                         completed={item["id"] for item in completed})}
+        except (KeyError, TypeError, ValueError, SyntaxError) as caught:
+            failure = str(caught)[:300]
+    raise ValueError(f"Plan repair failed: {failure}")

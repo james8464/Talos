@@ -86,3 +86,13 @@ unchanged. A `coding plan:` request without a JSON file generates a plan from
 the source catalog: at most three steps, three targets per step, validated for
 unsafe paths, cycles and unknown dependencies before anything runs. Voice input is not routed to these commands, and a room request can
 never apply a patch.
+
+## Plan-level repair
+
+For model-generated plans, a step that still ends `declined` after its per-step
+retry triggers one plan-level revision. The failed step, the verified steps,
+and the captured failure output go back to the planner, which returns
+replacement steps for the remaining work. The failed step is marked
+`superseded`, queued steps it replaced are reported as dropped, and one revision
+is the cap. If the revision is invalid, `repair_error` is recorded and the plan
+ends `blocked`.

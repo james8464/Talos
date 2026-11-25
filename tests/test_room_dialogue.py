@@ -102,6 +102,8 @@ class RoomDialogueTests(unittest.TestCase):
                                 "request": "Add a note."}]}
         with patch("talos_core.room.room_coding.generate_plan",
                    return_value=generated), \
+                patch("talos_core.room.room_coding.repair_plan",
+                      side_effect=ValueError("no safe revision")), \
                 patch("talos_core.room.room_coding.local_infer",
                       return_value=lambda prompt: "{}"):
             reply = room.route("POST", "/v1/turn", {

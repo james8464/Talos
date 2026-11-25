@@ -235,6 +235,69 @@ class CodingPlanTests(unittest.TestCase):
         self.assertEqual((self.tmp / "talos_core" / "example.py").read_text(), EXAMPLE)
         self.assertEqual((self.tmp / "talos_core" / "other.py").read_text(), OTHER)
 
+    def test_plan_repairs_remaining_steps_after_a_decline(self):
+        plan = self.plan([
+            {"id": "bad", "target": "talos_core/example.py", "request": "first"},
+            {"id": "after", "target": "talos_core/other.py", "request": "second",
+             "needs": ["bad"]},
+        ])
+        seen = []
+
+        def repair(failed, completed, error):
+            seen.append((failed["id"], [item["id"] for item in completed], error))
+            return [{"id": "fixed", "targets": ["talos_core/other.py"],
+                     "request": "second"}]
+
+        def infer(prompt):
+            if "TARGET: talos_core/example.py" in prompt:
+                return "{}"
+            return self.infer(prompt)
+
+        result = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp,
+                                      infer=infer, repair=repair)
+        steps = {step["id"]: step for step in result["steps"]}
+        self.assertEqual(result["status"], "done")
+        self.assertEqual(result["revision"], 1)
+        self.assertEqual(steps["bad"]["status"], "superseded")
+        self.assertEqual(steps["fixed"]["status"], "verified")
+        self.assertNotIn("after", steps)
+        self.assertEqual(result["repair"]["failed"], "bad")
+        self.assertEqual(result["repair"]["replacement"], ["fixed"])
+        self.assertEqual(seen[0][0], "bad")
+
+    def test_plan_repair_runs_at_most_once(self):
+        plan = self.plan([{"id": "bad", "target": "talos_core/example.py",
+                           "request": "first"}])
+        calls = []
+
+        def repair(failed, completed, error):
+            calls.append(failed["id"])
+            return [{"id": "again", "targets": ["talos_core/other.py"],
+                     "request": "retry"}]
+
+        def infer(prompt):
+            return "{}"
+
+        result = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp,
+                                      infer=infer, repair=repair)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["revision"], 1)
+        self.assertEqual(calls, ["bad"])
+        self.assertEqual(len(result["steps"]), 2)
+
+    def test_plan_repair_error_is_recorded(self):
+        plan = self.plan([{"id": "bad", "target": "talos_core/example.py",
+                           "request": "first"}])
+
+        def repair(failed, completed, error):
+            raise ValueError("cannot revise")
+
+        result = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp,
+                                      infer=lambda prompt: "{}", repair=repair)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["revision"], 0)
+        self.assertEqual(result["repair_error"], "cannot revise")
+
     def test_plan_does_not_rerun_after_terminal(self):
         plan = self.plan([{"id": "only", "target": "talos_core/example.py", "request": "x"}])
         first = coding_jobs.run_plan(self.state, plan["id"], root=self.tmp, infer=self.infer)

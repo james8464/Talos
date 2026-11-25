@@ -38,6 +38,19 @@ class PlanGeneratorTests(unittest.TestCase):
         result = plan_generator.generate("x", root=self.root, infer=lambda prompt: raw)
         self.assertEqual(result["steps"][0]["targets"], ["talos_core/example.py"])
 
+    def test_repair_can_depend_on_completed_step(self):
+        completed = [{"id": "first", "status": "verified",
+                      "targets": ["talos_core/example.py"]}]
+        raw = self.plan([{"id": "fixed", "targets": ["talos_core/other.py"],
+                          "request": "follow up", "needs": ["first"]}])
+        result = plan_generator.repair(
+            "Change both.", root=self.root,
+            failed={"id": "dead", "targets": ["talos_core/example.py"],
+                    "request": "start"},
+            completed=completed, error="unit tests failed",
+            infer=lambda prompt: raw)
+        self.assertEqual(result["steps"][0]["needs"], ["first"])
+
     def test_cycle_is_retried_with_feedback(self):
         prompts = []
         bad = self.plan([{"id": "a", "targets": ["talos_core/example.py"],
