@@ -249,7 +249,32 @@ func (a *App) createMessage(c *gin.Context) {
 		return
 	}
 	a.recordMessageCommitTiming(c)
+	a.replyToIdentityMessage(c, c.Param("roomId"), content.PlainText(), key)
 	writeResultResponse(c, result)
+}
+
+// replyToIdentityMessage writes one Agent-authored reply for a deterministic
+// identity command. A failure never changes the accepted Human message.
+func (a *App) replyToIdentityMessage(c *gin.Context, roomID, text, key string) {
+	if a.roomIdentity == nil || strings.TrimSpace(text) == "" || key == "" {
+		return
+	}
+	reply := a.roomIdentity.Answer(roomID, text, time.Now())
+	if reply == "" {
+		return
+	}
+	agents, err := a.queries.ListRoomAgentActors(c.Request.Context(), roomID)
+	if err != nil || len(agents) == 0 {
+		if a.logger != nil {
+			a.logger.Warn("identity_reply.no_agent", "room_id", roomID, "error", err)
+		}
+		return
+	}
+	if _, err := a.collaboration.CreateAgentMessage(
+		c.Request.Context(), roomID, agents[0].ID, reply, "identity:"+key,
+	); err != nil && a.logger != nil {
+		a.logger.Warn("identity_reply.failed", "room_id", roomID, "error", err)
+	}
 }
 
 func (a *App) recordMessageCommitTiming(c *gin.Context) {

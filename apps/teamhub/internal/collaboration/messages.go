@@ -341,3 +341,69 @@ func (s *Service) hydrateRoutineMessageNames(ctx context.Context, roomID string,
 	}
 	return names, nil
 }
+
+// CreateAgentMessage writes a plain conversation reply authored by an active
+// Room Agent. It takes the same membership and delivery locks as a Human
+// message but skips attachments, mentions and Agent input limits.
+func (s *Service) CreateAgentMessage(ctx context.Context, roomID, agentID, text, key string) (messagecreation.Result, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return messagecreation.Result{}, err
+	}
+	defer tx.Rollback(ctx)
+	queries := s.queries.WithTx(tx)
+	tenantID, err := queries.GetRoomTenantID(ctx, roomID)
+	if err != nil {
+		return messagecreation.Result{}, err
+	}
+	collaborationRoomID, _, err := mentionMembershipRoom(ctx, queries, roomID)
+	if err != nil {
+		return messagecreation.Result{}, err
+	}
+	if err := roomcreation.LockMemberships(ctx, queries, roomID, collaborationRoomID); err != nil {
+		return messagecreation.Result{}, err
+	}
+	agents, err := queries.ListRoomAgentActors(ctx, collaborationRoomID)
+	if err != nil {
+		return messagecreation.Result{}, err
+	}
+	var author store.Actor
+	for _, candidate := range agents {
+		if candidate.ID == agentID {
+			author = candidate
+			break
+		}
+	}
+	if author.ID == "" {
+		return messagecreation.Result{}, pgx.ErrNoRows
+	}
+	if err := tenantmembership.LockAgents(ctx, queries, author.ID); err != nil {
+		return messagecreation.Result{}, err
+	}
+	if err := queries.LockTenantDeliveryRooms(ctx, store.LockTenantDeliveryRoomsParams{
+		TenantID: tenantID, RoomIds: []string{roomID, collaborationRoomID},
+	}); err != nil {
+		return messagecreation.Result{}, err
+	}
+	content, err := messagecreation.Normalize([]messagecreation.Segment{{Type: "text", Content: text}})
+	if err != nil {
+		return messagecreation.Result{}, err
+	}
+	digest := sha256.Sum256([]byte(key))
+	persisted, err := messagecreation.Persist(ctx, queries, messagecreation.Draft{
+		ID:       "message_" + hex.EncodeToString(digest[:12]),
+		TenantID: tenantID, RoomID: roomID, Author: author,
+		Content: content, Validated: true, SuppressMentionSignals: true,
+	})
+	if err != nil {
+		return messagecreation.Result{}, err
+	}
+	published, err := messagecreation.Publish(ctx, queries, persisted)
+	if err != nil {
+		return messagecreation.Result{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return messagecreation.Result{}, err
+	}
+	return published, nil
+}
