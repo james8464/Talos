@@ -1,6 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdtemp, open, readFile, rm, stat, writeFile } from "node:fs/promises";
-import os from "node:os";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
@@ -54,13 +53,16 @@ export class TalosMediaCapture {
   }
 
   available(): boolean {
-    return this.#options.binary !== undefined || this.#options.compiler !== undefined;
+    return (
+      this.#options.binary !== undefined || this.#options.compiler !== undefined
+    );
   }
 
   async #helper(): Promise<string> {
     if (this.#options.binary) return this.#options.binary;
     const compiler = this.#options.compiler;
-    if (!compiler) throw new Error("The native capture compiler is unavailable.");
+    if (!compiler)
+      throw new Error("The native capture compiler is unavailable.");
     const target = path.join(this.#options.runtimeDir, "talos-av-capture");
     const [sourceStat, targetStat] = await Promise.all([
       stat(this.#options.source).catch(() => undefined),
@@ -78,7 +80,9 @@ export class TalosMediaCapture {
     if (!(seconds > 0 && seconds <= 10))
       throw new Error("Capture length must be between 0 and 10 seconds.");
     const helper = await this.#helper();
-    const folder = await mkdtemp(path.join(this.#options.runtimeDir, "capture-"));
+    const folder = await mkdtemp(
+      path.join(this.#options.runtimeDir, "capture-"),
+    );
     const frame = path.join(folder, "frame.jpg");
     const clip = path.join(folder, "clip.wav");
     try {
@@ -98,17 +102,13 @@ export class TalosMediaCapture {
         audioBase64: audioBytes.toString("base64"),
         seconds,
         cameraPermission: String(payload.camera_permission ?? "unknown"),
-        microphonePermission: String(payload.microphone_permission ?? "unknown"),
+        microphonePermission: String(
+          payload.microphone_permission ?? "unknown",
+        ),
         mediaDeleted: true,
       };
     } finally {
       await rm(folder, { recursive: true, force: true });
     }
   }
-}
-
-/** Writes the helper input for tests and Electron packaging checks. */
-export async function writeMediaFile(file: string, bytes: Buffer): Promise<void> {
-  await writeFile(file, bytes);
-  await (await open(file, "r")).close();
 }
