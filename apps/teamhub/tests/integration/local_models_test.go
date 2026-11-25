@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 const localModelsLibraryPiModel = "localmodels-library/localmodels-lib-qwen3-8-27b-iq3s-ud-iq3-s/Qwen3.8-27B-UD-IQ3_S"
@@ -80,9 +80,9 @@ INSERT INTO actors(id,tenant_id,kind,display_name,handle) VALUES
   ('actor_models_codex','tenant_acme','agent','Codex','models_codex');
 INSERT INTO agent_registrations(actor_id,tenant_id,agent_management_id,status,instructions,runtime_model,
   computer_id,local_runtime_type,workspace_grant_id,created_by_actor_id,visibility_scope) VALUES
-  ('actor_models_shared','tenant_acme','agent_models_shared','active','Run','`+localModelsLibraryPiModel+`','computer_models','pi','grant_linger','actor_acme_alice','workspace'),
-  ('actor_models_private','tenant_acme','agent_models_private','active','Run','`+localModelsLibraryPiModel+`','computer_models','pi','grant_linger','actor_acme_alice','sponsor'),
-  ('actor_models_codex','tenant_acme','agent_models_codex','active','Run','`+localModelsLibraryPiModel+`','computer_models','codex','grant_linger','actor_acme_alice','workspace');
+  ('actor_models_shared','tenant_acme','agent_models_shared','active','Run','`+localModelsLibraryPiModel+`','computer_models','pi','grant_talos','actor_acme_alice','workspace'),
+  ('actor_models_private','tenant_acme','agent_models_private','active','Run','`+localModelsLibraryPiModel+`','computer_models','pi','grant_talos','actor_acme_alice','sponsor'),
+  ('actor_models_codex','tenant_acme','agent_models_codex','active','Run','`+localModelsLibraryPiModel+`','computer_models','codex','grant_talos','actor_acme_alice','workspace');
 `); err != nil {
 		t.Fatal(err)
 	}

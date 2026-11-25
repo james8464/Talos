@@ -164,7 +164,7 @@ beforeEach(() => {
     },
   });
   window.localStorage.setItem(
-    "linger.voice.device.tenant-northstar",
+    "talos.voice.device.tenant-northstar",
     JSON.stringify({ deviceId: "microphone", groupId: "desk", label: "Desk" }),
   );
 });
@@ -663,7 +663,7 @@ describe("LiveKit voice input lifecycle", () => {
     await waitFor(() =>
       expect(
         JSON.parse(
-          window.localStorage.getItem("linger.voice.device.tenant-northstar")!,
+          window.localStorage.getItem("talos.voice.device.tenant-northstar")!,
         ),
       ).toMatchObject({ deviceId: "usb", label: "USB microphone" }),
     );
@@ -1297,7 +1297,7 @@ describe("LiveKit voice input lifecycle", () => {
     expect(media.stop).toHaveBeenCalledOnce();
     expect(
       JSON.parse(
-        window.localStorage.getItem("linger.voice.listening.tenant-northstar")!,
+        window.localStorage.getItem("talos.voice.listening.tenant-northstar")!,
       ),
     ).toMatchObject({ captureId: second.id, stopped: false });
     view.unmount();

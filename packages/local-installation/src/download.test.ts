@@ -12,7 +12,7 @@ afterEach(async () => {
   );
 });
 it("verifies streamed bytes before publishing a file and reports byte progress", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.from("trusted fixture");
   const events: number[] = [];
@@ -33,7 +33,7 @@ it("verifies streamed bytes before publishing a file and reports byte progress",
   expect(events.at(-1)).toBe(bytes.length);
 });
 it("a bad checksum never publishes an executable archive", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const output = path.join(root, "kit.tgz");
   await expect(
@@ -52,7 +52,7 @@ it("a bad checksum never publishes an executable archive", async () => {
   await expect(access(output)).rejects.toThrow();
 });
 it("rejects HTTP, credential-bearing URLs, and downloads over the size bound", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const options = {
     output: path.join(root, "kit.tgz"),
@@ -76,7 +76,7 @@ it("rejects HTTP, credential-bearing URLs, and downloads over the size bound", a
 });
 
 it("reports interrupted streams safely and keeps partial progress without publishing files", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const events: number[] = [];
   const broken = () => {
@@ -116,7 +116,7 @@ it("reports interrupted streams safely and keeps partial progress without publis
 });
 
 it("replaces fetch transport details with safe actionable guidance", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const error = await downloadVerified(
     {
@@ -145,7 +145,7 @@ it("replaces fetch transport details with safe actionable guidance", async () =>
 it.each(["fetch", "stream"])(
   "preserves explicit cancellation during %s",
   async (boundary) => {
-    const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+    const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
     roots.push(root);
     const abort = new AbortController();
     const reason = new Error("Installation cancelled.");
@@ -176,7 +176,7 @@ it.each(["fetch", "stream"])(
 );
 
 it("preserves filesystem failures outside the transport boundary", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.from("trusted fixture");
   await expect(
@@ -198,7 +198,7 @@ it("preserves filesystem failures outside the transport boundary", async () => {
 it.each([false, true])(
   "cancels a blocked response body without waiting for the idle timeout (resumable: %s)",
   async (resumable) => {
-    const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+    const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
     roots.push(root);
     const abort = new AbortController();
     const reason = new Error("Installation cancelled.");
@@ -261,7 +261,7 @@ it.each([false, true])(
 );
 
 it("resumes an interrupted transfer with a range request", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.from("resumable trusted fixture");
   const ranges: (string | null)[] = [];
@@ -305,7 +305,7 @@ it("resumes an interrupted transfer with a range request", async () => {
 it.each([false, true])(
   "restarts with a full response when the server ignores Range (resumable=%s)",
   async (resumable) => {
-    const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+    const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
     roots.push(root);
     const output = path.join(root, "kit.tgz");
     const bytes = Buffer.from("complete verified archive");
@@ -343,7 +343,7 @@ it.each([false, true])(
 );
 
 it("continues a stalled transfer on the mirror before retrying the first host", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.from("resumable trusted fixture");
   const requests: string[] = [];
@@ -387,7 +387,7 @@ it("continues a stalled transfer on the mirror before retrying the first host", 
 });
 
 it("moves to a mirror when the first host cannot serve the file", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.from("mirrored fixture");
   const hosts: string[] = [];
@@ -415,7 +415,7 @@ it("moves to a mirror when the first host cannot serve the file", async () => {
 });
 
 it("restarts an attempt that stops receiving bytes and names every host on failure", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   let calls = 0;
   await expect(
@@ -445,7 +445,7 @@ it("restarts an attempt that stops receiving bytes and names every host on failu
 });
 
 it("keeps a resumable partial file for the next call", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.from("bundle bytes that arrive in two runs");
   const output = path.join(root, "bundle.tgz");
@@ -493,7 +493,7 @@ it("keeps a resumable partial file for the next call", async () => {
 });
 
 it("moves to a faster mirror when the first host is slow with substantial work left", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.alloc(64 * 1024, 0x7a);
   const requests: string[] = [];
@@ -563,7 +563,7 @@ it("moves to a faster mirror when the first host is slow with substantial work l
 });
 
 it("keeps downloading from a slow primary when the remaining time is short", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.alloc(16 * 1024, 0x79);
   const hosts: string[] = [];
@@ -608,7 +608,7 @@ it("keeps downloading from a slow primary when the remaining time is short", asy
 });
 
 it("finishes on the primary without error when every host is equally slow", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.alloc(40 * 1024, 0x78);
   const hosts: string[] = [];
@@ -676,7 +676,7 @@ it("finishes on the primary without error when every host is equally slow", asyn
 });
 
 it("moves past a hung primary at slowCheckAfterMs instead of waiting for idleTimeoutMs", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.from("served by mirror quickly");
   const hosts: string[] = [];
@@ -720,7 +720,7 @@ it("moves past a hung primary at slowCheckAfterMs instead of waiting for idleTim
 });
 
 it("promotes the fastest mirror when the first host hangs and the last mirror is slower", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-download-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-download-"));
   roots.push(root);
   const bytes = Buffer.alloc(64 * 1024, 0x77);
   const hosts: string[] = [];

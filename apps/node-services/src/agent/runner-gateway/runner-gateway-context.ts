@@ -13,7 +13,7 @@ import type {
   LocalModelsSnapshot,
   RunnerCapability,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { randomUUID } from "node:crypto";
 import type {
   AgentCliCredentialIssuer,

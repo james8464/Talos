@@ -184,7 +184,7 @@ export const accountSettingsMessages = defineMessages("accountSettings", {
   composioDetail:
     "Connects Gmail, GitHub, Slack, Notion and other apps. Use a key with full read and write access.",
   composioDetailFromEnvironment:
-    "Connects Gmail, GitHub, Slack, Notion and other apps. Set with COMPOSIO_API_KEY on the server, in user.env when Linger is installed on this computer.",
+    "Connects Gmail, GitHub, Slack, Notion and other apps. Set with COMPOSIO_API_KEY on the server, in user.env when Talos is installed on this computer.",
   composioDetailCannotSave:
-    "Connects Gmail, GitHub, Slack, Notion and other apps. When Linger is installed on this computer, set COMPOSIO_API_KEY in user.env, then reopen the Linger app. On a server you run yourself, set it there, or set TEAMHUB_SECRET_ENCRYPTION_KEY to save the key here.",
+    "Connects Gmail, GitHub, Slack, Notion and other apps. When Talos is installed on this computer, set COMPOSIO_API_KEY in user.env, then reopen the Talos app. On a server you run yourself, set it there, or set TEAMHUB_SECRET_ENCRYPTION_KEY to save the key here.",
 });

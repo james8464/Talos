@@ -87,7 +87,7 @@ export async function prepareLiveKitSettings(
       if (await portFree(existing[name], protocol)) continue;
       settings[name] = await freePort(reserved, { protocol });
       onMoved?.(
-        `Port ${existing[name]} is in use by another program; Linger's livekit uses port ${settings[name]} instead.\n`,
+        `Port ${existing[name]} is in use by another program; Talos's livekit uses port ${settings[name]} instead.\n`,
       );
     }
     if (

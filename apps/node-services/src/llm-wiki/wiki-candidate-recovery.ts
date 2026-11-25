@@ -1,8 +1,8 @@
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, posix } from "node:path";
-import { parseOkfFrontmatter } from "@linger/knowledge-format";
+import { parseOkfFrontmatter } from "@talos/knowledge-format";
 import type { WikiCandidateIssue } from "./wiki-candidate-validation.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 export function isWikiQualityWarning(issue: WikiCandidateIssue): boolean {
   return (

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
 )
 
 // LiveCheck records whether a ready Runtime returned a model reply. Discovery

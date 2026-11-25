@@ -3,12 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SaveDiagnosticsButton } from "./save-diagnostics-button";
 
-function desktop(lingerDesktop: unknown) {
-  Object.assign(window, { lingerDesktop });
+function desktop(talosDesktop: unknown) {
+  Object.assign(window, { talosDesktop });
 }
 
 afterEach(() => {
-  delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+  delete (window as { talosDesktop?: unknown }).talosDesktop;
 });
 
 describe("SaveDiagnosticsButton", () => {

@@ -10,8 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func (a *App) createRuntimeHumanInteraction(c *gin.Context) {

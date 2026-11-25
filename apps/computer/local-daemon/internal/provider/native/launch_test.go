@@ -103,7 +103,7 @@ func TestHelperOutputRejectsAssignedStreams(t *testing.T) {
 }
 
 func TestFixtureChildSeesOnlyInvocationEnvironment(t *testing.T) {
-	t.Setenv("LINGER_GATEWAY_TOKEN", "daemon-secret")
+	t.Setenv("TALOS_GATEWAY_TOKEN", "daemon-secret")
 	invocation := fixtureInvocation(t, "print", map[string]string{"FIXTURE_STDOUT": "ok"})
 	output, err := runOutput(context.Background(), ownedCommand(context.Background(), invocation))
 	if err != nil || string(output) != "ok" {

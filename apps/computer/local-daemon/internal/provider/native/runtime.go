@@ -10,7 +10,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 // ErrSessionNotFound reports that a retained native session cannot be resumed

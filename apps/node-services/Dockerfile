@@ -33,12 +33,12 @@ COPY apps/teamhub-cli/bin ./apps/teamhub-cli/bin
 
 FROM dependency-manifests AS dependencies
 RUN --mount=type=cache,id=pnpm-store-node-services-node26.5.0-pnpm11.7.0-linux-amd64,sharing=locked,target=/pnpm/store \
-    pnpm install --filter @linger/node-services... --frozen-lockfile --trust-lockfile \
+    pnpm install --filter @talos/node-services... --frozen-lockfile --trust-lockfile \
     --store-dir /pnpm/store --fetch-retries 5 --fetch-timeout 1800000
 
 FROM dependency-manifests AS production-dependencies
 RUN --mount=type=cache,id=pnpm-store-node-services-node26.5.0-pnpm11.7.0-linux-amd64,sharing=locked,target=/pnpm/store \
-    pnpm install --filter @linger/node-services... --prod --frozen-lockfile --trust-lockfile \
+    pnpm install --filter @talos/node-services... --prod --frozen-lockfile --trust-lockfile \
     --store-dir /pnpm/store --fetch-retries 5 --fetch-timeout 1800000
 
 FROM dependencies AS release-dependencies
@@ -62,13 +62,13 @@ COPY apps/node-services/src ./apps/node-services/src
 COPY apps/voice-runtime/tsconfig.json apps/voice-runtime/tsconfig.build.json ./apps/voice-runtime/
 COPY apps/voice-runtime/src ./apps/voice-runtime/src
 COPY apps/node-services/scripts/generate-feature-catalog.ts ./apps/node-services/scripts/generate-feature-catalog.ts
-RUN pnpm --filter @linger/wire-contracts build \
-    && pnpm --filter @linger/document-files build \
-    && pnpm --filter @linger/document-model build \
-    && pnpm --filter @linger/knowledge-format build \
-    && pnpm --filter @linger/service-kit build \
-    && pnpm --filter @linger/voice-runtime build \
-    && pnpm --filter @linger/node-services build
+RUN pnpm --filter @talos/wire-contracts build \
+    && pnpm --filter @talos/document-files build \
+    && pnpm --filter @talos/document-model build \
+    && pnpm --filter @talos/knowledge-format build \
+    && pnpm --filter @talos/service-kit build \
+    && pnpm --filter @talos/voice-runtime build \
+    && pnpm --filter @talos/node-services build
 
 # The Computer release this image serves on /install/: macOS and
 # Linux targets built from this same commit. Its install uses the pruned
@@ -95,7 +95,7 @@ COPY packages/service-kit/package.json ./packages/service-kit/package.json
 COPY apps/computer/package.json ./apps/computer/package.json
 COPY apps/teamhub-cli/package.json ./apps/teamhub-cli/package.json
 RUN --mount=type=cache,id=pnpm-store-computer-node26.5.0-pnpm11.7.0-linux-amd64,sharing=locked,target=/pnpm/store \
-    pnpm install --filter @linger/computer... --filter @linger/teamhub-cli... --frozen-lockfile --trust-lockfile \
+    pnpm install --filter @talos/computer... --filter @talos/teamhub-cli... --frozen-lockfile --trust-lockfile \
     --store-dir /pnpm/store --fetch-retries 5 --fetch-timeout 1800000
 
 # Only the dependency inputs: pinned Node distributions, tool versions and
@@ -108,7 +108,7 @@ COPY scripts/local-computer-node-distributions.mjs scripts/managed-tools-runtime
 COPY apps/computer/scripts/bundle-computer-tools.mjs ./apps/computer/scripts/
 COPY apps/computer/tools ./apps/computer/tools
 RUN --mount=type=cache,id=computer-release-downloads,target=/root/.cache \
-    LINGER_COMPUTER_NODE_DISTRIBUTION_CACHE=/root/.cache/node-distributions \
+    TALOS_COMPUTER_NODE_DISTRIBUTION_CACHE=/root/.cache/node-distributions \
     COMPUTER_RELEASE_TARGETS="$COMPUTER_RELEASE_TARGETS" \
     node scripts/prepare-local-computer-release.mjs --part deps --output /out \
     && find /out -exec touch -h -d 2000-01-01T00:00:00Z {} +
@@ -133,7 +133,7 @@ COPY packages/document-files ./packages/document-files
 COPY packages/service-kit ./packages/service-kit
 COPY apps/teamhub-cli ./apps/teamhub-cli
 COPY apps/computer ./apps/computer
-COPY scripts/local-computer-node-distributions.mjs scripts/managed-tools-*.mjs scripts/prepare-local-computer-release.mjs scripts/install-linger-computer.sh scripts/uninstall-linger-computer.sh scripts/publish-windows-installers.mjs scripts/local-computer-windows-installer.mjs scripts/local-computer-windows-bootstrap.ps1 scripts/install-linger-computer.ps1 scripts/uninstall-linger-computer.ps1 ./scripts/
+COPY scripts/local-computer-node-distributions.mjs scripts/managed-tools-*.mjs scripts/prepare-local-computer-release.mjs scripts/install-talos-computer.sh scripts/uninstall-talos-computer.sh scripts/publish-windows-installers.mjs scripts/local-computer-windows-installer.mjs scripts/local-computer-windows-bootstrap.ps1 scripts/install-talos-computer.ps1 scripts/uninstall-talos-computer.ps1 ./scripts/
 COPY --from=computer-deps /out/files /deps/files
 RUN --mount=type=cache,id=computer-go-modules,target=/root/go/pkg/mod \
     --mount=type=cache,id=computer-go-build,target=/root/.cache/go-build \
@@ -189,7 +189,7 @@ USER node
 RUN node --input-type=module -e \
     "import { readdir, readFile } from 'node:fs/promises'; async function check(directory) { for (const entry of await readdir(directory, { withFileTypes: true })) { const path = directory + '/' + entry.name; if (entry.isDirectory()) await check(path); else await readFile(path); } } await check('./apps/node-services/prompts')"
 # Check the production workspace links of every role without dev dependencies.
-RUN node --conditions=linger-production --input-type=module -e \
+RUN node --conditions=talos-production --input-type=module -e \
     "await import('./apps/node-services/dist/agent/main.js'); await import('./apps/node-services/dist/memory/main.js'); await import('./apps/node-services/dist/llm-wiki/service.js'); await import('./apps/node-services/dist/document/realtime.js'); await import('./apps/node-services/dist/document/app.js')"
 
 ARG SOURCE_COMMIT=dev
@@ -199,4 +199,4 @@ ENV APP_VERSION=$SOURCE_COMMIT
 EXPOSE 4319 4321
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "Promise.all([4319, 4321].map((port) => fetch('http://127.0.0.1:' + port + '/healthz'))).then((responses) => { if (responses.some((response) => !response.ok)) process.exit(1); }).catch(() => process.exit(1))"
-CMD ["node", "--conditions=linger-production", "apps/node-services/dist/main.js"]
+CMD ["node", "--conditions=talos-production", "apps/node-services/dist/main.js"]

@@ -98,7 +98,7 @@ describe("native source commands", () => {
     ).toMatchObject({
       command: tools.node,
       args: [
-        "--conditions=linger-production",
+        "--conditions=talos-production",
         `${offline}/node-services/dist/supervisor.js`,
         "--compiled",
       ],
@@ -193,7 +193,7 @@ describe("native source commands", () => {
     });
     expect(planNativeCommand("web", repo, tools).args).toEqual([
       "--filter",
-      "@linger/web",
+      "@talos/web",
       "dev",
     ]);
     expect(
@@ -243,18 +243,18 @@ describe("native source commands", () => {
       args: [
         "install",
         "--filter",
-        "@linger/node-services...",
+        "@talos/node-services...",
         "--filter",
-        "@linger/web...",
+        "@talos/web...",
         ...flags,
       ],
     });
     expect(planNativeCommand("prepare-computer", repo, tools).args).toEqual([
       "install",
       "--filter",
-      "@linger/computer...",
+      "@talos/computer...",
       "--filter",
-      "@linger/teamhub-cli...",
+      "@talos/teamhub-cli...",
       ...flags,
     ]);
   });

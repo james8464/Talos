@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 // A Task's AlterEgo writes to its playground, never to a new Document bound

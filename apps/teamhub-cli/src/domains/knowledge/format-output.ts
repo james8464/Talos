@@ -6,9 +6,9 @@ import { CliError } from "../../errors.js";
 import type {
   PersonalKnowledgeEvidenceReadResponse,
   PersonalKnowledgeQueryResponse,
-} from "@linger/wire-contracts/node-services-internal/client";
-import { PERSONAL_KNOWLEDGE_EVIDENCE_ID_PATTERN } from "@linger/wire-contracts/node-services-internal/client";
-import { isRecord } from "@linger/service-kit";
+} from "@talos/wire-contracts/node-services-internal/client";
+import { PERSONAL_KNOWLEDGE_EVIDENCE_ID_PATTERN } from "@talos/wire-contracts/node-services-internal/client";
+import { isRecord } from "@talos/service-kit";
 
 interface KnowledgeEvidenceReadInput {
   evidenceId: string;

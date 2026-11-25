@@ -11,7 +11,7 @@ import type {
 } from "@blocknote/core";
 import { yDocToBlocks } from "@blocknote/core/yjs";
 import * as Y from "yjs";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 import {
   inspectRoomDocumentState,

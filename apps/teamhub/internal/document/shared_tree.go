@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 )
 
 type SharedFolderInput struct {

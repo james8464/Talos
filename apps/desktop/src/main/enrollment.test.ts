@@ -106,7 +106,7 @@ const fakeServer = (
       overrides.bundle ?? {
         computer_id: "computer_1",
         tenant_id: "tenant_acme",
-        gateway_url: "wss://linger.example.com/v1/runner",
+        gateway_url: "wss://talos.example.com/v1/runner",
         gateway_token: TOKEN,
         credential_expires_at: "2026-11-16T08:00:00Z",
       },
@@ -130,7 +130,7 @@ const writeDaemonIdentity = (
 };
 
 const input = {
-  serverUrl: "https://linger.example.com",
+  serverUrl: "https://talos.example.com",
   cookie: "teamhub_session=abc",
   displayName: "Laptop",
 };
@@ -143,7 +143,7 @@ describe("enrollComputer", () => {
       computerId: "computer_1",
       tenantId: "tenant_acme",
       ownerActorId: "actor_ann",
-      gatewayUrl: "wss://linger.example.com/v1/runner",
+      gatewayUrl: "wss://talos.example.com/v1/runner",
       credential: TOKEN,
     });
     expect(server.calls.map((c) => [c.method, c.url, !!c.cookie])).toEqual([
@@ -169,7 +169,7 @@ describe("enrollComputer", () => {
       bundle: {
         computer_id: "computer_2",
         tenant_id: "tenant_acme",
-        gateway_url: "wss://linger.example.com/v1/runner",
+        gateway_url: "wss://talos.example.com/v1/runner",
         gateway_token: TOKEN,
         credential_expires_at: "2026-11-16T08:00:00Z",
       },
@@ -184,7 +184,7 @@ describe("enrollComputer", () => {
       bundle: {
         computer_id: "computer_1",
         tenant_id: "tenant_acme",
-        gateway_url: "wss://linger.example.com/v1/runner",
+        gateway_url: "wss://talos.example.com/v1/runner",
         gateway_token: `sr1.${claims({
           runner_id: "computer_1",
           tenant_owners: [
@@ -213,7 +213,7 @@ describe("enrollComputer", () => {
       bundle: {
         computer_id: "computer_1",
         tenant_id: "tenant_acme",
-        gateway_url: "https://linger.example.com/v1/runner",
+        gateway_url: "https://talos.example.com/v1/runner",
         gateway_token: TOKEN,
         credential_expires_at: "2026-11-16T08:00:00Z",
       },
@@ -391,7 +391,7 @@ describe("readDaemonId", () => {
 describe("EnrollmentModule", () => {
   const setupModule = (
     serverOverrides: ServerOverrides = {},
-    initialServerUrl = "https://linger.example.com",
+    initialServerUrl = "https://talos.example.com",
     initialConfig: Partial<DesktopConfig> = {},
     ensureDefault: () => Promise<void> = async () => {},
   ) => {
@@ -430,7 +430,7 @@ describe("EnrollmentModule", () => {
     serverOverrides: ServerOverrides = {},
     initialConfig: Partial<DesktopConfig> = {},
   ) => {
-    const setup = setupModule(serverOverrides, "https://linger.example.com", {
+    const setup = setupModule(serverOverrides, "https://talos.example.com", {
       computerId: "computer_orphan",
       tenantId: "tenant_acme",
       ownerActorId: "actor_ann",
@@ -438,7 +438,7 @@ describe("EnrollmentModule", () => {
     });
     setup.credentials.write({
       computerId: "computer_orphan",
-      gatewayUrl: "wss://linger.example.com/v1/runner",
+      gatewayUrl: "wss://talos.example.com/v1/runner",
       token: TOKEN,
     });
     return setup;
@@ -507,7 +507,7 @@ describe("EnrollmentModule", () => {
     await enrollment.unenroll();
     expect(host.ctx.config.get().computerId).toBeUndefined();
     expect(host.ctx.config.get().savedEnrollments).toEqual({
-      "https://linger.example.com": {
+      "https://talos.example.com": {
         computerId: "computer_1",
         tenantId: "tenant_acme",
         ownerActorId: "actor_ann",
@@ -536,7 +536,7 @@ describe("EnrollmentModule", () => {
     });
     expect(host.ctx.config.get().computerId).toBeUndefined();
     expect(host.ctx.config.get().savedEnrollments).toEqual({
-      "https://linger.example.com": {
+      "https://talos.example.com": {
         computerId: "computer_1",
         tenantId: "tenant_acme",
         ownerActorId: "actor_ann",
@@ -606,7 +606,7 @@ describe("EnrollmentModule", () => {
     );
 
     expect(host.ctx.config.get().savedEnrollments).toEqual({
-      "https://linger.example.com": {
+      "https://talos.example.com": {
         computerId: "computer_1",
         tenantId: "tenant_acme",
         ownerActorId: "actor_ann",
@@ -622,7 +622,7 @@ describe("EnrollmentModule", () => {
     const order: string[] = [];
     const { enrollment, host, bus } = setupModule(
       {},
-      "https://linger.example.com",
+      "https://talos.example.com",
       {},
       async () => {
         order.push("ensureDefault");
@@ -682,12 +682,12 @@ describe("EnrollmentModule", () => {
         bundle: {
           computer_id: "computer_1",
           tenant_id: "tenant_acme",
-          gateway_url: "wss://linger.example.com/v1/runner-gateway",
+          gateway_url: "wss://talos.example.com/v1/runner-gateway",
           gateway_token: TOKEN,
           credential_expires_at: "2026-11-16T08:00:00Z",
         },
       },
-      "https://linger.example.com",
+      "https://talos.example.com",
     );
     await host.start();
     await enrollment.enroll();

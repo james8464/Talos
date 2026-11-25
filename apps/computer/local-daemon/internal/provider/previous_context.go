@@ -10,8 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/runtimehistory"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/runtimehistory"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 const (

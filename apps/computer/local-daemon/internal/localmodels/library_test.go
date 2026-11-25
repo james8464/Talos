@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 const testModel = "qwen3-4b:Q4_K_M"

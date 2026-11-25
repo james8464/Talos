@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // defaultLocalRuntimeModels stands in for a Runtime diagnostic that reported

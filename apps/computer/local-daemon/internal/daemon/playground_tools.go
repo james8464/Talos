@@ -12,8 +12,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/clicredential"
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
 )
 
 // maxCardFiles is how many files one card carries.
@@ -25,14 +25,14 @@ type playgroundFailure struct{ code, detail string }
 func (f *playgroundFailure) Error() string { return f.code + ": " + f.detail }
 
 type playgroundRequest struct {
-	Folder lingercontext.PlaygroundFolder `json:"folder"`
+	Folder taloscontext.PlaygroundFolder `json:"folder"`
 	Path   string                         `json:"path"`
 	Offset int64                          `json:"offset"`
 	Limit  int64                          `json:"limit"`
 }
 
 type playgroundCardFile struct {
-	Folder lingercontext.PlaygroundFolder `json:"folder"`
+	Folder taloscontext.PlaygroundFolder `json:"folder"`
 	Path   string                         `json:"path"`
 }
 
@@ -94,15 +94,15 @@ func (d *Daemon) callPlayground(ctx context.Context, tenantID, agentID, name str
 		return result, nil
 	case errors.As(err, &failure):
 		return map[string]any{"status": failure.code, "detail": failure.detail}, nil
-	case errors.Is(err, lingercontext.ErrPlaygroundFolder), errors.Is(err, lingercontext.ErrSharedTaskPathConflict):
+	case errors.Is(err, taloscontext.ErrPlaygroundFolder), errors.Is(err, taloscontext.ErrSharedTaskPathConflict):
 		return map[string]any{"status": "not_allowed"}, nil
-	case errors.Is(err, lingercontext.ErrPlaygroundPath):
+	case errors.Is(err, taloscontext.ErrPlaygroundPath):
 		return map[string]any{"status": "invalid_file_path"}, nil
 	case errors.Is(err, fs.ErrNotExist):
 		return map[string]any{"status": "file_not_found"}, nil
-	case errors.Is(err, lingercontext.ErrPlaygroundNotFolder):
+	case errors.Is(err, taloscontext.ErrPlaygroundNotFolder):
 		return map[string]any{"status": "not_a_folder"}, nil
-	case errors.Is(err, lingercontext.ErrPlaygroundNotFile):
+	case errors.Is(err, taloscontext.ErrPlaygroundNotFile):
 		return map[string]any{"status": "not_a_file"}, nil
 	}
 	return nil, err
@@ -196,7 +196,7 @@ func (d *Daemon) runAgentCLI(ctx context.Context, installation clicredential.Ins
 	if !ok {
 		return nil, &playgroundFailure{"cli_unavailable", "This Computer has no TeamHub CLI; update the Computer."}
 	}
-	home, err := os.MkdirTemp("", "linger-live-card-")
+	home, err := os.MkdirTemp("", "talos-live-card-")
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func cardCLIProgram(directory, goos string) (program string, prefix, environment
 	script := filepath.Join(directory, "teamhub.js")
 	// The same relative app path teamhub.cmd names; apps/desktop/build.mjs
 	// writes both.
-	app := filepath.Join(directory, "..", "..", "..", "..", "Linger.exe")
+	app := filepath.Join(directory, "..", "..", "..", "..", "Talos.exe")
 	if !regularFile(script) || !regularFile(app) {
 		return "", nil, nil, false
 	}

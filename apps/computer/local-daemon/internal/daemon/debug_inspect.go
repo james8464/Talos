@@ -6,13 +6,13 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/assignment"
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/runtimehistory"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/runtimehistory"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 func debugInspectedEvent(command protocol.Command, payload json.RawMessage) protocol.Event {
@@ -40,7 +40,7 @@ func (d *Daemon) handleDebugInspect(ctx context.Context, stream transport.Stream
 			return decodeErr
 		}
 		reason := "inspection_unavailable"
-		if errors.Is(err, lingercontext.ErrContextConflict) {
+		if errors.Is(err, taloscontext.ErrContextConflict) {
 			reason = "context_view_conflict"
 		}
 		source := "codex_rollout"

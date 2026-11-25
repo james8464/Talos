@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 )
 
 // Routine tools: the live voice lists, sets up and changes this Room's

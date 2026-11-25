@@ -300,7 +300,7 @@ describe("Room Chat", () => {
     ).toBeVisible();
     expect(
       await within(email).findByRole("combobox", { name: "Send from" }),
-    ).toHaveTextContent("jenny@linger.test");
+    ).toHaveTextContent("jenny@talos.test");
     fireEvent.click(screen.getByRole("button", { name: "Open in side panel" }));
     await waitFor(() =>
       expect(openPanelTab).toHaveBeenCalledWith(

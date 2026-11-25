@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 func invokePiModel(ctx context.Context, request ModelInvokeRequest, installed ModelInvokeRuntime, work, scratch string) ModelInvokeResult {

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // runStop is what a Run terminal tells the Run's stopped event.

@@ -17,13 +17,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/permissionreview"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/retention"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicekey"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/permissionreview"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/retention"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicekey"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
 )
 
 // registeredKinds reads the job kinds registered in workers. River keeps its
@@ -250,7 +250,7 @@ func voiceOnConfig() config.Config {
 }
 
 // Voice that cannot run here leaves TeamHub up with voice off and one
-// warning: without LINGER_SECRET_SEED, or without ffmpeg. Any other build
+// warning: without TALOS_SECRET_SEED, or without ffmpeg. Any other build
 // failure still stops startup.
 func TestVoiceMediaThatCannotRunTurnsVoiceOff(t *testing.T) {
 	for _, tc := range []struct {

@@ -16,12 +16,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/clicredential"
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // testViewContent is a fake Agent Service content route. Manifests answer at
@@ -66,23 +66,23 @@ func newTestViewContent(t *testing.T) *testViewContent {
 func (c *testViewContent) url() string { return c.server.URL + "/content" }
 
 // mapping maps one read-only file whose content is body.
-func (c *testViewContent) mapping(name, body string) lingercontext.Mapping {
+func (c *testViewContent) mapping(name, body string) taloscontext.Mapping {
 	sum := sha256.Sum256([]byte(body))
 	digest := hex.EncodeToString(sum[:])
 	c.mu.Lock()
 	c.files[digest] = []byte(body)
 	c.mu.Unlock()
-	return lingercontext.Mapping{
+	return taloscontext.Mapping{
 		Kind: "memory", TargetPath: "memory", Access: "read_only",
-		Files: []lingercontext.FileInput{{RelativePath: name, MediaType: "text/plain", SizeBytes: int64(len(body)), SHA256: digest}},
+		Files: []taloscontext.FileInput{{RelativePath: name, MediaType: "text/plain", SizeBytes: int64(len(body)), SHA256: digest}},
 	}
 }
 
 // publish serves the View of the command's Context and returns its reference.
-func (c *testViewContent) publish(t *testing.T, command protocol.Command, mappings ...lingercontext.Mapping) json.RawMessage {
+func (c *testViewContent) publish(t *testing.T, command protocol.Command, mappings ...taloscontext.Mapping) json.RawMessage {
 	t.Helper()
 	if mappings == nil {
-		mappings = []lingercontext.Mapping{}
+		mappings = []taloscontext.Mapping{}
 	}
 	body, err := json.Marshal(map[string]any{
 		"version": 1, "execution_context_key": command.ExecutionContextKey,
@@ -96,13 +96,13 @@ func (c *testViewContent) publish(t *testing.T, command protocol.Command, mappin
 	c.mu.Lock()
 	c.manifests[digest] = body
 	c.mu.Unlock()
-	return mustJSON(lingercontext.ViewRef{ViewDigest: digest})
+	return mustJSON(taloscontext.ViewRef{ViewDigest: digest})
 }
 
-func openTestViews(t *testing.T) *lingercontext.ViewStore {
+func openTestViews(t *testing.T) *taloscontext.ViewStore {
 	t.Helper()
 	state := t.TempDir()
-	views, err := lingercontext.OpenViewStore(filepath.Join(state, "context.sqlite"), filepath.Join(state, "views"), nil)
+	views, err := taloscontext.OpenViewStore(filepath.Join(state, "context.sqlite"), filepath.Join(state, "views"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,20 +121,20 @@ func openTestViews(t *testing.T) *lingercontext.ViewStore {
 
 // readyTestContextView returns a store whose Context of the command is already
 // at the returned View, so the Daemon fetches nothing for it.
-func readyTestContextView(t *testing.T, command protocol.Command) (*lingercontext.ViewStore, json.RawMessage) {
+func readyTestContextView(t *testing.T, command protocol.Command) (*taloscontext.ViewStore, json.RawMessage) {
 	t.Helper()
 	views := openTestViews(t)
 	content := newTestViewContent(t)
 	ref := content.publish(t, command)
-	var view lingercontext.ViewRef
+	var view taloscontext.ViewRef
 	if err := json.Unmarshal(ref, &view); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := views.Ensure(context.Background(), lingercontext.ViewRequest{
+	if _, err := views.Ensure(context.Background(), taloscontext.ViewRequest{
 		TenantID: command.TenantID, RunnerID: command.RunnerID, AgentID: command.AgentID,
 		WorkspaceGrantID: command.WorkspaceGrantID, ExecutionContextKey: command.ExecutionContextKey,
 		RuntimeInstanceID: command.RuntimeInstanceID, ViewDigest: view.ViewDigest,
-	}, lingercontext.ContentSource{ContentURL: content.url()}); err != nil {
+	}, taloscontext.ContentSource{ContentURL: content.url()}); err != nil {
 		t.Fatal(err)
 	}
 	return views, ref
@@ -146,10 +146,10 @@ func TestContextViewFailureNamesWhetherARetryCanPass(t *testing.T) {
 		code      string
 		retryable bool
 	}{
-		{lingercontext.ErrInputDownloadUnavailable, "CONTEXT_VIEW_FAILED", true},
-		{lingercontext.ErrProjectionRecoveryRequired, "CONTEXT_RECOVERY_REQUIRED", false},
-		{lingercontext.ErrSkillPackageUnavailable, "SKILL_PACKAGE_UNAVAILABLE", false},
-		{lingercontext.ErrContextConflict, "CONTEXT_VIEW_FAILED", false},
+		{taloscontext.ErrInputDownloadUnavailable, "CONTEXT_VIEW_FAILED", true},
+		{taloscontext.ErrProjectionRecoveryRequired, "CONTEXT_RECOVERY_REQUIRED", false},
+		{taloscontext.ErrSkillPackageUnavailable, "SKILL_PACKAGE_UNAVAILABLE", false},
+		{taloscontext.ErrContextConflict, "CONTEXT_VIEW_FAILED", false},
 	} {
 		failure := contextViewFailure(scenario.err)
 		if failure["code"] != scenario.code || failure["retryable"] != scenario.retryable {
@@ -237,7 +237,7 @@ func TestOperationStartFetchesItsViewAndFailsAloneWithoutIt(t *testing.T) {
 	d.contentURL.Store(&contentURL)
 
 	missing := daemonOperationStart("operation-missing", "agent-1")
-	missing.ContextViewRef = mustJSON(lingercontext.ViewRef{ViewDigest: strings.Repeat("b", 64)})
+	missing.ContextViewRef = mustJSON(taloscontext.ViewRef{ViewDigest: strings.Repeat("b", 64)})
 	if err := d.handleOperationStart(t.Context(), stream, missing); err != nil {
 		t.Fatal("a missing View failed the connection:", err)
 	}
@@ -259,7 +259,7 @@ func TestOperationStartFetchesItsViewAndFailsAloneWithoutIt(t *testing.T) {
 	if !failed || !accepted {
 		t.Fatalf("failed=%v accepted=%v events=%s", failed, accepted, describeEvents(stream.snapshotEvents()))
 	}
-	var ref lingercontext.ViewRef
+	var ref taloscontext.ViewRef
 	if err := json.Unmarshal(start.ContextViewRef, &ref); err != nil {
 		t.Fatal(err)
 	}

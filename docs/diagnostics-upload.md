@@ -3,7 +3,7 @@
 When setup or the local services fail, the desktop app can send its
 diagnostics zip to a receiver instead of asking the person to mail the file.
 This page is the contract a receiver implements, so a team that runs its own
-Linger can collect reports too.
+Talos can collect reports too.
 
 ## In the app
 
@@ -22,7 +22,7 @@ The receiver is `diagnosticsUploadUrl` in the desktop `config.json` (in the
 app's user data folder). It must be `https`, or `http` to `localhost`,
 `127.0.0.1` or `[::1]` while developing a receiver; any other value is
 ignored. Without it, the app uses the hosted receiver that the release
-pipeline builds in (`LINGER_DIAGNOSTICS_UPLOAD_URL`, see
+pipeline builds in (`TALOS_DIAGNOSTICS_UPLOAD_URL`, see
 [desktop-release.md](desktop-release.md)); a build without one, such as a
 fork's, a local or a self-hosted build, hides Send Diagnostics.
 
@@ -30,7 +30,7 @@ fork's, a local or a self-hosted build, hides Send Diagnostics.
 { "diagnosticsUploadUrl": "https://diagnostics.example.com/v1/reports" }
 ```
 
-## Protocol `linger.diagnostics-upload/v1`
+## Protocol `talos.diagnostics-upload/v1`
 
 Two requests. The receiver never has to accept the zip itself: it can hand
 out a presigned object storage URL.
@@ -42,11 +42,11 @@ POST /v1/reports HTTP/1.1
 Content-Type: application/json
 
 {
-  "schema": "linger.diagnostics-upload/v1",
+  "schema": "talos.diagnostics-upload/v1",
   "size": 183204,
   "sha256": "<hex SHA-256 of the zip>",
   "client": {
-    "name": "linger-desktop",
+    "name": "talos-desktop",
     "version": "0.16.20",
     "platform": "darwin-arm64"
   }
@@ -57,7 +57,7 @@ The receiver answers `200` or `201`:
 
 ```json
 {
-  "schema": "linger.diagnostics-upload/v1",
+  "schema": "talos.diagnostics-upload/v1",
   "reportId": "LD-7K3Q9XPM",
   "upload": {
     "method": "PUT",

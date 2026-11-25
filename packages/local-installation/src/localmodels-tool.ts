@@ -3,7 +3,7 @@ import { createReadStream } from "node:fs";
 import { lstat, readdir, readFile, rm, chmod } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { sleep } from "@linger/service-kit";
+import { sleep } from "@talos/service-kit";
 import { x as extract } from "tar";
 import { downloadInRegion, resolveRegion } from "./region.js";
 import {
@@ -333,7 +333,7 @@ async function prepareLocalmodelsTool(
   const pinned = dependencies.source ?? pinnedToolSource();
   if (!pinned)
     throw new Error(
-      "Upstream tool distribution metadata is unavailable. Download the current Linger installer.",
+      "Upstream tool distribution metadata is unavailable. Download the current Talos installer.",
     );
   const source = validateToolSource(pinned);
   const directory = kitDirectory(home, source);
@@ -445,12 +445,12 @@ async function prepareLocalmodelsTool(
 type ToolLocation = Awaited<ReturnType<typeof prepareLocalmodelsTool>>;
 const preparing = new Map<string, Promise<ToolLocation>>();
 function configuredDevTool(): ToolLocation | undefined {
-  const python = process.env.LINGER_LOCALMODELS_DEV_PYTHON?.trim();
-  const moduleDir = process.env.LINGER_LOCALMODELS_DEV_MODULE_DIR?.trim();
+  const python = process.env.TALOS_LOCALMODELS_DEV_PYTHON?.trim();
+  const moduleDir = process.env.TALOS_LOCALMODELS_DEV_MODULE_DIR?.trim();
   if (!python || !moduleDir) return undefined;
   if (!path.isAbsolute(python) || !path.isAbsolute(moduleDir))
     throw new Error(
-      "LINGER_LOCALMODELS_DEV_PYTHON and LINGER_LOCALMODELS_DEV_MODULE_DIR must be absolute paths.",
+      "TALOS_LOCALMODELS_DEV_PYTHON and TALOS_LOCALMODELS_DEV_MODULE_DIR must be absolute paths.",
     );
   return { python, moduleDir, sourceCommit: "0".repeat(40) };
 }
@@ -572,7 +572,7 @@ export function localmodelsLegacyToolsMarkerFile(home: string): string {
 /**
  * localmodels' own default tools directory (its TOOLS_DIR,
  * ~/.local/share/localmodels/tools on every platform), which every home
- * shared before Linger gave each home its own.
+ * shared before Talos gave each home its own.
  */
 export function legacyLocalmodelsToolsDirectory(): string {
   return path.join(os.homedir(), ".local", "share", "localmodels", "tools");
@@ -1252,7 +1252,7 @@ async function installedPinnedTool(
   return installedKit(kitDirectory(home, source), source).catch(
     (cause: unknown) => {
       throw new Error(
-        "Cannot stop local models: the installed tool kit could not be verified. Start Linger to repair the kit, then try again.",
+        "Cannot stop local models: the installed tool kit could not be verified. Start Talos to repair the kit, then try again.",
         { cause },
       );
     },
@@ -1260,7 +1260,7 @@ async function installedPinnedTool(
 }
 /**
  * The kit this release pins, from the installer's published metadata
- * (LINGER_LOCALMODELS_TOOL_JSON), or undefined when it ships none. The one
+ * (TALOS_LOCALMODELS_TOOL_JSON), or undefined when it ships none. The one
  * reader of that variable.
  */
 export function pinnedToolSource(): LocalmodelsToolSource | undefined {
@@ -1273,7 +1273,7 @@ export function pinnedToolSource(): LocalmodelsToolSource | undefined {
       manifestSha256: "0".repeat(64),
     };
   }
-  const raw = process.env.LINGER_LOCALMODELS_TOOL_JSON;
+  const raw = process.env.TALOS_LOCALMODELS_TOOL_JSON;
   return raw ? validateToolSource(JSON.parse(raw)) : undefined;
 }
 function kitDirectory(home: string, source: LocalmodelsToolSource): string {

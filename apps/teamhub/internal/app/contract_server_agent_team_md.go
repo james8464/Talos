@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentsendmessage"
-	teamhubagentapi "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentsendmessage"
+	teamhubagentapi "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 func (a *App) createAgentTeamMd(c *gin.Context) {

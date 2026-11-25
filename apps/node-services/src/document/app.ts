@@ -6,12 +6,12 @@ import {
   ROOM_DOCUMENT_MAX_REFERENCES,
   type RoomDocumentSemanticBlock,
   type RoomDocumentSemanticOperation,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import {
   registerDocumentRuntimeRoutes,
   type DocumentRuntimeHandlers,
-} from "@linger/wire-contracts/node-services-internal/server";
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+} from "@talos/wire-contracts/node-services-internal/server";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 import { Hono } from "hono";
 
 import type { DocumentComputation } from "./computation-pool.js";
@@ -23,8 +23,8 @@ import {
 } from "./document-changes.js";
 import { exportDocument } from "./export.js";
 import { documentLogger } from "./log.js";
-import { isRecord } from "@linger/service-kit";
-import { sha256Hex } from "@linger/service-kit/node";
+import { isRecord } from "@talos/service-kit";
+import { sha256Hex } from "@talos/service-kit/node";
 import { RuntimeInputError, sha256Pattern } from "./runtime-input.js";
 
 type ImportRequest = components["schemas"]["ImportDocumentRequest"];

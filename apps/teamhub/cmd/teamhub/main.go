@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
 )
 
 func main() {

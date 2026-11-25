@@ -470,7 +470,7 @@ describe("DecisionCard", () => {
       connectorCard({
         account: "octo",
         app: "github",
-        input: '{\n  "owner": "linger",\n  "repo": "app"\n}',
+        input: '{\n  "owner": "talos",\n  "repo": "app"\n}',
         kind: "change",
         title: "Run GITHUB_STAR_A_REPOSITORY_FOR_THE_AUTHENTICATED_USER",
         tool: "GITHUB_STAR_A_REPOSITORY_FOR_THE_AUTHENTICATED_USER",

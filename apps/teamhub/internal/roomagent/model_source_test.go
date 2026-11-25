@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 func TestHTTPGatewayAppliesModelSourceAndMapsRefusals(t *testing.T) {

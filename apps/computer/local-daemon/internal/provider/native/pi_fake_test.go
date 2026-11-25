@@ -322,10 +322,10 @@ func piFakeCatalog() int {
 		fmt.Printf(`{"type":"response","id":"unrelated-%s","command":%q,"success":false,"error":"no"}`+"\n", request.ID, request.Type)
 		fmt.Println(`{"type":"noise"}`)
 		switch request.ID {
-		case "linger-state":
-			fmt.Println(`{"type":"response","id":"linger-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"reasoner"},"thinkingLevel":"high"}}`)
-		case "linger-models":
-			fmt.Println(`{"type":"response","id":"linger-models","command":"get_available_models","success":true,"data":{"models":[` +
+		case "talos-state":
+			fmt.Println(`{"type":"response","id":"talos-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"reasoner"},"thinkingLevel":"high"}}`)
+		case "talos-models":
+			fmt.Println(`{"type":"response","id":"talos-models","command":"get_available_models","success":true,"data":{"models":[` +
 				`{"provider":"fixture","id":"reasoner","reasoning":true,"thinkingLevelMap":{"minimal":null,"max":"maximum"}},` +
 				`{"provider":" fixture ","id":"fast","reasoning":false},` +
 				`{"provider":"fixture","id":"reasoner","reasoning":false},` +

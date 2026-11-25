@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
-import { orderByRegion, type Region } from "@linger/service-kit";
+import { orderByRegion, type Region } from "@talos/service-kit";
 
 import { mirrorHome, packageRoot } from "./paths.js";
 

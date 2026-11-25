@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 // Client judges through the shared Agent Service model call with strict JSON

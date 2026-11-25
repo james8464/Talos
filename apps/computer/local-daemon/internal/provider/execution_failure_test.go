@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // The diagnostics are what codexErrorDiagnostics decodes from codex-cli

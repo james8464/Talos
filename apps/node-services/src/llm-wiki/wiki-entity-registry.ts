@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { parseOkfFrontmatter } from "@linger/knowledge-format";
+import { parseOkfFrontmatter } from "@talos/knowledge-format";
 import {
   PERSONAL_WIKI_ENTITY_TYPES,
   type PersonalWikiNodeTypeId,

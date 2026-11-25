@@ -12,13 +12,13 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/winprocess"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/winprocess"
 	"golang.org/x/sys/windows"
 )
 
 const (
-	detachedJobHelperKey = "LINGER_TEST_DETACHED_JOB_HELPER"
-	detachedJobReadyKey  = "LINGER_TEST_DETACHED_JOB_READY"
+	detachedJobHelperKey = "TALOS_TEST_DETACHED_JOB_HELPER"
+	detachedJobReadyKey  = "TALOS_TEST_DETACHED_JOB_READY"
 )
 
 func TestDetachedDaemonSurvivesSessionJobClose(t *testing.T) {

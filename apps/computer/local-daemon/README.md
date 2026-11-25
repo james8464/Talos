@@ -1,9 +1,9 @@
 # Local Computer Daemon
 
 This Go module is the resident Local Computer Daemon.
-It carries the frozen Linger execution implementation needed for local process,
+It carries the frozen Talos execution implementation needed for local process,
 provider, workspace, and daemon lifecycle behavior while adapting all product
-control through Linger's Runner Gateway.
+control through Talos's Runner Gateway.
 
 ## Ownership
 
@@ -14,7 +14,7 @@ control through Linger's Runner Gateway.
 - `internal/protocol`: the Daemon's routed command/event model. The wire shapes
   come from the generated `contracts/generated/go/runnergateway` module
   (Runner Gateway protocol 2).
-- `internal/linger`: Linger Gateway, device identity, process-instance lease,
+- `internal/talos`: Talos Gateway, device identity, process-instance lease,
   Registration, Context, Local MCP Relay, and Local Skill catalog adapters.
 
 The Go daemon must not own TeamHub records, Agent scheduling, Context authority,
@@ -22,14 +22,14 @@ MCP policy, or Artifact publication. Those remain in TeamHub and Agent Service.
 
 ## Control CLI
 
-`linger-computer` (`cmd/linger-computer`, implemented in `internal/computercli`)
+`talos-computer` (`cmd/talos-computer`, implemented in `internal/computercli`)
 is the local control CLI: `login`, `auth status`, `daemon
 start|stop|restart|status|logs|runners|service`, `runtime check`, `doctor`, and
 `version`. It reads the config through `internal/computerconfig`, talks to the
-Daemon through `internal/linger/control`, and diagnoses Runtimes with the same
+Daemon through `internal/talos/control`, and diagnoses Runtimes with the same
 `internal/provider` discovery the Daemon uses. It starts the Daemon found at
-`../daemon/linger-computer-daemon` beside its own bundle directory, or at
-`LINGER_GO_LOCAL_DAEMON_PATH` during source development.
+`../daemon/talos-computer-daemon` beside its own bundle directory, or at
+`TALOS_GO_LOCAL_DAEMON_PATH` during source development.
 
 When `login` switches the Computer to another account, it deletes the previous
 enrollment's state except `state/workspaces`. On Windows, a program can keep a
@@ -42,8 +42,8 @@ stops and names the open file.
 
 ## Current entrypoint
 
-`linger-computer-daemon --config <path>` reads the owner-only config emitted by
-the `linger-computer login` flow. It discovers and version-gates the
+`talos-computer-daemon --config <path>` reads the owner-only config emitted by
+the `talos-computer login` flow. It discovers and version-gates the
 configured Codex, Claude, Pi, and Antigravity installations.
 Each Runtime kind has one minimum version (`native.MinimumVersions`, Codex
 0.166.0); an older installation is reported as `RUNTIME_INCOMPATIBLE` and never
@@ -83,7 +83,7 @@ before Claude starts.
 
 It opens owner-only local
 identity/Registration/Assignment/Context/Operation stores, and connects only to
-the configured Linger Runner Gateway. Runtime executable paths, process
+the configured Talos Runner Gateway. Runtime executable paths, process
 environment, and physical workspace paths are resolved locally and never come
 from an Operation wire request.
 
@@ -409,7 +409,7 @@ Runtime's catalog.
 Before a Run or model call on a Runtime whose profile is the BYOK source's,
 the Daemon checks the saved loopback gateway's `/health` (`EnsureGateway` in
 `source_gateway.go`), off the admission lock. A gateway that does not answer,
-because the endpoint was down when Linger started or a quit stopped it, is
+because the endpoint was down when Talos started or a quit stopped it, is
 mounted again with `source apply --mode byok` from the configuration
 `localmodels` saved, serialized with `apply`; the kit probes the endpoint
 first. A failed mount fails the Run before its Runtime starts, with the
@@ -494,7 +494,7 @@ heredoc (`internal/permission/shell_text.go`). Named variables such as `"$id"`,
 
 - Claude checks it in its tool policy, on both the PreToolUse hook and
   `can_use_tool`.
-- Codex runs `linger-computer-daemon shell-text-hook` as a
+- Codex runs `talos-computer-daemon shell-text-hook` as a
   PreToolUse hook for every shell command. Codex on Windows runs PowerShell,
   so it gets no hook.
 - Pi loads the managed extension (`extensions/pi-mcp.mjs`) for every Run. It
@@ -529,7 +529,7 @@ for a browser sign-in when signed out.
   session id as the checkpoint, like a Codex thread. Later Runs reopen it with
   `session/load` and drop the history it replays. An id Antigravity has not
   stored is not a usable session: `session/load` accepts it, but the prompt
-  then fails, so Linger never assigns one. A stored session replays at least
+  then fails, so Talos never assigns one. A stored session replays at least
   the prompt that made it, so a load that replays no prompt, or that
   Antigravity refuses, finds no session and returns `session_not_found` so Agent
   Service can clear the persisted session and restart the Run cleanly in a fresh
@@ -582,7 +582,7 @@ for a browser sign-in when signed out.
 
 The daemon implementation is intentionally maintained as a frozen in-repository
 snapshot. It does not implement automatic upstream updates; changes are reviewed
-and versioned as part of the Linger Computer daemon.
+and versioned as part of the Talos Computer daemon.
 
 ## Windows host boundary
 
@@ -602,7 +602,7 @@ additional exception applies on ancestor access rules: the Codex Windows
 sandbox may hold replace rights on a parent, such as AppData. The sandbox acts
 through the `CodexSandboxUsers` group and the capability SIDs in
 `%USERPROFILE%\.codex\cap_sid` (or `%CODEX_HOME%\cap_sid`). A sandboxed Codex
-command can therefore replace such a parent; Linger accepts this so it installs
+command can therefore replace such a parent; Talos accepts this so it installs
 beside Codex. Private paths themselves still grant access only to the current
 user and SYSTEM. Their owner is the current user or, when that user is an
 administrator, Administrators, which owns what an elevated process (Run as
@@ -613,7 +613,7 @@ process ID is never mistaken for the original. Ordinary tasks are held by a Job
 Object; managed services are held by a separate supervisor process. An upgrade
 must keep the old program directory that still hosts a supervisor.
 
-`linger-computer-daemon.exe platform` reads one JSON request from standard input.
+`talos-computer-daemon.exe platform` reads one JSON request from standard input.
 `action` selects a file-permission, process-recovery, service-cleanup or Runtime
 diagnosis operation. Standard output returns only JSON; errors go to standard
 error with a non-zero exit code. This entry does not start the Daemon, and
@@ -668,7 +668,7 @@ returned receipts and current state before taking another action.
 After actions such as click and type, Playwright
 writes the page snapshot to a file and returns only a link; the Daemon reads the
 file, puts the snapshot back into the result and deletes the file, so the model
-need not call `browser_snapshot` again. Only links under `.linger/browser-output/`
+need not call `browser_snapshot` again. Only links under `.talos/browser-output/`
 are replaced.
 
 A Codex Context home receives the public entry as a URL server in its projected
@@ -1059,7 +1059,7 @@ tell Agents to post a connection card.
 
 On Linux the managed browser is the first Google Chrome or Chromium found in the
 usual install folders, Snap included, and then on `PATH`. A Snap browser keeps
-its Agent profiles under `~/snap/<name>/common/linger-browser-profiles/`,
+its Agent profiles under `~/snap/<name>/common/talos-browser-profiles/`,
 because confinement denies the hidden state folder. Without `DISPLAY` or
 `WAYLAND_DISPLAY` the browser tools fail with that reason before starting Chrome.
 Before a launch, the Daemon stops a Chrome that an earlier Daemon left on the
@@ -1116,11 +1116,11 @@ config file and `mcp__*` in `--tools`. On Room-presence `provider.prepare`, Pi
 starts with a 40-second timeout, verifies `get_state` and applies any clamped
 thinking level, then parks without submitting a prompt. When a Run adopts a
 parked Pi process whose MCP server set changed, the Daemon writes the new
-front-rewritten `linger-mcp.json`, verifies `get_commands` exposes
-`linger-sync-mcp`, runs `/linger-sync-mcp` and reads the structured verdict from
-its `linger.mcp_sync` RPC dialog before submitting the prompt; an attachment
+front-rewritten `talos-mcp.json`, verifies `get_commands` exposes
+`talos-sync-mcp`, runs `/talos-sync-mcp` and reads the structured verdict from
+its `talos.mcp_sync` RPC dialog before submitting the prompt; an attachment
 failure recycles the process and falls back to a cold spawn. Its `tool_call`
-hook opens an RPC `input` dialog titled `linger.permission_review` for each
+hook opens an RPC `input` dialog titled `talos.permission_review` for each
 `bash` and `mcp__*` call, with the call as JSON. The Daemon answers it with a
 JSON verdict from the Run's permission review, with `bash` reviewed as a shell
 command. A Run without review gets an allow verdict, because a resident Pi
@@ -1128,32 +1128,32 @@ process may serve both kinds of Run. A missing or unreadable verdict blocks the
 call. The Daemon cancels any other extension dialog.
 
 The compatibility probe of the pinned Playwright catalog is
-`TestPinnedPlaywrightCatalog`; it needs `LINGER_PLAYWRIGHT_COMPAT_ENTRY` and
-`LINGER_PLAYWRIGHT_COMPAT_NODE`. The macOS read-only probe is
-`TestPinnedCuaReadOnlyPermissions`; point `LINGER_CUA_COMPAT_EXECUTABLE` at a
+`TestPinnedPlaywrightCatalog`; it needs `TALOS_PLAYWRIGHT_COMPAT_ENTRY` and
+`TALOS_PLAYWRIGHT_COMPAT_NODE`. The macOS read-only probe is
+`TestPinnedCuaReadOnlyPermissions`; point `TALOS_CUA_COMPAT_EXECUTABLE` at a
 verified asset.
 
 Real desktop probes run on demand and are skipped by default:
 
 | Test                         | Switch                                                | Covers                                                                                                                   |
 | ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `TestMacDesktopLive`         | `LINGER_MAC_DESKTOP_PROBE=1`                          | Non-Latin background input in TextEdit, whole-screen screenshot, separate browser                                        |
-| `TestWindowsDesktopLive`     | `LINGER_WINDOWS_EXPECT=ready\|locked\|noninteractive` | Three lines of non-Latin text in Notepad, keys, whole-screen tools, lock screen, session 0, separate browser             |
-| `TestUserChromeLive`         | `LINGER_USER_CHROME_PROBE=1`                          | Wrong token, connect, reconnect after restart, private storage, disconnect                                               |
-| `TestNativeLinuxDesktopLive` | `LINGER_NATIVE_LINUX_LIVE=1`                          | Mousepad Unicode save, AT-SPI windows, screenshot, out-of-bounds, unknown-key and oversized-text refusal, cancelled drag |
-| `TestNativeLinuxOpenURLLive` | `LINGER_NATIVE_LINUX_BROWSER_LIVE=1`                  | `open_url` in the default browser, a second URL in the running browser, a page that answers late                         |
-| `TestNativeLinuxGNOMELive`   | `LINGER_NATIVE_LINUX_GNOME_LIVE=1`                    | GTK4 Text Editor read as text, `WINDOW_CHANGED` after the user activates another window, GTK4 Calculator clicks          |
+| `TestMacDesktopLive`         | `TALOS_MAC_DESKTOP_PROBE=1`                          | Non-Latin background input in TextEdit, whole-screen screenshot, separate browser                                        |
+| `TestWindowsDesktopLive`     | `TALOS_WINDOWS_EXPECT=ready\|locked\|noninteractive` | Three lines of non-Latin text in Notepad, keys, whole-screen tools, lock screen, session 0, separate browser             |
+| `TestUserChromeLive`         | `TALOS_USER_CHROME_PROBE=1`                          | Wrong token, connect, reconnect after restart, private storage, disconnect                                               |
+| `TestNativeLinuxDesktopLive` | `TALOS_NATIVE_LINUX_LIVE=1`                          | Mousepad Unicode save, AT-SPI windows, screenshot, out-of-bounds, unknown-key and oversized-text refusal, cancelled drag |
+| `TestNativeLinuxOpenURLLive` | `TALOS_NATIVE_LINUX_BROWSER_LIVE=1`                  | `open_url` in the default browser, a second URL in the running browser, a page that answers late                         |
+| `TestNativeLinuxGNOMELive`   | `TALOS_NATIVE_LINUX_GNOME_LIVE=1`                    | GTK4 Text Editor read as text, `WINDOW_CHANGED` after the user activates another window, GTK4 Calculator clicks          |
 
-The first three read `LINGER_COMPUTER_TOOLS` (the unpacked tool directory) and
-`LINGER_NODE`; the Linux tests need only an isolated X11 session,
+The first three read `TALOS_COMPUTER_TOOLS` (the unpacked tool directory) and
+`TALOS_NODE`; the Linux tests need only an isolated X11 session,
 `TestNativeLinuxGNOMELive` a GNOME one, and
 `TestNativeLinuxOpenURLLive` also a default browser.
-`LINGER_PROBE_EVIDENCE` sets the evidence JSON path. `TestUserChromeLive` reads
-the whole line the extension copied from `LINGER_USER_CHROME_TOKEN_FILE` or the
+`TALOS_PROBE_EVIDENCE` sets the evidence JSON path. `TestUserChromeLive` reads
+the whole line the extension copied from `TALOS_USER_CHROME_TOKEN_FILE` or the
 clipboard. Windows probes must run on the interactive desktop, for example started
 with `schtasks /IT`.
 
-During development, `LINGER_COMPUTER_CUA_PATH` makes the Daemon use an already
+During development, `TALOS_COMPUTER_CUA_PATH` makes the Daemon use an already
 authorized Cua executable.
 
 Before delivery, still run `make check BASE=<target-branch>` from the repository

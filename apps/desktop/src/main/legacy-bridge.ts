@@ -16,18 +16,18 @@ export const defaultBridgeStateDirectory = (
   env: NodeJS.ProcessEnv = process.env,
   home: string = os.homedir(),
 ): string => {
-  if (env.LINGER_BRIDGE_STATE_DIR)
-    return path.resolve(env.LINGER_BRIDGE_STATE_DIR);
+  if (env.TALOS_BRIDGE_STATE_DIR)
+    return path.resolve(env.TALOS_BRIDGE_STATE_DIR);
   // The bridge kept its state under the app's name before the rename. On
   // macOS that folder is the app's data folder, which index.ts moves to its
-  // Linger name before this runs; elsewhere the bridge's own folder keeps the
+  // Talos name before this runs; elsewhere the bridge's own folder keeps the
   // old name, which names only the migration source here.
   if (platform === "darwin") {
     return path.join(
       home,
       "Library",
       "Application Support",
-      "Linger",
+      "Talos",
       "bridge",
     );
   }
@@ -55,7 +55,7 @@ export const bridgeSocketPath = (
         path.win32.resolve(stateDirectory).replaceAll("\\", "/").toLowerCase(),
       )
       .digest("hex");
-    return `\\\\.\\pipe\\linger-bridge-${key}`;
+    return `\\\\.\\pipe\\talos-bridge-${key}`;
   }
   const resolved = path.resolve(stateDirectory);
   const colocated = path.join(resolved, SOCKET_FILE_NAME);

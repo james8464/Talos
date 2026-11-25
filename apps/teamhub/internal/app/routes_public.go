@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // publicRoutes mounts every teamhub-public operation.

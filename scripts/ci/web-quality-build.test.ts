@@ -27,8 +27,8 @@ it("builds production Web assets without invoking Computer packaging", () => {
       },
     });
     expect(readFileSync(log, "utf8").trim().split("\n")).toEqual([
-      "--filter @linger/web test:build",
-      "--filter @linger/web run build:assets",
+      "--filter @talos/web test:build",
+      "--filter @talos/web run build:assets",
     ]);
   } finally {
     rmSync(root, { recursive: true, force: true });

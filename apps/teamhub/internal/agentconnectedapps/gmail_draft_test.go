@@ -20,8 +20,8 @@ func TestBuildGmailDraftRawEmbedsImagesInline(t *testing.T) {
 	png := []byte("\x89PNG\r\n\x1a\nimage-bytes")
 	raw, err := BuildGmailDraftRaw(GmailDraftMessage{
 		To: []string{"lisa@acme.example"}, Cc: []string{"Sam <sam@acme.example>"},
-		Subject: "Café chez nous la semaine prochaine", HTML: `<p>Hi</p><img src="cid:card.1@linger">`,
-		Images: []InlineImage{{ContentID: "card.1@linger", Filename: "card.png", MediaType: "image/png", Bytes: png}},
+		Subject: "Café chez nous la semaine prochaine", HTML: `<p>Hi</p><img src="cid:card.1@talos">`,
+		Images: []InlineImage{{ContentID: "card.1@talos", Filename: "card.png", MediaType: "image/png", Bytes: png}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestBuildGmailDraftRawEmbedsImagesInline(t *testing.T) {
 	}
 	htmlBody, _ := io.ReadAll(base64.NewDecoder(base64.StdEncoding, stripLines(html)))
 	if !strings.HasPrefix(html.Header.Get("Content-Type"), "text/html") ||
-		!strings.Contains(string(htmlBody), `src="cid:card.1@linger"`) {
+		!strings.Contains(string(htmlBody), `src="cid:card.1@talos"`) {
 		t.Fatalf("html part %q: %s", html.Header.Get("Content-Type"), htmlBody)
 	}
 	image, err := reader.NextPart()
@@ -59,7 +59,7 @@ func TestBuildGmailDraftRawEmbedsImagesInline(t *testing.T) {
 		t.Fatal(err)
 	}
 	imageBody, _ := io.ReadAll(base64.NewDecoder(base64.StdEncoding, stripLines(image)))
-	if image.Header.Get("Content-ID") != "<card.1@linger>" ||
+	if image.Header.Get("Content-ID") != "<card.1@talos>" ||
 		!strings.HasPrefix(image.Header.Get("Content-Disposition"), "inline") ||
 		!bytes.Equal(imageBody, png) {
 		t.Fatalf("image part headers=%v body=%q", image.Header, imageBody)
@@ -119,7 +119,7 @@ func TestCompactInlineImageShrinksLargeImagesOnly(t *testing.T) {
 	if err := png.Encode(&encoded, source); err != nil {
 		t.Fatal(err)
 	}
-	large := InlineImage{ContentID: "card.1@linger", Filename: "card.png", MediaType: "image/png", Bytes: encoded.Bytes()}
+	large := InlineImage{ContentID: "card.1@talos", Filename: "card.png", MediaType: "image/png", Bytes: encoded.Bytes()}
 	compact := CompactInlineImage(large)
 	if compact.MediaType != "image/jpeg" || compact.Filename != "card.jpg" || len(compact.Bytes) >= len(large.Bytes) {
 		t.Fatalf("compact=%s %s %d bytes from %d", compact.MediaType, compact.Filename, len(compact.Bytes), len(large.Bytes))
@@ -141,8 +141,8 @@ func TestBuildGmailDraftRawAttachesFilesBesideTheBody(t *testing.T) {
 	png := []byte("\x89PNG\r\n\x1a\nimage-bytes")
 	pdf := []byte("%PDF-1.7 plan")
 	raw, err := BuildGmailDraftRaw(GmailDraftMessage{
-		To: []string{"lisa@acme.example"}, Subject: "Plan", HTML: `<p>Hi</p><img src="cid:card.1@linger">`,
-		Images:      []InlineImage{{ContentID: "card.1@linger", Filename: "card.png", MediaType: "image/png", Bytes: png}},
+		To: []string{"lisa@acme.example"}, Subject: "Plan", HTML: `<p>Hi</p><img src="cid:card.1@talos">`,
+		Images:      []InlineImage{{ContentID: "card.1@talos", Filename: "card.png", MediaType: "image/png", Bytes: png}},
 		Attachments: []MailAttachment{{Filename: "プラン v2.pdf", MediaType: "application/pdf", Bytes: pdf}},
 	})
 	if err != nil {

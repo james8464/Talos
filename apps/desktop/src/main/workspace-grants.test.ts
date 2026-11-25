@@ -17,7 +17,7 @@ const pickNothing = async () => undefined;
 
 describe("WorkspaceGrantsModule", () => {
   it("grants the default folder on start for a connected computer", async () => {
-    const directory = path.join(tempDirectory(), "Linger");
+    const directory = path.join(tempDirectory(), "Talos");
     const grants = new WorkspaceGrantsModule({
       pickDirectory: pickNothing,
       defaultDirectory: directory,
@@ -29,13 +29,13 @@ describe("WorkspaceGrantsModule", () => {
 
     expect(existsSync(directory)).toBe(true);
     expect(grants.list()).toMatchObject([
-      { path: realpathSync(directory), label: "Linger", access: "read_write" },
+      { path: realpathSync(directory), label: "Talos", access: "read_write" },
     ]);
     await host.stop("quit");
   });
 
   it("grants the default folder once the computer connects", async () => {
-    const directory = path.join(tempDirectory(), "Linger");
+    const directory = path.join(tempDirectory(), "Talos");
     const grants = new WorkspaceGrantsModule({
       pickDirectory: pickNothing,
       defaultDirectory: directory,
@@ -54,7 +54,7 @@ describe("WorkspaceGrantsModule", () => {
     );
     bus.emit("computer.changed", "computer_1");
     await changed;
-    expect(grants.list().map((g) => g.label)).toEqual(["Linger"]);
+    expect(grants.list().map((g) => g.label)).toEqual(["Talos"]);
     await host.stop("quit");
   });
 
@@ -62,7 +62,7 @@ describe("WorkspaceGrantsModule", () => {
     const existing = tempDirectory();
     const grants = new WorkspaceGrantsModule({
       pickDirectory: pickNothing,
-      defaultDirectory: path.join(tempDirectory(), "Linger"),
+      defaultDirectory: path.join(tempDirectory(), "Talos"),
     });
     const host = testHost([stubModule("Config"), grants], {
       computerId: "computer_1",
@@ -83,7 +83,7 @@ describe("WorkspaceGrantsModule", () => {
   });
 
   it("serializes concurrent ensureDefault calls without creating duplicates", async () => {
-    const directory = path.join(tempDirectory(), "Linger");
+    const directory = path.join(tempDirectory(), "Talos");
     const grants = new WorkspaceGrantsModule({
       pickDirectory: pickNothing,
       defaultDirectory: directory,

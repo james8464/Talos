@@ -57,7 +57,7 @@ export function createStaticHost({ root } = {}) {
     if (pathname === "/healthz") {
       const body = JSON.stringify({
         ok: true,
-        service: "linger-web",
+        service: "talos-web",
       });
 
       response.statusCode = 200;

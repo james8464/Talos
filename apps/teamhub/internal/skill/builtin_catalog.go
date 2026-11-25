@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	builtinskills "github.com/simplexai-labs/linger/skills"
+	builtinskills "github.com/simplexai-labs/talos/skills"
 	"gopkg.in/yaml.v3"
 )
 

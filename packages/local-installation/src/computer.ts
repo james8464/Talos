@@ -88,9 +88,9 @@ async function environment(instance: Instance): Promise<NodeJS.ProcessEnv> {
   // Preserve ordinary discovery while explicit bindings belong only to the selected Harness.
   const inherited = { ...process.env };
   const explicit = new Set([
-    "LINGER_CODEX_PATH",
-    "LINGER_CLAUDE_PATH",
-    "LINGER_PI_PATH",
+    "TALOS_CODEX_PATH",
+    "TALOS_CLAUDE_PATH",
+    "TALOS_PI_PATH",
     "CODEX_HOME",
     "CLAUDE_CONFIG_DIR",
     "PI_CODING_AGENT_DIR",
@@ -105,7 +105,7 @@ async function environment(instance: Instance): Promise<NodeJS.ProcessEnv> {
     ...(await localModelsEnvironment(instance)),
     ...(byok?.mode === "byok" ? byok.environment : {}),
     PATH: await runtimePath(instance),
-    LINGER_COMPUTER_INSECURE_DEVELOPMENT_ORIGIN: instance.origin,
+    TALOS_COMPUTER_INSECURE_DEVELOPMENT_ORIGIN: instance.origin,
   };
 }
 async function invoke(
@@ -143,7 +143,7 @@ async function inspectInstanceComputer(
     return {
       ...empty(
         "action_required",
-        `Reopen Linger to complete browser account and Computer authorization. Product address: ${instance.origin}`,
+        `Reopen Talos to complete browser account and Computer authorization. Product address: ${instance.origin}`,
       ),
       activeOperations: 0,
     };
@@ -159,13 +159,13 @@ async function inspectInstanceComputer(
     if (result.code !== 0)
       return empty(
         "action_required",
-        "This computer's configuration is unavailable. Run linger-computer doctor to check authorization; the device identity is not reset automatically.",
+        "This computer's configuration is unavailable. Run talos-computer doctor to check authorization; the device identity is not reset automatically.",
       );
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw error;
     return empty(
       "action_required",
-      "Computer status could not be inspected. Run linger-computer doctor; existing services and device identity are preserved.",
+      "Computer status could not be inspected. Run talos-computer doctor; existing services and device identity are preserved.",
     );
   }
   const daemon = record(status.daemon);
@@ -196,14 +196,14 @@ async function inspectInstanceComputer(
       ...result,
       state: "action_required",
       detail:
-        "This computer's authorization expired or its version needs an update. Run linger-computer doctor; the existing device identity is preserved.",
+        "This computer's authorization expired or its version needs an update. Run talos-computer doctor; the existing device identity is preserved.",
     };
   if (!result.connected)
     return {
       ...result,
       state: "offline",
       detail:
-        "This computer is not connected to the Gateway. Reopen Linger, then retry.",
+        "This computer is not connected to the Gateway. Reopen Talos, then retry.",
     };
   const ready = runtimes.some((runtime) => record(runtime).status === "ready");
   if (!ready)
@@ -211,7 +211,7 @@ async function inspectInstanceComputer(
       ...result,
       state: "action_required",
       detail:
-        "No signed-in runtime is available. Install or sign in to Codex, Claude or Pi, then reopen Linger.",
+        "No signed-in runtime is available. Install or sign in to Codex, Claude or Pi, then reopen Talos.",
     };
   return {
     ...result,
@@ -275,9 +275,9 @@ async function bindManagedRuntime(
 ) {
   const runtime = Boolean(
     managed.CODEX_HOME ||
-    managed.LINGER_CODEX_PATH ||
-    managed.LINGER_CLAUDE_PATH ||
-    managed.LINGER_PI_PATH,
+    managed.TALOS_CODEX_PATH ||
+    managed.TALOS_CLAUDE_PATH ||
+    managed.TALOS_PI_PATH,
   );
   if (!runtime && !localModels) return;
   const contents = await readPrivate(instance.computerConfig);
@@ -302,7 +302,7 @@ async function bindManagedRuntime(
     }
     config.runtime_paths = Object.fromEntries(
       (["codex", "claude", "pi"] as const).flatMap((name) => {
-        const executable = managed[`LINGER_${name.toUpperCase()}_PATH`];
+        const executable = managed[`TALOS_${name.toUpperCase()}_PATH`];
         return executable ? [[name, executable]] : [];
       }),
     );
@@ -330,7 +330,7 @@ async function connectInstanceComputer(
     if (!options.interactive && !options.authorize)
       return empty(
         "action_required",
-        `Browser authorization is required. Reopen Linger and sign in with its local account. Product address: ${instance.origin}`,
+        `Browser authorization is required. Reopen Talos and sign in with its local account. Product address: ${instance.origin}`,
       );
     const tokenFile = await options.authorize?.();
     const login = await invoke(
@@ -343,7 +343,7 @@ async function connectInstanceComputer(
         ...(desired.authFile ? ["--codex-auth", desired.authFile] : []),
         ...(["codex", "claude", "pi"] as const).flatMap((runtime) => {
           const executable =
-            desired.managed[`LINGER_${runtime.toUpperCase()}_PATH`];
+            desired.managed[`TALOS_${runtime.toUpperCase()}_PATH`];
           return executable ? [`--${runtime}-path`, executable] : [];
         }),
         ...localModelsLoginArguments(desired.localModels),
@@ -355,17 +355,17 @@ async function connectInstanceComputer(
     if (login.code !== 0 && tokenFile)
       return empty(
         "action_required",
-        "Automatic connection has not finished. Connection credentials are preserved; reopen Linger to retry. No second device identity is created.",
+        "Automatic connection has not finished. Connection credentials are preserved; reopen Talos to retry. No second device identity is created.",
       );
     if (login.code !== 0)
       return empty(
         "action_required",
-        `Browser authorization is incomplete. Visit ${instance.origin}, then reopen Linger to retry.`,
+        `Browser authorization is incomplete. Visit ${instance.origin}, then reopen Talos to retry.`,
       );
     if (!(await configured(instance)))
       return empty(
         "action_required",
-        "Browser authorization did not create Computer configuration. Reopen Linger to retry.",
+        "Browser authorization did not create Computer configuration. Reopen Talos to retry.",
       );
     startedByLogin = true;
     await stamp();
@@ -446,7 +446,7 @@ async function connectInstanceComputer(
         ...current,
         state: "action_required",
         detail:
-          "Could not start the Computer process. Run linger-computer doctor to check configuration and authorization; device identity will not be reset automatically.",
+          "Could not start the Computer process. Run talos-computer doctor to check configuration and authorization; device identity will not be reset automatically.",
       }
     : current;
 }
@@ -485,6 +485,6 @@ export async function stopIdleComputer(
   );
   if (stopped.code !== 0)
     throw new Error(
-      "Could not stop instance Computer; run linger-computer doctor",
+      "Could not stop instance Computer; run talos-computer doctor",
     );
 }

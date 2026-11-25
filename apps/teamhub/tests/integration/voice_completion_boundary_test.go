@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
 )
 
 func TestLiveKitCompletionKeepsSpeechAcrossStopBoundary(t *testing.T) {

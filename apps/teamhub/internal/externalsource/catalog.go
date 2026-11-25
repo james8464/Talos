@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/proactive"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/proactive"
 )
 
 const (

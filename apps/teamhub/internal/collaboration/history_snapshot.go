@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // ErrHistoryTooLarge reports a conversation over the sharing limit of 10,000 messages or 100 MB.

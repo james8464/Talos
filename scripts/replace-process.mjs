@@ -52,7 +52,7 @@ export function formatWindowsSpawnError(command, error) {
     errno === -4094 ||
     code === "EACCES" ||
     code === "EPERM"
-      ? " Windows Defender, antivirus, or SmartScreen may have blocked or quarantined this executable; allow it or reinstall Linger."
+      ? " Windows Defender, antivirus, or SmartScreen may have blocked or quarantined this executable; allow it or reinstall Talos."
       : "";
   return `Failed to launch ${executable}${details ? ` (${details})` : ""}: ${message}.${blockedHint}`;
 }

@@ -3,7 +3,7 @@ import {
   createTeamHubAgentResourcesResolver,
   parseAgentEffectiveResources,
 } from "../../../src/agent/executor/teamhub-context-resolvers.js";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 const response = () => ({
   effective_sha256: "a".repeat(64),

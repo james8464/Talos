@@ -22,11 +22,11 @@ take precedence.
 
 ## Common Commands
 
-- `pnpm --filter @linger/node-services exec vitest run <test-file>`: run
+- `pnpm --filter @talos/node-services exec vitest run <test-file>`: run
   one test.
-- `pnpm --filter @linger/node-services exec vitest run --project agent`:
+- `pnpm --filter @talos/node-services exec vitest run --project agent`:
   run the Agent suite; `--project agent-process` runs the real process suite.
-- `pnpm --filter @linger/node-services typecheck`: typecheck Node Services,
+- `pnpm --filter @talos/node-services typecheck`: typecheck Node Services,
   including the Agent feature catalog check.
 - `make check-node-services`: run the boundary gate.
 

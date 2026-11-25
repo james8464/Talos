@@ -8,10 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 const browserConnectionPrompt = "Please connect your everyday Chrome so I can continue the browser task. The extension token goes only to your Computer."

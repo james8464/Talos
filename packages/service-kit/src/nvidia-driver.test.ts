@@ -17,7 +17,7 @@ describe("nvidia-driver helpers", () => {
       "https://www.nvidia.com/Download/index.aspx",
     );
     expect(NVIDIA_DRIVER_GUIDE_URL).toBe(
-      "https://docs.heylinger.com/install/nvidia-driver",
+      "https://docs.talos.local/install/nvidia-driver",
     );
     expect(NVIDIA_SMI_VERIFY_COMMAND).toBe("nvidia-smi");
   });

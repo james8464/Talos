@@ -290,9 +290,9 @@ describe("atomic message resource execution", () => {
     expect(await readdir(cwd)).toEqual(["report.pdf"]);
   });
   it("rejects every bad resource before any network side effect", async () => {
-    const fixtureRoot = process.env.LINGER_TEST_WINDOWS_FILE_LINKS;
+    const fixtureRoot = process.env.TALOS_TEST_WINDOWS_FILE_LINKS;
     if (process.platform === "win32" && !fixtureRoot)
-      throw new Error("LINGER_TEST_WINDOWS_FILE_LINKS is required");
+      throw new Error("TALOS_TEST_WINDOWS_FILE_LINKS is required");
     const cwd =
       process.platform === "win32"
         ? path.join(fixtureRoot!, "message")

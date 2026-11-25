@@ -1,5 +1,5 @@
-import { createTeamHubAgentRuntimeStateClient } from "@linger/wire-contracts/teamhub-internal/client";
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
+import { createTeamHubAgentRuntimeStateClient } from "@talos/wire-contracts/teamhub-internal/client";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
 import type { TeamHubCliConfigurationSource } from "../../executor/local-backend.js";
 
 export type MemoryDocument = components["schemas"]["AgentMemoryDocument"];

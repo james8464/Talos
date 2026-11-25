@@ -4,7 +4,7 @@ import { File as NodeFile } from "node:buffer";
 import {
   inspectRoomDocumentState,
   materializeRoomDocument,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 

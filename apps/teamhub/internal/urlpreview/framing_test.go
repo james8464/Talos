@@ -23,7 +23,7 @@ func TestRefusesFraming(t *testing.T) {
 		}, "", false},
 		{"frame-ancestors self", csp("frame-ancestors 'self'"), "", true},
 		{"frame-ancestors none", csp("frame-ancestors 'none'"), "", true},
-		{"named hosts never name Linger", csp("frame-ancestors https://a.example"), "https", true},
+		{"named hosts never name Talos", csp("frame-ancestors https://a.example"), "https", true},
 		{"https source for an https page", csp("FRAME-ANCESTORS HTTPS:"), "https", false},
 		{"https source for an http page", csp("frame-ancestors https:"), "http", true},
 		{"http source also matches https pages", csp("frame-ancestors http:"), "https", false},

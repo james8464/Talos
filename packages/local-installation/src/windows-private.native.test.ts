@@ -22,7 +22,7 @@ afterEach(async () => {
     await rm(root, { recursive: true, force: true });
 });
 async function fixture() {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-private-acl-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-private-acl-"));
   roots.push(root);
   await windowsPrivatePath(root, "directory", true);
   return root;
@@ -163,7 +163,7 @@ it.skipIf(process.platform !== "win32")(
   },
 );
 it.skipIf(process.platform !== "win32")(
-  "accepts private paths that Administrators own, as an elevated Linger creates them",
+  "accepts private paths that Administrators own, as an elevated Talos creates them",
   async (context) => {
     const root = await fixture();
     const file = path.join(root, "manager.sqlite");

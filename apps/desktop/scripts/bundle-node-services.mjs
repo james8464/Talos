@@ -2,10 +2,10 @@
 // the files `tsc` would write, inside `output` laid out like the package:
 //
 //   dist/{main,document/worker,…}.js
-//   node_modules/@linger/voice-runtime/dist/{main,agent,…}.js
+//   node_modules/@talos/voice-runtime/dist/{main,agent,…}.js
 //
 // Node Services finds its workers and prompts from its package directory
-// (src/paths.ts), which each entry gets as LINGER_PACKAGE_ROOT; the Voice
+// (src/paths.ts), which each entry gets as TALOS_PACKAGE_ROOT; the Voice
 // workers sit beside each other as in dist/. Packages with native code or
 // files they load at runtime stay external and come from the production
 // node_modules (see build-native-runtime.mjs).
@@ -65,7 +65,7 @@ async function bundle(repo, output, entry, outputFile, define = {}) {
     logLevel: "warning",
     banner: {
       // CommonJS dependencies inside the bundle require Node's builtins.
-      js: 'import { createRequire as __lingerRequire } from "node:module"; const require = __lingerRequire(import.meta.url);',
+      js: 'import { createRequire as __talosRequire } from "node:module"; const require = __talosRequire(import.meta.url);',
     },
   });
   return result.metafile;
@@ -87,7 +87,7 @@ export async function bundleNodeServices(repo, output) {
   };
   const nodeServices = (entry, outputFile) =>
     bundle(repo, output, entry, outputFile, {
-      LINGER_PACKAGE_ROOT: JSON.stringify(packageRootFrom(outputFile)),
+      TALOS_PACKAGE_ROOT: JSON.stringify(packageRootFrom(outputFile)),
     });
   const metafiles = await Promise.all([
     ...NODE_SERVICES_ENTRIES.map((entry) =>
@@ -98,7 +98,7 @@ export async function bundleNodeServices(repo, output) {
         repo,
         output,
         `apps/voice-runtime/src/${entry}.ts`,
-        `node_modules/@linger/voice-runtime/dist/${entry}.js`,
+        `node_modules/@talos/voice-runtime/dist/${entry}.js`,
       ),
     ),
     // Waits for TeamHub and restarts the service after a crash, as in
@@ -119,10 +119,10 @@ export async function bundleNodeServices(repo, output) {
   );
   // The worker's package exports and module type.
   await writeFile(
-    path.join(output, "node_modules/@linger/voice-runtime/package.json"),
+    path.join(output, "node_modules/@talos/voice-runtime/package.json"),
     JSON.stringify(
       {
-        name: "@linger/voice-runtime",
+        name: "@talos/voice-runtime",
         private: true,
         type: "module",
         exports: { "./worker": { default: "./dist/main.js" } },

@@ -20,10 +20,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 const (

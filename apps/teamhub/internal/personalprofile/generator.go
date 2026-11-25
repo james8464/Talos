@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 func supplementPrompt(input GenerationRequest) (system, user string) {

@@ -60,7 +60,7 @@ describe("Another Me background failure banner", () => {
       },
     });
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Background tasks failed 3 times in a row: your Runtime is incompatible, or its model isn't available to your account. Update your local CLI or Linger, or check its model setting.",
+      "Background tasks failed 3 times in a row: your Runtime is incompatible, or its model isn't available to your account. Update your local CLI or Talos, or check its model setting.",
     );
     expect(screen.queryByRole("button")).toBeNull();
 

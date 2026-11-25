@@ -35,7 +35,7 @@ import type {
   DaemonToAgentEnvelope,
   OperationStart,
   RunEvent,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import { type RunnerCredentialAuthenticator } from "../../../src/agent/runner-gateway/runner-credential-authority.js";
 import {
@@ -1669,7 +1669,7 @@ const hello = (runnerId = "runner-local"): RunnerHello => ({
     {
       grant_id: "grant-repo",
       tenant_id: "tenant-acme",
-      label: "Linger workspace",
+      label: "Talos workspace",
       mode: "workspace-write",
       scope: "owner",
     },

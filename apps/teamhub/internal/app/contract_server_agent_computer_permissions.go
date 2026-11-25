@@ -11,11 +11,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 // getAgentComputerPermissions reads the macOS permissions of the Agent's
@@ -48,7 +48,7 @@ func (a *App) requestAgentComputerPermissions(c *gin.Context) {
 	}
 	decision, ok := computerPermissionDecision(computerID, request)
 	if !ok {
-		a.writeAgentAPIError(c, http.StatusBadRequest, api.AgentApiErrorCodeInvalidRequest, "Ask for screen_recording or accessibility of linger or computer_use, each once, with a reason of at most 200 characters")
+		a.writeAgentAPIError(c, http.StatusBadRequest, api.AgentApiErrorCodeInvalidRequest, "Ask for screen_recording or accessibility of talos or computer_use, each once, with a reason of at most 200 characters")
 		return
 	}
 	ctx := c.Request.Context()
@@ -156,7 +156,7 @@ func (a *App) readAgentComputerPermissions(c *gin.Context, tenantID, ownerID, co
 // the Agent gets a precise error instead of a refused card.
 func computerPermissionDecision(computerID string, request api.RequestAgentComputerPermissionsJSONRequestBody) (typedcard.ComputerPermissionDecision, bool) {
 	decision := typedcard.ComputerPermissionDecision{ComputerID: computerID, Subject: string(request.Subject)}
-	if decision.Subject != typedcard.ComputerPermissionSubjectLinger && decision.Subject != typedcard.ComputerPermissionSubjectComputerUse ||
+	if decision.Subject != typedcard.ComputerPermissionSubjectTalos && decision.Subject != typedcard.ComputerPermissionSubjectComputerUse ||
 		len(request.Permissions) == 0 || len(request.Permissions) > 2 {
 		return decision, false
 	}

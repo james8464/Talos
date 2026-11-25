@@ -63,8 +63,8 @@ const roomDocumentLink = createReactInlineContentSpec(
     ),
     toExternalHTML: ({ inlineContent }) => (
       <a
-        data-linger-document-id={inlineContent.props.documentId}
-        data-linger-tenant-id={inlineContent.props.tenantId}
+        data-talos-document-id={inlineContent.props.documentId}
+        data-talos-tenant-id={inlineContent.props.tenantId}
         href={inlineContent.props.href}
       >
         {inlineContent.props.label}

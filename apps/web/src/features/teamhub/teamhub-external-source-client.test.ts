@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createHttpTeamHubClient } from "./teamhub-client";
 import type { TeamHubExternalConnection } from "./teamhub-types";
-import { requestBodyText, requestUrlText } from "@linger/service-kit";
+import { requestBodyText, requestUrlText } from "@talos/service-kit";
 
 describe("TeamHub External Source client", () => {
   it.each(["gmail", "outlook", "notion"])(
@@ -26,7 +26,7 @@ describe("TeamHub External Source client", () => {
   it("uses a fresh desktop return URL for each request that creates an auth link", async () => {
     const url = "http://127.0.0.1:43210/oauth/connector/" + "a".repeat(48);
     const prepare = vi.fn().mockResolvedValue(url);
-    vi.stubGlobal("window", { lingerDesktop: { connectorOAuth: { prepare } } });
+    vi.stubGlobal("window", { talosDesktop: { connectorOAuth: { prepare } } });
     try {
       const fetchRequest = vi
         .fn<typeof fetch>()

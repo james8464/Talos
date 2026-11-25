@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // getURLPreviewFraming reads a page's framing rules for the Web link preview

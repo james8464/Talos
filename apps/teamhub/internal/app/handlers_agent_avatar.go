@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentregistry"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // updateTenantAgentAvatar replaces the avatar every Human sees for one Agent.

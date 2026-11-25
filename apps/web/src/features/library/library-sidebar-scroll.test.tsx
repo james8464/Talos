@@ -34,7 +34,7 @@ it.each([false, true])(
 
     const client = new QueryClient();
     window.sessionStorage.setItem(
-      "linger:library-sidebar-scroll:tenant-northstar",
+      "talos:library-sidebar-scroll:tenant-northstar",
       "240",
     );
     const tree = (loaded: boolean, identity = "wiki") => (

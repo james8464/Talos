@@ -139,7 +139,7 @@ describe("useLogout", () => {
       JSON.stringify({ queries: ["private customer query"], opened: {} }),
     );
     window.localStorage.setItem(
-      "linger.models.lastComputer:tenant-northstar",
+      "talos.models.lastComputer:tenant-northstar",
       "computer-mac",
     );
     let finishOutbox!: () => void;
@@ -194,7 +194,7 @@ describe("useLogout", () => {
     ).toBeNull();
     expect(
       window.localStorage.getItem(
-        "linger.models.lastComputer:tenant-northstar",
+        "talos.models.lastComputer:tenant-northstar",
       ),
     ).toBeNull();
     expect(clearOutbox).toHaveBeenCalledWith(identity.account.id);

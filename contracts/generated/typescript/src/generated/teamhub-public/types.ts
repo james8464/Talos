@@ -54,8 +54,8 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Prove that this server is the Linger installed on this computer.
-     * @description Answers only on a local installation that has TEAMHUB_LOCAL_IDENTITY_KEY; elsewhere 404. The proof is the unpadded base64url HMAC-SHA256, keyed with that 32-byte key, of "linger-local-identity", the nonce and the server's web origin, joined with newlines. The desktop app checks it with the key from the installation's private files before it sends the owner's password, so a process that took the port cannot receive it.
+     * Prove that this server is the Talos installed on this computer.
+     * @description Answers only on a local installation that has TEAMHUB_LOCAL_IDENTITY_KEY; elsewhere 404. The proof is the unpadded base64url HMAC-SHA256, keyed with that 32-byte key, of "talos-local-identity", the nonce and the server's web origin, joined with newlines. The desktop app checks it with the key from the installation's private files before it sends the owner's password, so a process that took the port cannot receive it.
      */
     post: operations["proveLocalIdentity"];
     delete?: never;
@@ -576,7 +576,7 @@ export interface paths {
     get: operations["getLocalComputerPermissions"];
     put?: never;
     /**
-     * Raise a macOS permission prompt, open its Settings pane, or relaunch Linger on one owned Local Computer.
+     * Raise a macOS permission prompt, open its Settings pane, or relaunch Talos on one owned Local Computer.
      * @description The prompt or pane opens on that Computer, so the owner must be at it. The response settles waiting cards like a read.
      */
     post: operations["actOnLocalComputerPermission"];
@@ -4130,14 +4130,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    /** @description Reliable LiveKit data packet on topic linger.voice.live sent by the VoiceSession publisher to Voice Runtime. tool_result answers one tool_request; context silently tells the live model where the Human is, such as the page they opened. These packets only steer the conversation and never authorize writes. */
+    /** @description Reliable LiveKit data packet on topic talos.voice.live sent by the VoiceSession publisher to Voice Runtime. tool_result answers one tool_request; context silently tells the live model where the Human is, such as the page they opened. These packets only steer the conversation and never authorize writes. */
     VoiceLiveClientEvent: {
       /** @enum {string} */
       type: "tool_result" | "context";
       call_id?: string;
       text?: string;
     };
-    /** @description Reliable LiveKit data packet on topic linger.voice.live sent by Voice Runtime to the VoiceSession publisher. user_partial and user_turn carry the Human's transcript; reply_delta and reply_done carry the live reply text for subtitles; reply_done also means the turn's whole reply, including its tool rounds, has finished, so the browser saves the turn after it; reply_interrupted stops playback of that turn; tool_request asks the browser to read or operate the page it shows, or to end Voice Mode; speech_started opens the bubble of a background update the runtime started saying, identified by speech_id, whose reply_delta/reply_done carry its actual spoken words without touching the turn's own reply. playout_done says the turn's reply audio has finished playing on the reply track. session_failure asks the browser to fall back to dictation. */
+    /** @description Reliable LiveKit data packet on topic talos.voice.live sent by Voice Runtime to the VoiceSession publisher. user_partial and user_turn carry the Human's transcript; reply_delta and reply_done carry the live reply text for subtitles; reply_done also means the turn's whole reply, including its tool rounds, has finished, so the browser saves the turn after it; reply_interrupted stops playback of that turn; tool_request asks the browser to read or operate the page it shows, or to end Voice Mode; speech_started opens the bubble of a background update the runtime started saying, identified by speech_id, whose reply_delta/reply_done carry its actual spoken words without touching the turn's own reply. playout_done says the turn's reply audio has finished playing on the reply track. session_failure asks the browser to fall back to dictation. */
     VoiceLiveRuntimeEvent: {
       /** @enum {string} */
       type:
@@ -4864,7 +4864,7 @@ export interface components {
       /** @description Diagnostic text for display; never matched on. */
       detail?: string;
       /**
-       * @description Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Linger and renaming that folder lets the model load.
+       * @description Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Talos and renaming that folder lets the model load.
        * @enum {string}
        */
       cause?: "GATEWAY_HOME_NOT_PRIVATE";
@@ -5197,10 +5197,10 @@ export interface components {
       context_window: number;
     };
     /**
-     * @description The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+     * @description The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
      * @enum {string}
      */
-    ComputerPermissionSubject: "linger" | "computer_use";
+    ComputerPermissionSubject: "talos" | "computer_use";
     /**
      * @description A macOS privacy permission an Agent can ask its Computer owner to grant.
      * @enum {string}
@@ -5233,13 +5233,13 @@ export interface components {
       /** @enum {string} */
       platform: "darwin" | "windows" | "linux";
       /**
-       * @description desktop when the Linger desktop app runs the Computer; standalone otherwise.
+       * @description desktop when the Talos desktop app runs the Computer; standalone otherwise.
        * @enum {string}
        */
       host: "desktop" | "standalone";
       subjects: components["schemas"]["ComputerPermissionSubjectStatus"][];
     };
-    /** @description One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Linger desktop app so a new grant takes effect. */
+    /** @description One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Talos desktop app so a new grant takes effect. */
     ComputerPermissionAction: {
       /** @enum {string} */
       action: "prompt" | "open_settings" | "relaunch";
@@ -7586,7 +7586,7 @@ export interface components {
     };
     UrlPreviewFraming: {
       /**
-       * @description refused: the final response forbids framing by another site (X-Frame-Options DENY or SAMEORIGIN, or a CSP frame-ancestors that allows no page of the Linger page's scheme), so the panel offers a new tab instead of a frame. allowed: it does not. unknown: TeamHub did not read the page, because it was unreachable, slow or redirected too often, TeamHub was busy with other probes, or it is on a non-public address or a port other than 80 and 443, which TeamHub never requests; the panel frames it and lets the browser decide.
+       * @description refused: the final response forbids framing by another site (X-Frame-Options DENY or SAMEORIGIN, or a CSP frame-ancestors that allows no page of the Talos page's scheme), so the panel offers a new tab instead of a frame. allowed: it does not. unknown: TeamHub did not read the page, because it was unreachable, slow or redirected too often, TeamHub was busy with other probes, or it is on a non-public address or a port other than 80 and 443, which TeamHub never requests; the panel frames it and lets the browser decide.
        * @enum {string}
        */
       framing: "allowed" | "refused" | "unknown";
@@ -12909,7 +12909,7 @@ export interface operations {
       query: {
         /** @description The http or https page to preview. */
         url: string;
-        /** @description The scheme of the Linger page that frames the site; frame-ancestors scheme sources are matched against it. Without it, http and https sources both allow the frame. */
+        /** @description The scheme of the Talos page that frames the site; frame-ancestors scheme sources are matched against it. Without it, http and https sources both allow the frame. */
         page_scheme?: "http" | "https";
       };
       header?: never;

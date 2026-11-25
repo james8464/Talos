@@ -50,19 +50,19 @@ const permissionStepInput = z.discriminatedUnion("action", [
   z
     .object({
       action: z.literal("prompt"),
-      subject: z.literal("linger"),
+      subject: z.literal("talos"),
       permission: permissionId,
     })
     .strict(),
   z
     .object({
       action: z.literal("open_settings"),
-      subject: z.enum(["linger", "computer_use"]),
+      subject: z.enum(["talos", "computer_use"]),
       permission: permissionId,
     })
     .strict(),
   z
-    .object({ action: z.literal("relaunch"), subject: z.literal("linger") })
+    .object({ action: z.literal("relaunch"), subject: z.literal("talos") })
     .strict(),
 ]);
 

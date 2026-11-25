@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 func (a *App) issueManagedAgentAccessCredential(c *gin.Context) {

@@ -1,6 +1,6 @@
 import { Server, type Connection } from "@hocuspocus/server";
-import { ROOM_DOCUMENT_SESSION_LIMITS } from "@linger/document-model";
-import type { components as RuntimeComponents } from "@linger/wire-contracts/node-services-internal/types";
+import { ROOM_DOCUMENT_SESSION_LIMITS } from "@talos/document-model";
+import type { components as RuntimeComponents } from "@talos/wire-contracts/node-services-internal/types";
 import * as Y from "yjs";
 
 import type { DocumentBodyStore } from "./bodies.js";
@@ -157,7 +157,7 @@ export function createDocumentRealtimeServer(
     port: options.port ?? 0,
     debounce: 250,
     maxDebounce: 2_000,
-    name: "linger-room-document-runtime",
+    name: "talos-room-document-runtime",
     quiet: true,
     maxPendingDocuments: admission.limits.maxPendingDocumentsPerConnection,
     maxUnauthenticatedQueueMessages:

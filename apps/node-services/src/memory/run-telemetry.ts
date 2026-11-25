@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import { createJsonLogger, type JsonLogger } from "@linger/service-kit/node";
+import { createJsonLogger, type JsonLogger } from "@talos/service-kit/node";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- needs an implicit index signature
 export type MemorySubjectFailure = {

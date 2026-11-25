@@ -17,8 +17,8 @@ import {
 import { sameOrigin } from "./navigation.js";
 
 // Previews keep their sign-ins across restarts, apart from the app's own
-// session with the Linger server.
-export const PREVIEW_PARTITION = "persist:linger-preview";
+// session with the Talos server.
+export const PREVIEW_PARTITION = "persist:talos-preview";
 // A page asks for at most this many views; each is a renderer process.
 const MAX_VIEWS = 8;
 // Script popups, such as a sign-in window, one view may have open at once.
@@ -32,7 +32,7 @@ const PREVIEW_PERMISSIONS = new Set(["clipboard-sanitized-write"]);
 
 export interface PreviewViewsHost {
   window(): BaseWindow | undefined;
-  // The view holding the Linger page.
+  // The view holding the Talos page.
   content(): WebContentsView | undefined;
   serverUrl(): string | undefined;
   warn(event: string, fields: Record<string, unknown>): void;
@@ -114,7 +114,7 @@ function keepToWeb(contents: WebContents): void {
 }
 
 /**
- * The link preview panel's native views. The Linger page lays each one over
+ * The link preview panel's native views. The Talos page lays each one over
  * its panel and hides it while a menu or dialog covers the panel. The page
  * learns each view's address and history, never its content.
  */
@@ -258,7 +258,7 @@ export class PreviewViews {
 
   // Links that ask for a new tab load in place. Only script popups, such as
   // a sign-in window, open a window: at most MAX_POPUPS, titled with their
-  // site so a page cannot pass one off as Linger, and closed with the view.
+  // site so a page cannot pass one off as Talos, and closed with the view.
   #guard(id: string, preview: Preview): void {
     const contents = preview.view.webContents;
     keepToWeb(contents);

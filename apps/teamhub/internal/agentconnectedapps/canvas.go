@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -31,7 +31,7 @@ var (
 	canvasAssetImage  = regexp.MustCompile(`\(document-asset:([A-Za-z0-9][A-Za-z0-9_-]{0,63})\)`)
 	canvasAssetURL    = regexp.MustCompile(`^document-asset:([A-Za-z0-9][A-Za-z0-9_-]{0,63})$`)
 	// An inline image as goldmark renders it, capturing the Asset its Content-ID names.
-	mailInlineImage = regexp.MustCompile(`<img src="cid:([A-Za-z0-9][A-Za-z0-9_-]{0,63})\.[0-9a-f]{8}@linger"`)
+	mailInlineImage = regexp.MustCompile(`<img src="cid:([A-Za-z0-9][A-Za-z0-9_-]{0,63})\.[0-9a-f]{8}@talos"`)
 	// ErrMailRawHTML reports mail Markdown that contains raw HTML.
 	ErrMailRawHTML = errors.New("raw HTML in mail Markdown")
 )

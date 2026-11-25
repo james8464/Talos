@@ -1,5 +1,5 @@
 {
-  "name": "linger-release-build",
+  "name": "talos-release-build",
   "private": true,
   "packageManager": "pnpm@11.7.0",
   "engines": {

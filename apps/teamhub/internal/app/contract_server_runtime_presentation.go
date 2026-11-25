@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func (a *App) listRoomRunStatuses(c *gin.Context) {

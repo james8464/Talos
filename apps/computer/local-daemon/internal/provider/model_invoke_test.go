@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 func TestModelInvokeTimeoutAllowsWikiRefreshDeadline(t *testing.T) {
@@ -215,7 +215,7 @@ func newCodexInvokeFixture(t *testing.T, run func(ctx context.Context, command *
 				ExecutablePath: "/fixture/codex", Version: "0.166.0",
 				Environment: map[string]string{
 					"CODEX_HOME": source, "HOME": t.TempDir(), "PATH": "/usr/bin",
-					"TEAMHUB_CLI_TOKEN": "secret", "LINGER_RUNNER_TOKEN": "secret",
+					"TEAMHUB_CLI_TOKEN": "secret", "TALOS_RUNNER_TOKEN": "secret",
 				},
 			}, true, nil
 		},
@@ -251,7 +251,7 @@ func TestModelInvokerRunsCodexInATemporaryDirectoryWithPromptOnStdin(t *testing.
 			return fmt.Errorf("cwd = %s", command.Dir)
 		}
 		for key := range environment {
-			if strings.HasPrefix(key, "TEAMHUB_") || strings.HasPrefix(key, "LINGER_") {
+			if strings.HasPrefix(key, "TEAMHUB_") || strings.HasPrefix(key, "TALOS_") {
 				return fmt.Errorf("environment leaks %s", key)
 			}
 		}

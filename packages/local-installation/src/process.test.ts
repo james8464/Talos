@@ -2,7 +2,7 @@ import { expect, it, vi } from "vitest";
 import { PassThrough } from "node:stream";
 import { runProcess } from "./process.js";
 it("executes argument arrays literally and preserves JSON output", async () => {
-  const value = "$(touch /tmp/never-linger); a b";
+  const value = "$(touch /tmp/never-talos); a b";
   const result = await runProcess(process.execPath, [
     "-e",
     "console.log(JSON.stringify(process.argv.slice(1)))",
@@ -52,7 +52,7 @@ it("reports nonzero exit without exposing argv in errors", async () => {
     (await runProcess(process.execPath, ["-e", "process.exit(7)"])).code,
   ).toBe(7);
   await expect(
-    runProcess("/missing-linger-private-secret", []),
+    runProcess("/missing-talos-private-secret", []),
   ).rejects.toThrow(/unavailable/i);
 });
 it("bounds captured output rather than buffering forever", async () => {

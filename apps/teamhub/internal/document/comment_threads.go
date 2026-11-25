@@ -9,9 +9,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 const createReplyOperation = "create_reply"

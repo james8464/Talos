@@ -13,11 +13,11 @@ import {
 const frameStyles = `
   html, body, #office-preview { height: 100%; margin: 0; min-height: 100%; width: 100%; }
   body { background: #f7f8fa; color: #202124; overflow: hidden; }
-  .linger-office-preview { border: 0; font-size: 15px; }
-  .linger-office-preview .ofv-toolbar { min-height: 44px; }
-  .linger-office-preview .ofv-workbook-table { font-size: 14px; }
-  .linger-office-preview .ofv-workbook-table td,
-  .linger-office-preview .ofv-workbook-table th { line-height: 1.4; padding: 6px 8px; }
+  .talos-office-preview { border: 0; font-size: 15px; }
+  .talos-office-preview .ofv-toolbar { min-height: 44px; }
+  .talos-office-preview .ofv-workbook-table { font-size: 14px; }
+  .talos-office-preview .ofv-workbook-table td,
+  .talos-office-preview .ofv-workbook-table th { line-height: 1.4; padding: 6px 8px; }
 `;
 
 const style = document.createElement("style");
@@ -53,7 +53,7 @@ function renderOfficeFile(message: OfficePreviewRenderMessage) {
   removeScrollListener?.();
   activeViewer?.destroy();
   activeViewer = createViewer({
-    className: "linger-office-preview",
+    className: "talos-office-preview",
     container,
     fallback: "custom",
     file: message.buffer,

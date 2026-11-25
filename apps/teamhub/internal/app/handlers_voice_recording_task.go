@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
 )
 
 func (a *App) writeRecordingTaskResult(c *gin.Context, result idempotency.Result, err error) {

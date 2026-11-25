@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentregistry"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func (a *App) listAgentSkillBindings(c *gin.Context) {

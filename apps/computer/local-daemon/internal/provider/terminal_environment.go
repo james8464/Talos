@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
 )
 
 // terminalEnvironment resolves PATH as the user's terminal would, then appends
@@ -86,8 +86,8 @@ func captureTerminalPath(ctx context.Context, environment map[string]string) boo
 	}
 	bounded, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	const marker = "\x00linger-runtime-path\x00"
-	command := exec.CommandContext(bounded, shell, "-lic", `/bin/sh -c 'printf "\000linger-runtime-path\000%s\n" "$PATH"'`)
+	const marker = "\x00talos-runtime-path\x00"
+	command := exec.CommandContext(bounded, shell, "-lic", `/bin/sh -c 'printf "\000talos-runtime-path\000%s\n" "$PATH"'`)
 	command.Env = environmentList(environment)
 	if home := environment["HOME"]; filepath.IsAbs(home) {
 		command.Dir = home

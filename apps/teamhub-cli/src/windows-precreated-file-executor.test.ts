@@ -5,7 +5,7 @@ import { expect, it, vi } from "vitest";
 import { createTeamHubClient } from "./http-client.js";
 import { executeFileCommand } from "./file-executor.js";
 
-const fixtureRoot = process.env.LINGER_TEST_WINDOWS_FILE_LINKS;
+const fixtureRoot = process.env.TALOS_TEST_WINDOWS_FILE_LINKS;
 const digest = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 const enabled = process.platform === "win32" && !!fixtureRoot;

@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 type documentUpload struct {

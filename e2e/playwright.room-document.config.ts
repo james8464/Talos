@@ -67,14 +67,14 @@ export default defineConfig({
   webServer: shouldManageWebServers
     ? [
         {
-          command: `pnpm --filter @linger/web run build:assets && PLAYWRIGHT_ROOM_DOCUMENT_WEB_PORT=${webPort} PLAYWRIGHT_ROOM_DOCUMENT_TEAMHUB_PORT=${teamHubPort} PLAYWRIGHT_ROOM_DOCUMENT_RUNTIME_PORT=${runtimePort} pnpm --filter @linger/web exec node e2e/room-startup-production-server.mjs`,
+          command: `pnpm --filter @talos/web run build:assets && PLAYWRIGHT_ROOM_DOCUMENT_WEB_PORT=${webPort} PLAYWRIGHT_ROOM_DOCUMENT_TEAMHUB_PORT=${teamHubPort} PLAYWRIGHT_ROOM_DOCUMENT_RUNTIME_PORT=${runtimePort} pnpm --filter @talos/web exec node e2e/room-startup-production-server.mjs`,
           cwd: "..",
           reuseExistingServer: false,
           timeout: 180_000,
           url: `${webUrl}/healthz`,
         },
         {
-          command: `WEB_PUBLIC_ORIGIN=${webUrl} TEAMHUB_TEST_POSTGRES_PORT=${postgresPort} ROOM_DOCUMENT_E2E_CONTROL_PORT=${controlPort} ROOM_DOCUMENT_E2E_TEAMHUB_PORT=${teamHubPort} ROOM_DOCUMENT_E2E_RUNTIME_PORT=${runtimePort} ROOM_DOCUMENT_E2E_TEAMHUB_STARTUP_TIMEOUT_MS=120000 apps/teamhub/scripts/with-test-database.sh pnpm --filter @linger/node-services exec tsx tests/document/realtime-e2e-harness.ts`,
+          command: `WEB_PUBLIC_ORIGIN=${webUrl} TEAMHUB_TEST_POSTGRES_PORT=${postgresPort} ROOM_DOCUMENT_E2E_CONTROL_PORT=${controlPort} ROOM_DOCUMENT_E2E_TEAMHUB_PORT=${teamHubPort} ROOM_DOCUMENT_E2E_RUNTIME_PORT=${runtimePort} ROOM_DOCUMENT_E2E_TEAMHUB_STARTUP_TIMEOUT_MS=120000 apps/teamhub/scripts/with-test-database.sh pnpm --filter @talos/node-services exec tsx tests/document/realtime-e2e-harness.ts`,
           cwd: "..",
           stdout: "pipe",
           gracefulShutdown: { signal: "SIGTERM", timeout: 30_000 },

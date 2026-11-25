@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskexecution"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskexecution"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 type taskExecutionService interface {

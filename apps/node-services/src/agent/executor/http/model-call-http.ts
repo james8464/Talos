@@ -1,5 +1,5 @@
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
-import { isRecord } from "@linger/service-kit";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
+import { isRecord } from "@talos/service-kit";
 import { isModelCallKind, modelCallPolicies } from "../../../model-tasks.js";
 import {
   ModelCallError,

@@ -17,7 +17,7 @@ const sourceRuns = `${route}/runtime-presentation-runs?message_id=source`;
 const replyRuns = `${route}/runtime-presentation-runs?message_id=reply`;
 const run = { run_id: "run", room_id: "room", agent: { id: "agent" } };
 const completed = { ...run, status: "completed" };
-const replyMarker = "LINGER_REPLY_0123456789ABCDEF";
+const replyMarker = "TALOS_REPLY_0123456789ABCDEF";
 const replyDigest = sha256Hex(replyMarker);
 const reply = {
   id: "reply",
@@ -169,15 +169,15 @@ it("exits nonzero with the matching IDs before waiting for a reply", async () =>
         env: {
           ...Object.fromEntries(
             Object.entries(process.env).filter(
-              ([key]) => !key.startsWith("LINGER_ACCEPTANCE_"),
+              ([key]) => !key.startsWith("TALOS_ACCEPTANCE_"),
             ),
           ),
-          LINGER_ACCEPTANCE_BASE_URL: `http://127.0.0.1:${address.port}`,
-          LINGER_ACCEPTANCE_OWNER_FILE: owner,
-          LINGER_ACCEPTANCE_COMPUTER_ID: "computer",
-          LINGER_ACCEPTANCE_CONTEXT_VIEWS: join(root, "context-views"),
-          LINGER_ACCEPTANCE_AGENT_LOG_ROOT: join(root, "logs"),
-          LINGER_ACCEPTANCE_TIMEOUT_SECONDS: "10",
+          TALOS_ACCEPTANCE_BASE_URL: `http://127.0.0.1:${address.port}`,
+          TALOS_ACCEPTANCE_OWNER_FILE: owner,
+          TALOS_ACCEPTANCE_COMPUTER_ID: "computer",
+          TALOS_ACCEPTANCE_CONTEXT_VIEWS: join(root, "context-views"),
+          TALOS_ACCEPTANCE_AGENT_LOG_ROOT: join(root, "logs"),
+          TALOS_ACCEPTANCE_TIMEOUT_SECONDS: "10",
         },
       });
       throw new Error("Unexpected successful exit");
@@ -204,7 +204,7 @@ it("exits nonzero with the matching IDs before waiting for a reply", async () =>
 it("requires exact bytes, regular files, and both events from the same run", async () => {
   const root = await mkdtemp(join(tmpdir(), "acceptance-evidence-"));
   try {
-    const marker = "LINGER_ACCEPTANCE_0123456789ABCDEF";
+    const marker = "TALOS_ACCEPTANCE_0123456789ABCDEF";
     const file = join(root, "marker.txt");
     const link = join(root, "marker-link.txt");
     const log = join(root, "events.ndjson");
@@ -252,13 +252,13 @@ it("requires exact bytes, regular files, and both events from the same run", asy
         env: {
           ...Object.fromEntries(
             Object.entries(process.env).filter(
-              ([key]) => !key.startsWith("LINGER_ACCEPTANCE_"),
+              ([key]) => !key.startsWith("TALOS_ACCEPTANCE_"),
             ),
           ),
-          LINGER_ACCEPTANCE_FILE: file,
-          LINGER_ACCEPTANCE_EXPECTED: marker,
-          LINGER_ACCEPTANCE_AGENT_LOG: log,
-          LINGER_ACCEPTANCE_RUN_ID: "run",
+          TALOS_ACCEPTANCE_FILE: file,
+          TALOS_ACCEPTANCE_EXPECTED: marker,
+          TALOS_ACCEPTANCE_AGENT_LOG: log,
+          TALOS_ACCEPTANCE_RUN_ID: "run",
         },
       },
     );

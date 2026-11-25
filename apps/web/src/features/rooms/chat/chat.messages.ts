@@ -72,9 +72,9 @@ export const chatMessages = defineMessages("chat", {
   // Threads.
   replyCount: { one: "{count} reply", other: "{count} replies" },
   backgroundFailedIncompatible: {
-    one: "Background tasks failed {count} time in a row: your Runtime is incompatible, or its model isn't available to your account. Update your local CLI or Linger, or check its model setting.",
+    one: "Background tasks failed {count} time in a row: your Runtime is incompatible, or its model isn't available to your account. Update your local CLI or Talos, or check its model setting.",
     other:
-      "Background tasks failed {count} times in a row: your Runtime is incompatible, or its model isn't available to your account. Update your local CLI or Linger, or check its model setting.",
+      "Background tasks failed {count} times in a row: your Runtime is incompatible, or its model isn't available to your account. Update your local CLI or Talos, or check its model setting.",
   },
   backgroundFailedSignIn: {
     one: "Background tasks failed {count} time in a row: your Runtime needs you to sign in again.",

@@ -295,10 +295,10 @@ describe("Settings surfaces", () => {
     expect(submit).toBeDisabled();
 
     fireEvent.change(within(dialog).getByLabelText("Current password"), {
-      target: { value: "linger-v0" },
+      target: { value: "talos-v0" },
     });
     fireEvent.change(within(dialog).getByLabelText("New password"), {
-      target: { value: "linger-v1" },
+      target: { value: "talos-v1" },
     });
     fireEvent.change(within(dialog).getByLabelText("Confirm new password"), {
       target: { value: "different-password" },
@@ -309,14 +309,14 @@ describe("Settings surfaces", () => {
     expect(submit).toBeDisabled();
 
     fireEvent.change(within(dialog).getByLabelText("Confirm new password"), {
-      target: { value: "linger-v1" },
+      target: { value: "talos-v1" },
     });
     fireEvent.click(submit);
 
     expect(await screen.findByText("Password changed")).toBeVisible();
     expect(change).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: { current_password: "linger-v0", new_password: "linger-v1" },
+        body: { current_password: "talos-v0", new_password: "talos-v1" },
       }),
     );
     expect(

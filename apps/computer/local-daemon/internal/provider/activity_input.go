@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
 )
 
 // Publish only fields used by the product's tool summaries, not message bodies,

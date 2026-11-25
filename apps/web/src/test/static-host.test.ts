@@ -21,11 +21,11 @@ const serveHost = (host: ReturnType<typeof createStaticHost>) =>
     void host(request, response);
   });
 const indexDocument =
-  '<!doctype html><html><body><div id="root">Linger</div></body></html>';
-const productionScript = 'console.log("Linger production asset");'.repeat(80);
+  '<!doctype html><html><body><div id="root">Talos</div></body></html>';
+const productionScript = 'console.log("Talos production asset");'.repeat(80);
 
 beforeEach(async () => {
-  fixtureRoot = await mkdtemp(join(tmpdir(), "linger-static-host-"));
+  fixtureRoot = await mkdtemp(join(tmpdir(), "talos-static-host-"));
   await mkdir(join(fixtureRoot, "assets"));
   await mkdir(join(fixtureRoot, "brand"));
   await writeFile(join(fixtureRoot, "index.html"), indexDocument);
@@ -118,7 +118,7 @@ describe("Web static host routing", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     await expect(response.json()).resolves.toEqual({
       ok: true,
-      service: "linger-web",
+      service: "talos-web",
     });
   });
 
@@ -237,7 +237,7 @@ describe("Web static host cache policy", () => {
     const page = (version: string) =>
       `<!doctype html><script src="/assets/index-${version}.js"></script>`;
     const release = async (version: string) => {
-      const root = await mkdtemp(join(tmpdir(), "linger-static-release-"));
+      const root = await mkdtemp(join(tmpdir(), "talos-static-release-"));
       await writeFile(join(root, "index.html"), page(version));
       await utimes(join(root, "index.html"), 0, 0);
       return root;

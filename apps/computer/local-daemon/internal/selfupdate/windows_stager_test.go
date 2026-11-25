@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 type windowsRelease struct {
@@ -54,7 +54,7 @@ func serveWindowsRelease(t *testing.T, edit func(metadata map[string]any)) windo
 	if err != nil {
 		t.Fatal(err)
 	}
-	served["/install/linger-computer.ps1"] = []byte("$LingerRelease = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" +
+	served["/install/talos-computer.ps1"] = []byte("$TalosRelease = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" +
 		base64.StdEncoding.EncodeToString(encoded) + "')) | ConvertFrom-Json\n")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		content, ok := served[r.URL.Path]
@@ -93,13 +93,13 @@ func TestWindowsInstallerFixture(t *testing.T) {
 		mode, installer := os.Args[i+1], os.Args[i+2]
 		switch mode {
 		case "record":
-			root := os.Getenv("LINGER_COMPUTER_DATA_DIR")
-			downloads := os.Getenv("LINGER_COMPUTER_DOWNLOAD_BASE_URL")
+			root := os.Getenv("TALOS_COMPUTER_DATA_DIR")
+			downloads := os.Getenv("TALOS_COMPUTER_DOWNLOAD_BASE_URL")
 			files, err := os.ReadDir(filepath.Join(downloads, "files"))
 			if err != nil {
 				os.Exit(4)
 			}
-			values := []string{installer, root, downloads, os.Getenv("LINGER_WEB_URL")}
+			values := []string{installer, root, downloads, os.Getenv("TALOS_WEB_URL")}
 			for _, file := range files {
 				values = append(values, file.Name())
 			}

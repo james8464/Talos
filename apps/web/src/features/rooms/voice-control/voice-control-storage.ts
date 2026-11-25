@@ -3,7 +3,7 @@ import type { TeamHubVoiceCapture } from "@/features/teamhub/teamhub-types";
 import type { VoiceMicrophoneBinding } from "./microphone-devices";
 
 export function deviceStorageKey(tenantId: string) {
-  return `linger.voice.device.${tenantId}`;
+  return `talos.voice.device.${tenantId}`;
 }
 
 export function readDeviceBinding(
@@ -52,7 +52,7 @@ export function removeStorage(key: string) {
 
 export function readSelectedVoiceRoom(tenantId: string) {
   try {
-    return window.sessionStorage.getItem(`linger.voice.target.${tenantId}`);
+    return window.sessionStorage.getItem(`talos.voice.target.${tenantId}`);
   } catch {
     return null;
   }
@@ -60,7 +60,7 @@ export function readSelectedVoiceRoom(tenantId: string) {
 
 export function writeSelectedVoiceRoom(tenantId: string, roomId: string) {
   try {
-    window.sessionStorage.setItem(`linger.voice.target.${tenantId}`, roomId);
+    window.sessionStorage.setItem(`talos.voice.target.${tenantId}`, roomId);
   } catch {
     /* Recording works even when browser preferences are unavailable. */
   }
@@ -77,7 +77,7 @@ export function readVoiceListeningCapture(
 ): VoiceListeningCapture | undefined {
   try {
     const value = JSON.parse(
-      readStorage(`linger.voice.listening.${tenantId}`) ?? "null",
+      readStorage(`talos.voice.listening.${tenantId}`) ?? "null",
     );
     if (
       value &&
@@ -109,14 +109,14 @@ export function rememberVoiceListeningCapture(
     if (newerBy > 0 || (newerBy === 0 && !previous.stopped && value.stopped))
       return;
   }
-  writeStorage(`linger.voice.listening.${tenantId}`, JSON.stringify(value));
+  writeStorage(`talos.voice.listening.${tenantId}`, JSON.stringify(value));
 }
 
 export function resumeVoiceListening(tenantId: string) {
   const previous = readVoiceListeningCapture(tenantId);
   if (previous?.stopped)
     writeStorage(
-      `linger.voice.listening.${tenantId}`,
+      `talos.voice.listening.${tenantId}`,
       JSON.stringify({ ...previous, stopped: false }),
     );
 }

@@ -5,11 +5,11 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
-import { runnerGatewayEnvelopeSchema } from "@linger/wire-contracts/runner-gateway/schema";
+import { runnerGatewayEnvelopeSchema } from "@talos/wire-contracts/runner-gateway/schema";
 import {
   parseAgentToDaemonEnvelope,
   parseDaemonToAgentEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 import { expect, it } from "vitest";
 
 const assignment = {
@@ -143,7 +143,7 @@ const agentFrames = [
     kind: "computer_permission",
     ...localCapability,
     action: "prompt",
-    subject: "linger",
+    subject: "talos",
     permission: "screen_recording",
   },
   {
@@ -370,7 +370,7 @@ it.skipIf(process.platform === "win32")(
         "go",
         [
           "test",
-          "./internal/linger/transport",
+          "./internal/talos/transport",
           "-run",
           "^TestRunnerWireContractFixtures$",
           "-count=1",
@@ -379,8 +379,8 @@ it.skipIf(process.platform === "win32")(
           cwd: fileURLToPath(new URL("../local-daemon/", import.meta.url)),
           env: {
             ...process.env,
-            LINGER_RUNNER_WIRE_AGENT_FIXTURE: agentFile,
-            LINGER_RUNNER_WIRE_DAEMON_FIXTURE: daemonFile,
+            TALOS_RUNNER_WIRE_AGENT_FIXTURE: agentFile,
+            TALOS_RUNNER_WIRE_DAEMON_FIXTURE: daemonFile,
           },
           timeout: 120_000,
         },

@@ -22,8 +22,8 @@ import {
   type RoomDocumentE2EFixture,
 } from "./realtime-e2e-fixture.js";
 import type { RealtimeE2EControl } from "./realtime-e2e-http-harness.js";
-import { sleep } from "@linger/service-kit";
-import { serviceCredential } from "@linger/service-kit/node";
+import { sleep } from "@talos/service-kit";
+import { serviceCredential } from "@talos/service-kit/node";
 
 type RealtimeServer = ReturnType<typeof createDocumentRealtimeServer>;
 
@@ -43,13 +43,13 @@ export interface RealRealtimeE2EConfig {
 const runtimeInstanceId = "document_runtime_e2e";
 const secretSeed = "e2e-document-runtime-secret-seed-0123456789";
 const teamHubToRuntimeToken = serviceCredential("node-services-internal", {
-  LINGER_SECRET_SEED: secretSeed,
+  TALOS_SECRET_SEED: secretSeed,
 })!;
 const teamHubInternalToken = serviceCredential("teamhub-internal", {
-  LINGER_SECRET_SEED: secretSeed,
+  TALOS_SECRET_SEED: secretSeed,
 })!;
 const connectionTokenKey = serviceCredential("document-connection-token", {
-  LINGER_SECRET_SEED: secretSeed,
+  TALOS_SECRET_SEED: secretSeed,
 })!;
 
 export class RealRealtimeE2EEnvironment implements RealtimeE2EControl {
@@ -85,7 +85,7 @@ export class RealRealtimeE2EEnvironment implements RealtimeE2EControl {
       );
     }
     this.#artifactRoot = await mkdtemp(
-      join(tmpdir(), "linger-room-document-e2e-"),
+      join(tmpdir(), "talos-room-document-e2e-"),
     );
     this.#bodies = createDocumentBodyStore(databaseUrl);
     this.#fixtureManager = new RealTeamHubFixtureManager({
@@ -98,7 +98,7 @@ export class RealRealtimeE2EEnvironment implements RealtimeE2EControl {
       TEAMHUB_ARTIFACT_STORAGE_ROOT: this.#artifactRoot,
       TEAMHUB_DATABASE_URL: databaseUrl,
       TEAMHUB_DOCUMENT_PREVIEW_PUBLIC_ORIGIN: this.#teamHubBaseUrl,
-      LINGER_SECRET_SEED: secretSeed,
+      TALOS_SECRET_SEED: secretSeed,
       TEAMHUB_DOCUMENT_RUNTIME_URL: `http://127.0.0.1:${this.#config.runtimePort}`,
       TEAMHUB_HTTP_ADDRESS: `127.0.0.1:${this.#config.teamHubPort}`,
     };

@@ -4,7 +4,7 @@ import {
   WorkerDocumentNormalizer,
   type DocumentNormalizer,
 } from "./document-normalizer/document-normalizer.js";
-import { createJsonLogger, type JsonLogger } from "@linger/service-kit/node";
+import { createJsonLogger, type JsonLogger } from "@talos/service-kit/node";
 
 import type { Flashback } from "./flashback.js";
 import type { ModelCall } from "./runtime-model-call.js";

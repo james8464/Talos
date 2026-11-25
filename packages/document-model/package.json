@@ -1,5 +1,5 @@
 {
-  "name": "@linger/document-model",
+  "name": "@talos/document-model",
   "version": "0.0.0",
   "description": "Document Model: pure, schema-versioned Room Document model shared by Web and Document Runtime.",
   "private": true,
@@ -7,7 +7,7 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "linger-production": "./dist/index.js",
+      "talos-production": "./dist/index.js",
       "default": "./src/index.ts"
     }
   },
@@ -22,7 +22,7 @@
     "node": ">=26.5.0 <27"
   },
   "dependencies": {
-    "@linger/service-kit": "workspace:*",
+    "@talos/service-kit": "workspace:*",
     "@blocknote/core": "^0.51.4",
     "@noble/hashes": "2.2.0",
     "yjs": "13.6.31"

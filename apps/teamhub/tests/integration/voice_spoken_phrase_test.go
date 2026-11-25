@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // Recording control goes only through the Start and Stop endpoints: a final

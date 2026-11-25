@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 // CreateMessageTreeTx publishes an Agent's directory as new Documents inside

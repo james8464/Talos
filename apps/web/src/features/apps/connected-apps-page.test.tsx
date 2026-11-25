@@ -106,7 +106,7 @@ describe("Connected apps", () => {
     await waitFor(() => expect(createConnection).toHaveBeenCalledWith("slack"));
     expect(window.open).toHaveBeenCalledWith(
       "https://connect.example.test/slack",
-      "linger_composio_oauth",
+      "talos_composio_oauth",
       expect.any(String),
     );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -246,7 +246,7 @@ describe("Connected apps", () => {
       screen.getByRole("button", { name: "Actions for Gmail" }),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Connect Slack" })).toBeVisible();
-    expect(screen.queryByText("jenny@linger.test")).not.toBeInTheDocument();
+    expect(screen.queryByText("jenny@talos.test")).not.toBeInTheDocument();
 
     const categories = screen.getByRole("tablist", {
       name: "Connector categories",
@@ -272,7 +272,7 @@ describe("Connected apps", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Connected only" }));
     fireEvent.click(screen.getByRole("button", { name: "Gmail" }));
-    expect(await screen.findByText("jenny@linger.test")).toBeVisible();
+    expect(await screen.findByText("jenny@talos.test")).toBeVisible();
   });
 
   it("asks for a new key when Composio rejects the saved one, then connects", async () => {
@@ -400,7 +400,7 @@ describe("Connected apps", () => {
 
     renderPage(runtime, "/apps?app=gmail");
     const gmail = await screen.findByRole("dialog", { name: "Gmail" });
-    expect(await within(gmail).findByText("jenny@linger.test")).toBeVisible();
+    expect(await within(gmail).findByText("jenny@talos.test")).toBeVisible();
     expect(within(gmail).queryByText(/Signed in as/)).toBeNull();
   });
 
@@ -414,13 +414,13 @@ describe("Connected apps", () => {
         {
           ...existing,
           id: "gmail-expired",
-          identity_label: "expired@linger.test",
+          identity_label: "expired@talos.test",
           status: "expired",
         },
         {
           ...existing,
           id: "gmail-failed",
-          identity_label: "failed@linger.test",
+          identity_label: "failed@talos.test",
           status: "failed",
         },
       ],
@@ -433,8 +433,8 @@ describe("Connected apps", () => {
       within(gmail).getByText("Connected, 2 need reconnecting"),
     ).toBeVisible();
     const dialog = screen.getByRole("dialog", { name: "Gmail" });
-    expect(within(dialog).getByText("expired@linger.test")).toBeVisible();
-    expect(within(dialog).getByText("failed@linger.test")).toBeVisible();
+    expect(within(dialog).getByText("expired@talos.test")).toBeVisible();
+    expect(within(dialog).getByText("failed@talos.test")).toBeVisible();
     expect(within(dialog).getAllByText("Needs reconnecting")).toHaveLength(2);
   });
 
@@ -486,7 +486,7 @@ describe("Connected apps", () => {
 
     const dialog = await screen.findByRole("dialog", { name: "Gmail" });
     const toggle = await within(dialog).findByRole("switch", {
-      name: "Auto reminders for jenny@linger.test",
+      name: "Auto reminders for jenny@talos.test",
     });
     expect(toggle).toBeChecked();
     expect(
@@ -553,7 +553,7 @@ describe("Connected apps", () => {
     await waitFor(() => expect(createConnection).toHaveBeenCalledWith("slack"));
     expect(window.open).toHaveBeenCalledWith(
       "https://connect.example.test/slack",
-      "linger_composio_oauth",
+      "talos_composio_oauth",
       expect.stringContaining("width=560,height=720"),
     );
     expect(screen.queryByText("Authorization in progress")).toBeNull();
@@ -728,12 +728,12 @@ describe("Connected apps", () => {
     expect(within(dialog).getByText("Needs reconnecting")).toBeVisible();
     expect(
       within(dialog).getByRole("button", {
-        name: "Reconnect jenny@linger.test",
+        name: "Reconnect jenny@talos.test",
       }),
     ).toBeEnabled();
     expect(
       within(dialog).getByRole("button", {
-        name: "Disconnect jenny@linger.test",
+        name: "Disconnect jenny@talos.test",
       }),
     ).toBeEnabled();
     expect(
@@ -748,7 +748,7 @@ describe("Connected apps", () => {
     const expired = {
       ...existing,
       id: "gmail-expired",
-      identity_label: "old@linger.test",
+      identity_label: "old@talos.test",
       status: "expired" as const,
     };
     vi.spyOn(runtime.client, "listExternalConnections").mockResolvedValue({
@@ -775,7 +775,7 @@ describe("Connected apps", () => {
     const dialog = await screen.findByRole("dialog", { name: "Gmail" });
     expect(createReauthorization).not.toHaveBeenCalled();
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Reconnect old@linger.test" }),
+      within(dialog).getByRole("button", { name: "Reconnect old@talos.test" }),
     );
     await waitFor(() =>
       expect(createReauthorization).toHaveBeenCalledWith(
@@ -799,7 +799,7 @@ describe("Connected apps", () => {
     const expired = {
       ...existing,
       id: "gmail-expired",
-      identity_label: "old@linger.test",
+      identity_label: "old@talos.test",
       status: "expired" as const,
     };
     vi.spyOn(runtime.client, "listExternalConnections").mockResolvedValue({
@@ -832,7 +832,7 @@ describe("Connected apps", () => {
       await within(dialog).findByText("Add account failed for the test."),
     ).toBeVisible();
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Reconnect old@linger.test" }),
+      within(dialog).getByRole("button", { name: "Reconnect old@talos.test" }),
     );
     await waitFor(() =>
       expect(
@@ -929,7 +929,7 @@ describe("Connected apps", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Disconnect jenny@linger.test",
+        name: "Disconnect jenny@talos.test",
       }),
     );
     const dialog = screen.getByRole("dialog", {

@@ -48,7 +48,7 @@ afterEach(async () => {
 });
 
 async function temporary(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-legacy-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-legacy-"));
   roots.push(root);
   return root;
 }
@@ -75,7 +75,7 @@ async function legacyInstance(
     port: 3999,
     releaseDir: path.join(home, "releases", "1"),
     computerConfig: path.join(root, "computer", "config.json"),
-    computerExecutable: "linger-computer",
+    computerExecutable: "talos-computer",
     ...(mode === "source-native"
       ? {
           releaseDir: "/checkout",
@@ -105,7 +105,7 @@ async function legacyInstance(
 }
 
 describe("migrateLegacyInstallation", () => {
-  it("gives each instance its Linger names once", async () => {
+  it("gives each instance its Talos names once", async () => {
     const home = await temporary();
     await legacyInstance(home, "desktop");
     const stopped: string[] = [];
@@ -120,11 +120,11 @@ describe("migrateLegacyInstallation", () => {
     await migrateLegacyInstallation(options);
 
     const instance = (await loadInstance({ name: "desktop", home }))!;
-    expect(instance.project).toMatch(/^linger-desktop-[a-f0-9]{12}$/);
+    expect(instance.project).toMatch(/^talos-desktop-[a-f0-9]{12}$/);
     expect(
       await readFile(path.join(instance.root, "services.env"), "utf8"),
     ).toBe(
-      "LINGER_POSTGRES_PASSWORD=pw\nLINGER_SECRET_SEED=seed\nTEAMHUB_SECRET_ENCRYPTION_KEY=key\n",
+      "TALOS_POSTGRES_PASSWORD=pw\nTALOS_SECRET_SEED=seed\nTEAMHUB_SECRET_ENCRYPTION_KEY=key\n",
     );
     expect(stopped).toEqual(["desktop"]);
     expect(await legacyMigrationPending(home)).toBe(false);
@@ -143,7 +143,7 @@ describe("migrateLegacyInstallation", () => {
 
     expect(stopInstance).toHaveBeenCalledTimes(1);
     expect((await loadInstance({ name: "desktop", home }))!.project).toMatch(
-      /^linger-desktop-/,
+      /^talos-desktop-/,
     );
   });
 
@@ -165,14 +165,14 @@ describe("migrateLegacyInstallation", () => {
 
     expect(stopInstance).toHaveBeenCalledTimes(2);
     expect((await loadInstance({ name: "beta", home }))!.project).toMatch(
-      /^linger-beta-/,
+      /^talos-beta-/,
     );
     expect(await legacyMigrationPending(home)).toBe(true);
 
     stopInstance.mockImplementation(async () => {});
     await migrateLegacyInstallation({ home, stopInstance });
     expect((await loadInstance({ name: "alpha", home }))!.project).toMatch(
-      /^linger-alpha-/,
+      /^talos-alpha-/,
     );
     expect(await legacyMigrationPending(home)).toBe(false);
   });
@@ -189,7 +189,7 @@ describe("migrateLegacyInstallation", () => {
     expect(skipped).toEqual([
       {
         instance: "desktop",
-        reason: expect.stringMatching(/^Another Linger installer is using it/),
+        reason: expect.stringMatching(/^Another Talos installer is using it/),
       },
     ]);
 
@@ -203,7 +203,7 @@ describe("migrateLegacyInstallation", () => {
     // The state a crash leaves between the env rewrite and instance.json.
     await put(
       path.join(instance.root, "services.env"),
-      "LINGER_POSTGRES_PASSWORD=pw\nSIMPLEX_SECRET_SEED=seed\n",
+      "TALOS_POSTGRES_PASSWORD=pw\nSIMPLEX_SECRET_SEED=seed\n",
     );
     const stopInstance = vi.fn(async () => {});
 
@@ -212,7 +212,7 @@ describe("migrateLegacyInstallation", () => {
     expect(stopInstance).toHaveBeenCalledTimes(1);
     expect(
       await readFile(path.join(instance.root, "services.env"), "utf8"),
-    ).toBe("LINGER_POSTGRES_PASSWORD=pw\nLINGER_SECRET_SEED=seed\n");
+    ).toBe("TALOS_POSTGRES_PASSWORD=pw\nTALOS_SECRET_SEED=seed\n");
     expect(await legacyMigrationPending(home)).toBe(false);
   });
 
@@ -255,7 +255,7 @@ describe("stopping a legacy instance", () => {
 
     expect(stopIdleComputer).not.toHaveBeenCalled();
     expect((await loadInstance({ name: "default", home }))!.project).toMatch(
-      /^linger-default-/,
+      /^talos-default-/,
     );
   });
 
@@ -277,7 +277,7 @@ describe("stopping a legacy instance", () => {
       {
         instance: "default",
         reason:
-          "Its Computer is running 2 task(s). Let them finish or stop them, then start Linger again.",
+          "Its Computer is running 2 task(s). Let them finish or stop them, then start Talos again.",
       },
     ]);
     expect(stopIdleComputer).not.toHaveBeenCalled();
@@ -314,7 +314,7 @@ describe("stopping a legacy instance", () => {
       connected: false,
     });
     vi.mocked(stopIdleComputer).mockRejectedValueOnce(
-      new Error("Could not stop instance Computer; run linger-computer doctor"),
+      new Error("Could not stop instance Computer; run talos-computer doctor"),
     );
     vi.mocked(stopNativeProcess).mockRejectedValueOnce(
       Object.assign(new Error("Native postgres process identity changed"), {
@@ -346,12 +346,12 @@ describe("stopping a legacy instance", () => {
       {
         instance: "default",
         reason:
-          "Its postgres service is still running and could not be stopped (Native postgres did not stop; identity record retained.). Restart this computer, then start Linger again.",
+          "Its postgres service is still running and could not be stopped (Native postgres did not stop; identity record retained.). Restart this computer, then start Talos again.",
       },
     ]);
     expect(skipped[0]!.reason).not.toMatch(/stop any task/i);
     expect((await loadInstance({ name: "desktop", home }))!.project).toMatch(
-      /^linger-desktop-/,
+      /^talos-desktop-/,
     );
   });
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentregistry"
 )
 
 func TestValidAgentTextCountsCharacters(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const claudeCatalogRequestID = "linger-catalog"
+const claudeCatalogRequestID = "talos-catalog"
 
 // claudeCatalogArgs start Claude without tools, MCP, slash commands or
 // session persistence; only the initialize control request is ever sent.

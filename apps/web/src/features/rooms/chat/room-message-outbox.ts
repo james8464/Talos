@@ -6,7 +6,7 @@ import type {
 } from "@/features/teamhub/teamhub-message-content";
 import type { PendingRoomMessage } from "./message-row";
 
-const databaseName = "linger-room-message-outbox-v1";
+const databaseName = "talos-room-message-outbox-v1";
 const databaseVersion = 2;
 const intentStore = "message-intents";
 const accountIndex = "account-id";

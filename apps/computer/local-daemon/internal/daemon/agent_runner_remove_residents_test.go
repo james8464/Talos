@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 const parkedClaudeScript = `#!/bin/sh
@@ -24,7 +24,7 @@ printf '%s\n' "$$" > "$FAKE_DIR/pid"
 while IFS= read -r line; do
   case "$line" in
     *'"subtype":"initialize"'*)
-      printf '{"type":"control_response","response":{"subtype":"success","request_id":"linger-session-restore","response":{}}}\n'
+      printf '{"type":"control_response","response":{"subtype":"success","request_id":"talos-session-restore","response":{}}}\n'
       continue ;;
   esac
   uuid=$(printf '%s' "$line" | sed 's/.*"uuid":"\([^"]*\)".*/\1/')
@@ -73,7 +73,7 @@ func parkClaudeFor(t *testing.T, executable, contextKey, agentID string) int {
 	root := t.TempDir()
 	backend, err := native.Open("claude", native.Profile{
 		Program: executable, Logger: slog.Default(), ContextKey: contextKey, AgentID: agentID,
-		Env: map[string]string{"LINGER_CLAUDE_SESSION_ROOT": filepath.Join(root, "sessions"), "FAKE_DIR": root},
+		Env: map[string]string{"TALOS_CLAUDE_SESSION_ROOT": filepath.Join(root, "sessions"), "FAKE_DIR": root},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -135,7 +135,7 @@ func newRemoveTestDaemon(t *testing.T, stream *fakeStream) *Daemon {
 		t.Fatal(err)
 	}
 	state := t.TempDir()
-	views, err := lingercontext.OpenViewStore(filepath.Join(state, "context.sqlite"), filepath.Join(state, "views"), nil)
+	views, err := taloscontext.OpenViewStore(filepath.Join(state, "context.sqlite"), filepath.Join(state, "views"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

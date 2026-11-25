@@ -2,10 +2,10 @@ import {
   inspectRoomDocumentState,
   ROOM_DOCUMENT_SCHEMA_VERSION,
   ROOM_DOCUMENT_STATE_HASH_VERSION,
-} from "@linger/document-model";
-import { sha256Hex } from "@linger/service-kit/node";
+} from "@talos/document-model";
+import { sha256Hex } from "@talos/service-kit/node";
 import { setTimeout as delay } from "node:timers/promises";
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 import * as Y from "yjs";
 
 import type { DocumentBodyStore, LoadedDocumentBody } from "./bodies.js";

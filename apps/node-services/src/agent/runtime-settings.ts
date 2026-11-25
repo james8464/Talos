@@ -1,4 +1,4 @@
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 import {
   parseLocalPlacement,

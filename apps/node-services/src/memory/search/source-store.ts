@@ -9,8 +9,8 @@ import {
   SESSION_PATH_PATTERN,
   sessionSourceUri,
 } from "../session-source.js";
-import type { PersonalKnowledgeQueryRequest } from "@linger/wire-contracts/node-services-internal/client";
-import { SESSION_ITEM_LABELS } from "@linger/knowledge-format/sections";
+import type { PersonalKnowledgeQueryRequest } from "@talos/wire-contracts/node-services-internal/client";
+import { SESSION_ITEM_LABELS } from "@talos/knowledge-format/sections";
 import { localIsoString } from "../date.js";
 import { markMemoryChanged } from "../fs-utils.js";
 import { agentWorkspaceRoot } from "../paths.js";

@@ -175,7 +175,7 @@ describe("Voice Mode window in the language on screen", () => {
     const floating = within(fake.document.body);
     await floating.findByRole("region", { name: zh.window });
     expect(
-      floating.getByRole("button", { name: zh.returnToLinger }),
+      floating.getByRole("button", { name: zh.returnToTalos }),
     ).toHaveAttribute("title", zh.returnHint);
   });
 

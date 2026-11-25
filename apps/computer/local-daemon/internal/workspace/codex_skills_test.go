@@ -16,9 +16,9 @@ import (
 
 // Opt-in native protocol proof: no thread or model request is created.
 func TestNativeCodexListsInheritedSkill(t *testing.T) {
-	binary := os.Getenv("LINGER_CODEX_SKILL_PROBE")
+	binary := os.Getenv("TALOS_CODEX_SKILL_PROBE")
 	if binary == "" {
-		t.Skip("set LINGER_CODEX_SKILL_PROBE to an installed Codex executable")
+		t.Skip("set TALOS_CODEX_SKILL_PROBE to an installed Codex executable")
 	}
 	user := t.TempDir()
 	shared := filepath.Join(user, ".codex")
@@ -50,7 +50,7 @@ func TestNativeCodexListsInheritedSkill(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { cancel(); _ = cmd.Wait() }()
-	_, _ = fmt.Fprintln(stdin, `{"id":1,"method":"initialize","params":{"clientInfo":{"name":"linger-skill-proof","version":"1"},"capabilities":{"experimentalApi":true}}}`)
+	_, _ = fmt.Fprintln(stdin, `{"id":1,"method":"initialize","params":{"clientInfo":{"name":"talos-skill-proof","version":"1"},"capabilities":{"experimentalApi":true}}}`)
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(make([]byte, 65536), 4*1024*1024)
 	for scanner.Scan() {

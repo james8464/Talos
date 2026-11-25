@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 
-import { SYSTEM_PROXY_VARIABLE } from "@linger/local-installation/service-proxy";
+import { SYSTEM_PROXY_VARIABLE } from "@talos/local-installation/service-proxy";
 
 // The voice websocket the services open; a PAC script is evaluated for it.
 const SONIOX_URL = "wss://stt-rt.soniox.com/transcribe-websocket";
@@ -30,7 +30,7 @@ export interface SystemProxy {
 }
 
 /**
- * The system proxy for the installer, as `LINGER_SYSTEM_HTTPS_PROXY`, which
+ * The system proxy for the installer, as `TALOS_SYSTEM_HTTPS_PROXY`, which
  * passes it only to TeamHub and node-services. A proxy the person set in the
  * app's environment wins and is inherited as it is.
  */

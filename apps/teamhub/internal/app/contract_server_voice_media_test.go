@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func TestVoiceDictationCommitRequestIDMatchesPublicContract(t *testing.T) {

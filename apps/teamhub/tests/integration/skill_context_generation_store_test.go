@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/skill"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func TestSkillContextResolverReadsCurrentPolicyUnderItsLock(t *testing.T) {
@@ -44,7 +44,7 @@ func TestSkillContextResolverReadsCurrentPolicyUnderItsLock(t *testing.T) {
 		return items
 	}
 	items := resolve()
-	if len(items) != 2 || items[0].SkillID != "linger_default_query" ||
+	if len(items) != 2 || items[0].SkillID != "talos_default_query" ||
 		items[0].Source != "default" || items[1].SkillID != "tenant_explicit_query" ||
 		items[1].Source != "explicit" || items[1].Config["mode"] != "query" {
 		t.Fatalf("resolved Skills=%+v", items)
@@ -124,13 +124,13 @@ func seedSkillContextGenerationStore(t *testing.T, ctx context.Context, pool *pg
 		`INSERT INTO skills(
 			skill_id,owner_kind,name,default_agent_types
 		 ) VALUES(
-			'linger_default_query','platform','default-query',ARRAY['general']::text[]
+			'talos_default_query','platform','default-query',ARRAY['general']::text[]
 		 )`,
 		`INSERT INTO skill_manifests(
 			manifest_id,skill_id,manifest_version,description,config_schema,
 			content_hash,file_count,size_bytes
 		 ) VALUES(
-			'manifest_default_query','linger_default_query','1.0.0',
+			'manifest_default_query','talos_default_query','1.0.0',
 			'Default query Skill.','{}',
 			sha256(convert_to('teamhub.skill-package.v1','UTF8') || decode('00','hex') ||
 				   int8send(8::bigint) || convert_to('SKILL.md','UTF8') ||
@@ -144,7 +144,7 @@ func seedSkillContextGenerationStore(t *testing.T, ctx context.Context, pool *pg
 		`UPDATE skill_manifests SET package_state='sealed',sealed_at=clock_timestamp()
 		 WHERE manifest_id='manifest_default_query'`,
 		`UPDATE skills SET latest_manifest_id='manifest_default_query'
-		 WHERE skill_id='linger_default_query'`,
+		 WHERE skill_id='talos_default_query'`,
 		`INSERT INTO skills(
 			skill_id,owner_kind,tenant_id,name,default_agent_types,created_by_actor_id
 		 ) VALUES(

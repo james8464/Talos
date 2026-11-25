@@ -36,11 +36,11 @@ import type {
   SessionCompact,
   SessionCompacted,
   SessionOptions,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   RUNNER_GATEWAY_PROTOCOL_VERSION,
   parseAgentToDaemonEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 
 interface RunnerOperationTargetBase {
   /** The Agent Service epoch whose Run this Operation executes. */
@@ -1061,7 +1061,7 @@ export class RunnerOperationState {
                   : {
                       provider: runtime,
                       sessionId: id,
-                      lingerMaterialized: true,
+                      talosMaterialized: true,
                     },
               )
             : new RunnerOperationError("cancelled", envelope.reason, false);
@@ -1496,7 +1496,7 @@ const encodedBytes = (value: unknown): number => {
 };
 
 // Codex and Antigravity name their own sessions and keep them as a thread
-// id; Claude and Pi run a session id that Linger materialized.
+// id; Claude and Pi run a session id that Talos materialized.
 function namesOwnSession(runtime: string): boolean {
   return runtime === "codex" || runtime === "antigravity";
 }

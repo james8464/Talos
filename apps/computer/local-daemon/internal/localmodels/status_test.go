@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 // testdata/library-status-dev38.json is what localmodels 0.1.0.dev38 printed

@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
 )
 
 type CreateAgentDocumentInput struct {

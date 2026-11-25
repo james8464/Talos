@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
-const testAgyProtocolHelperEnv = "LINGER_TEST_AGY_PROTOCOL_HELPER"
+const testAgyProtocolHelperEnv = "TALOS_TEST_AGY_PROTOCOL_HELPER"
 
 func init() {
 	metaPath := os.Getenv(testAgyProtocolHelperEnv)
@@ -123,7 +123,7 @@ func TestProtocolProbeWaitsForInitializeBeforeClosingInput(t *testing.T) {
 	}
 	stdout, _, err := runBoundedProbe(context.Background(), executable,
 		[]string{"-test.run=^TestProtocolProbeProcess$"},
-		map[string]string{"LINGER_TEST_PROTOCOL_HELPER": "delayed"},
+		map[string]string{"TALOS_TEST_PROTOCOL_HELPER": "delayed"},
 		`{"id":1,"method":"initialize"}`+"\n", 5*time.Second)
 	if err != nil {
 		t.Fatalf("probe failed: %v; output=%s", err, stdout)
@@ -143,7 +143,7 @@ func TestProtocolProbeCancellationClosesUnresponsiveRuntime(t *testing.T) {
 	started := time.Now()
 	_, _, err = runBoundedProbe(ctx, executable,
 		[]string{"-test.run=^TestProtocolProbeProcess$"},
-		map[string]string{"LINGER_TEST_PROTOCOL_HELPER": "unresponsive"},
+		map[string]string{"TALOS_TEST_PROTOCOL_HELPER": "unresponsive"},
 		`{"id":1,"method":"initialize"}`+"\n", 5*time.Second)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected cancellation, got %v", err)
@@ -158,9 +158,9 @@ func TestClaudeProtocolProbeRequiresMatchingInitialization(t *testing.T) {
 		name, frame string
 		matched     bool
 	}{
-		{"success", `{"type":"control_response","response":{"subtype":"success","request_id":"linger-computer-doctor"}}`, true},
+		{"success", `{"type":"control_response","response":{"subtype":"success","request_id":"talos-computer-doctor"}}`, true},
 		{"wrong request", `{"type":"control_response","response":{"subtype":"success","request_id":"another-request"}}`, false},
-		{"rejected", `{"type":"control_response","response":{"subtype":"error","request_id":"linger-computer-doctor"}}`, false},
+		{"rejected", `{"type":"control_response","response":{"subtype":"error","request_id":"talos-computer-doctor"}}`, false},
 		{"session announcement", `{"type":"system","subtype":"init","session_id":"session"}`, false},
 		{"missing response", `{"type":"control_response"}`, false},
 	} {
@@ -183,8 +183,8 @@ func TestClaudeProtocolProbeClosesInputAfterSplitInitialization(t *testing.T) {
 	}
 	_, _, err = runBoundedProbe(context.Background(), executable,
 		[]string{"-test.run=^TestProtocolProbeProcess$"},
-		map[string]string{"LINGER_TEST_PROTOCOL_HELPER": "claude"},
-		`{"type":"control_request","request_id":"linger-computer-doctor","request":{"subtype":"initialize"}}`+"\n", 5*time.Second)
+		map[string]string{"TALOS_TEST_PROTOCOL_HELPER": "claude"},
+		`{"type":"control_request","request_id":"talos-computer-doctor","request":{"subtype":"initialize"}}`+"\n", 5*time.Second)
 	if err != nil {
 		t.Fatalf("Claude initialize did not close stdin cleanly: %v", err)
 	}
@@ -212,7 +212,7 @@ if [ "$1 $2 $3" = "auth status --json" ]; then
   exit 0
 fi
 IFS= read -r _request
-echo '{"type":"control_response","response":{"subtype":"success","request_id":"linger-computer-doctor"}}'
+echo '{"type":"control_response","response":{"subtype":"success","request_id":"talos-computer-doctor"}}'
 exit 0
 `
 	if err := os.WriteFile(claude, []byte(script), 0o700); err != nil {
@@ -247,7 +247,7 @@ exit 0
 }
 
 func TestProtocolProbeProcess(t *testing.T) {
-	mode := os.Getenv("LINGER_TEST_PROTOCOL_HELPER")
+	mode := os.Getenv("TALOS_TEST_PROTOCOL_HELPER")
 	if mode == "" {
 		return
 	}
@@ -271,7 +271,7 @@ func TestProtocolProbeProcess(t *testing.T) {
 	if mode == "claude" {
 		fmt.Print(`{"type":"control_response","response":`)
 		time.Sleep(20 * time.Millisecond)
-		fmt.Println(`{"subtype":"success","request_id":"linger-computer-doctor"}}`)
+		fmt.Println(`{"subtype":"success","request_id":"talos-computer-doctor"}}`)
 	} else {
 		fmt.Print(`{"id":1,"res`)
 		time.Sleep(20 * time.Millisecond)

@@ -23,7 +23,7 @@ func TestPrepareCodexHomeReturnsSandboxArgsAndLeavesConfigAlone(t *testing.T) {
 		{"no shared config", "", false},
 		{"no sandbox key", "model = \"o3\"\n", false},
 		{"top-level sandbox_mode", "sandbox_mode = \"read-only\"\nmodel = \"o3\"\n", false},
-		{"same key inside a table", "[permissions.linger]\nsandbox_mode = \"read-only\"\n", false},
+		{"same key inside a table", "[permissions.talos]\nsandbox_mode = \"read-only\"\n", false},
 		{"windows native sandbox", "[windows]\nsandbox = \"elevated\"\n", false},
 		{"invalid TOML", "sandbox_mode = \n[[[broken", true},
 	}

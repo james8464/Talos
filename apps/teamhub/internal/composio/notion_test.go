@@ -20,7 +20,7 @@ func TestNotionListsSharedResourcesAndRendersPageWithoutChildPages(t *testing.T)
 		var data json.RawMessage
 		switch proxy.Endpoint {
 		case "/v1/users/me":
-			data = json.RawMessage(`{"object":"user","id":"bot-11111111-1111-1111-1111-111111111111","name":"Linger","type":"bot","bot":{"workspace_name":"Acme Labs"}}`)
+			data = json.RawMessage(`{"object":"user","id":"bot-11111111-1111-1111-1111-111111111111","name":"Talos","type":"bot","bot":{"workspace_name":"Acme Labs"}}`)
 		case "/v1/search":
 			data = json.RawMessage(`{"object":"list","results":[
 				{"object":"page","id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","url":"https://www.notion.so/About-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","properties":{"title":{"type":"title","title":[{"plain_text":"About me"}]}}},
@@ -72,7 +72,7 @@ func TestNotionRendersSelectedDatabaseRows(t *testing.T) {
 		var data json.RawMessage
 		switch proxy.Endpoint {
 		case "/v1/databases/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/query":
-			data = json.RawMessage(`{"results":[{"id":"row1","properties":{"Name":{"type":"title","title":[{"plain_text":"Linger"}]},"Role":{"type":"rich_text","rich_text":[{"plain_text":"Founder"}]}}}],"has_more":false}`)
+			data = json.RawMessage(`{"results":[{"id":"row1","properties":{"Name":{"type":"title","title":[{"plain_text":"Talos"}]},"Role":{"type":"rich_text","rich_text":[{"plain_text":"Founder"}]}}}],"has_more":false}`)
 		default:
 			t.Fatalf("unexpected endpoint %s", proxy.Endpoint)
 		}
@@ -85,7 +85,7 @@ func TestNotionRendersSelectedDatabaseRows(t *testing.T) {
 	}
 	resource := NotionResource{ID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", Title: "Projects", Kind: "notion_database", URL: "https://www.notion.so/projects"}
 	snapshot, err := client.GetNotionDatabase(context.Background(), "notion-account", resource)
-	if err != nil || !strings.Contains(snapshot.Markdown, "Linger") || !strings.Contains(snapshot.Markdown, "Founder") {
+	if err != nil || !strings.Contains(snapshot.Markdown, "Talos") || !strings.Contains(snapshot.Markdown, "Founder") {
 		t.Fatalf("database=%+v err=%v", snapshot, err)
 	}
 	documents, err := RenderNotionDocumentsWithLimits(NotionIdentity{BotID: "bot-1", WorkspaceName: "Acme"}, []NotionSnapshot{snapshot}, DefaultAppImportLimits())

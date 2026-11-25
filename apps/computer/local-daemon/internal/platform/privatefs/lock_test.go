@@ -13,7 +13,7 @@ import (
 )
 
 func TestFileLockChild(t *testing.T) {
-	path := os.Getenv("LINGER_FILELOCK_FIXTURE")
+	path := os.Getenv("TALOS_FILELOCK_FIXTURE")
 	if path == "" {
 		return
 	}
@@ -36,7 +36,7 @@ func TestLockSurvivesContentAccessAndReleasesOnProcessExit(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	child := exec.CommandContext(ctx, binary, "-test.run=^TestFileLockChild$")
-	child.Env = append(os.Environ(), "LINGER_FILELOCK_FIXTURE="+path)
+	child.Env = append(os.Environ(), "TALOS_FILELOCK_FIXTURE="+path)
 	stdin, err := child.StdinPipe()
 	if err != nil {
 		t.Fatal(err)

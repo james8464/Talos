@@ -7,13 +7,13 @@ import (
 	"slices"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomcreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/tenantmembership"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/tenantmembership"
 )
 
 var (

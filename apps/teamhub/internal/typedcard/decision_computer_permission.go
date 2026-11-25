@@ -12,10 +12,10 @@ import (
 )
 
 // Computer permission subjects and permissions. Each subject is the app macOS
-// grants the permission to: Linger runs shell commands, CuaDriver runs the
+// grants the permission to: Talos runs shell commands, CuaDriver runs the
 // computer-use tools.
 const (
-	ComputerPermissionSubjectLinger      = "linger"
+	ComputerPermissionSubjectTalos      = "talos"
 	ComputerPermissionSubjectComputerUse = "computer_use"
 
 	ComputerPermissionScreenRecording = "screen_recording"
@@ -49,7 +49,7 @@ const computerPermissionTitle = "System permission needed on your Mac"
 func (command ComputerPermissionDecision) normalize() (computerPermissionView, error) {
 	view := computerPermissionView{ComputerID: command.ComputerID, Subject: command.Subject, Reason: strings.TrimSpace(command.Reason)}
 	if !browserConnectionComputerPattern.MatchString(command.ComputerID) ||
-		(command.Subject != ComputerPermissionSubjectLinger && command.Subject != ComputerPermissionSubjectComputerUse) ||
+		(command.Subject != ComputerPermissionSubjectTalos && command.Subject != ComputerPermissionSubjectComputerUse) ||
 		len(command.Permissions) == 0 || len(command.Permissions) > 2 || utf8.RuneCountInString(view.Reason) > 200 {
 		return computerPermissionView{}, ErrInvalid
 	}
@@ -180,5 +180,5 @@ func computerPermissionSubjectLabel(subject string) string {
 	if subject == ComputerPermissionSubjectComputerUse {
 		return "computer use (CuaDriver)"
 	}
-	return "Linger"
+	return "Talos"
 }

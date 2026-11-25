@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const envRootLockFile = ".operation_lock"

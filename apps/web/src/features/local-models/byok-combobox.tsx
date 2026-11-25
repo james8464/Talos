@@ -53,7 +53,7 @@ export function ByokCombobox({
   "aria-invalid"?: boolean;
   className?: string;
   disabled: boolean;
-  /** The value is a default Linger filled in, shown in grey. */
+  /** The value is a default Talos filled in, shown in grey. */
   filled?: boolean;
   heading?: string;
   id: string;

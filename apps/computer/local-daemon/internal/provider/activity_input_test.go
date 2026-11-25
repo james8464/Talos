@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 func TestToolActivityPublishesDisplayInput(t *testing.T) {

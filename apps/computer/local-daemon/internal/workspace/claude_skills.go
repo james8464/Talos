@@ -170,7 +170,7 @@ func parseSkillFrontmatter(raw []byte) (skillFrontmatter, bool) {
 // configuration directory, which the Runtime loads as its `user` setting
 // source. Claude Code identifies a Skill by its directory name, not by the
 // `name` in its frontmatter, so the link name is the invocable name and must be
-// the real one — the opaque `linger-local-<hash>` naming the Codex projection
+// the real one — the opaque `talos-local-<hash>` naming the Codex projection
 // uses would make every inherited Skill uncallable.
 //
 // The Skill's own bytes stay on the Computer. Only a link is created, so a

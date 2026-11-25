@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// SecretSeedMinLength is the shortest LINGER_SECRET_SEED accepted.
+// SecretSeedMinLength is the shortest TALOS_SECRET_SEED accepted.
 const SecretSeedMinLength = 32
 
 const serviceCredentialSalt = "simplexai/service-credential/v1"
@@ -30,15 +30,15 @@ func ServiceCredential(seed, label string) string {
 }
 
 // applyDerivedCredentials derives every service credential and TeamHub's own
-// signing key from LINGER_SECRET_SEED. Without a seed every link
+// signing key from TALOS_SECRET_SEED. Without a seed every link
 // stays off.
 func applyDerivedCredentials(cfg *Config) error {
-	seed := strings.TrimSpace(os.Getenv("LINGER_SECRET_SEED"))
+	seed := strings.TrimSpace(os.Getenv("TALOS_SECRET_SEED"))
 	if seed == "" {
 		return nil
 	}
 	if len(seed) < SecretSeedMinLength {
-		return errors.New("LINGER_SECRET_SEED must be at least 32 characters")
+		return errors.New("TALOS_SECRET_SEED must be at least 32 characters")
 	}
 	for _, link := range []struct {
 		credential *string
@@ -55,7 +55,7 @@ func applyDerivedCredentials(cfg *Config) error {
 		*link.credential = ServiceCredential(seed, link.label)
 	}
 	if seed == developmentSecretSeed && !isLoopbackOrigin(cfg.PublicWebURL) {
-		return errors.New("LINGER_SECRET_SEED is the public development seed; set a private seed when WEB_PUBLIC_ORIGIN is not localhost")
+		return errors.New("TALOS_SECRET_SEED is the public development seed; set a private seed when WEB_PUBLIC_ORIGIN is not localhost")
 	}
 	return nil
 }

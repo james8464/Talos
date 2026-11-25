@@ -10,7 +10,7 @@ import type {
   SessionlyCheckpoint,
   SessionlyMessageCursor,
 } from "./types.js";
-import { isNodeError, isRecord } from "@linger/service-kit";
+import { isNodeError, isRecord } from "@talos/service-kit";
 
 export async function readSessionlyCheckpoint(
   memoryRoot: string,

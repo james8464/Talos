@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { materializeRoomDocument } from "@linger/document-model";
+import { materializeRoomDocument } from "@talos/document-model";
 import { describe, expect, it } from "vitest";
 
 import { historyRevisionMarkdown } from "./document-history-revision";

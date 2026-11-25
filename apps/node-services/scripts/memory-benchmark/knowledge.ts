@@ -5,11 +5,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { JsonLogger } from "@linger/service-kit/node";
+import type { JsonLogger } from "@talos/service-kit/node";
 import type {
   PersonalKnowledgeEvidenceReadResponse,
   PersonalKnowledgeQueryResponse,
-} from "@linger/wire-contracts/node-services-internal/client";
+} from "@talos/wire-contracts/node-services-internal/client";
 import postgres from "postgres";
 
 import { AgentWikiBackend } from "../../src/llm-wiki/agent-wiki-backend.js";

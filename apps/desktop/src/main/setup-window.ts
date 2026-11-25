@@ -14,10 +14,10 @@ import os from "node:os";
 import path from "node:path";
 
 import iconPng from "../../resources/icon.png";
-// The Linger logo with its wordmark, for the page header.
+// The Talos logo with its wordmark, for the page header.
 import logoPng from "../../resources/logo-horizontal.png";
 // The installer's welcome scene, so setup looks like the installer.
-import scenePng from "../../../linger-installer/public/onboarding/welcome-scene.png";
+import scenePng from "../../../talos-installer/public/onboarding/welcome-scene.png";
 // The SPA's typeface, so the setup page reads like the app it opens.
 import geistWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2";
 import { localizePage } from "../i18n/page.js";
@@ -69,7 +69,7 @@ export interface SetupWindowOptions {
 
 const SETUP_URL = "app://setup/";
 // Its own session: the setup page never sees the server's cookies.
-const PARTITION = "linger-setup";
+const PARTITION = "talos-setup";
 
 // The first-run window (setup, sign-in, connect, permissions). The main
 // window stays hidden until setup finishes or the user asks for it.
@@ -183,7 +183,7 @@ export class SetupWindowModule implements Module {
     return !!this.#window && !this.#window.isDestroyed();
   }
 
-  // Opens Linger again: setup until this computer is connected, the main
+  // Opens Talos again: setup until this computer is connected, the main
   // window after.
   showApp(): void {
     const enrolled = !!this.#ctx?.config.get().computerId;

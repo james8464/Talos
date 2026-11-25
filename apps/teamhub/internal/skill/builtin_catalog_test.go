@@ -12,7 +12,7 @@ import (
 	"testing/fstest"
 	"unicode"
 
-	builtinskills "github.com/simplexai-labs/linger/skills"
+	builtinskills "github.com/simplexai-labs/talos/skills"
 )
 
 const (

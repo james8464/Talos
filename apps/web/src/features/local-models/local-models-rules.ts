@@ -1,4 +1,4 @@
-import { isInkling2MiniModelId } from "@linger/service-kit/featured-models";
+import { isInkling2MiniModelId } from "@talos/service-kit/featured-models";
 
 import type { Translate } from "@/i18n/language";
 import { formatBytes } from "@/lib/format-bytes";

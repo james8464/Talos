@@ -2,18 +2,18 @@
 // The setup window walks a new install through server, sign-in, connecting
 // this computer and the system permissions it needs.
 
-import { INKLING_2_MINI_ANNOUNCEMENT_URL } from "@linger/service-kit/featured-models";
+import { INKLING_2_MINI_ANNOUNCEMENT_URL } from "@talos/service-kit/featured-models";
 import {
   NVIDIA_DRIVER_DOWNLOAD_URL,
   NVIDIA_DRIVER_GUIDE_URL,
   type DesktopDriverInstallState,
   type DesktopNvidiaAppKind,
-} from "@linger/service-kit/nvidia-driver";
+} from "@talos/service-kit/nvidia-driver";
 import type {
   SetupChoice,
   SetupMemory,
-} from "@linger/local-installation/setup-plan";
-import type { WindowsPrivateRefusal } from "@linger/local-installation/windows-private";
+} from "@talos/local-installation/setup-plan";
+import type { WindowsPrivateRefusal } from "@talos/local-installation/windows-private";
 
 export interface SetupFolder {
   readonly grantId: string;
@@ -24,7 +24,7 @@ export interface SetupFolder {
 export type SetupPermission = "full-disk" | "folders" | "automation";
 export type SetupPermissionStatus = "granted" | "denied" | "unknown";
 
-// Linger installed and run on this computer instead of a team server.
+// Talos installed and run on this computer instead of a team server.
 export interface SetupLocalServer {
   // Whether this computer can run it; absent options are not offered.
   readonly available: boolean;
@@ -388,7 +388,7 @@ export type SetupCommand =
       readonly action: "start" | "confirm" | "retry" | "cancel" | "copy";
     };
 
-export interface LingerSetupApi {
+export interface TalosSetupApi {
   readonly featuredAnnouncementUrl: SetupExternalUrl;
   readonly nvidiaDriverDownloadUrl: SetupExternalUrl;
   readonly nvidiaDriverGuideUrl: SetupExternalUrl;

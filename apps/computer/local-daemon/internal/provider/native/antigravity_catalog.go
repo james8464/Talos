@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const antigravityProbeSeedLimit = 4 << 20
@@ -37,7 +37,7 @@ func PrepareAntigravityProtocolProbe() ([]string, func(), error) {
 }
 
 func prepareAntigravityProbe(env map[string]string, seedCredentials bool) ([]string, string, func(), error) {
-	root, err := os.MkdirTemp("", "linger-antigravity-probe-")
+	root, err := os.MkdirTemp("", "talos-antigravity-probe-")
 	if err != nil {
 		return nil, "", nil, err
 	}

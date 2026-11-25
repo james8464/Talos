@@ -1,7 +1,7 @@
 import type {
   AgentToDaemonEnvelope,
   CapabilityModelSource,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LocalComputerCapabilityError } from "../../../src/agent/runner-gateway/local-computer-management.js";

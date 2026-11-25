@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
 )
 
 // draftReadTool reads the draft a send-draft call sends. The call names only

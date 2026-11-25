@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // maxEventStreamRoomCursors bounds the per-wake Room reread; a client keeps

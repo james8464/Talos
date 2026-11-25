@@ -14,12 +14,12 @@ import {
   TeamHubVoiceRuntimeClient,
   TeamHubVoiceRuntimeError,
   type VoiceObservation,
-} from "@linger/wire-contracts/teamhub-internal/client";
-import type { components as PublicComponents } from "@linger/wire-contracts/teamhub-public/types";
+} from "@talos/wire-contracts/teamhub-internal/client";
+import type { components as PublicComponents } from "@talos/wire-contracts/teamhub-public/types";
 
 import type { ASRProvider, ASRStream } from "./asr.js";
 import { DictationASRStream } from "./dictation-asr.js";
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 import { VoiceFailure } from "./voice-failure.js";
 
 const asrFlushTimeoutMs = 5_000;
@@ -36,7 +36,7 @@ const trackConsumerRetryDelaysMs = [
 const maximumBufferedInputSeconds = 20;
 const publisherAbsenceToleranceMs = 250;
 const firstFrameWaitMs = 500;
-export const dictationCommitTopic = "linger.voice.dictation.commit";
+export const dictationCommitTopic = "talos.voice.dictation.commit";
 const maximumDictationCommitRequests = 1_024;
 
 interface CurrentVoiceTrack {
@@ -130,7 +130,7 @@ export class VoiceTrackWorker {
         )
           return;
         const generation = Number(
-          participant.attributes?.["linger.voice_generation"] ?? 0,
+          participant.attributes?.["talos.voice_generation"] ?? 0,
         );
         if (this.dictation && generation <= this.poisonedGeneration) return;
         this.currentTrack?.controller.abort();
@@ -193,10 +193,10 @@ export class VoiceTrackWorker {
               await withTimeout(
                 ctx.room.localParticipant?.setAttributes({
                   // Clients that predate the code read only this flag.
-                  "linger.voice_dictation_failure": "transcript_unconfirmed",
-                  "linger.voice_dictation_failure_code":
+                  "talos.voice_dictation_failure": "transcript_unconfirmed",
+                  "talos.voice_dictation_failure_code":
                     voiceTrackFailureCode(error),
-                  "linger.voice_dictation_failure_generation":
+                  "talos.voice_dictation_failure_generation":
                     String(generation),
                 }) ?? Promise.resolve(),
                 1_000,
@@ -293,7 +293,7 @@ export class VoiceTrackWorker {
     let readinessTimer: ReturnType<typeof setInterval> | undefined;
     let readinessUpdate: Promise<void> | undefined;
     const publisherGeneration = Number(
-      participant.attributes?.["linger.voice_generation"] ?? 0,
+      participant.attributes?.["talos.voice_generation"] ?? 0,
     );
     if (!Number.isSafeInteger(publisherGeneration) || publisherGeneration < 0)
       throw new Error("Voice publisher generation is invalid");
@@ -521,17 +521,17 @@ export class VoiceTrackWorker {
     const trackSid = track.sid;
     return (resetDictation = false) =>
       local.setAttributes({
-        "linger.voice_ready_generation": String(publisherGeneration),
-        "linger.voice_ready_track": trackSid,
-        "linger.voice_ready_at": String(Date.now()),
-        "linger.voice_purpose": this.dictation
+        "talos.voice_ready_generation": String(publisherGeneration),
+        "talos.voice_ready_track": trackSid,
+        "talos.voice_ready_at": String(Date.now()),
+        "talos.voice_purpose": this.dictation
           ? "chat_dictation"
           : "hardware_control",
         ...(this.dictation && resetDictation
           ? {
-              "linger.voice_dictation_failure": "",
-              "linger.voice_dictation_failure_code": "",
-              "linger.voice_dictation_failure_generation": "",
+              "talos.voice_dictation_failure": "",
+              "talos.voice_dictation_failure_code": "",
+              "talos.voice_dictation_failure_generation": "",
             }
           : {}),
       });
@@ -576,9 +576,9 @@ export class VoiceTrackWorker {
     if (publisherGeneration > 0 && ctx.room.localParticipant) {
       await withTimeout(
         ctx.room.localParticipant.setAttributes({
-          "linger.voice_ready_generation": "0",
-          "linger.voice_ready_track": "",
-          "linger.voice_ready_at": "0",
+          "talos.voice_ready_generation": "0",
+          "talos.voice_ready_track": "",
+          "talos.voice_ready_at": "0",
         }),
         1_000,
         "Voice input readiness reset timed out",

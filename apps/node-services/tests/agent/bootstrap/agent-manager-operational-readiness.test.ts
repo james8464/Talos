@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createAgentManagerOperationalReadiness } from "../../../src/agent/bootstrap/agent-manager-operational-readiness.js";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("AgentManager operational readiness", () => {
   it("recovers after the TeamHub becomes ready", async () => {

@@ -17,14 +17,14 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/personalprofile"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/personalprofile"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 type recordingProfileGenerator struct {

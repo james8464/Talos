@@ -278,7 +278,7 @@ function withModel(
 }
 
 afterEach(() => {
-  delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+  delete (window as { talosDesktop?: unknown }).talosDesktop;
 });
 
 describe("LocalModelsPage", () => {
@@ -650,11 +650,11 @@ describe("LocalModelsPage", () => {
   it.each([
     [
       "/home/ana/.local/share/localmodels/tools/gateway-home",
-      "It loaded, but Agents couldn't be given access to it: the folder /home/ana/.local/share/localmodels/tools/gateway-home belongs to another account. Quit Linger, rename that folder, then open Linger and load the model again.",
+      "It loaded, but Agents couldn't be given access to it: the folder /home/ana/.local/share/localmodels/tools/gateway-home belongs to another account. Quit Talos, rename that folder, then open Talos and load the model again.",
     ],
     [
       undefined,
-      "It loaded, but Agents couldn't be given access to it: a Linger folder on the computer belongs to another account.",
+      "It loaded, but Agents couldn't be given access to it: a Talos folder on the computer belongs to another account.",
     ],
   ])(
     "explains a gateway folder another account owns (path %s)",
@@ -830,7 +830,7 @@ describe("LocalModelsPage", () => {
       pool: "gpu:0",
       state: "idle",
     });
-    // A 16 GB card where Linger's embedding holds 1 GB and other apps 8 GB:
+    // A 16 GB card where Talos's embedding holds 1 GB and other apps 8 GB:
     // the model fits the empty card but not what is free now.
     const pool = gpuPool(0, 16, [
       { component: true, gb: 1, id: "embedding", name: "Qwen3 Embedding" },
@@ -1264,7 +1264,7 @@ describe("LocalModelsPage", () => {
     [
       "NOT_REPORTED",
       "lab-118 hasn't reported local models yet",
-      "up-to-date Linger app",
+      "up-to-date Talos app",
     ],
   ] as const)(
     "explains a Computer without a model library (%s)",
@@ -1362,7 +1362,7 @@ describe("LocalModelsPage", () => {
   });
 
   it("opens the desktop app's own Computer when the address names none", async () => {
-    (window as { lingerDesktop?: unknown }).lingerDesktop = {
+    (window as { talosDesktop?: unknown }).talosDesktop = {
       computer: {
         enroll: () => Promise.reject(new Error("not used")),
         getStatus: () =>
@@ -1389,10 +1389,10 @@ describe("LocalModelsPage", () => {
 
   it("prefers the saved browser choice over the desktop app's own Computer when both are present", async () => {
     window.localStorage.setItem(
-      `linger.models.lastComputer:${tenantId}`,
+      `talos.models.lastComputer:${tenantId}`,
       "computer-mac",
     );
-    (window as { lingerDesktop?: unknown }).lingerDesktop = {
+    (window as { talosDesktop?: unknown }).talosDesktop = {
       computer: {
         enroll: () => Promise.reject(new Error("not used")),
         getStatus: () =>
@@ -1434,7 +1434,7 @@ describe("LocalModelsPage", () => {
       expect(statuses()[0]).toBe("GPT-OSS 20B: Loaded · Memory · 14.3 GB"),
     );
     expect(
-      window.localStorage.getItem(`linger.models.lastComputer:${tenantId}`),
+      window.localStorage.getItem(`talos.models.lastComputer:${tenantId}`),
     ).toBe("computer-mac");
 
     // Re-entering Settings > Models with no ?computer= reopens Mac Studio.
@@ -1449,7 +1449,7 @@ describe("LocalModelsPage", () => {
     // A stale stored ID that is no longer owned falls back to the first online Computer.
     cleanup();
     window.localStorage.setItem(
-      `linger.models.lastComputer:${tenantId}`,
+      `talos.models.lastComputer:${tenantId}`,
       "computer-removed",
     );
     await renderPage(fixture);
@@ -1473,7 +1473,7 @@ describe("LocalModelsPage", () => {
       [inventoryComputer(labView()), inventoryComputer(macView())],
     );
     window.localStorage.setItem(
-      `linger.models.lastComputer:${tenantId}`,
+      `talos.models.lastComputer:${tenantId}`,
       "computer-mac",
     );
 
@@ -1483,7 +1483,7 @@ describe("LocalModelsPage", () => {
       screen.getByRole("combobox", { name: "Computer" }),
     ).toHaveTextContent("Teammate Rig");
     expect(
-      window.localStorage.getItem(`linger.models.lastComputer:${tenantId}`),
+      window.localStorage.getItem(`talos.models.lastComputer:${tenantId}`),
     ).toBe("computer-mac");
   });
 
@@ -1857,7 +1857,7 @@ describe("LocalModelsPage", () => {
                   computer_id: "computer-mac",
                   runtime_type: "pi",
                   type: "local",
-                  workspace_grant_id: "grant-linger-workspace",
+                  workspace_grant_id: "grant-talos-workspace",
                 },
               },
             }
@@ -1945,7 +1945,7 @@ describe("LocalModelsPage", () => {
                   computer_id: "computer-mac",
                   runtime_type: "pi",
                   type: "local",
-                  workspace_grant_id: "grant-linger-workspace",
+                  workspace_grant_id: "grant-talos-workspace",
                 },
               },
             }
@@ -2025,7 +2025,7 @@ describe("LocalModelsPage", () => {
                   computer_id: "computer-mac",
                   runtime_type: "pi",
                   type: "local",
-                  workspace_grant_id: "grant-linger-workspace",
+                  workspace_grant_id: "grant-talos-workspace",
                 },
               },
             }
@@ -3465,7 +3465,7 @@ describe("Model source", () => {
                   computer_id: "computer-mac",
                   runtime_type: "pi",
                   type: "local",
-                  workspace_grant_id: "grant-linger-workspace",
+                  workspace_grant_id: "grant-talos-workspace",
                 },
               },
             }
@@ -4583,7 +4583,7 @@ describe("Featured Inkling 2 Mini spotlight", () => {
                   computer_id: "computer-lab",
                   runtime_type: "pi",
                   type: "local",
-                  workspace_grant_id: "grant-linger-workspace",
+                  workspace_grant_id: "grant-talos-workspace",
                 },
               },
             }
@@ -4610,7 +4610,7 @@ describe("Featured Inkling 2 Mini spotlight", () => {
     const absentSpotlight = spotlightRegion();
     expect(absentSpotlight).toHaveAttribute("data-in-catalog", "false");
     expect(absentSpotlight).toHaveTextContent(
-      "Not in this computer's local model catalog yet. Update Linger's local models runtime if you're on an older version.",
+      "Not in this computer's local model catalog yet. Update Talos's local models runtime if you're on an older version.",
     );
     expect(within(absentSpotlight).queryByRole("article")).toBeNull();
     expect(
@@ -5715,9 +5715,9 @@ describe("Featured Inkling 2 Mini spotlight", () => {
 
   it("shows post-reboot driver completion banner with direct model download and dismisses cleanly", async () => {
     const clearInstallState = vi.fn(async () => {});
-    const previousDesktop = (window as { lingerDesktop?: unknown })
-      .lingerDesktop;
-    (window as { lingerDesktop?: unknown }).lingerDesktop = {
+    const previousDesktop = (window as { talosDesktop?: unknown })
+      .talosDesktop;
+    (window as { talosDesktop?: unknown }).talosDesktop = {
       computer: {
         enroll: vi.fn(),
         getStatus: vi.fn(async () => ({
@@ -5798,9 +5798,9 @@ describe("Featured Inkling 2 Mini spotlight", () => {
       );
     } finally {
       if (previousDesktop === undefined) {
-        delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+        delete (window as { talosDesktop?: unknown }).talosDesktop;
       } else {
-        (window as { lingerDesktop?: unknown }).lingerDesktop = previousDesktop;
+        (window as { talosDesktop?: unknown }).talosDesktop = previousDesktop;
       }
     }
   });

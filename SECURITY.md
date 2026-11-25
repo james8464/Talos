@@ -17,7 +17,7 @@ are no maintained release branches yet.
 
 ## Trust model
 
-Linger is a self-hosted workspace for one owner and the Agents that work
+Talos is a self-hosted workspace for one owner and the Agents that work
 for them. Read these assumptions before you expose a deployment to a network.
 
 - **Agents act with your authority on your computer.** An Agent runs Codex,
@@ -32,7 +32,7 @@ for them. Read these assumptions before you expose a deployment to a network.
   apps run directly; writes such as sending mail wait for the owner's
   confirmation in the Room.
 - **One secret protects every service link.** TeamHub, the Node services and
-  the Voice Runtime derive their credentials from `LINGER_SECRET_SEED`.
+  the Voice Runtime derive their credentials from `TALOS_SECRET_SEED`.
   `TEAMHUB_SECRET_ENCRYPTION_KEY` encrypts API keys saved in the product.
   Anyone who holds either value can impersonate a service or read saved keys.
 
@@ -42,7 +42,7 @@ for them. Read these assumptions before you expose a deployment to a network.
 and encryption key so `pnpm dev` and `docker compose up` work on `localhost`
 without setup. Everyone has these values. TeamHub refuses to start with the
 public seed once `WEB_PUBLIC_ORIGIN` is not `localhost`, `127.0.0.1` or `::1`.
-The Linger installer does not use the public values: it generates a private
+The Talos installer does not use the public values: it generates a private
 seed and encryption key for each instance once, keeps them in the instance's
 owner-only `services.env`, and preserves them across restarts and reinstalls.
 Losing or replacing the encryption key makes a saved Composio key unreadable
@@ -51,7 +51,7 @@ until someone saves it again in Apps.
 Before serving other computers:
 
 - Generate private values with `openssl rand -base64 32` for
-  `LINGER_SECRET_SEED` and `TEAMHUB_SECRET_ENCRYPTION_KEY`, and keep them in
+  `TALOS_SECRET_SEED` and `TEAMHUB_SECRET_ENCRYPTION_KEY`, and keep them in
   the ignored `.env` or your secret store, never in Git.
 - Put HTTPS in front of the Web port. The Computer installer, the Runner
   Gateway WebSocket and sign-in cookies travel over that connection, and plain

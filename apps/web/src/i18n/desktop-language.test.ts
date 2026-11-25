@@ -10,12 +10,12 @@ import {
 } from "./language";
 
 const desktop = (set = vi.fn(async () => {})) => {
-  Object.assign(window, { lingerDesktop: { language: { set } } });
+  Object.assign(window, { talosDesktop: { language: { set } } });
   return set;
 };
 
 afterEach(() => {
-  delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+  delete (window as { talosDesktop?: unknown }).talosDesktop;
   localStorage.clear();
   resetLanguageForTest();
 });
@@ -49,7 +49,7 @@ describe("reportLanguageToDesktop", () => {
     await expect(setLanguage("zh-CN")).resolves.toBeUndefined();
     stop();
 
-    delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+    delete (window as { talosDesktop?: unknown }).talosDesktop;
     expect(() => reportLanguageToDesktop()()).not.toThrow();
   });
 });

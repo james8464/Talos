@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import type { Message, MessageSource } from "@linger/service-kit/messages";
+import type { Message, MessageSource } from "@talos/service-kit/messages";
 import { describe, expect, it } from "vitest";
 
 import { offlineMessages } from "../shell/offline.messages.js";

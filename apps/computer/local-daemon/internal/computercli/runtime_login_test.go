@@ -9,7 +9,7 @@ import (
 )
 
 // A sign-in must run the same executable discovery found and must hand it
-// the Runtime environment, not the CLI's own LINGER_* variables.
+// the Runtime environment, not the CLI's own TALOS_* variables.
 func TestRuntimeLoginOpensTheRuntimeTheDaemonStarts(t *testing.T) {
 	f := newFixture(t)
 	var launched *exec.Cmd
@@ -41,7 +41,7 @@ func TestRuntimeLoginOpensTheRuntimeTheDaemonStarts(t *testing.T) {
 		t.Fatal("runtime does not use the CLI's terminal")
 	}
 	for _, entry := range launched.Env {
-		if strings.HasPrefix(entry, "LINGER_") {
+		if strings.HasPrefix(entry, "TALOS_") {
 			t.Fatalf("runtime received %q", entry)
 		}
 	}

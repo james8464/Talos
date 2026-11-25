@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 type roomDocumentAssetResponse struct {
@@ -612,7 +612,7 @@ func assertRoomDocumentAssetStatus(t *testing.T, env *testEnv, client *http.Clie
 
 func writeRoomDocumentAssetObject(t *testing.T, env *testEnv, assetID string, contents []byte) {
 	t.Helper()
-	digest := sha256.Sum256([]byte("linger/room-document/asset-object/" + assetID))
+	digest := sha256.Sum256([]byte("talos/room-document/asset-object/" + assetID))
 	objectKey := "object_" + hex.EncodeToString(digest[:16])
 	if err := os.WriteFile(filepath.Join(env.artifactRoot, objectKey), contents, 0o600); err != nil {
 		t.Fatal(err)

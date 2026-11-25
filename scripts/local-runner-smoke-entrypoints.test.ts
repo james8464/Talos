@@ -76,7 +76,7 @@ describe("Local Runner smoke entrypoints", () => {
     async (probe) => {
       const home = await mkdtemp(path.join(os.tmpdir(), "claude-smoke-probe-"));
       try {
-        const marker = path.join(home, ".linger-smoke-marker");
+        const marker = path.join(home, ".talos-smoke-marker");
         await writeFile(marker, "fixture workspace");
         const child = spawn(
           process.execPath,
@@ -85,7 +85,7 @@ describe("Local Runner smoke entrypoints", () => {
               root,
               "scripts/test-fixtures/claude-runtime-auth-fixture.mjs",
             ),
-            "--linger-login-marker",
+            "--talos-login-marker",
             marker,
             ...(probe ? ["--bare"] : []),
           ],
@@ -169,7 +169,7 @@ describe("Local Runner smoke entrypoints", () => {
       "bash scripts/smoke-local-runner.sh",
     );
     expect(packageJson.scripts["smoke:local-runner:soak"]).toBe(
-      "LINGER_LOCAL_RUNNER_SOAK_ONLY=1 bash scripts/smoke-local-runner-live.sh",
+      "TALOS_LOCAL_RUNNER_SOAK_ONLY=1 bash scripts/smoke-local-runner-live.sh",
     );
     expect(packageJson.scripts["smoke:local-runner:live"]).toBe(
       "bash scripts/smoke-local-runner-live.sh",
@@ -247,7 +247,7 @@ printf 'restart-allowed\\n'
       "utf8",
     );
     const installer = await readFile(
-      path.join(root, "scripts/install-linger-computer.sh"),
+      path.join(root, "scripts/install-talos-computer.sh"),
       "utf8",
     );
     const releaseBuilder = await readFile(
@@ -260,14 +260,14 @@ printf 'restart-allowed\\n'
     );
 
     expect(computerPackage.scripts.bundle).toBe("node scripts/bundle.mjs");
-    expect(bundleBuilder).toContain("daemon/linger-computer-daemon");
-    expect(bundleBuilder).toContain("./cmd/linger-computer-daemon");
+    expect(bundleBuilder).toContain("daemon/talos-computer-daemon");
+    expect(bundleBuilder).toContain("./cmd/talos-computer-daemon");
     expect(bundleBuilder).not.toContain("daemon-entry");
     expect(bundleBuilder).not.toContain("operation-child");
-    expect(deterministicSmoke).toContain("./cmd/linger-computer-daemon");
+    expect(deterministicSmoke).toContain("./cmd/talos-computer-daemon");
     expect(deterministicSmoke).not.toContain("local-runner-daemon.mjs");
     for (const source of [installer, releaseBuilder]) {
-      expect(source).toContain("daemon/linger-computer-daemon");
+      expect(source).toContain("daemon/talos-computer-daemon");
     }
     expect(releaseBuilder).not.toContain("daemon/daemon-entry.js");
     expect(releaseBuilder).not.toContain("runner/operation-child.js");
@@ -347,7 +347,7 @@ printf 'restart-allowed\\n'
     expect(fixture).not.toContain("has_external_mcp_servers");
     expect(fixture).not.toContain("mcp_id:");
     expect(liveSmoke).toContain("runtime_state_to_file");
-    expect(liveSmoke).toContain("LINGER_LOCAL_RUNNER_SOAK_ONLY");
+    expect(liveSmoke).toContain("TALOS_LOCAL_RUNNER_SOAK_ONLY");
     expect(liveSmoke).toContain("for iteration in {1..20}");
     expect(liveSmoke).toContain("Unsettled daemon ledger rows");
     expect(liveSmoke).toContain("mcp_ctx_[A-Za-z0-9_-]{43}");
@@ -702,7 +702,7 @@ printf 'hold-stopped\\n'
               ...process.env,
               LIVE_CODEX_HOME: home,
               AUTH_FILE: authFile,
-              LINGER_CODEX_AUTH_FILE: explicitAuthFile,
+              TALOS_CODEX_AUTH_FILE: explicitAuthFile,
             },
             stdio: ["ignore", "pipe", "pipe"],
           },

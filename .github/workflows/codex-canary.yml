@@ -43,12 +43,12 @@ jobs:
       - name: Authentication probe without an auth file
         working-directory: apps/computer/local-daemon
         env:
-          LINGER_CODEX_COMPAT_EXECUTABLE: ${{ steps.codex.outputs.codex-executable }}
+          TALOS_CODEX_COMPAT_EXECUTABLE: ${{ steps.codex.outputs.codex-executable }}
         run: go test ./internal/provider -run '^TestNativeCodexAuthenticationWithoutAuthFile$' -count=1 -v
       - name: First run with a tool, then resume in a new process
         env:
-          LINGER_CODEX_COMPAT_EXECUTABLE: ${{ steps.codex.outputs.codex-executable }}
-        run: pnpm --filter @linger/computer exec vitest run --config vitest.config.ts tests/codex-native-compat.test.ts
+          TALOS_CODEX_COMPAT_EXECUTABLE: ${{ steps.codex.outputs.codex-executable }}
+        run: pnpm --filter @talos/computer exec vitest run --config vitest.config.ts tests/codex-native-compat.test.ts
       - name: Report a scheduled failure
         if: failure() && github.event_name == 'schedule'
         env:

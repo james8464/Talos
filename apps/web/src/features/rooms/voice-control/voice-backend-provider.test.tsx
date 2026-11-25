@@ -25,7 +25,7 @@ import {
   useOptionalVoiceControl,
   type VoiceControlContextValue,
 } from "./voice-control-context";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 import {
   teamHubErrorResponse,
   TeamHubTestServer,

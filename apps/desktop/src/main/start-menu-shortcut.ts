@@ -46,20 +46,20 @@ function normalizeWindowsPath(
 /**
  * Stamps the Windows AppUserModelID onto the Start Menu shortcut only when
  * running the installation that the shortcut already targets. Skips isolated
- * user-data runs (LINGER_DESKTOP_USER_DATA) and portable/side-by-side binaries
+ * user-data runs (TALOS_DESKTOP_USER_DATA) and portable/side-by-side binaries
  * so they never overwrite a user's installed Start Menu shortcut.
  */
 export function markStartMenuShortcut(
   deps: StartMenuShortcutDependencies,
 ): boolean {
-  if (deps.env.LINGER_DESKTOP_USER_DATA?.trim()) return false;
+  if (deps.env.TALOS_DESKTOP_USER_DATA?.trim()) return false;
   const shortcut = path.win32.join(
     deps.appData,
     "Microsoft",
     "Windows",
     "Start Menu",
     "Programs",
-    "Linger.lnk",
+    "Talos.lnk",
   );
   if (!(deps.exists ?? existsSync)(shortcut)) return false;
   let existing: ShortcutDetails;

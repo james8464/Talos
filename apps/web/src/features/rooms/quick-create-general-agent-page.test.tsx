@@ -41,7 +41,7 @@ import {
 
 const LOCAL_TARGET: LocalAgentTarget = {
   computerId: "computer-jenny-mac",
-  workspaceGrantId: "grant-linger-workspace",
+  workspaceGrantId: "grant-talos-workspace",
   runtimeType: "codex",
   model: "openai/gpt-5.4",
 };
@@ -94,7 +94,7 @@ describe("quick General Agent creation", () => {
             computer_id: "computer-jenny-mac",
             runtime_type: "codex",
             type: "local",
-            workspace_grant_id: "grant-linger-workspace",
+            workspace_grant_id: "grant-talos-workspace",
           },
         },
         skill_bindings: [],
@@ -202,7 +202,7 @@ describe("quick General Agent creation", () => {
   it("resumes an accepted Actor after a reload instead of creating another", async () => {
     const { runtime } = await stalledRuntime();
     sessionStorage.setItem(
-      `linger.agent.quick-create:${LOCAL_SCOPE}:actor:account-jenny`,
+      `talos.agent.quick-create:${LOCAL_SCOPE}:actor:account-jenny`,
       JSON.stringify({ actorId: "accepted-actor", accountId: "account-jenny" }),
     );
     const createAgent = agentCreations(runtime);
@@ -214,7 +214,7 @@ describe("quick General Agent creation", () => {
   it("does not resume an Actor record of another Account", async () => {
     const { runtime } = await stalledRuntime();
     sessionStorage.setItem(
-      `linger.agent.quick-create:${LOCAL_SCOPE}:actor:account-jenny`,
+      `talos.agent.quick-create:${LOCAL_SCOPE}:actor:account-jenny`,
       JSON.stringify({ actorId: "other-actor", accountId: "account-other" }),
     );
     const createAgent = agentCreations(runtime);
@@ -229,7 +229,7 @@ describe("quick General Agent creation", () => {
     // The seeded Session is static, so model the two Accounts.
     const seed = await teamHubData(runtime.client.api.GET("/v0/session"));
     const accounts: Record<string, string> = {
-      "second@linger.test": "account-second-review",
+      "second@talos.test": "account-second-review",
       jenny: seed.account_id,
     };
     let accountId: string | null = seed.account_id;
@@ -293,10 +293,10 @@ describe("quick General Agent creation", () => {
       expect(queryClient.getQueryData(["teamhub", "identity"])).toBeUndefined(),
     );
     fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "second@linger.test" },
+      target: { value: "second@talos.test" },
     });
     fireEvent.change(screen.getByLabelText("Password", { selector: "input" }), {
-      target: { value: "linger-second" },
+      target: { value: "talos-second" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await waitFor(() => expect(create.count()).toBe(2));
@@ -316,7 +316,7 @@ describe("quick General Agent creation", () => {
       target: { value: "jenny" },
     });
     fireEvent.change(screen.getByLabelText("Password", { selector: "input" }), {
-      target: { value: "linger-v0" },
+      target: { value: "talos-v0" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await screen.findByText("Your Agent is ready");
@@ -372,7 +372,7 @@ describe("quick General Agent creation", () => {
     expect(router.state.location.pathname).toBe("/create-agent");
     expect(
       sessionStorage.getItem(
-        `linger.agent.quick-create:${LOCAL_SCOPE}:actor:account-jenny`,
+        `talos.agent.quick-create:${LOCAL_SCOPE}:actor:account-jenny`,
       ),
     ).toBeTruthy();
   });
@@ -1087,7 +1087,7 @@ describe("quick Local Agent creation", () => {
 
   describe("in the desktop app", () => {
     afterEach(() => {
-      delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+      delete (window as { talosDesktop?: unknown }).talosDesktop;
     });
 
     const stubDesktop = (
@@ -1098,7 +1098,7 @@ describe("quick Local Agent creation", () => {
       },
     ) => {
       const enroll = vi.fn(async () => ({ computerId: "computer-this-mac" }));
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         computer: {
           getStatus: async () => ({
             ...state,
@@ -1175,7 +1175,7 @@ describe("quick Local Agent creation", () => {
         await runtime.client.listTenantLocalComputers("tenant-northstar");
       const enroll = stubDesktop(inventory.items[0]!.computer_id);
       Object.assign(
-        (window as { lingerDesktop?: Record<string, unknown> }).lingerDesktop!,
+        (window as { talosDesktop?: Record<string, unknown> }).talosDesktop!,
         { localAccount: { available: vi.fn(async () => true) } },
       );
       expect(enroll).not.toHaveBeenCalled();
@@ -1195,7 +1195,7 @@ describe("quick Local Agent creation", () => {
         await runtime.client.listTenantLocalComputers("tenant-northstar");
       stubDesktop(inventory.items[0]!.computer_id);
       Object.assign(
-        (window as { lingerDesktop?: Record<string, unknown> }).lingerDesktop!,
+        (window as { talosDesktop?: Record<string, unknown> }).talosDesktop!,
         { localAccount: { available: vi.fn(async () => false) } },
       );
       renderCreation(runtime, "local");

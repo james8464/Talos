@@ -53,9 +53,9 @@ describe("env inventory", () => {
   it("sees variables kept as data and read later", () => {
     expect(
       typeScriptVariableNames(
-        '{ runtime: "codex", environmentKey: "LINGER_CODEX_PATH" }',
+        '{ runtime: "codex", environmentKey: "TALOS_CODEX_PATH" }',
       ),
-    ).toEqual(["LINGER_CODEX_PATH"]);
+    ).toEqual(["TALOS_CODEX_PATH"]);
   });
 
   it("sees Go reads through literals, constants and environment snapshots", () => {

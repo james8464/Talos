@@ -12,8 +12,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/demodata"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/platform/migrations"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/demodata"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/platform/migrations"
 )
 
 // Suite owns one migrated identity template and private per-test clones.

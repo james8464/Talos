@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // HydrateCards projects a Message page with a fixed set of batch queries.

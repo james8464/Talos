@@ -4,18 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 // piReviewDialog titles the input dialog the managed extension opens for
 // each command or MCP call; its placeholder is the call as JSON.
-const piReviewDialog = "linger.permission_review"
+const piReviewDialog = "talos.permission_review"
 
 // piMCPSyncCommand and piMCPSyncDialog coordinate dynamic MCP attachment on a
 // resident Pi process through the managed extension.
 const (
-	piMCPSyncCommand = "linger-sync-mcp"
-	piMCPSyncDialog  = "linger.mcp_sync"
+	piMCPSyncCommand = "talos-sync-mcp"
+	piMCPSyncDialog  = "talos.mcp_sync"
 )
 
 // piVerdict is the answer the managed extension parses.

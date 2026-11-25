@@ -12,7 +12,7 @@ export default defineConfig({
       ...configDefaults.exclude,
       ".worktrees/**",
       ".orchestrator/**",
-      ".linger-runtime/**",
+      ".talos-runtime/**",
       ".pnpm-store/**",
     ],
   },

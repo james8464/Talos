@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 type wikiStreamTransport func(*http.Request) (*http.Response, error)

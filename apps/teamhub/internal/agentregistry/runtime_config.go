@@ -12,9 +12,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // RuntimeConfigSnapshot projects an Agent's registration for Agent Service

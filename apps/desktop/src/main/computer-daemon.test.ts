@@ -100,8 +100,8 @@ const setup = (
       workspaceGrants: [
         {
           grantId: "grant-1",
-          path: "/Users/me/Linger",
-          label: "Linger",
+          path: "/Users/me/Talos",
+          label: "Talos",
           access: "read_write",
           createdAt: "2026-11-01T00:00:00Z",
         },
@@ -113,7 +113,7 @@ const setup = (
   if (options.credential !== false)
     credentials.write({
       computerId: "computer-1",
-      gatewayUrl: "wss://linger.example/v1/runner-gateway",
+      gatewayUrl: "wss://talos.example/v1/runner-gateway",
       token: TOKEN,
     });
   const children: FakeChild[] = [];
@@ -135,8 +135,8 @@ const setup = (
     spawn,
     credentials,
     directory: path.join(directory, "computer"),
-    teamhubCliDirectory: "/Applications/Linger.app/teamhub-cli",
-    env: options.env ?? { HOME: "/Users/me", LINGER_CODEX_PATH: "/opt/codex" },
+    teamhubCliDirectory: "/Applications/Talos.app/teamhub-cli",
+    env: options.env ?? { HOME: "/Users/me", TALOS_CODEX_PATH: "/opt/codex" },
     ...(options.permissions ? { permissions: options.permissions } : {}),
     ...(options.relaunch ? { relaunch: options.relaunch } : {}),
     ...(options.protect ? { protect: options.protect } : {}),
@@ -156,7 +156,7 @@ describe("ComputerDaemonModule", () => {
     const [child] = children;
     expect(child!.env).toEqual({
       HOME: "/Users/me",
-      LINGER_CODEX_PATH: "/opt/codex",
+      TALOS_CODEX_PATH: "/opt/codex",
       [TOKEN_ENV]: TOKEN,
     });
     if (process.platform !== "win32")
@@ -168,7 +168,7 @@ describe("ComputerDaemonModule", () => {
       runner_id: "computer-1",
       display_name: "Studio Mac",
       gateway: {
-        url: "wss://linger.example/v1/runner-gateway",
+        url: "wss://talos.example/v1/runner-gateway",
         token_env: TOKEN_ENV,
       },
       state_directory: path.join(path.dirname(child!.configFile), "state"),
@@ -176,15 +176,15 @@ describe("ComputerDaemonModule", () => {
       workspace_grants: [
         {
           grant_id: "grant-1",
-          label: "Linger",
+          label: "Talos",
           tenant_id: "tenant-1",
-          root_path: "/Users/me/Linger",
+          root_path: "/Users/me/Talos",
           mode: "workspace-write",
           scope: "owner",
         },
       ],
       desktop: {
-        teamhub_cli_directory: "/Applications/Linger.app/teamhub-cli",
+        teamhub_cli_directory: "/Applications/Talos.app/teamhub-cli",
       },
     });
     expect(daemon.state()).toBe("starting");
@@ -197,8 +197,8 @@ describe("ComputerDaemonModule", () => {
     // Saved before enrolling, whose computer change restarts the daemon.
     config.update({
       runtimeEnvironment: {
-        LINGER_PI_PATH: "/home/me/.linger/runtime/pi/pi",
-        PI_CODING_AGENT_DIR: "/home/me/.linger/runtime/pi-agent",
+        TALOS_PI_PATH: "/home/me/.talos/runtime/pi/pi",
+        PI_CODING_AGENT_DIR: "/home/me/.talos/runtime/pi-agent",
         CODEX_HOME: "relative/is/ignored",
       },
       preferredRuntime: "pi",
@@ -208,15 +208,15 @@ describe("ComputerDaemonModule", () => {
     const child = children[1]!;
     expect(child.env).toEqual({
       HOME: "/Users/me",
-      LINGER_CODEX_PATH: "/opt/codex",
-      LINGER_PI_PATH: "/home/me/.linger/runtime/pi/pi",
-      PI_CODING_AGENT_DIR: "/home/me/.linger/runtime/pi-agent",
+      TALOS_CODEX_PATH: "/opt/codex",
+      TALOS_PI_PATH: "/home/me/.talos/runtime/pi/pi",
+      PI_CODING_AGENT_DIR: "/home/me/.talos/runtime/pi-agent",
       [TOKEN_ENV]: TOKEN,
     });
     const written = JSON.parse(readFileSync(child.configFile, "utf8"));
     expect(written.runtime_paths).toEqual({
       codex: "/opt/codex",
-      pi: "/home/me/.linger/runtime/pi/pi",
+      pi: "/home/me/.talos/runtime/pi/pi",
     });
     expect(written.preferred_runtime).toBe("pi");
   });
@@ -231,12 +231,12 @@ describe("ComputerDaemonModule", () => {
     ).toBeUndefined();
     config.update({
       runtimeEnvironment: {
-        LINGER_LOCALMODELS_PYTHON:
-          "/home/me/.linger/tools/localmodels/kit/python3",
-        LINGER_LOCALMODELS_MODULE_DIR: "/home/me/.linger/tools/localmodels/kit",
-        LINGER_LOCALMODELS_STATE: "/home/me/.linger/runtime/localmodels/state",
-        LINGER_LOCALMODELS_BASE_DIR:
-          "/home/me/.linger/runtime/localmodels/models",
+        TALOS_LOCALMODELS_PYTHON:
+          "/home/me/.talos/tools/localmodels/kit/python3",
+        TALOS_LOCALMODELS_MODULE_DIR: "/home/me/.talos/tools/localmodels/kit",
+        TALOS_LOCALMODELS_STATE: "/home/me/.talos/runtime/localmodels/state",
+        TALOS_LOCALMODELS_BASE_DIR:
+          "/home/me/.talos/runtime/localmodels/models",
       },
     });
     bus.emit("computer.runtime");
@@ -244,10 +244,10 @@ describe("ComputerDaemonModule", () => {
     expect(
       JSON.parse(readFileSync(children[2]!.configFile, "utf8")).local_models,
     ).toEqual({
-      python: "/home/me/.linger/tools/localmodels/kit/python3",
-      module_directory: "/home/me/.linger/tools/localmodels/kit",
-      state_directory: "/home/me/.linger/runtime/localmodels/state",
-      base_directory: "/home/me/.linger/runtime/localmodels/models",
+      python: "/home/me/.talos/tools/localmodels/kit/python3",
+      module_directory: "/home/me/.talos/tools/localmodels/kit",
+      state_directory: "/home/me/.talos/runtime/localmodels/state",
+      base_directory: "/home/me/.talos/runtime/localmodels/models",
     });
   });
 
@@ -256,21 +256,21 @@ describe("ComputerDaemonModule", () => {
       {
         Path: "C:\\Windows",
         Codex_Home: "C:\\Users\\me\\.codex",
-        LINGER_CODEX_PATH: "C:\\old\\codex.exe",
+        TALOS_CODEX_PATH: "C:\\old\\codex.exe",
       },
       {
-        LINGER_CODEX_PATH: "C:\\Users\\me\\.linger\\runtime\\codex\\codex.exe",
-        CODEX_HOME: "C:\\Users\\me\\.linger\\codex-home",
-        LINGER_PI_PATH: "\\\\server\\share\\pi.exe",
+        TALOS_CODEX_PATH: "C:\\Users\\me\\.talos\\runtime\\codex\\codex.exe",
+        CODEX_HOME: "C:\\Users\\me\\.talos\\codex-home",
+        TALOS_PI_PATH: "\\\\server\\share\\pi.exe",
         CLAUDE_CONFIG_DIR: "relative\\claude",
       },
       path.win32,
     );
     expect(env).toEqual({
       Path: "C:\\Windows",
-      LINGER_CODEX_PATH: "C:\\Users\\me\\.linger\\runtime\\codex\\codex.exe",
-      CODEX_HOME: "C:\\Users\\me\\.linger\\codex-home",
-      LINGER_PI_PATH: "\\\\server\\share\\pi.exe",
+      TALOS_CODEX_PATH: "C:\\Users\\me\\.talos\\runtime\\codex\\codex.exe",
+      CODEX_HOME: "C:\\Users\\me\\.talos\\codex-home",
+      TALOS_PI_PATH: "\\\\server\\share\\pi.exe",
     });
     const config = daemonConfig(
       new ConfigStore(
@@ -278,17 +278,17 @@ describe("ComputerDaemonModule", () => {
       ).get(),
       { computerId: "c", gatewayUrl: "wss://x", token: TOKEN },
       {
-        directory: "C:\\Users\\me\\AppData\\Linger\\computer",
-        env: { ...env, LINGER_CLAUDE_PATH: "claude.exe" },
+        directory: "C:\\Users\\me\\AppData\\Talos\\computer",
+        env: { ...env, TALOS_CLAUDE_PATH: "claude.exe" },
         platformPath: path.win32,
       },
     );
     expect(config.runtime_paths).toEqual({
-      codex: "C:\\Users\\me\\.linger\\runtime\\codex\\codex.exe",
+      codex: "C:\\Users\\me\\.talos\\runtime\\codex\\codex.exe",
       pi: "\\\\server\\share\\pi.exe",
     });
     expect(config.state_directory).toBe(
-      "C:\\Users\\me\\AppData\\Linger\\computer\\state",
+      "C:\\Users\\me\\AppData\\Talos\\computer\\state",
     );
   });
 

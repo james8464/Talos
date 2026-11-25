@@ -7,7 +7,7 @@ import { TeamHubRuntimeProvider } from "@/features/teamhub/teamhub-runtime";
 
 import { AnotherMeIntro } from "./another-me-intro";
 
-function renderIntro(onDone = vi.fn(), name = "Linger") {
+function renderIntro(onDone = vi.fn(), name = "Talos") {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <TeamHubRuntimeProvider runtime={createTestTeamHubRuntime()}>
@@ -29,7 +29,7 @@ describe("AnotherMeIntro", () => {
   it("greets the Human by name, then finishes on its own", async () => {
     const onDone = renderIntro();
 
-    expect(screen.getByRole("status")).toHaveTextContent("Hi, BobI'm Linger.");
+    expect(screen.getByRole("status")).toHaveTextContent("Hi, BobI'm Talos.");
     await act(() => vi.advanceTimersByTime(2000));
     expect(onDone).not.toHaveBeenCalled();
     // jsdom has no Web Animations, so leaving completes at once.

@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicekey"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicekey"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 // voiceReconcileTimeout bounds how long a key save waits for the Node Services
@@ -32,7 +32,7 @@ func (e voiceReconcileStatusError) Error() string {
 }
 
 // registerVoice builds voice media while TEAMHUB_VOICE_MEDIA is on, or takes
-// the plane a test injects; without LINGER_SECRET_SEED or ffmpeg it runs
+// the plane a test injects; without TALOS_SECRET_SEED or ffmpeg it runs
 // with voice off. Whether a provider can be used is decided at each
 // use from the key in effect then: the environment key, else the one saved in
 // the product. Soniox enables transcription (Recording, dictation and Pocket
@@ -77,7 +77,7 @@ func (a *App) registerVoice(cfg config.Config, deps Deps, objects artifactstore.
 var newVoiceMediaPlane = newVoiceMedia
 
 // buildVoiceMedia returns the plane voice runs on, or nil with voice off.
-// Like every other service link, voice stays off without LINGER_SECRET_SEED,
+// Like every other service link, voice stays off without TALOS_SECRET_SEED,
 // and a computer without ffmpeg runs without voice rather than not at all;
 // any other build error still stops startup.
 func (a *App) buildVoiceMedia(cfg config.Config, injected voicemedia.Plane, objects artifactstore.ObjectStore) (voicemedia.Plane, error) {

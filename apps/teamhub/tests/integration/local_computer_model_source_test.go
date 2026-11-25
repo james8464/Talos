@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 const modelSourceTestAPIKey = "sk-model-source-never-stored"

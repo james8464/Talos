@@ -1,4 +1,4 @@
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 import {
   queryOptions,
   useMutation,
@@ -67,7 +67,7 @@ export function progressText(
 }
 
 /**
- * Sending a gmail canvas: what is saved in Linger is uploaded to Gmail and
+ * Sending a gmail canvas: what is saved in Talos is uploaded to Gmail and
  * sent only when `send` runs, so the Human sends exactly what they see.
  * `saved` says the editor showing the email, if any, has nothing unsaved.
  */

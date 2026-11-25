@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // LockMembership serializes membership reads and writes with the Human Room API.

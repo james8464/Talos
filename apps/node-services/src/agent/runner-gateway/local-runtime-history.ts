@@ -1,5 +1,5 @@
 import type { RuntimeHistoryPage } from "../executor/history.js";
-import type { DebugHistoryInspectionResult } from "@linger/wire-contracts/runner-gateway/types";
+import type { DebugHistoryInspectionResult } from "@talos/wire-contracts/runner-gateway/types";
 
 /**
  * Maps a Runner Gateway History inspection result onto the shared

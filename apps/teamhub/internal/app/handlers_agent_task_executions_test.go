@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskexecution"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskexecution"
 )
 
 func TestWorkerTaskExecutionModelPreservesCompletedEffectWitnesses(t *testing.T) {

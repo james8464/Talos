@@ -114,7 +114,7 @@ beforeEach(async () => {
   mocks.daily.mockReset();
   mocks.tracking.mockReset().mockResolvedValue(undefined);
   vi.stubEnv("TEAMHUB_BASE_URL", "http://teamhub.test");
-  vi.stubEnv("LINGER_SECRET_SEED", "test-seed-0123456789abcdef0123456789");
+  vi.stubEnv("TALOS_SECRET_SEED", "test-seed-0123456789abcdef0123456789");
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => new Response(transcript)),

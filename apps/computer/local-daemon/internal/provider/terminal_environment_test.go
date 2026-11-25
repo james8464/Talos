@@ -152,14 +152,14 @@ func TestTerminalEnvironmentAppendsCommonRuntimeDirectories(t *testing.T) {
 	if environment["PATH"] != want {
 		t.Fatalf("PATH=%q, want %q", environment["PATH"], want)
 	}
-	claude := filepath.Join(root, ".npm-global/bin/linger-runtime-fixture")
+	claude := filepath.Join(root, ".npm-global/bin/talos-runtime-fixture")
 	if err := os.MkdirAll(filepath.Dir(claude), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(claude, []byte("#!/bin/sh\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if path, err := resolveExecutableEntry(t.Context(), "fixture", "linger-runtime-fixture", DiscoveryOptions{Environment: environment}); err != nil || path != claude {
+	if path, err := resolveExecutableEntry(t.Context(), "fixture", "talos-runtime-fixture", DiscoveryOptions{Environment: environment}); err != nil || path != claude {
 		t.Fatalf("resolved %q, %v; want %q", path, err, claude)
 	}
 }

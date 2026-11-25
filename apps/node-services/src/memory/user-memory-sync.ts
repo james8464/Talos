@@ -4,7 +4,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { isNodeError } from "@linger/service-kit";
+import { isNodeError } from "@talos/service-kit";
 import { memoryDatabase } from "./database.js";
 import { localDate } from "./date.js";
 import { withDirectoryLock, assertDirectoryLock } from "./filesystem-lock.js";

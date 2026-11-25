@@ -29,7 +29,7 @@ export async function writeManagedToolsLaunchers(directory, configuration) {
   );
   for (const tool of ["teamhub", "lev8"]) {
     const target = path.join(directory, tool);
-    const marker = "# Linger managed CLI launcher\n";
+    const marker = "# Talos managed CLI launcher\n";
     try {
       if (
         !(await lstat(target)).isFile() ||

@@ -6,7 +6,7 @@ import {
   DocumentComputationError,
 } from "../../src/document/computation-pool.js";
 import { useDocumentComputation } from "./computation-test-support.js";
-import { sleep } from "@linger/service-kit";
+import { sleep } from "@talos/service-kit";
 
 const teamHubToken = "teamhub-to-runtime-pool-test-token";
 const fixtureWorkerUrl = new URL(

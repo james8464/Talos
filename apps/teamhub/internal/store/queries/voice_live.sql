@@ -189,7 +189,7 @@ WHERE actor.id=sqlc.arg(actor_id)::text AND actor.tenant_id=sqlc.arg(tenant_id):
 -- name: ListVoiceLiveKnownAddresses :many
 -- Where the user's email addresses are written, for the live voice to check a
 -- recipient it heard against: their own (login, connected Gmail, Profile)
--- first, then the emails they sent from Linger, newest first. The caller
+-- first, then the emails they sent from Talos, newest first. The caller
 -- reads the addresses out of each text.
 SELECT known.kind::text AS kind, known.text::text AS text
 FROM (

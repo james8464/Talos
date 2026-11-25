@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 func TestDiscoverUsesConfiguredExecutableAndReportsAllRuntimes(t *testing.T) {
@@ -421,16 +421,16 @@ if [ "$1" = "--version" ]; then echo "claude 2.1.282"; exit 0; fi
 if [ "$1 $2 $3" = "auth status --json" ]; then echo '{"loggedIn":true}'; exit 0; fi
 if [ "$1 $2" = "-p --input-format" ]; then
   IFS= read -r request
-  printf '%s\n' '{"type":"control_response","response":{"subtype":"success","request_id":"linger-catalog","response":{"models":[{"value":"claude-fixture","displayName":"Claude fixture"}]}}}'
+  printf '%s\n' '{"type":"control_response","response":{"subtype":"success","request_id":"talos-catalog","response":{"models":[{"value":"claude-fixture","displayName":"Claude fixture"}]}}}'
   if IFS= read -r unexpected; then exit 4; fi
   exit 0
 fi
 [ "$1 $2" = "-p --output-format" ] || exit 2
 IFS= read -r request
-[ "$request" = '{"type":"control_request","request_id":"linger-computer-doctor","request":{"subtype":"initialize"}}' ] || exit 3
+[ "$request" = '{"type":"control_request","request_id":"talos-computer-doctor","request":{"subtype":"initialize"}}' ] || exit 3
 echo called > "$PROMPT_MARKER"
 printf '%s' '{"type":"control_response","response":'
-printf '%s\n' '{"subtype":"success","request_id":"linger-computer-doctor"}}'
+printf '%s\n' '{"subtype":"success","request_id":"talos-computer-doctor"}}'
 if IFS= read -r unexpected; then exit 4; fi
 exit 0
 `

@@ -9,17 +9,17 @@ import (
 	"strings"
 	"time"
 
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // defaultRetryDelay spaces a retry when Options.RetryDelay is unset.

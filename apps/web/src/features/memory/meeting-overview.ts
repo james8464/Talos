@@ -2,7 +2,7 @@ import {
   EMPTY_SECTION_TEXT,
   SESSION_ITEM_LABELS,
   SESSION_SECTIONS,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 import {
   prepareReadOnlyMarkdown,
   stripKnowledgeCitations,

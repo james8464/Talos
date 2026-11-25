@@ -156,7 +156,7 @@ func acpInitialize(ctx context.Context, conn *acpConn) error {
 	raw, err := conn.call(ctx, "initialize", map[string]any{
 		"protocolVersion":    acpProtocolVersion,
 		"clientCapabilities": map[string]any{"fs": map[string]any{"readTextFile": false, "writeTextFile": false}, "terminal": false},
-		"clientInfo":         map[string]any{"name": "linger-computer", "version": "1.0.0"},
+		"clientInfo":         map[string]any{"name": "talos-computer", "version": "1.0.0"},
 	})
 	if err != nil {
 		return err

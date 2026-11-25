@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
 
 func runtimeEnabled(scope []string, kind string) bool {

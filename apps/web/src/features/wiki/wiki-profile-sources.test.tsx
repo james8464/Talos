@@ -105,7 +105,7 @@ describe("Wiki Profile sources", () => {
       name: "Add Gmail",
     });
     expect(addGmail.parentElement).toHaveTextContent(
-      "GmailConnected: jenny@linger.testAdd",
+      "GmailConnected: jenny@talos.testAdd",
     );
     fireEvent.click(addGmail);
     await waitFor(() => expect(generate).toHaveBeenCalledOnce());
@@ -285,7 +285,7 @@ describe("Wiki Profile sources", () => {
     const active = {
       ...pending,
       connect_url: undefined,
-      identity_label: "new@linger.test",
+      identity_label: "new@talos.test",
       status: "active" as const,
     };
     vi.spyOn(runtime.client, "createExternalConnection").mockResolvedValue(
@@ -376,7 +376,7 @@ describe("Wiki Profile sources", () => {
 
     expect(window.open).toHaveBeenCalledWith(
       "https://connect.example.test/notion-pending",
-      "linger_composio_oauth",
+      "talos_composio_oauth",
       expect.stringContaining("width=560,height=720"),
     );
     act(() => {
@@ -486,7 +486,7 @@ describe("Wiki Profile sources", () => {
         {
           ...existing,
           id: "gmail-expired",
-          identity_label: "old@linger.test",
+          identity_label: "old@talos.test",
           status: "expired",
         },
       ],
@@ -503,7 +503,7 @@ describe("Wiki Profile sources", () => {
     );
     expect(
       within(sources).getByRole("button", {
-        name: "Gmail · jenny@linger.test — connected",
+        name: "Gmail · jenny@talos.test — connected",
       }),
     ).toBeVisible();
   });
@@ -525,7 +525,7 @@ describe("Wiki Profile sources", () => {
         {
           ...existing,
           id: "gmail-pending",
-          identity_label: "pending@linger.test",
+          identity_label: "pending@talos.test",
           status: "pending",
         },
         {
@@ -544,7 +544,7 @@ describe("Wiki Profile sources", () => {
       name: "Profile sources",
     });
     const names = [
-      "Gmail · jenny@linger.test — connected",
+      "Gmail · jenny@talos.test — connected",
       "Reconnect Slack",
       "Connect Discord",
       "Connect GitHub",
@@ -672,7 +672,7 @@ describe("Wiki Profile sources", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Gmail · jenny@linger.test — connected",
+        name: "Gmail · jenny@talos.test — connected",
       }),
     );
     fireEvent.click(

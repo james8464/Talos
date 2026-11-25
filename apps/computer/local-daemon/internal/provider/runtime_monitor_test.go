@@ -353,9 +353,9 @@ if [ "$1" = "--version" ]; then echo '1.2.0'; exit 0; fi
 if [ "$1" = "auth" ]; then echo '{"status":"ready"}'; exit 0; fi
 while IFS= read -r line; do
   case "$line" in
-  *linger-probe*) echo '{"type":"response","id":"linger-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
-  *linger-state*) echo '{"type":"response","id":"linger-state","command":"get_state","success":true,"data":{"model":{"provider":"localmodels","id":"gw"},"thinkingLevel":"off"}}' ;;
-  *linger-models*) echo '{"type":"response","id":"linger-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"builtin","id":"other"},{"provider":"localmodels","id":"gw"}]}}' ;;
+  *talos-probe*) echo '{"type":"response","id":"talos-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
+  *talos-state*) echo '{"type":"response","id":"talos-state","command":"get_state","success":true,"data":{"model":{"provider":"localmodels","id":"gw"},"thinkingLevel":"off"}}' ;;
+  *talos-models*) echo '{"type":"response","id":"talos-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"builtin","id":"other"},{"provider":"localmodels","id":"gw"}]}}' ;;
   esac
 done
 `
@@ -534,9 +534,9 @@ func TestRuntimeMonitorProbesFromTheUnshapedResult(t *testing.T) {
 if [ "$1" = "--version" ]; then echo '1.2.0'; exit 0; fi
 while IFS= read -r line; do
   case "$line" in
-  *linger-probe*) echo '{"type":"response","id":"linger-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
-  *linger-state*) echo '{"type":"response","id":"linger-state","command":"get_state","success":true,"data":{"thinkingLevel":"off"}}' ;;
-  *linger-models*) echo '{"type":"response","id":"linger-models","command":"get_available_models","success":true,"data":{"models":[]}}' ;;
+  *talos-probe*) echo '{"type":"response","id":"talos-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
+  *talos-state*) echo '{"type":"response","id":"talos-state","command":"get_state","success":true,"data":{"thinkingLevel":"off"}}' ;;
+  *talos-models*) echo '{"type":"response","id":"talos-models","command":"get_available_models","success":true,"data":{"models":[]}}' ;;
   esac
 done
 `

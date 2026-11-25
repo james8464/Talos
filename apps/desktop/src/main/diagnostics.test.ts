@@ -56,26 +56,26 @@ const write = (file: string, text: string) => {
 
 describe("excludedFromDiagnostics", () => {
   it.each([
-    "C:\\Users\\me\\.linger\\instances\\desktop\\computer\\Gateway.JSON",
-    "C:\\Users\\me\\.linger\\instances\\desktop\\caller.key",
-    "C:\\Users\\me\\.linger\\instances\\desktop\\control.key",
-    "C:\\Users\\me\\.linger\\instances\\desktop\\compose.env",
-    "C:\\Users\\me\\.linger\\instances\\desktop\\launch.html",
-    "C:\\Users\\me\\.linger\\installer\\jobs\\job_1.input.json",
-    "C:\\Users\\me\\AppData\\Roaming\\Linger\\computer\\credential.json",
-    "C:\\Users\\me\\AppData\\Roaming\\Linger\\Network\\Cookies",
-    "/home/me/.linger/instances/desktop/.env.local",
-    "/home/me/.linger/instances/desktop/postgres-password",
-    "/home/me/.linger/runtime/localmodels/state/byok.json",
-    "/home/me/.linger/runtime/localmodels/models/deployments/llm/api-key",
+    "C:\\Users\\me\\.talos\\instances\\desktop\\computer\\Gateway.JSON",
+    "C:\\Users\\me\\.talos\\instances\\desktop\\caller.key",
+    "C:\\Users\\me\\.talos\\instances\\desktop\\control.key",
+    "C:\\Users\\me\\.talos\\instances\\desktop\\compose.env",
+    "C:\\Users\\me\\.talos\\instances\\desktop\\launch.html",
+    "C:\\Users\\me\\.talos\\installer\\jobs\\job_1.input.json",
+    "C:\\Users\\me\\AppData\\Roaming\\Talos\\computer\\credential.json",
+    "C:\\Users\\me\\AppData\\Roaming\\Talos\\Network\\Cookies",
+    "/home/me/.talos/instances/desktop/.env.local",
+    "/home/me/.talos/instances/desktop/postgres-password",
+    "/home/me/.talos/runtime/localmodels/state/byok.json",
+    "/home/me/.talos/runtime/localmodels/models/deployments/llm/api-key",
   ])("leaves out %s", (file) => {
     expect(excludedFromDiagnostics(file)).toBe(true);
   });
 
   it.each([
-    "C:\\Users\\me\\.linger\\installer\\jobs\\job_1.json",
-    "C:\\Users\\me\\AppData\\Roaming\\Linger\\logs\\computer-daemon.log",
-    "/home/me/.linger/instances/desktop/instance.json",
+    "C:\\Users\\me\\.talos\\installer\\jobs\\job_1.json",
+    "C:\\Users\\me\\AppData\\Roaming\\Talos\\logs\\computer-daemon.log",
+    "/home/me/.talos/instances/desktop/instance.json",
   ])("keeps %s", (file) => {
     expect(excludedFromDiagnostics(file)).toBe(false);
   });
@@ -85,12 +85,12 @@ describe("diagnosticsEntry", () => {
   it("names Windows files with forward slashes below the prefix", () => {
     expect(
       diagnosticsEntry(
-        "linger-home",
-        "C:\\Users\\me\\.linger",
-        "C:\\Users\\me\\.linger\\installer\\jobs\\job_1.json",
+        "talos-home",
+        "C:\\Users\\me\\.talos",
+        "C:\\Users\\me\\.talos\\installer\\jobs\\job_1.json",
         path.win32,
       ),
-    ).toBe("linger-home/installer/jobs/job_1.json");
+    ).toBe("talos-home/installer/jobs/job_1.json");
   });
 });
 
@@ -110,8 +110,8 @@ describe("redactDiagnostics", () => {
 describe("homeRedactor", () => {
   it("replaces a macOS or Linux home folder with ~", () => {
     const strip = homeRedactor("/Users/alice/");
-    expect(strip("open /Users/alice/.linger/x.log and /Users/alice")).toBe(
-      "open ~/.linger/x.log and ~",
+    expect(strip("open /Users/alice/.talos/x.log and /Users/alice")).toBe(
+      "open ~/.talos/x.log and ~",
     );
     // Another account whose name starts the same stays.
     expect(strip("/Users/alice2/notes")).toBe("/Users/alice2/notes");
@@ -122,20 +122,20 @@ describe("homeRedactor", () => {
     expect(
       strip(
         [
-          "C:\\Users\\Alice\\.linger\\job.log",
-          '{"path":"C:\\\\Users\\\\Alice\\\\.linger"}',
+          "C:\\Users\\Alice\\.talos\\job.log",
+          '{"path":"C:\\\\Users\\\\Alice\\\\.talos"}',
           "c:/users/alice/AppData",
         ].join("\n"),
       ),
     ).toBe(
-      ["~\\.linger\\job.log", '{"path":"~\\\\.linger"}', "~/AppData"].join(
+      ["~\\.talos\\job.log", '{"path":"~\\\\.talos"}', "~/AppData"].join(
         "\n",
       ),
     );
   });
 
   it("leaves text alone for a home at the root", () => {
-    expect(homeRedactor("/root")("/root/.linger")).toBe("/root/.linger");
+    expect(homeRedactor("/root")("/root/.talos")).toBe("/root/.talos");
   });
 });
 
@@ -143,7 +143,7 @@ describe("collectDiagnostics", () => {
   it("replaces the home folder in every entry and the summary", async () => {
     const root = tempDirectory();
     const userHome = path.join(root, "people", "alice");
-    const home = path.join(userHome, ".linger");
+    const home = path.join(userHome, ".talos");
     const output = path.join(root, "out");
     mkdirSync(output);
     write(
@@ -159,8 +159,8 @@ describe("collectDiagnostics", () => {
     });
     const text = [...unzip(file).values()].join("\n");
     expect(text).not.toContain(userHome);
-    expect(unzip(file).get("linger-home/installer/jobs/job_1.log")).toBe(
-      `unpacking into ${path.join("~", ".linger", "source")}\n`,
+    expect(unzip(file).get("talos-home/installer/jobs/job_1.log")).toBe(
+      `unpacking into ${path.join("~", ".talos", "source")}\n`,
     );
   });
 
@@ -213,7 +213,7 @@ describe("collectDiagnostics", () => {
       now: new Date("2026-11-06T07:08:09Z"),
     });
 
-    expect(path.basename(file)).toBe("linger-diagnostics-20261106-070809.zip");
+    expect(path.basename(file)).toBe("talos-diagnostics-20261106-070809.zip");
     if (process.platform !== "win32")
       expect(statSync(file).mode & 0o777).toBe(0o600);
     const entries = unzip(file);
@@ -222,9 +222,9 @@ describe("collectDiagnostics", () => {
     expect([...entries.keys()].sort()).toEqual([
       "desktop/logs/computer-daemon.log",
       "desktop/logs/main.log",
-      "linger-home/installer/jobs/job_1.json",
-      "linger-home/instances/desktop/instance.json",
-      "linger-home/instances/desktop/native/logs/teamhub.log",
+      "talos-home/installer/jobs/job_1.json",
+      "talos-home/instances/desktop/instance.json",
+      "talos-home/instances/desktop/native/logs/teamhub.log",
       "summary.json",
     ]);
     expect(entries.get("desktop/logs/main.log")).not.toContain("t-secret");
@@ -261,20 +261,20 @@ describe("collectDiagnostics", () => {
         })
       ).file,
     );
-    expect(entries.has("linger-home/instances/desktop/user.env")).toBe(false);
+    expect(entries.has("talos-home/instances/desktop/user.env")).toBe(false);
     const text = [...entries.values()].join("\n");
     expect(text).not.toContain("soniox-123");
     expect(text).not.toContain("xai-456");
     expect(text).not.toContain("composio-789");
     expect(
-      entries.get("linger-home/instances/desktop/native/logs/voice.log"),
+      entries.get("talos-home/instances/desktop/native/logs/voice.log"),
     ).toContain("live session key [REDACTED] rejected\n");
   });
 
   it("bundles recent localmodels stack run records, deployment records, and engine logs with redaction", async () => {
     const root = tempDirectory();
     const userHome = path.join(root, "people", "bob");
-    const home = path.join(userHome, ".linger");
+    const home = path.join(userHome, ".talos");
     const output = path.join(root, "out");
     mkdirSync(output);
     const localmodels = path.join(home, "runtime", "localmodels");
@@ -374,10 +374,10 @@ describe("collectDiagnostics", () => {
     });
     const entries = unzip(file);
     expect([...entries.keys()].sort()).toEqual([
-      "linger-home/runtime/localmodels/models/deployments/qwen-llm/server.log",
-      "linger-home/runtime/localmodels/state/deployments/local/qwen-llm.json",
-      "linger-home/runtime/localmodels/state/stacks/abcdef123456.progress",
-      "linger-home/runtime/localmodels/state/stacks/abcdef123456.run.json",
+      "talos-home/runtime/localmodels/models/deployments/qwen-llm/server.log",
+      "talos-home/runtime/localmodels/state/deployments/local/qwen-llm.json",
+      "talos-home/runtime/localmodels/state/stacks/abcdef123456.progress",
+      "talos-home/runtime/localmodels/state/stacks/abcdef123456.run.json",
       "summary.json",
     ]);
     const joined = [...entries.values()].join("\n");
@@ -390,12 +390,12 @@ describe("collectDiagnostics", () => {
     expect(joined).not.toContain("deployment-raw-key");
     expect(
       entries.get(
-        "linger-home/runtime/localmodels/models/deployments/qwen-llm/server.log",
+        "talos-home/runtime/localmodels/models/deployments/qwen-llm/server.log",
       ),
     ).toContain("--api-key [REDACTED]");
     expect(
       entries.get(
-        "linger-home/runtime/localmodels/models/deployments/qwen-llm/server.log",
+        "talos-home/runtime/localmodels/models/deployments/qwen-llm/server.log",
       ),
     ).toContain("CUDA out of memory");
   });
@@ -430,16 +430,16 @@ describe("collectDiagnostics", () => {
       .sort();
     expect(bundledRuns).toHaveLength(MAX_LOCALMODELS_FILES);
     expect(bundledRuns).not.toContain(
-      "linger-home/runtime/localmodels/state/stacks/plan-0.run.json",
+      "talos-home/runtime/localmodels/state/stacks/plan-0.run.json",
     );
     expect(bundledRuns).not.toContain(
-      "linger-home/runtime/localmodels/state/stacks/plan-1.run.json",
+      "talos-home/runtime/localmodels/state/stacks/plan-1.run.json",
     );
     expect(bundledRuns).not.toContain(
-      "linger-home/runtime/localmodels/state/stacks/plan-2.run.json",
+      "talos-home/runtime/localmodels/state/stacks/plan-2.run.json",
     );
     const newest = entries.get(
-      `linger-home/runtime/localmodels/state/stacks/plan-${MAX_LOCALMODELS_FILES + 2}.run.json`,
+      `talos-home/runtime/localmodels/state/stacks/plan-${MAX_LOCALMODELS_FILES + 2}.run.json`,
     )!;
     expect(newest).toMatch(/^\[first \d+ bytes left out\]\n/);
     expect(newest).toContain("final-failure-line");

@@ -4,7 +4,7 @@
 // and the source they came from. The desktop copies them into the unpacked
 // source, so Native there needs no Go toolchain, module download or compile.
 //
-//   node scripts/build-teamhub.mjs --target win32-x64 --source linger-<label>.tar.gz
+//   node scripts/build-teamhub.mjs --target win32-x64 --source talos-<label>.tar.gz
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
@@ -114,7 +114,7 @@ export async function buildTeamhub(
   const commit = await sourceCommit(archive);
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
-  const work = await mkdtemp(path.join(tmpdir(), "linger-teamhub-"));
+  const work = await mkdtemp(path.join(tmpdir(), "talos-teamhub-"));
   try {
     // The package holds one folder, `<name>-<label>/`.
     await run("tar", [

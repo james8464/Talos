@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	claudeMCPDirPrefix = "linger-mcp-"
+	claudeMCPDirPrefix = "talos-mcp-"
 	claudeMCPFileName  = "mcp-config.json"
 )
 

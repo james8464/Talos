@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicequicknotes"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicequicknotes"
 )
 
 func (s *Service) searchVoiceLiveMeetings(ctx context.Context, session voicelive.Session, raw string) (string, error) {

@@ -1,7 +1,7 @@
 import {
   materializeRoomDocument,
   readRoomDocumentBlocks,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import type { DocumentBodyStore } from "../../src/document/bodies.js";
 import * as Y from "yjs";
 

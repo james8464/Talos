@@ -136,7 +136,7 @@ export function ConnectComputerPage({
           </span>
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">
-              Linger Computer
+              Talos Computer
             </p>
             <h1 className="truncate text-lg">
               {t(

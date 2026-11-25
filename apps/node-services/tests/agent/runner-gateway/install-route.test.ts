@@ -109,8 +109,8 @@ describe("Computer install route", () => {
       (await raw(host, `/install/files/${archives.app!.file}`)).status,
     ).toBe(200);
     for (const requestPath of [
-      "/install/linger-computer.sh",
-      "/install/uninstall-linger-computer.sh",
+      "/install/talos-computer.sh",
+      "/install/uninstall-talos-computer.sh",
     ]) {
       const response = await raw(host, requestPath);
       expect(response.status, requestPath).toBe(503);
@@ -143,8 +143,8 @@ describe("Computer install route", () => {
   it("answers 503 on every install path when the image ships no release", async () => {
     const host = await serve(undefined);
     for (const requestPath of [
-      "/install/linger-computer.sh",
-      "/install/uninstall-linger-computer.sh",
+      "/install/talos-computer.sh",
+      "/install/uninstall-talos-computer.sh",
       `/install/files/app-linux-x64-${"0".repeat(64)}.tar.gz`,
     ]) {
       const response = await raw(host, requestPath);
@@ -156,11 +156,11 @@ describe("Computer install route", () => {
   it("renders both shell scripts with the origin and the installer with every target line from release.json", async () => {
     const { root, archives } = await writeComputerRelease();
     const host = await serve(root);
-    const response = await raw(host, "/install/linger-computer.sh");
+    const response = await raw(host, "/install/talos-computer.sh");
     expect(response.status).toBe(200);
     const lines = response.body.toString().split("\n");
     expect(lines).toContain(
-      'web_origin="${LINGER_WEB_URL:-https://app.example.test}"',
+      'web_origin="${TALOS_WEB_URL:-https://app.example.test}"',
     );
     expect(lines).toContain(
       `release_linux_x64="${archives.app!.sha256} ${archives.app!.size} ${archives.deps!.sha256} ${archives.deps!.size}"`,
@@ -170,10 +170,10 @@ describe("Computer install route", () => {
     }
     const uninstaller = await raw(
       host,
-      "/install/uninstall-linger-computer.sh",
+      "/install/uninstall-talos-computer.sh",
     );
     expect(uninstaller.body.toString().split("\n")).toContain(
-      'web_origin="${LINGER_WEB_URL:-https://app.example.test}"',
+      'web_origin="${TALOS_WEB_URL:-https://app.example.test}"',
     );
   });
 
@@ -186,7 +186,7 @@ describe("Computer install route", () => {
       JSON.parse(
         Buffer.from(/\$m = '([^']+)'/u.exec(body)![1]!, "base64").toString(),
       ) as unknown;
-    const install = await raw(host, "/install/linger-computer.ps1");
+    const install = await raw(host, "/install/talos-computer.ps1");
     expect(install.status).toBe(200);
     expect(install.headers["content-type"]).toBe("text/plain; charset=utf-8");
     expect(install.body.toString()).toContain("Write-Host install");
@@ -195,7 +195,7 @@ describe("Computer install route", () => {
       webOrigin: "https://app.example.test",
       targets: { "win32-x64": targets["win32-x64"] },
     });
-    const uninstall = await raw(host, "/install/uninstall-linger-computer.ps1");
+    const uninstall = await raw(host, "/install/uninstall-talos-computer.ps1");
     expect(uninstall.body.toString()).toContain("Write-Host uninstall");
     expect(metadataOf(uninstall.body.toString())).toEqual(
       metadataOf(install.body.toString()),
@@ -204,7 +204,7 @@ describe("Computer install route", () => {
     expect((await raw(host, `/install/files/${windowsApp}`)).status).toBe(200);
     // The bash installer has no Windows line to fill.
     expect(
-      (await raw(host, "/install/linger-computer.sh")).body.toString(),
+      (await raw(host, "/install/talos-computer.sh")).body.toString(),
     ).not.toContain("win32");
   });
 
@@ -212,15 +212,15 @@ describe("Computer install route", () => {
     const { root } = await writeComputerRelease();
     const host = await serve(root);
     for (const requestPath of [
-      "/install/linger-computer.ps1",
-      "/install/uninstall-linger-computer.ps1",
+      "/install/talos-computer.ps1",
+      "/install/uninstall-talos-computer.ps1",
     ]) {
       expect((await raw(host, requestPath)).status, requestPath).toBe(404);
     }
     const windowsOnly = await writeComputerRelease({ targets: ["win32-x64"] });
     const unconfigured = await serve(windowsOnly.root, null);
     expect(
-      (await raw(unconfigured, "/install/linger-computer.ps1")).status,
+      (await raw(unconfigured, "/install/talos-computer.ps1")).status,
     ).toBe(503);
   });
 
@@ -262,11 +262,11 @@ describe("Computer install route", () => {
 
     const { root } = await writeComputerRelease();
     const host = await serve(root, development);
-    const lines = (await raw(host, "/install/linger-computer.sh")).body
+    const lines = (await raw(host, "/install/talos-computer.sh")).body
       .toString()
       .split("\n");
     expect(lines).toContain(
-      'web_origin="${LINGER_WEB_URL:-http://10.0.0.5:31037}"',
+      'web_origin="${TALOS_WEB_URL:-http://10.0.0.5:31037}"',
     );
   });
 });

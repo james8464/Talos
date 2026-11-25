@@ -22,7 +22,7 @@ describe("serviceCredential", () => {
     for (const vector of fixture.vectors) {
       expect(
         serviceCredential(vector.label, {
-          LINGER_SECRET_SEED: vector.seed,
+          TALOS_SECRET_SEED: vector.seed,
         }),
       ).toBe(vector.credential);
     }
@@ -31,7 +31,7 @@ describe("serviceCredential", () => {
   it("needs a long enough seed", () => {
     expect(serviceCredential("teamhub-internal", {})).toBeUndefined();
     expect(() =>
-      serviceCredential("teamhub-internal", { LINGER_SECRET_SEED: "short" }),
+      serviceCredential("teamhub-internal", { TALOS_SECRET_SEED: "short" }),
     ).toThrow("at least 32 characters");
   });
 });

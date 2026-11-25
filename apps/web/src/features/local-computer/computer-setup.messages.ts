@@ -68,7 +68,7 @@ export const computerSetupMessages = defineMessages("computerSetup", {
   updateAlternativeMac:
     "If you installed {app} from Homebrew or its macOS app, update it there instead.",
   readyAfterUpdate: "It turns ready here on its own shortly after you update.",
-  computerUpgradeRequiredTitle: "Linger Computer update required",
+  computerUpgradeRequiredTitle: "Talos Computer update required",
   openComputerSettings: "Open <link>Settings › Computers</link> to update it.",
   checkingRuntimeTitle: "Checking {app}",
   checkingRuntimeBody:
@@ -105,12 +105,12 @@ export const computerSetupMessages = defineMessages("computerSetup", {
   connectThisComputer: "Connect this computer",
   lookingForApps: "Looking for Codex and Claude Code on this computer…",
   desktopAuthFailed:
-    "This computer's sign-in expired. Choose Reconnect This Computer in the Linger menu bar menu.",
+    "This computer's sign-in expired. Choose Reconnect This Computer in the Talos menu bar menu.",
   desktopIdentityConflict:
-    "This computer is already registered under another Computer entry. Choose Reconnect This Computer in the Linger menu bar menu.",
-  desktopUpgradeRequired: "Update the Linger app to connect this computer.",
+    "This computer is already registered under another Computer entry. Choose Reconnect This Computer in the Talos menu bar menu.",
+  desktopUpgradeRequired: "Update the Talos app to connect this computer.",
   desktopDisconnected:
-    "The Linger background service is not running. Quit and reopen the app.",
+    "The Talos background service is not running. Quit and reopen the app.",
   desktopRuntimeCrashed:
-    "Codex and Claude Code could not be checked because the local runtime stopped. Linger is restarting it.",
+    "Codex and Claude Code could not be checked because the local runtime stopped. Talos is restarting it.",
 });

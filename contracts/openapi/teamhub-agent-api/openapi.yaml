@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Linger TeamHub Agent API
+  title: Talos TeamHub Agent API
   version: 0.5.0
   license:
     name: Proprietary

@@ -20,8 +20,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/secretbox"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/secretbox"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // Backend names one web search backend; the values are the contract's.

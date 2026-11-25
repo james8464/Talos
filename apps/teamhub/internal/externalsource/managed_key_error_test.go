@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
 )
 
 func TestConnectionKeyErrorsDistinguishForbidden(t *testing.T) {

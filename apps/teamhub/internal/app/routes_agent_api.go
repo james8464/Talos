@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 // agentAPIRoutes mounts the teamhub-agent-api operations outside the CLI file

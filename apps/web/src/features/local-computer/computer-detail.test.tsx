@@ -11,7 +11,7 @@ import { ComputerDetail } from "./computer-detail";
 
 afterEach(() => {
   cleanup();
-  delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+  delete (window as { talosDesktop?: unknown }).talosDesktop;
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -38,7 +38,7 @@ it("uses the target Computer platform for the required update", () => {
   fireEvent.click(screen.getAllByRole("button", { name: "Update" })[0]!);
   expect(
     screen.getByText(
-      "irm 'http://localhost:3000/install/linger-computer.ps1' | iex",
+      "irm 'http://localhost:3000/install/talos-computer.ps1' | iex",
     ),
   ).toBeVisible();
   unmount();
@@ -51,7 +51,7 @@ it("uses the target Computer platform for the required update", () => {
   );
   fireEvent.click(screen.getAllByRole("button", { name: "Update" })[0]!);
   expect(screen.getByRole("combobox")).toHaveValue("");
-  expect(screen.queryByText(/linger-computer.ps1/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/talos-computer.ps1/)).not.toBeInTheDocument();
   fireEvent.change(screen.getByRole("combobox"), {
     target: { value: "linux" },
   });
@@ -116,7 +116,7 @@ it("keeps the last reported presentation stable throughout reconnect churn", () 
 
 it("shows the desktop Prevent sleep switch only for this computer", async () => {
   Object.assign(window, {
-    lingerDesktop: {
+    talosDesktop: {
       computer: {
         getStatus: vi.fn(async () => ({
           bridge: "online",

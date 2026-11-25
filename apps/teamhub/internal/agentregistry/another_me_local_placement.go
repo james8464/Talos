@@ -4,7 +4,7 @@ import (
 	"errors"
 	"slices"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 var errAnotherMeComputerUnavailable = errors.New("no Local Computer is ready for Another Me")

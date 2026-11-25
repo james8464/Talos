@@ -6,7 +6,7 @@ import {
   privateDirectory,
   readPrivate,
 } from "./private-files.js";
-import { LEGACY_PROJECT_PREFIX, lingerHome } from "./home.js";
+import { LEGACY_PROJECT_PREFIX, talosHome } from "./home.js";
 import { freePort, portFree } from "./ports.js";
 import { readLiveKitSettings } from "./native-livekit.js";
 import path from "node:path";
@@ -47,8 +47,8 @@ interface InstanceOptions {
 // Generated once per instance and never rewritten: the database, the service
 // credentials and the Composio key TeamHub saves are bound to these values.
 const credentials: Record<string, () => string> = {
-  LINGER_POSTGRES_PASSWORD: () => randomBytes(32).toString("hex"),
-  LINGER_SECRET_SEED: () => randomBytes(32).toString("hex"),
+  TALOS_POSTGRES_PASSWORD: () => randomBytes(32).toString("hex"),
+  TALOS_SECRET_SEED: () => randomBytes(32).toString("hex"),
   // TeamHub requires 32 bytes in standard base64.
   TEAMHUB_SECRET_ENCRYPTION_KEY: () => randomBytes(32).toString("base64"),
 };
@@ -78,13 +78,13 @@ export function instanceRoot(options: { name: string; home?: string }): string {
       "Invalid instance name; use lowercase letters, numbers and hyphens",
     );
   return path.join(
-    path.resolve(options.home ?? lingerHome()),
+    path.resolve(options.home ?? talosHome()),
     "instances",
     options.name,
   );
 }
 export function composeProject(root: string, name: string): string {
-  return `linger-${name}-${createHash("sha256").update(root).digest("hex").slice(0, 12)}`;
+  return `talos-${name}-${createHash("sha256").update(root).digest("hex").slice(0, 12)}`;
 }
 export async function loadInstance(options: {
   name: string;
@@ -99,13 +99,13 @@ export async function loadInstance(options: {
     (value.mode as string) === "release"
   )
     throw new Error(
-      `The Linger installation in ${root} ran in Docker, which Linger no longer supports. Remove that folder and install again; Linger now runs natively.`,
+      `The Talos installation in ${root} ran in Docker, which Talos no longer supports. Remove that folder and install again; Talos now runs natively.`,
     );
   // The installer converts it before it starts; `--migrate` reports why not,
   // and the desktop runs that and shows the reason for its own instance.
   if (value.project?.startsWith(LEGACY_PROJECT_PREFIX))
     throw new Error(
-      `The installation in ${root} still has its names from the earlier Simplex app because it could not be converted. Run the installer with --migrate to see why, fix that, then start Linger again.`,
+      `The installation in ${root} still has its names from the earlier Simplex app because it could not be converted. Run the installer with --migrate to see why, fix that, then start Talos again.`,
     );
   if (
     value.schemaVersion !== 1 ||
@@ -237,16 +237,16 @@ export async function initializeInstance(
             : {}),
           computerExecutable:
             options.computerExecutable ??
-            process.env.LINGER_COMPUTER_BIN ??
+            process.env.TALOS_COMPUTER_BIN ??
             (releaseDir
               ? path.join(
                   releaseDir,
                   "computer",
                   process.platform === "win32"
-                    ? "linger-computer.exe"
-                    : "linger-computer",
+                    ? "talos-computer.exe"
+                    : "talos-computer",
                 )
-              : "linger-computer"),
+              : "talos-computer"),
         };
         await privateDirectory(path.dirname(instance.computerConfig));
         await writeMissingCredentials(root);

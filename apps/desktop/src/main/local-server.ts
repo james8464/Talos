@@ -32,47 +32,47 @@ import {
   proveLocalIdentity,
   readLocalIdentity,
   readLocalLogin,
-} from "@linger/local-installation/account";
-import { extractArchiveFallback } from "@linger/local-installation/archive";
-import { downloadInRegion } from "@linger/local-installation/region";
-import { latestLegacyBackup } from "@linger/local-installation/legacy-database";
-import { legacyMigrationPending } from "@linger/local-installation/home";
-import { loadInstance } from "@linger/local-installation/instance";
-import { foldersInUse } from "@linger/local-installation/native-process";
-import { normalizeFailurePunctuation } from "@linger/local-installation/localmodels-failure";
+} from "@talos/local-installation/account";
+import { extractArchiveFallback } from "@talos/local-installation/archive";
+import { downloadInRegion } from "@talos/local-installation/region";
+import { latestLegacyBackup } from "@talos/local-installation/legacy-database";
+import { legacyMigrationPending } from "@talos/local-installation/home";
+import { loadInstance } from "@talos/local-installation/instance";
+import { foldersInUse } from "@talos/local-installation/native-process";
+import { normalizeFailurePunctuation } from "@talos/local-installation/localmodels-failure";
 import {
   localRunnerGatewayUrl,
   validateSourceRepository,
-} from "@linger/local-installation/source-checkout";
-import type { LegacyInstanceSkipped } from "@linger/local-installation/legacy-migration";
+} from "@talos/local-installation/source-checkout";
+import type { LegacyInstanceSkipped } from "@talos/local-installation/legacy-migration";
 import {
   type SetupChoice,
   type SetupMemory,
   setupChoices,
-} from "@linger/local-installation/setup-plan";
+} from "@talos/local-installation/setup-plan";
 import {
   removeRetrying,
   renameRetrying,
-} from "@linger/local-installation/fs-retry";
+} from "@talos/local-installation/fs-retry";
 import {
   markNativeRuntimeVerified,
   nativeRuntimeVerified,
   NATIVE_RUNTIME_DIRECTORY,
   readNativeRuntime,
-} from "@linger/local-installation/native-runtime";
-import { linuxNodeFdHygieneArgs } from "@linger/local-installation/native-process-fds";
+} from "@talos/local-installation/native-runtime";
+import { linuxNodeFdHygieneArgs } from "@talos/local-installation/native-process-fds";
 import {
   installTeamhubBinaries,
   TEAMHUB_BINARY_DIRECTORY,
-} from "@linger/local-installation/teamhub-binaries";
-import { redact } from "@linger/local-installation/redaction";
-import { isInkling2MiniModelId } from "@linger/service-kit/featured-models";
+} from "@talos/local-installation/teamhub-binaries";
+import { redact } from "@talos/local-installation/redaction";
+import { isInkling2MiniModelId } from "@talos/service-kit/featured-models";
 import {
   windowsPrivateLocation,
   windowsPrivateRefusal,
   type WindowsPrivateRefusal,
-} from "@linger/local-installation/windows-private";
-import { adoptUserEnvironment } from "@linger/local-installation/user-environment";
+} from "@talos/local-installation/windows-private";
+import { adoptUserEnvironment } from "@talos/local-installation/user-environment";
 
 import {
   NODE_RUNTIME_RELEASES,
@@ -104,7 +104,7 @@ import type {
   SetupReason,
 } from "../shared/setup.js";
 
-// The pinned linger source this build installs, written by the release build:
+// The pinned talos source this build installs, written by the release build:
 // downloaded from `url` (or a mirror of it), or bundled in the app at `file`.
 export type SourceArchive =
   | {
@@ -124,7 +124,7 @@ export interface SourceDependencies {
 // A file every complete source tree has.
 const SOURCE_MARKER = "scripts/source-native.mjs";
 // Where scripts/source-native.mjs looks for that store in the checkout.
-const DEPENDENCY_STORE = ".linger-runtime/pnpm-store";
+const DEPENDENCY_STORE = ".talos-runtime/pnpm-store";
 
 // The inference model the installer would deploy here, with what it needs.
 export interface LocalModel {
@@ -189,7 +189,7 @@ export const QUICK_INSTALL: LocalServerPlan = {
 };
 
 // Whether the installer can set up PostgreSQL for a native install on
-// `target`: it takes the source for it from LINGER_NATIVE_DEPENDENCIES_JSON
+// `target`: it takes the source for it from TALOS_NATIVE_DEPENDENCIES_JSON
 // or else the distribution.json beside it.
 export function hasNativePostgres(
   installerDirectory: string,
@@ -210,7 +210,7 @@ export function hasNativePostgres(
       );
     });
   try {
-    const raw = environment.LINGER_NATIVE_DEPENDENCIES_JSON;
+    const raw = environment.TALOS_NATIVE_DEPENDENCIES_JSON;
     if (raw) return covers(JSON.parse(raw));
     const value = JSON.parse(
       readFileSync(path.join(installerDirectory, "distribution.json"), "utf8"),
@@ -358,7 +358,7 @@ export interface LocalModelsDegradedStatus {
 }
 
 export interface LocalServerOptions {
-  // The default LINGER_HOME of the installer.
+  // The default TALOS_HOME of the installer.
   // The desktop keeps its Node runtime and its record here wherever the
   // installation goes.
   readonly home: string;
@@ -368,8 +368,8 @@ export interface LocalServerOptions {
   readonly installerDirectory: string;
   readonly sourceArchive?: SourceArchive;
   readonly sourceDependencies?: SourceDependencies;
-  // A linger checkout installed instead of the source package, for developers
-  // (LINGER_CHECKOUT).
+  // A talos checkout installed instead of the source package, for developers
+  // (TALOS_CHECKOUT).
   readonly checkout?: string;
   // Signs the app's web session in to the local server with its owner, once
   // the server proved it is this installation's (signInWithPassword).
@@ -488,7 +488,7 @@ export function legacyMigrationResult(
   return {
     skipped,
     ...(own && {
-      failure: `Linger could not convert this computer's installation from the earlier Simplex app. ${own.reason}`,
+      failure: `Talos could not convert this computer's installation from the earlier Simplex app. ${own.reason}`,
     }),
   };
 }
@@ -499,7 +499,7 @@ const GiB = 1024 * MiB;
 // a local model needs its own on top.
 export const LOCATION_FREE_BYTES = 20 * GiB;
 
-// Runs Linger on this computer: fetches a pinned Node 26 and the linger
+// Runs Talos on this computer: fetches a pinned Node 26 and the talos
 // source, drives the bundled installer through its local API and signs the
 // window in to the result. The desktop itself is the Computer, so the
 // installer skips its own and the desktop enrolls once signed in.
@@ -738,7 +738,7 @@ export class LocalServerModule implements Module {
     return record !== undefined && sameOrigin(record.origin, serverUrl);
   }
 
-  // Whether the window should show "Starting Linger" instead of the retrying
+  // Whether the window should show "Starting Talos" instead of the retrying
   // offline page when `serverUrl` fails to load. True while a resume is active
   // for this origin, or during initial boot before LocalServer.start() begins
   // the resume; false once resume has settled so a later transient failure
@@ -810,7 +810,7 @@ export class LocalServerModule implements Module {
     return this.#running;
   }
 
-  // Installs into a folder the person picked, once it can hold Linger; null
+  // Installs into a folder the person picked, once it can hold Talos; null
   // goes back to the default.
   async chooseLocation(picked: string | null): Promise<void> {
     if (this.#running) return;
@@ -993,7 +993,7 @@ export class LocalServerModule implements Module {
             env: {
               ...process.env,
               ELECTRON_RUN_AS_NODE: "1",
-              LINGER_HOME: home,
+              TALOS_HOME: home,
             },
             signal: AbortSignal.timeout(timeoutMs),
           },
@@ -1047,7 +1047,7 @@ export class LocalServerModule implements Module {
           env: {
             ...process.env,
             ELECTRON_RUN_AS_NODE: "1",
-            LINGER_HOME: this.#options.home,
+            TALOS_HOME: this.#options.home,
           },
           signal,
         },
@@ -1228,7 +1228,7 @@ export class LocalServerModule implements Module {
   async #install(plan: LocalServerPlan): Promise<void> {
     const status = this.status();
     if (!status.available)
-      throw new Error("Running Linger on this computer is not supported here");
+      throw new Error("Running Talos on this computer is not supported here");
     const signal = this.#abort.signal;
     const home = this.#location ?? this.#home;
     this.#attempt += 1;
@@ -1296,7 +1296,7 @@ export class LocalServerModule implements Module {
       this.#advance(
         "download",
         0,
-        this.#downloadsSource() ? "Downloading Linger…" : "Unpacking Linger…",
+        this.#downloadsSource() ? "Downloading Talos…" : "Unpacking Talos…",
       );
       const repo = await this.#timed("source", () =>
         this.#ensureSource(home, signal),
@@ -1392,7 +1392,7 @@ export class LocalServerModule implements Module {
         runtime: runtime.setupChoice,
         keys: Object.keys(runtime.environment),
       });
-      // The installer set a database from before Linger aside for a fresh
+      // The installer set a database from before Talos aside for a fresh
       // one; this computer's enrollment belongs to the old one, so it
       // enrolls again. Noted in the config so that happens once.
       const legacyBackup = await latestLegacyBackup(
@@ -1441,7 +1441,7 @@ export class LocalServerModule implements Module {
       await this.#timed("await_agents", () =>
         this.#awaitAgents(job.origin, signal),
       );
-      this.#set("ready", "Linger is running on this computer.");
+      this.#set("ready", "Talos is running on this computer.");
     } catch (error) {
       this.#endSignIn();
       if (signal.aborted) return;
@@ -1605,7 +1605,7 @@ export class LocalServerModule implements Module {
     return Boolean(record && sameOrigin(record.origin, serverUrl));
   }
 
-  // Whether the window shows the Linger this app installed here and its
+  // Whether the window shows the Talos this app installed here and its
   // server still answers as itself; only then can its owner account sign the
   // window in. The services can stop while the app runs, and another program
   // can take their port, so the server is asked every time, at most once per
@@ -1623,19 +1623,19 @@ export class LocalServerModule implements Module {
   // every call so the password is never kept in memory.
   async account(): Promise<LocalAccount> {
     const record = await this.#readRecord();
-    if (!record) throw new Error("Linger is not installed on this computer.");
+    if (!record) throw new Error("Talos is not installed on this computer.");
     return readLocalAccount(
       path.join(record.home, "instances", LOCAL_INSTANCE),
     );
   }
 
-  // Signs the window in to the installed Linger with its owner account; the
+  // Signs the window in to the installed Talos with its owner account; the
   // password goes from the file to the server and nowhere else.
   async signInWithAccount(): Promise<void> {
     const record = await this.#windowRecord();
     if (!record)
       throw new Error(
-        "This window is not showing the Linger on this computer.",
+        "This window is not showing the Talos on this computer.",
       );
     const account = await this.account();
     try {
@@ -1908,7 +1908,7 @@ export class LocalServerModule implements Module {
           env: {
             ...process.env,
             ELECTRON_RUN_AS_NODE: "1",
-            LINGER_HOME: home,
+            TALOS_HOME: home,
           },
         },
       );
@@ -1960,7 +1960,7 @@ export class LocalServerModule implements Module {
     if (macos && !atLeast(macos, MIN_MACOS))
       return Promise.reject(
         new Error(
-          `Linger needs macOS ${MIN_MACOS} or later. This Mac runs macOS ${macos}. Update macOS in System Settings > General > Software Update, then try again.`,
+          `Talos needs macOS ${MIN_MACOS} or later. This Mac runs macOS ${macos}. Update macOS in System Settings > General > Software Update, then try again.`,
         ),
       );
     this.#node ??= this.#fetchNode(signal).catch((error: unknown) => {
@@ -2037,7 +2037,7 @@ export class LocalServerModule implements Module {
       const repo = await realpath(this.#options.checkout);
       if (!(await isFile(path.join(repo, "scripts/source-native.mjs"))))
         throw new Error(
-          "LINGER_CHECKOUT is not a Linger checkout (scripts/source-native.mjs is missing)",
+          "TALOS_CHECKOUT is not a Talos checkout (scripts/source-native.mjs is missing)",
         );
       return repo;
     }
@@ -2085,12 +2085,12 @@ export class LocalServerModule implements Module {
           this.#advance(
             "download",
             (bytes.completed / bytes.total) * 0.05,
-            "Downloading Linger…",
+            "Downloading Talos…",
             bytes,
           ),
       );
     if (!(await isFile(path.join(directory, SOURCE_MARKER))))
-      throw new Error("The source package is not a Linger source tree");
+      throw new Error("The source package is not a Talos source tree");
     await this.#timed("teamhub_binaries", () =>
       this.#ensureTeamhubBinaries(directory, archive.sha256, signal),
     );
@@ -2153,7 +2153,7 @@ export class LocalServerModule implements Module {
         (await nativeRuntimeVerified(directory))
       )
         return;
-      this.#advance("download", 0.05, "Unpacking Linger services…");
+      this.#advance("download", 0.05, "Unpacking Talos services…");
       await removeRetrying(directory);
       if (bundle.layout === "directory")
         await this.#copyBundled(
@@ -2286,7 +2286,7 @@ export class LocalServerModule implements Module {
     if (this.#options.checkout || !bundle) return;
     const store = path.join(repo, DEPENDENCY_STORE);
     if (existsSync(store)) return;
-    const message = "Downloading Linger dependencies…";
+    const message = "Downloading Talos dependencies…";
     this.#advance("download", 0.05, message);
     try {
       await this.#unpack(
@@ -2518,7 +2518,7 @@ export class LocalServerModule implements Module {
         {
           stdio: ["pipe", "pipe", "ignore"],
           windowsHide: true,
-          env: { ...process.env, LINGER_HOME: home },
+          env: { ...process.env, TALOS_HOME: home },
           signal,
         },
       );
@@ -2577,7 +2577,7 @@ export class LocalServerModule implements Module {
         // A detached Windows process otherwise opens its own console window.
         windowsHide: true,
         stdio: ["ignore", "pipe", "pipe"],
-        env: { ...process.env, ...proxyEnv, LINGER_HOME: home },
+        env: { ...process.env, ...proxyEnv, TALOS_HOME: home },
       },
     );
     const log = this.#ctx?.log;
@@ -2693,19 +2693,19 @@ export class LocalServerModule implements Module {
       if (this.#daemonConnection === "identity_conflict") {
         this.#ctx?.log.warn("local_server.computer_identity_conflict");
         throw new Error(
-          "This computer's local identity is already connected to another Computer registration. Choose Reconnect This Computer in the Linger menu, or remove the duplicate Computer and try again.",
+          "This computer's local identity is already connected to another Computer registration. Choose Reconnect This Computer in the Talos menu, or remove the duplicate Computer and try again.",
         );
       }
       if (this.#daemonConnection === "auth_failed") {
         this.#ctx?.log.warn("local_server.computer_auth_failed");
         throw new Error(
-          "This computer's sign-in expired before it could connect. Choose Reconnect This Computer in the Linger menu, then try again.",
+          "This computer's sign-in expired before it could connect. Choose Reconnect This Computer in the Talos menu, then try again.",
         );
       }
       if (this.#daemonConnection === "upgrade_required") {
         this.#ctx?.log.warn("local_server.computer_upgrade_required");
         throw new Error(
-          "This computer's Linger app is too old for the server. Update Linger, then try again.",
+          "This computer's Talos app is too old for the server. Update Talos, then try again.",
         );
       }
       // The Another Me has an Agent once the server created it; there is no
@@ -2791,11 +2791,11 @@ export class LocalServerModule implements Module {
       if (update) {
         // The services restart even if they still answer.
         this.#preparing = "updating";
-        this.#set("preparing", "Updating Linger on this computer…");
+        this.#set("preparing", "Updating Talos on this computer…");
         windows?.showUpdating();
       } else {
         this.#preparing = "starting";
-        this.#set("preparing", "Starting Linger on this computer…");
+        this.#set("preparing", "Starting Talos on this computer…");
         // The window would show the server as unreachable until it is back.
         const checkStartedAt = Date.now();
         let reachable = await this.#reachable(currentRecord.origin);
@@ -2866,7 +2866,7 @@ export class LocalServerModule implements Module {
           !(await this.#reachable(origin))
         )
           throw new Error(
-            "Linger could not restart on this version. The earlier version is still installed; try again.",
+            "Talos could not restart on this version. The earlier version is still installed; try again.",
           );
         await this.#moved({ ...currentRecord, origin }, repo);
       } else if (origin !== currentRecord.origin)
@@ -2887,7 +2887,7 @@ export class LocalServerModule implements Module {
         origin,
         currentRecord.origin,
       );
-      this.#set("ready", "Linger is running on this computer.");
+      this.#set("ready", "Talos is running on this computer.");
       this.#ctx?.log.info("local_server.resume_succeeded", {
         total_ms: Date.now() - startedAt,
       });
@@ -3039,7 +3039,7 @@ export class LocalServerModule implements Module {
     const env = {
       ...process.env,
       ...(await proxyEnv),
-      LINGER_HOME: record.home,
+      TALOS_HOME: record.home,
     };
     onStage?.("installer_resume");
     const resumeStartedAt = Date.now();
@@ -3349,7 +3349,7 @@ interface BundledRuntime {
 // PostgreSQL build: Ubuntu 22.04, Debian 12.
 const MIN_GLIBC = "2.35";
 
-// The oldest macOS every binary Linger runs on a Mac starts on: the bundled
+// The oldest macOS every binary Talos runs on a Mac starts on: the bundled
 // PostgreSQL and LiveKit's ffmpeg are built for 14.0 (Node.js 26 for 13.5,
 // Electron for 13.0). packaging/mac/package.py writes the same value as
 // LSMinimumSystemVersion.
@@ -3515,12 +3515,12 @@ export function computerNotOnline(
   computer: ReportedComputer | undefined,
 ): string {
   if (!computer)
-    return "This computer did not come online on Linger: the server does not list this computer. Choose Reconnect This Computer in the Linger tray menu, then try again.";
+    return "This computer did not come online on Talos: the server does not list this computer. Choose Reconnect This Computer in the Talos tray menu, then try again.";
   if (computer.status !== "online")
-    return "This computer did not come online on Linger: its Computer service is not connected. computer-daemon.log in the logs says why.";
+    return "This computer did not come online on Talos: its Computer service is not connected. computer-daemon.log in the logs says why.";
   if (computer.upgrade_required)
-    return "This computer's Computer service is too old for the server. Update Linger, then try again.";
-  return "This computer did not come online on Linger.";
+    return "This computer's Computer service is too old for the server. Update Talos, then try again.";
+  return "This computer did not come online on Talos.";
 }
 
 export const anotherMeMissing = (
@@ -3531,13 +3531,13 @@ export const anotherMeMissing = (
   const waited = `Your Another Me was not created after ${minutes} minute${minutes === 1 ? "" : "s"}. The server creates it once this computer is connected with a signed-in AI runtime (Codex, Claude Code or Pi).`;
   const reason = ((): string => {
     if (computer === null)
-      return "Linger could not read this computer's status from the server.";
+      return "Talos could not read this computer's status from the server.";
     if (!computer)
-      return "The server does not list this computer: it never connected, or it shares no folder with agents. Choose Reconnect This Computer in the Linger tray menu, then try again.";
+      return "The server does not list this computer: it never connected, or it shares no folder with agents. Choose Reconnect This Computer in the Talos tray menu, then try again.";
     if (computer.status !== "online")
       return "The server sees this computer as offline: its Computer service is not connected. computer-daemon.log in the logs says why.";
     if (computer.upgrade_required)
-      return "This computer's Computer service is too old for the server. Update Linger, then try again.";
+      return "This computer's Computer service is too old for the server. Update Talos, then try again.";
     if (
       !computer.workspace_grants?.some(
         (grant) => grant.mode === "workspace-write",
@@ -3562,7 +3562,7 @@ export const anotherMeMissing = (
     return [
       "No signed-in AI runtime is reported by this computer.",
       ...(found.length ? [`It found ${found.join("; ")}.`] : []),
-      "Install Codex or Claude Code and sign in to it in a terminal (codex login, or claude), then restart Linger and try again.",
+      "Install Codex or Claude Code and sign in to it in a terminal (codex login, or claude), then restart Talos and try again.",
     ].join(" ");
   })();
   return `${waited}\n${reason}`;
@@ -3726,7 +3726,7 @@ export function formatInstallJobFailure(
 // setup binding gives.
 const LOCAL_MODEL_NOT_READY: Record<string, string> = {
   "pi-extensions-unavailable":
-    "The local model's Pi can't load extensions, which every Linger run needs.",
+    "The local model's Pi can't load extensions, which every Talos run needs.",
   "deployment-unavailable": "The local model service isn't running.",
   "acceptance-unavailable": "The local model stack hasn't passed its checks.",
   "gateway-ownership": "The local model gateway isn't running.",
@@ -3847,7 +3847,7 @@ export class InstallerApi {
     const session = response.headers
       .getSetCookie()
       .map(parseSetCookie)
-      .find((cookie) => cookie?.name === "linger_installer_session");
+      .find((cookie) => cookie?.name === "talos_installer_session");
     if (!session) throw new Error("The installer did not open a session");
     api.#cookie = `${session.name}=${session.value}`;
     return api;
@@ -4206,7 +4206,7 @@ const isByokProtocol = (value: unknown): value is SetupByokProtocol =>
   value === "anthropic";
 
 // The refusal the installer names in its startFailure line on stdout when
-// it could not start (startFailureLine in apps/linger-installer).
+// it could not start (startFailureLine in apps/talos-installer).
 const startRefusal = (output: string): WindowsPrivateRefusal | undefined => {
   for (const line of output.split("\n")) {
     if (!line.startsWith('{"startFailure"')) continue;
@@ -4316,7 +4316,7 @@ export async function readLocalAccount(root: string): Promise<LocalAccount> {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     throw new Error(
-      `The account file of Linger on this computer is missing (${path.join(root, "local-account.json")}).`,
+      `The account file of Talos on this computer is missing (${path.join(root, "local-account.json")}).`,
       { cause: error },
     );
   }
@@ -4327,7 +4327,7 @@ export class SignInRejectedError extends Error {
   readonly status: number;
 
   constructor(status: number) {
-    super(`Signing in to Linger failed (${status})`);
+    super(`Signing in to Talos failed (${status})`);
     this.name = "SignInRejectedError";
     this.status = status;
   }
@@ -4339,14 +4339,14 @@ export const signInFailure = (error: unknown): string => {
     return "The saved password no longer works. Log in with your email and password.";
   // fetch rejects with a TypeError when nothing answers, and with a
   // TimeoutError or AbortError when the answer takes too long. What answers
-  // without proving it is this installation's server is not Linger either.
+  // without proving it is this installation's server is not Talos either.
   if (
     error instanceof LocalServerUnverifiedError ||
     error instanceof TypeError ||
     (error instanceof Error &&
       (error.name === "TimeoutError" || error.name === "AbortError"))
   )
-    return "Linger on this computer is not responding.";
+    return "Talos on this computer is not responding.";
   return error instanceof Error ? error.message : String(error);
 };
 
@@ -4365,7 +4365,7 @@ export class LocalServerUnverifiedError extends Error {
   readonly reason: string;
 
   constructor(reason: string, options?: ErrorOptions) {
-    super("Linger on this computer is not responding.", options);
+    super("Talos on this computer is not responding.", options);
     this.name = "LocalServerUnverifiedError";
     this.reason = reason;
   }
@@ -4435,7 +4435,7 @@ export const signInWithPassword = async (
     .getSetCookie()
     .map(parseSetCookie)
     .filter((cookie) => cookie !== undefined);
-  if (!cookies.length) throw new Error("Signing in to Linger failed");
+  if (!cookies.length) throw new Error("Signing in to Talos failed");
   for (const cookie of cookies) await setCookie(cookie);
 };
 
@@ -4459,17 +4459,17 @@ export const followHttps =
   };
 
 // The folder a picked one installs into: the folder itself when it is empty
-// or already holds Linger, else a Linger folder inside it.
+// or already holds Talos, else a Talos folder inside it.
 export const installLocation = async (picked: string): Promise<string> => {
   const entries = await readdir(picked).catch(() => [] as string[]);
   return entries.every((entry) => entry.startsWith(".")) ||
     entries.includes("instances") ||
     entries.includes("installer")
     ? picked
-    : path.join(picked, "Linger");
+    : path.join(picked, "Talos");
 };
 
-// Why Linger cannot install into `directory`, or undefined when it can: the
+// Why Talos cannot install into `directory`, or undefined when it can: the
 // folder (or the one it will be made in) must take files and its disk must
 // have `neededBytes` free.
 export const checkLocation = async (
@@ -4483,11 +4483,11 @@ export const checkLocation = async (
       return "This folder can't be found.";
     existing = path.dirname(existing);
   }
-  const probe = path.join(existing, `.linger-${randomUUID()}`);
+  const probe = path.join(existing, `.talos-${randomUUID()}`);
   try {
     await writeFile(probe, "", { flag: "wx" });
   } catch {
-    return "Linger can't write to this folder. Choose another one.";
+    return "Talos can't write to this folder. Choose another one.";
   } finally {
     await rm(probe, { force: true });
   }
@@ -4582,8 +4582,8 @@ export async function unpackArchive(
           : String(fallbackError);
       const hint =
         platform === "win32"
-          ? "Restore Windows tar.exe or reinstall Linger."
-          : "Install tar or reinstall Linger.";
+          ? "Restore Windows tar.exe or reinstall Talos."
+          : "Install tar or reinstall Talos.";
       throw new Error(
         `Failed to unpack ${path.basename(file)}: ${command} was not found (ENOENT) and the built-in extractor failed (${detail}). ${hint}`,
         { cause: fallbackError },

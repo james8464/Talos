@@ -1,4 +1,4 @@
-import { createJsonLogger } from "@linger/service-kit/node";
+import { createJsonLogger } from "@talos/service-kit/node";
 import type postgres from "postgres";
 import { describe, expect, it, vi } from "vitest";
 import { ModelCallError } from "../../src/runtime-model-call.js";

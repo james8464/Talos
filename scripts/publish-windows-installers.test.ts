@@ -22,13 +22,13 @@ afterEach(async () => {
 describe("Windows installer publication", () => {
   it("preserves PowerShell literal dollar tokens in published entrypoints", async () => {
     const output = await mkdtemp(
-      path.join(os.tmpdir(), "linger-powershell-release-"),
+      path.join(os.tmpdir(), "talos-powershell-release-"),
     );
     temporaryRoots.push(output);
     await publishWindowsInstallers(output);
     for (const filename of [
-      "linger-computer.ps1",
-      "uninstall-linger-computer.ps1",
+      "talos-computer.ps1",
+      "uninstall-talos-computer.ps1",
     ]) {
       const source = await readFile(path.join(output, filename), "utf8");
       expect(source).toContain("$checksumText -notmatch '^[0-7]+$'");
@@ -36,7 +36,7 @@ describe("Windows installer publication", () => {
       expect(source.match(/this file is a release template/g)).toHaveLength(1);
       // node-services fills the release metadata with its origin at startup.
       expect(source.split(WINDOWS_RELEASE_METADATA_MARKER)).toHaveLength(2);
-      expect(source).not.toContain("__LINGER_INSTALLER_HELPER_BASE64__");
+      expect(source).not.toContain("__TALOS_INSTALLER_HELPER_BASE64__");
     }
   });
 });

@@ -1,5 +1,5 @@
 {
-  "name": "@linger/service-kit",
+  "name": "@talos/service-kit",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,32 +9,32 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "linger-production": "./dist/index.js",
+      "talos-production": "./dist/index.js",
       "default": "./src/index.ts"
     },
     "./byok-endpoint": {
       "types": "./src/byok-endpoint.ts",
-      "linger-production": "./dist/byok-endpoint.js",
+      "talos-production": "./dist/byok-endpoint.js",
       "default": "./src/byok-endpoint.ts"
     },
     "./featured-models": {
       "types": "./src/featured-models.ts",
-      "linger-production": "./dist/featured-models.js",
+      "talos-production": "./dist/featured-models.js",
       "default": "./src/featured-models.ts"
     },
     "./messages": {
       "types": "./src/messages.ts",
-      "linger-production": "./dist/messages.js",
+      "talos-production": "./dist/messages.js",
       "default": "./src/messages.ts"
     },
     "./nvidia-driver": {
       "types": "./src/nvidia-driver.ts",
-      "linger-production": "./dist/nvidia-driver.js",
+      "talos-production": "./dist/nvidia-driver.js",
       "default": "./src/nvidia-driver.ts"
     },
     "./node": {
       "types": "./src/node.ts",
-      "linger-production": "./dist/node.js",
+      "talos-production": "./dist/node.js",
       "default": "./src/node.ts"
     }
   },

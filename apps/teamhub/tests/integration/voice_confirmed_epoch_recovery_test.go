@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
 )
 
 func TestVoiceConfirmedEmptyEpochPreservesRecordedPrefix(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"sort"
 	"time"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/skill"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
 )
 
 func (s *Service) storeSkillPackageFiles(ctx context.Context, pkg skill.Package) ([]storedSkillPackageFile, error) {

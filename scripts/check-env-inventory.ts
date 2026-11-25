@@ -82,7 +82,7 @@ const TS_PATTERNS = [
     `\\b(?:required|requiredEnvironment(?:Variable)?|readListenAddress)\\(\\s*(?:[A-Za-z_.]+\\s*,\\s*)?["'\`](${NAME})["'\`]`,
     "g",
   ),
-  // Names kept as data and read later: { environmentKey: "LINGER_CODEX_PATH" }.
+  // Names kept as data and read later: { environmentKey: "TALOS_CODEX_PATH" }.
   new RegExp(
     `\\b\\w*[Ee]nv(?:ironment)?(?:Key|Name|Variable)\\s*:\\s*["'\`](${NAME})["'\`]`,
     "g",

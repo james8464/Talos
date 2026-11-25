@@ -10,11 +10,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicekey"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicekey"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 const voiceKeyRuntimeToken = "voice-key-runtime-token"

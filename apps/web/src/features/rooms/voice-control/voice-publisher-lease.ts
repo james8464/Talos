@@ -8,7 +8,7 @@ export async function tryAcquireVoicePublisherLease(
   return new Promise((resolve, reject) => {
     void locks
       .request(
-        `linger:voice-publisher:${tenantId}`,
+        `talos:voice-publisher:${tenantId}`,
         { mode: "exclusive", ifAvailable: true },
         async (lock) => {
           if (!lock) {

@@ -13,7 +13,7 @@ func TestAccountRenamePreservesTheHumansAnotherMeName(t *testing.T) {
 	const actorID = "actor_rename_alice_me"
 	if _, err := env.pool.Exec(t.Context(), `
 		INSERT INTO actors(id,tenant_id,kind,display_name,handle)
-		VALUES($1,$2,'agent','Linger','alice-me-rename')
+		VALUES($1,$2,'agent','Talos','alice-me-rename')
 	`, actorID, acmeTenant); err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestAccountRenamePreservesTheHumansAnotherMeName(t *testing.T) {
 	_, revisionBefore := anotherMeDescription()
 
 	rename("Alice Stone")
-	if got := anotherMeName(); got != "Linger" {
+	if got := anotherMeName(); got != "Talos" {
 		t.Fatalf("Another Me after the rename = %q", got)
 	}
 	if description, revision := anotherMeDescription(); description != "Private delegate for Alice Stone" || revision != revisionBefore+1 {
@@ -63,7 +63,7 @@ func TestAccountRenamePreservesTheHumansAnotherMeName(t *testing.T) {
 	}
 
 	rename("Alicia Stone")
-	if got := anotherMeName(); got != "Linger" {
+	if got := anotherMeName(); got != "Talos" {
 		t.Fatalf("Another Me after another Human rename = %q", got)
 	}
 

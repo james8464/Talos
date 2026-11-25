@@ -12,10 +12,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcreationapproval"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcreationapproval"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
 )
 
 // These subcases reuse the real MCP proposal and approval chain's private DB.

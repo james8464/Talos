@@ -5,7 +5,7 @@ package native
 import (
 	"io/fs"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 // protectPrivateDir applies the owner-only ACL that privatefs checks.

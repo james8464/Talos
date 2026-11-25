@@ -48,7 +48,7 @@ const desktopConfig = z.object({
   // macOS permissions whose system prompt was shown once.
   permissionsAsked: z.array(z.enum(["folders", "automation"])).default([]),
   // The AI runtime the local server's installer set up: its executables
-  // (LINGER_<RUNTIME>_PATH) and profiles (CODEX_HOME, CLAUDE_CONFIG_DIR,
+  // (TALOS_<RUNTIME>_PATH) and profiles (CODEX_HOME, CLAUDE_CONFIG_DIR,
   // PI_CODING_AGENT_DIR). The Computer daemon runs with them.
   runtimeEnvironment: z.record(z.string(), z.string()).optional(),
   // The runtime the person chose in that installation; the daemon marks it
@@ -58,7 +58,7 @@ const desktopConfig = z.object({
   // already told about and enrolled this computer again for.
   legacyBackup: z.string().optional(),
   // Releases URL of the update feed, for a deployment that publishes its own
-  // releases (update-manifest.ts); GitHub's simplexai-labs/linger when unset.
+  // releases (update-manifest.ts); GitHub's simplexai-labs/talos when unset.
   // A value that is not a URL is dropped rather than resetting the file.
   updateFeedUrl: z.string().url().optional().catch(undefined),
   // Where Send Diagnostics uploads to (docs/diagnostics-upload.md); set by

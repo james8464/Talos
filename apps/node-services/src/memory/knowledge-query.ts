@@ -3,7 +3,7 @@ import type {
   PersonalKnowledgeEvidenceReadResponse,
   PersonalKnowledgeQueryRequest,
   PersonalKnowledgeQueryResponse,
-} from "@linger/wire-contracts/node-services-internal/client";
+} from "@talos/wire-contracts/node-services-internal/client";
 import type { ChunkSearchProvider } from "./chunk-index.js";
 
 import { chunkSource, type SourceChunk } from "./search/chunks.js";

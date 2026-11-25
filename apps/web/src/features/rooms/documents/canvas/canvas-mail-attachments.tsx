@@ -3,7 +3,7 @@ import {
   Cancel01Icon,
   File01Icon,
 } from "@hugeicons/core-free-icons";
-import { parseRoomDocumentAssetReference } from "@linger/document-model";
+import { parseRoomDocumentAssetReference } from "@talos/document-model";
 import {
   queryOptions,
   useQueries,

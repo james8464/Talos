@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { runWikiSyncCli } from "../../src/memory/wiki-sync-cli.js";
 import type { AnotherMeSubject } from "../../src/memory/types.js";
-import { requestBodyText, requestUrlText } from "@linger/service-kit";
+import { requestBodyText, requestUrlText } from "@talos/service-kit";
 
 const roots: string[] = [];
 const subject: AnotherMeSubject = {
@@ -32,7 +32,7 @@ async function memoryRoot(): Promise<string> {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "memory-wiki-sync-"));
   roots.push(root);
   vi.stubEnv("TEAMHUB_BASE_URL", "http://teamhub.test");
-  vi.stubEnv("LINGER_SECRET_SEED", "test-seed-0123456789abcdef0123456789");
+  vi.stubEnv("TALOS_SECRET_SEED", "test-seed-0123456789abcdef0123456789");
   return root;
 }
 

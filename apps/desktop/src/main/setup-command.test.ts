@@ -1,4 +1,4 @@
-import { INKLING_2_MINI_HF_URL } from "@linger/service-kit/featured-models";
+import { INKLING_2_MINI_HF_URL } from "@talos/service-kit/featured-models";
 import { describe, expect, it } from "vitest";
 
 import {

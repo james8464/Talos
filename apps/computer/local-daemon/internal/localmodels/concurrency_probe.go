@@ -19,11 +19,11 @@ import (
 	"sync"
 	"time"
 
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 const (
-	concurrencyProbeSchema     = "linger.local-models-concurrency-probes/v1"
+	concurrencyProbeSchema     = "talos.local-models-concurrency-probes/v1"
 	concurrencyProbeFileName   = "concurrency-probes.json"
 	concurrencyProbeTempPrefix = ".concurrency-probes-"
 

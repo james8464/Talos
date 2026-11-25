@@ -23,7 +23,7 @@ func TestRuntimeSessionRejectsPersistedCredentials(t *testing.T) {
 			}
 		}
 	}
-	safe := json.RawMessage(`{"threadId":"thread-1","mcpServerNames":["linger_teamhub_collaboration"],"mcpServerTransports":[{"name":"linger_teamhub_collaboration","url":"http://127.0.0.1:8090/mcp/teamhub-collaboration"}]}`)
+	safe := json.RawMessage(`{"threadId":"thread-1","mcpServerNames":["talos_teamhub_collaboration"],"mcpServerTransports":[{"name":"talos_teamhub_collaboration","url":"http://127.0.0.1:8090/mcp/teamhub-collaboration"}]}`)
 	if _, err := validateRuntimeSession(RuntimeSessionCheckpoint{ProviderKind: "codex", ThreadID: "thread-1", Session: safe}); err != nil {
 		t.Fatalf("credential-free provider session: %v", err)
 	}

@@ -34,7 +34,7 @@ input.on("line", (line) => {
       jsonrpc: "2.0",
       id: request.id,
       result: {
-        userAgent: "linger-computer-fixture",
+        userAgent: "talos-computer-fixture",
         codexHome: path.join(process.env.HOME, ".codex"),
         platformFamily: process.platform,
         platformOs: process.platform,

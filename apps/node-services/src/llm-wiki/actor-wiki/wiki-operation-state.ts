@@ -1,6 +1,6 @@
 import { chmod, lstat, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { isNodeError } from "@linger/service-kit";
+import { isNodeError } from "@talos/service-kit";
 
 interface WikiOperationStateOptions {
   dataDirectory: string;

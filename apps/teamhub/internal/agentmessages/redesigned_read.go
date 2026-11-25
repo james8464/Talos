@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // ReadInput selects exactly one read mode. A single repeatable-read snapshot

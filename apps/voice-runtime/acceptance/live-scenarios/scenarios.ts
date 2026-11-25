@@ -917,7 +917,7 @@ export function scenarioJobs(
   const recallFound = {
     status: "found",
     bullets: [
-      "Chen Zheng, Linger product lead, owns Live voice and Lev8",
+      "Chen Zheng, Talos product lead, owns Live voice and Lev8",
       "Lev8 latest plan (October weekly sync): for small and mid-size teams, 12 dollars per seat per month",
       "Set with Ray Zhao on Oct 22: Q4 launch December 10, Ray Zhao owns the canary plan",
       "Week 44 report: finished the Live voice v4 prompt, background task scheduling next week",

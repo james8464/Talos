@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentconnectedapps"
-	teamhubagentapi "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentconnectedapps"
+	teamhubagentapi "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 const agentConnectedAppsRequestMaxBytes = 1 << 20

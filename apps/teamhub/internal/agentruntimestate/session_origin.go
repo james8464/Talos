@@ -3,7 +3,7 @@ package agentruntimestate
 import (
 	"context"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // A cold native runtime has no resumable Session until its first Run is sealed.

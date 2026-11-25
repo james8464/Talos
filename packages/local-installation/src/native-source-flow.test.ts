@@ -186,7 +186,7 @@ async function fixture() {
   await writeFile(path.join(repo, "scripts/source-native.mjs"), "");
   await writeFile(
     path.join(repo, "package.json"),
-    JSON.stringify({ name: "linger" }),
+    JSON.stringify({ name: "talos" }),
   );
   vi.mocked(prepareNativeDependencies).mockResolvedValue({
     env: {},
@@ -911,7 +911,7 @@ test("only TeamHub's process gets the server identity key", async () => {
     );
   expect(events.join("\n")).not.toContain(key);
 });
-test("a database from before Linger is reported and the installation goes on", async () => {
+test("a database from before Talos is reported and the installation goes on", async () => {
   const f = await fixture();
   vi.mocked(prepareRuntime).mockResolvedValue({
     code: 0,
@@ -1342,7 +1342,7 @@ test("a service that stops because another program took its port names the port"
     state: "ready",
     message: "ready",
   });
-  // Another program takes TeamHub's port after Linger chose it, so TeamHub
+  // Another program takes TeamHub's port after Talos chose it, so TeamHub
   // exits at once.
   const holder = net.createServer();
   let port: number | undefined;
@@ -1422,7 +1422,7 @@ test("a port an earlier TeamHub still holds fails startup instead of passing its
 const failedBuild = [
   "building...",
   "go: downloading github.com/gin-gonic/gin v1.10.1",
-  "# github.com/simplexai-labs/linger/apps/teamhub/internal/artifact",
+  "# github.com/simplexai-labs/talos/apps/teamhub/internal/artifact",
   "internal\\artifact\\storage.go:276:17: undefined: unix.Statfs_t",
   "internal\\artifact\\storage.go:277:17: undefined: unix.Statfs",
   "failed to build, error: exit status 1",
@@ -1435,7 +1435,7 @@ test("a compile excerpt keeps the compiler's lines from the last build", () => {
   expect(compileFailureExcerpt(earlier + failedBuild)).toBe(
     [
       "go: downloading github.com/gin-gonic/gin v1.10.1",
-      "# github.com/simplexai-labs/linger/apps/teamhub/internal/artifact",
+      "# github.com/simplexai-labs/talos/apps/teamhub/internal/artifact",
       "internal\\artifact\\storage.go:276:17: undefined: unix.Statfs_t",
       "internal\\artifact\\storage.go:277:17: undefined: unix.Statfs",
       "failed to build, error: exit status 1",
@@ -1492,7 +1492,7 @@ test("a failed compile shows the compiler's lines on the setup page", async () =
   });
   expect(result).toMatchObject({ code: 1 });
   expect(result.message).toContain(
-    "# github.com/simplexai-labs/linger/apps/teamhub/internal/artifact\ninternal\\artifact\\storage.go:276:17: undefined: unix.Statfs_t",
+    "# github.com/simplexai-labs/talos/apps/teamhub/internal/artifact\ninternal\\artifact\\storage.go:276:17: undefined: unix.Statfs_t",
   );
   expect(result.message).toContain(
     `Inspect ${path.join(logs, "teamhub.log")}.`,
@@ -3038,7 +3038,7 @@ test("a cold resume degrades gracefully instead of blocking when local models ca
       },
     },
   });
-  expect(logs.join("")).toContain("Linger is starting without local models");
+  expect(logs.join("")).toContain("Talos is starting without local models");
 });
 
 test("an app update degrades a local model stack an earlier release stopped instead of failing the start", async () => {
@@ -3187,7 +3187,7 @@ test("the system proxy reaches only TeamHub and node-services, and restarts them
     for (const options of Object.values(direct))
       expect(options.env.HTTPS_PROXY).toBeUndefined();
 
-    vi.stubEnv("LINGER_SYSTEM_HTTPS_PROXY", "http://127.0.0.1:7890");
+    vi.stubEnv("TALOS_SYSTEM_HTTPS_PROXY", "http://127.0.0.1:7890");
     const proxied = await install();
     for (const name of ["teamhub", "node-services"]) {
       expect(proxied[name]!.env).toMatchObject({

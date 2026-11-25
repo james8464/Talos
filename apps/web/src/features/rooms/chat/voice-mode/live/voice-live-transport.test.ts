@@ -154,7 +154,7 @@ describe("live Voice Mode transport", () => {
       {
         ...participant("agent-runtime"),
         isAgent: true,
-        attributes: { "linger.voice_ready_generation": "1" },
+        attributes: { "talos.voice_ready_generation": "1" },
       },
     ];
     const f = fixture();
@@ -169,7 +169,7 @@ describe("live Voice Mode transport", () => {
 
   it("opens a chat_live session and subscribes only to the runtime's live reply", async () => {
     const early = publication(voiceLiveReplyTrack);
-    const otherTrack = publication("linger-other");
+    const otherTrack = publication("talos-other");
     const ownReply = publication(voiceLiveReplyTrack);
     media.present = [
       participant("agent-runtime", early, otherTrack),

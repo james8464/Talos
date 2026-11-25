@@ -103,7 +103,7 @@ func TestCodexProbeEnvironmentCleansPreparationFailureAndHonorsCancellation(t *t
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
-		if entry.IsDir() && strings.HasPrefix(entry.Name(), "linger-codex-probe-") {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), "talos-codex-probe-") {
 			t.Fatal("failed preparation leaked its private root")
 		}
 	}

@@ -18,7 +18,7 @@ import (
 // The test binary is the child executable on every platform; no shell or live
 // model participates. The grandchild deliberately keeps inherited pipes open.
 func TestOwnedChildFixture(t *testing.T) {
-	mode := os.Getenv("LINGER_OWNERSHIP_FIXTURE")
+	mode := os.Getenv("TALOS_OWNERSHIP_FIXTURE")
 	if mode == "" {
 		return
 	}
@@ -31,12 +31,12 @@ func TestOwnedChildFixture(t *testing.T) {
 		time.Sleep(time.Hour)
 	case "tree", "orphan":
 		child := exec.Command(os.Args[0], "-test.run=^TestOwnedChildFixture$")
-		child.Env = append(os.Environ(), "LINGER_OWNERSHIP_FIXTURE=wait")
+		child.Env = append(os.Environ(), "TALOS_OWNERSHIP_FIXTURE=wait")
 		child.Stdout, child.Stderr = os.Stdout, os.Stderr
 		if err := child.Start(); err != nil {
 			os.Exit(8)
 		}
-		if err := os.WriteFile(os.Getenv("LINGER_OWNERSHIP_READY"), []byte(fmt.Sprint(child.Process.Pid)), 0600); err != nil {
+		if err := os.WriteFile(os.Getenv("TALOS_OWNERSHIP_READY"), []byte(fmt.Sprint(child.Process.Pid)), 0600); err != nil {
 			os.Exit(9)
 		}
 		if mode == "orphan" {
@@ -54,7 +54,7 @@ func fixture(t *testing.T, mode string) *exec.Cmd {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(binary, "-test.run=^TestOwnedChildFixture$")
-	cmd.Env = append(os.Environ(), "LINGER_OWNERSHIP_FIXTURE="+mode)
+	cmd.Env = append(os.Environ(), "TALOS_OWNERSHIP_FIXTURE="+mode)
 	return cmd
 }
 
@@ -71,7 +71,7 @@ func TestOwnedTreeCancellationAndInheritedPipes(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			cmd := fixture(t, mode)
 			marker := filepath.Join(t.TempDir(), "ready")
-			cmd.Env = append(cmd.Env, "LINGER_OWNERSHIP_READY="+marker)
+			cmd.Env = append(cmd.Env, "TALOS_OWNERSHIP_READY="+marker)
 			stdin, err := cmd.StdinPipe()
 			if err != nil {
 				t.Fatal(err)

@@ -1,4 +1,4 @@
-import { createJsonLogger, type JsonLogger } from "@linger/service-kit/node";
+import { createJsonLogger, type JsonLogger } from "@talos/service-kit/node";
 
 // The Document Runtime runs on its own worker thread, so its logger is created
 // inside that thread rather than passed from the host.

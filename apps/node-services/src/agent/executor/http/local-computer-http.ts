@@ -1,6 +1,6 @@
 import { type Context, Hono } from "hono";
-import * as AgentManagementRoutes from "@linger/wire-contracts/node-services-internal/server";
-import type { ByokConfigInput } from "@linger/wire-contracts/runner-gateway/types";
+import * as AgentManagementRoutes from "@talos/wire-contracts/node-services-internal/server";
+import type { ByokConfigInput } from "@talos/wire-contracts/runner-gateway/types";
 import {
   LocalComputerBusyError,
   LocalComputerHasAgentsError,
@@ -20,11 +20,11 @@ import {
   LocalModelsActionTimeoutError,
   type LocalModelActionCommand,
 } from "../../runner-gateway/runner-local-models.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import {
   isByokProtocol,
   validByokPath,
-} from "@linger/service-kit/byok-endpoint";
+} from "@talos/service-kit/byok-endpoint";
 
 type LocalComputerHttpStatus = 400 | 404 | 405 | 409 | 410 | 502 | 503;
 
@@ -905,7 +905,7 @@ const parseComputerPermissionAction = (
     (value.action !== "prompt" &&
       value.action !== "open_settings" &&
       value.action !== "relaunch") ||
-    (value.subject !== "linger" && value.subject !== "computer_use") ||
+    (value.subject !== "talos" && value.subject !== "computer_use") ||
     (value.permission !== undefined &&
       value.permission !== "screen_recording" &&
       value.permission !== "accessibility") ||

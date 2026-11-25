@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/riverqueue/river"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
 )
 
 // connectionAuthorizationSettleWorker settles the cards waiting on a Connection

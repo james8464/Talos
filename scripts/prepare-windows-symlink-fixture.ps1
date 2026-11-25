@@ -1,6 +1,6 @@
 #requires -Version 5.1
 # The test user creates an empty directory and target.json before an elevated
-# account runs this script. Set LINGER_TEST_WINDOWS_SYMLINK_FIXTURE to that
+# account runs this script. Set TALOS_TEST_WINDOWS_SYMLINK_FIXTURE to that
 # directory when running the computercli and teamhub-cli symlink tests.
 param(
     [Parameter(Mandatory = $true)]

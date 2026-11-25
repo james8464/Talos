@@ -18,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 const (

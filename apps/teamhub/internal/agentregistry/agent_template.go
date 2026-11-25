@@ -8,11 +8,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 var (

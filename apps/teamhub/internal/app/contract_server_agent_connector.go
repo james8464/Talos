@@ -10,12 +10,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentconnectedapps"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentconnectedapps"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 func (a *App) prepareConnectorFileUpload(c *gin.Context) {

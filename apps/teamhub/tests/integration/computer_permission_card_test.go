@@ -7,10 +7,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
-// permissionLocalComputers reports a Mac whose Linger Screen Recording state
+// permissionLocalComputers reports a Mac whose Talos Screen Recording state
 // the test sets; every action records what the owner's card asked for.
 type permissionLocalComputers struct {
 	recordingLocalComputers
@@ -35,7 +35,7 @@ func (c *permissionLocalComputers) LocalComputerPermissions(_ context.Context, c
 		return roomagent.LocalComputerPermissionEntry{ID: id, State: state, Prompt: "available"}
 	}
 	return roomagent.LocalComputerPermissionStatus{Platform: "darwin", Host: "desktop", Subjects: []roomagent.LocalComputerPermissionSubject{
-		{Subject: "linger", Permissions: []roomagent.LocalComputerPermissionEntry{entry("screen_recording", c.state), entry("accessibility", "granted")}},
+		{Subject: "talos", Permissions: []roomagent.LocalComputerPermissionEntry{entry("screen_recording", c.state), entry("accessibility", "granted")}},
 		{Subject: "computer_use", Permissions: []roomagent.LocalComputerPermissionEntry{entry("screen_recording", "denied"), entry("accessibility", "denied")}},
 	}}, nil
 }
@@ -56,19 +56,19 @@ func TestComputerPermissionCardSettlesOnGrantAndDecline(t *testing.T) {
 		status, response := postAgentInRoom(t, env, issued.AccessToken, roomID, "/api/agent/v1/computer/permissions/request", body)
 		return status, string(response)
 	}
-	screen := map[string]any{"subject": "linger", "permissions": []string{"screen_recording"}, "reason": "Take a screenshot of the report"}
+	screen := map[string]any{"subject": "talos", "permissions": []string{"screen_recording"}, "reason": "Take a screenshot of the report"}
 
 	for _, invalid := range []map[string]any{
-		{"subject": "linger", "permissions": []string{"camera"}},
-		{"subject": "linger", "permissions": []string{"accessibility", "accessibility"}},
+		{"subject": "talos", "permissions": []string{"camera"}},
+		{"subject": "talos", "permissions": []string{"accessibility", "accessibility"}},
 		{"subject": "cua", "permissions": []string{"accessibility"}},
-		{"subject": "linger", "permissions": []string{}},
+		{"subject": "talos", "permissions": []string{}},
 	} {
 		if status, body := request(invalid); status != http.StatusBadRequest {
 			t.Fatalf("invalid request %v: %d %s", invalid, status, body)
 		}
 	}
-	if status, body := request(map[string]any{"subject": "linger", "permissions": []string{"accessibility"}}); status != http.StatusOK ||
+	if status, body := request(map[string]any{"subject": "talos", "permissions": []string{"accessibility"}}); status != http.StatusOK ||
 		!strings.Contains(body, `"status":"ready"`) {
 		t.Fatalf("granted permission: %d %s", status, body)
 	}
@@ -86,7 +86,7 @@ func TestComputerPermissionCardSettlesOnGrantAndDecline(t *testing.T) {
 		t.Fatalf("pending card was not reused: %d %s", status, body)
 	}
 	if got := countRows(t, env, `SELECT count(*) FROM decisions WHERE room_id=$1 AND status='pending' AND kind='computer_permission'
- AND view->>'computer_id'=$2 AND view->>'subject'='linger' AND decider_actor_id='actor_acme_alice'`, roomID, computerID); got != 1 {
+ AND view->>'computer_id'=$2 AND view->>'subject'='talos' AND decider_actor_id='actor_acme_alice'`, roomID, computerID); got != 1 {
 		t.Fatalf("pending computer permission cards=%d", got)
 	}
 	// A card for the other app is a separate request.
@@ -96,11 +96,11 @@ func TestComputerPermissionCardSettlesOnGrantAndDecline(t *testing.T) {
 	}
 
 	permissions := "/v0/tenants/tenant_acme/local-computers/" + computerID + "/permissions"
-	if code, _, body := env.request(alice, http.MethodPost, permissions, map[string]any{"action": "prompt", "subject": "linger"}, ""); code != http.StatusBadRequest {
+	if code, _, body := env.request(alice, http.MethodPost, permissions, map[string]any{"action": "prompt", "subject": "talos"}, ""); code != http.StatusBadRequest {
 		t.Fatalf("prompt without a permission: %d %s", code, body)
 	}
 	if code, _, body := env.request(alice, http.MethodPost, permissions, map[string]any{
-		"action": "prompt", "subject": "linger", "permission": "screen_recording",
+		"action": "prompt", "subject": "talos", "permission": "screen_recording",
 	}, ""); code != http.StatusOK || !strings.Contains(string(body), `"subjects"`) {
 		t.Fatalf("prompt: %d %s", code, body)
 	}
@@ -117,7 +117,7 @@ func TestComputerPermissionCardSettlesOnGrantAndDecline(t *testing.T) {
 		t.Fatalf("owner status: %d %s", code, body)
 	}
 	assertBrowserCardHandoff(t, env, first.InteractionID, first.MessageID, "answered", `"decision": "granted"`,
-		"the user granted screen_recording for Linger. Continue the task now.")
+		"the user granted screen_recording for Talos. Continue the task now.")
 	if got := countRows(t, env, `SELECT count(*) FROM decisions WHERE kind='computer_permission' AND view->>'subject'='computer_use' AND status='pending'`); got != 1 {
 		t.Fatalf("the computer use card settled without its grant: pending=%d", got)
 	}
@@ -146,7 +146,7 @@ func TestComputerPermissionCardSettlesOnGrantAndDecline(t *testing.T) {
 		t.Fatalf("decline: %d %s", code, body)
 	}
 	assertBrowserCardHandoff(t, env, second.InteractionID, second.MessageID, "denied", `"decision": "deny"`,
-		"the user declined to grant screen_recording for Linger")
+		"the user declined to grant screen_recording for Talos")
 }
 
 func assertCardStatus(t *testing.T, env *testEnv, decisionID, want string) {

@@ -27,8 +27,8 @@ type CodexHomeOptions struct {
 	ModelsCache *CodexModelsCachePeers
 }
 
-const projectionState = ".linger-projection.json"
-const projectionAssets = ".linger-config"
+const projectionState = ".talos-projection.json"
+const projectionAssets = ".talos-config"
 
 type projectionRecord struct {
 	Configuration string   `json:"configuration"`

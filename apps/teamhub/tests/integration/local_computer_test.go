@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 type recordingLocalComputers struct {
@@ -82,7 +82,7 @@ func TestTenantAgentAvailabilityProjectsUnknownWhenRuntimeStatusIsMissing(t *tes
 			computer_id,local_runtime_type,workspace_grant_id,created_by_actor_id
 		) VALUES (
 			'actor_local_status','tenant_acme','agent-management-local-status','active','Runs on Alice Mac','Run locally','model-local',
-			'computer_owner_mac','codex','grant_linger','actor_acme_alice'
+			'computer_owner_mac','codex','grant_talos','actor_acme_alice'
 		);
 	`); err != nil {
 		t.Fatal(err)
@@ -220,7 +220,7 @@ func TestLocalComputerInventoryEnrollmentAndCLICredentialExchange(t *testing.T) 
 UPDATE local_computers
 SET status='online',last_seen_at=now(),platform='darwin',daemon_version='0.40.0',recommended_version='0.41.0',
     active_operations=1,capacity=2,runtime_inventory='["claude"]',
-    workspace_grants=jsonb_build_array(jsonb_build_object('grant_id','grant_linger','tenant_id',$2::text,'scope','owner','label','Linger','mode','workspace-write')),
+    workspace_grants=jsonb_build_array(jsonb_build_object('grant_id','grant_talos','tenant_id',$2::text,'scope','owner','label','Talos','mode','workspace-write')),
     runtime_diagnostics=jsonb_build_array(jsonb_build_object('type','claude','status','ready','protocol','stream-json','checked_at',to_jsonb(now()),'version','1.2.3',
         'models',jsonb_build_array(jsonb_build_object('id','claude-sonnet','label','Claude Sonnet','allowed_reasoning_effort','[]'::jsonb))))
 WHERE computer_id=$1`, computerID, acmeTenant); err != nil {
@@ -252,7 +252,7 @@ WHERE computer_id=$1`, computerID, acmeTenant); err != nil {
 			computer_id,local_runtime_type,workspace_grant_id,created_by_actor_id
 		) VALUES (
 			'actor_local_guard','tenant_acme','agent-management-local-guard','active','Guard locally','model-local',
-			'`+computerID+`','codex','grant_linger','actor_acme_alice'
+			'`+computerID+`','codex','grant_talos','actor_acme_alice'
 		);
 	`); err != nil {
 		t.Fatal(err)
@@ -385,7 +385,7 @@ func TestLocalComputerEnrollmentDaemonIdentityHTTP(t *testing.T) {
 			computer_id,local_runtime_type,workspace_grant_id,created_by_actor_id
 		) VALUES (
 			'actor_local_reset','tenant_acme','agent-management-local-reset','active','Run locally','model-local',
-			$1,'codex','grant_linger','actor_acme_alice'
+			$1,'codex','grant_talos','actor_acme_alice'
 		)
 	`, computerA); err != nil {
 		t.Fatal(err)

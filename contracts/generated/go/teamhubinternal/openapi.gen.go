@@ -3524,7 +3524,7 @@ type LocalModelEngine string
 
 // LocalModelError defines model for LocalModelError.
 type LocalModelError struct {
-	// Cause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Linger and renaming that folder lets the model load.
+	// Cause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Talos and renaming that folder lets the model load.
 	Cause *LocalModelErrorCause `json:"cause,omitempty"`
 
 	// Code Closed localmodels library error set. It is extended only together with the localmodels library contract; UNKNOWN_ERROR preserves forward compatibility with newer localmodels releases.
@@ -3537,7 +3537,7 @@ type LocalModelError struct {
 	Path *string `json:"path,omitempty"`
 }
 
-// LocalModelErrorCause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Linger and renaming that folder lets the model load.
+// LocalModelErrorCause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Talos and renaming that folder lets the model load.
 type LocalModelErrorCause string
 
 // LocalModelErrorCode Closed localmodels library error set. It is extended only together with the localmodels library contract; UNKNOWN_ERROR preserves forward compatibility with newer localmodels releases.

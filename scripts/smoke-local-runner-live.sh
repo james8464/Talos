@@ -2,13 +2,13 @@
 set -Eeuo pipefail
 umask 077
 
-SOAK_ONLY="${LINGER_LOCAL_RUNNER_SOAK_ONLY:-0}"
-if [[ "${LINGER_LIVE_LOCAL_CODEX:-0}" != "1" && "$SOAK_ONLY" != "1" ]]; then
-  printf 'Refusing to run a billable live Codex smoke. Set LINGER_LIVE_LOCAL_CODEX=1 explicitly.\n' >&2
+SOAK_ONLY="${TALOS_LOCAL_RUNNER_SOAK_ONLY:-0}"
+if [[ "${TALOS_LIVE_LOCAL_CODEX:-0}" != "1" && "$SOAK_ONLY" != "1" ]]; then
+  printf 'Refusing to run a billable live Codex smoke. Set TALOS_LIVE_LOCAL_CODEX=1 explicitly.\n' >&2
   exit 2
 fi
 
-RECOVERY_DELAY_SECONDS="${LINGER_LOCAL_RUNNER_RECOVERY_DELAY_SECONDS:-0}"
+RECOVERY_DELAY_SECONDS="${TALOS_LOCAL_RUNNER_RECOVERY_DELAY_SECONDS:-0}"
 if [[ ! "$RECOVERY_DELAY_SECONDS" =~ ^[0-9]+$ ]] || ((RECOVERY_DELAY_SECONDS > 600)) || { [[ "$SOAK_ONLY" != "1" ]] && ((RECOVERY_DELAY_SECONDS > 0)); }; then
   printf 'Recovery delay must be 0-600 seconds and is supported only by the deterministic soak.\n' >&2
   exit 2
@@ -20,11 +20,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_ROOT="$(mktemp -d "/tmp/sx-lr-live.XXXXXX")"
 TMP_ROOT="$(cd "$TMP_ROOT" && pwd -P)"
 LIVE_CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-AUTH_FILE="${LINGER_CODEX_AUTH_FILE:-$LIVE_CODEX_HOME/auth.json}"
-LIVE_MODEL="${LINGER_LIVE_CODEX_MODEL:-}"
-LIVE_REASONING_EFFORT="${LINGER_LIVE_CODEX_REASONING_EFFORT:-}"
-RECONNECT_ONLY="${LINGER_LIVE_LOCAL_CODEX_RECONNECT_ONLY:-0}"
-RESTART_ONLY="${LINGER_LIVE_LOCAL_CODEX_RESTART_ONLY:-0}"
+AUTH_FILE="${TALOS_CODEX_AUTH_FILE:-$LIVE_CODEX_HOME/auth.json}"
+LIVE_MODEL="${TALOS_LIVE_CODEX_MODEL:-}"
+LIVE_REASONING_EFFORT="${TALOS_LIVE_CODEX_REASONING_EFFORT:-}"
+RECONNECT_ONLY="${TALOS_LIVE_LOCAL_CODEX_RECONNECT_ONLY:-0}"
+RESTART_ONLY="${TALOS_LIVE_LOCAL_CODEX_RESTART_ONLY:-0}"
 # The Agent Service derives its credentials from this seed.
 SECRET_SEED="local-runner-live-secret-seed-0123456789"
 # SERVICE_TOKEN is what the Agent Service presents to the TeamHub fixture;
@@ -39,7 +39,7 @@ TASK_ROOM_ID="room-task-live"
 # Enrollment assigns the Computer ID and writes its Runner credential.
 COMPUTER_ID=""
 RUNNER_TOKEN_FILE="$TMP_ROOT/runner-token"
-CODEX_EXECUTABLE="${LINGER_CODEX_PATH:-}"
+CODEX_EXECUTABLE="${TALOS_CODEX_PATH:-}"
 CONFIG="$TMP_ROOT/computer.json"
 FIXTURE_REPORT="$TMP_ROOT/fixture-report.ndjson"
 PROXY_EVENTS="$TMP_ROOT/proxy-events.ndjson"
@@ -67,7 +67,7 @@ free_port() {
 }
 
 computer() {
-  CODEX_HOME="$LIVE_CODEX_HOME" "$ROOT/apps/computer/dist/cli/linger-computer" "$@" --config "$CONFIG"
+  CODEX_HOME="$LIVE_CODEX_HOME" "$ROOT/apps/computer/dist/cli/talos-computer" "$@" --config "$CONFIG"
 }
 
 api() {
@@ -249,14 +249,14 @@ stop_agent_service() {
 start_agent_service() {
   env \
     TEAMHUB_BASE_URL="http://127.0.0.1:$FIXTURE_PORT" \
-    LINGER_SECRET_SEED="$SECRET_SEED" \
+    TALOS_SECRET_SEED="$SECRET_SEED" \
     NODE_SERVICES_ROLES="agent" NODE_SERVICES_HTTP_ADDRESS="127.0.0.1:$AGENT_PORT" \
     AGENT_HOME="$TMP_ROOT/agent-home" \
     AGENT_RUNNER_PUBLIC_GATEWAY_URL="ws://127.0.0.1:$AGENT_PORT/v1/runner-gateway" \
     CODEX_HOME="$LIVE_CODEX_HOME" \
     CODEX_CLI_PATH="$CODEX_EXECUTABLE" \
     AGENT_LOG_LEVEL="debug" \
-    node --conditions=linger-production \
+    node --conditions=talos-production \
       "$ROOT/apps/node-services/dist/main.js" \
       >>"$TMP_ROOT/agent.log" 2>&1 &
   AGENT_PID=$!
@@ -708,13 +708,13 @@ resolve_live_codex_home() {
   if [[ "$AUTH_FILE" = /* && -f "$AUTH_FILE" ]]; then
     AUTH_FILE="$(realpath "$AUTH_FILE")"
     LIVE_CODEX_HOME="$(dirname "$AUTH_FILE")"
-  elif [[ -z "${LINGER_CODEX_AUTH_FILE:-}" && "$LIVE_CODEX_HOME" = /* && -r "$LIVE_CODEX_HOME/config.toml" ]]; then
+  elif [[ -z "${TALOS_CODEX_AUTH_FILE:-}" && "$LIVE_CODEX_HOME" = /* && -r "$LIVE_CODEX_HOME/config.toml" ]]; then
     # Custom providers may authenticate through existing config. The real
     # daemon account/read probe and model execution still verify usability.
     LIVE_CODEX_HOME="$(realpath "$LIVE_CODEX_HOME")"
     AUTH_FILE=""
   else
-    printf 'Codex configuration unavailable; set an existing absolute LINGER_CODEX_AUTH_FILE or CODEX_HOME with config.toml.\n' >&2
+    printf 'Codex configuration unavailable; set an existing absolute TALOS_CODEX_AUTH_FILE or CODEX_HOME with config.toml.\n' >&2
     return 2
   fi
 }
@@ -749,7 +749,7 @@ else
     CODEX_EXECUTABLE="$(command -v codex || true)"
   fi
   [[ -n "$CODEX_EXECUTABLE" ]] || {
-    printf 'Codex is unavailable; set LINGER_CODEX_PATH or install codex on PATH\n' >&2
+    printf 'Codex is unavailable; set TALOS_CODEX_PATH or install codex on PATH\n' >&2
     exit 2
   }
   CODEX_EXECUTABLE="$(realpath "$CODEX_EXECUTABLE")"
@@ -766,7 +766,7 @@ PROXY_PORT="$(free_port)"
 cd "$ROOT"
 
 printf 'Building current Local Runner process boundaries...\n'
-pnpm --filter @linger/node-services... --filter @linger/teamhub-cli... build >/dev/null
+pnpm --filter @talos/node-services... --filter @talos/teamhub-cli... build >/dev/null
 node "$ROOT/apps/computer/scripts/bundle-teamhub-cli.mjs"
 mkdir -p "$ROOT/apps/computer/dist/cli"
 cp "$ROOT/apps/computer/dist/bundle/cli/teamhub" \
@@ -779,9 +779,9 @@ mkdir -p "$ROOT/apps/computer/dist/daemon" "$ROOT/apps/computer/dist/runtime/bin
 ln -sfn "$(command -v node)" "$ROOT/apps/computer/dist/runtime/bin/node"
 (
   cd "$ROOT/apps/computer/local-daemon"
-  go build -o ../dist/daemon/linger-computer-daemon \
-    ./cmd/linger-computer-daemon
-  go build -o ../dist/cli/linger-computer ./cmd/linger-computer
+  go build -o ../dist/daemon/talos-computer-daemon \
+    ./cmd/talos-computer-daemon
+  go build -o ../dist/cli/talos-computer ./cmd/talos-computer
 )
 
 publish_inbox_state "$REVISION"
@@ -858,7 +858,7 @@ if [[ -n "$LIVE_MODEL" ]]; then
   fi
   if [[ -z "$LIVE_REASONING_EFFORT" ]] && jq -e '(.allowed_reasoning_effort // [] | length) > 0' <<<"$selected_runtime_model" >/dev/null; then
     if ! LIVE_REASONING_EFFORT="$(jq -er '.default_reasoning_effort as $effort | select(.allowed_reasoning_effort | index($effort)) | $effort | select(type == "string" and length > 0)' <<<"$selected_runtime_model")"; then
-      printf 'Selected live Codex model has no valid default reasoning effort; set LINGER_LIVE_CODEX_REASONING_EFFORT explicitly.\n' >&2
+      printf 'Selected live Codex model has no valid default reasoning effort; set TALOS_LIVE_CODEX_REASONING_EFFORT explicitly.\n' >&2
       exit 1
     fi
   fi

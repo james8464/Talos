@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 const browserExtensionTokenPrefix = "PLAYWRIGHT_MCP_EXTENSION_TOKEN=" //nolint:gosec // G101: the variable name prefix, not a credential

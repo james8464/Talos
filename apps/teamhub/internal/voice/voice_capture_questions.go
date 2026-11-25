@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicecaptureqa"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicecaptureqa"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 const (

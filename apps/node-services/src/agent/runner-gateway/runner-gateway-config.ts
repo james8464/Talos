@@ -1,4 +1,4 @@
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 
 export interface RunnerGatewayConfiguration {
   /** The Gateway's HTTP origin, shared by the Local MCP Relay and Local Context. */
@@ -34,7 +34,7 @@ export const parseLocalContextRuntimeConfiguration = (
     environment,
   );
   if (!contentSigningKey) {
-    throw new TypeError("LINGER_SECRET_SEED must be set");
+    throw new TypeError("TALOS_SECRET_SEED must be set");
   }
   return {
     publicOrigin: configuration.publicOrigin,

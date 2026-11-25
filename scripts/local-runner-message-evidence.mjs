@@ -159,15 +159,15 @@ const fail = (code) => {
 
 async function runCli() {
   if (process.argv[2] === "--run-evidence") {
-    const file = process.env.LINGER_ACCEPTANCE_FILE?.trim();
-    const expected = process.env.LINGER_ACCEPTANCE_EXPECTED?.trim();
+    const file = process.env.TALOS_ACCEPTANCE_FILE?.trim();
+    const expected = process.env.TALOS_ACCEPTANCE_EXPECTED?.trim();
     const expectedSha256 =
-      process.env.LINGER_ACCEPTANCE_EXPECTED_SHA256?.trim();
-    const log = process.env.LINGER_ACCEPTANCE_AGENT_LOG?.trim();
-    const runId = process.env.LINGER_ACCEPTANCE_RUN_ID?.trim();
+      process.env.TALOS_ACCEPTANCE_EXPECTED_SHA256?.trim();
+    const log = process.env.TALOS_ACCEPTANCE_AGENT_LOG?.trim();
+    const runId = process.env.TALOS_ACCEPTANCE_RUN_ID?.trim();
     if (!file || !log || !path.isAbsolute(file) || !path.isAbsolute(log))
       fail("INVALID_INPUT");
-    const hasMarker = /^LINGER_ACCEPTANCE_[A-F0-9]{16}$/.test(expected ?? "");
+    const hasMarker = /^TALOS_ACCEPTANCE_[A-F0-9]{16}$/.test(expected ?? "");
     const hasDigest = /^[a-f0-9]{64}$/.test(expectedSha256 ?? "");
     if (!runId || (!hasMarker && !hasDigest)) fail("INVALID_INPUT");
     const verified = await verifyLocalRunEvidence({

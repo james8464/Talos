@@ -12,8 +12,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 )
 
 type DuplicateDocumentInput struct {

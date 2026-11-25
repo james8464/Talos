@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/permissionreview"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/permissionreview"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 // registerPermissionReview builds the Runtime permission review. Its route

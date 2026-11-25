@@ -15,17 +15,17 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomevent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/secretbox"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomevent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/secretbox"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // MessageAttachmentUpload is one file a Human uploads for a later Message.

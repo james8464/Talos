@@ -14,7 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 const (

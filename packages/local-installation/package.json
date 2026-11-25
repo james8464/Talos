@@ -1,12 +1,12 @@
 {
-  "name": "@linger/local-installation",
+  "name": "@talos/local-installation",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
     "./*": {
       "types": "./src/*.ts",
-      "linger-production": "./dist/*.js",
+      "talos-production": "./dist/*.js",
       "default": "./src/*.ts"
     }
   },
@@ -18,7 +18,7 @@
     "lint": "eslint --max-warnings=0 src"
   },
   "dependencies": {
-    "@linger/service-kit": "workspace:*",
+    "@talos/service-kit": "workspace:*",
     "tar": "7.5.22"
   }
 }

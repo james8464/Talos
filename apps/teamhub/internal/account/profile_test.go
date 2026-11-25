@@ -26,7 +26,7 @@ func TestMergeGeneratedSkipsEmptyGeneratedValues(t *testing.T) {
 
 func TestApplyPatchFreezesClearedFields(t *testing.T) {
 	bio := ""
-	organization := "Linger"
+	organization := "Talos"
 	name := "Jenny Wen"
 	next, err := applyPatch(record{Name: "Jenny Bin", Bio: "Old"}, Patch{
 		Name: &name, Bio: &bio, Organization: &organization,
@@ -34,14 +34,14 @@ func TestApplyPatchFreezesClearedFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if next.Name != "Jenny Wen" || next.Bio != "" || next.Organization != "Linger" {
+	if next.Name != "Jenny Wen" || next.Bio != "" || next.Organization != "Talos" {
 		t.Fatalf("patched %+v", next)
 	}
 	if !next.NameUserManaged || !next.BioUserManaged || !next.OrganizationUserManaged {
 		t.Fatalf("cleared fields must freeze %+v", next)
 	}
 	locked := mergeGenerated(next, Fields{Name: "Other", Bio: "Generated bio", Organization: "Other Co"})
-	if locked.Name != "Jenny Wen" || locked.Bio != "" || locked.Organization != "Linger" {
+	if locked.Name != "Jenny Wen" || locked.Bio != "" || locked.Organization != "Talos" {
 		t.Fatalf("frozen fields overwritten %+v", locked)
 	}
 }

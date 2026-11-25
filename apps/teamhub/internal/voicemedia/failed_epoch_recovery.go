@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func createRecoveryEpoch(ctx context.Context, q *store.Queries, previous store.VoiceMediaEpoch) (store.VoiceMediaEpoch, error) {

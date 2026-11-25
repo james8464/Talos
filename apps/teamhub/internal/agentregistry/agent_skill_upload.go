@@ -12,12 +12,12 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/skill"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // ErrSkillDefaultNameConflict reports an uploaded Skill whose name belongs to a managed system default.

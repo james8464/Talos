@@ -54,7 +54,7 @@ jobs:
             exit 0
           fi
           docker build \
-            --label "linger.dockerfile.sha256=$sha" \
+            --label "talos.dockerfile.sha256=$sha" \
             --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
             -t "$remote:$sha" \
             "$DOCKER_DIR"

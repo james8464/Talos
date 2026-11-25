@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, mkdir, open, realpath, rm } from "node:fs/promises";
 import path from "node:path";
-import { inferFileMetadata } from "@linger/document-files";
+import { inferFileMetadata } from "@talos/document-files";
 import { readExactHostFile } from "./files/host-file-reader.js";
 import {
   createHostFileExclusive,

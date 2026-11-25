@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { describe, expect, it, vi } from "vitest";
 import { teamHubData } from "./teamhub-api";
 import { createHttpTeamHubClient } from "./teamhub-client";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("voice HTTP cancellation", () => {
   it("keeps stop and close requests alive during page departure", async () => {

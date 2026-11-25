@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/migrations"
+	"github.com/simplexai-labs/talos/apps/teamhub/migrations"
 )
 
 func TestAnotherMeInstructionsMigrationPreservesCustomIdentityAndRuntime(t *testing.T) {
@@ -22,7 +22,7 @@ func TestAnotherMeInstructionsMigrationPreservesCustomIdentityAndRuntime(t *test
 		name, displayName, instructions string
 		general                         bool
 	}{
-		{name: "default identity", displayName: "Linger", instructions: oldInstructions},
+		{name: "default identity", displayName: "Talos", instructions: oldInstructions},
 		{name: "custom name", displayName: "Helper", instructions: oldInstructions},
 		{name: "custom instructions", displayName: "Helper", instructions: "Coordinate my research safely."},
 		{name: "general Agent", displayName: "Researcher", instructions: oldInstructions, general: true},

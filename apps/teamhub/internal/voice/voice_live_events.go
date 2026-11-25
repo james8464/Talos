@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
 )
 
 // VoiceLiveEventsHeartbeat keeps the stream open through proxies and is how

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   downloadInRegion,
@@ -23,7 +23,7 @@ afterEach(async () => {
 });
 // Each test has its own home, so the per-process resolution never carries over.
 async function home() {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "linger-region-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "talos-region-"));
   roots.push(directory);
   return directory;
 }

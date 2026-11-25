@@ -1,8 +1,8 @@
 import { teamHubFetch } from "./teamhub-transport.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { postTeamHubMemoryWikiRefresh } from "@linger/wire-contracts/teamhub-internal/client";
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
+import { postTeamHubMemoryWikiRefresh } from "@talos/wire-contracts/teamhub-internal/client";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
 
 import type { MemoryChunkIndex } from "./chunk-index.js";
 import { loadAnotherMeSubjects } from "./collector.js";

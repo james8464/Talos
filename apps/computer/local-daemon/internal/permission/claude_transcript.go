@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/runtimehistory"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/runtimehistory"
 )
 
 // claudeTranscriptRecords is how many of the newest session records are read; the

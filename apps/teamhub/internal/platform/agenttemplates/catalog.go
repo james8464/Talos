@@ -15,10 +15,10 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentregistry"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 //go:embed all:builtin

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, expect, it, vi } from "vitest";
 import { RuntimeExecutionError } from "../../../src/agent/executor/provider.js";
 import { RunnerOperationState } from "../../../src/agent/runner-gateway/runner-operation.js";
-import { parseDaemonToAgentEnvelope } from "@linger/wire-contracts/runner-gateway/validator";
+import { parseDaemonToAgentEnvelope } from "@talos/wire-contracts/runner-gateway/validator";
 import { setAgentLogOptions } from "../../../src/agent/observability/agent-log.js";
 
 afterEach(() => {

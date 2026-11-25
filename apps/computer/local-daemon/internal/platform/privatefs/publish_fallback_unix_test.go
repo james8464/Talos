@@ -58,9 +58,9 @@ func TestPublishFallbackPreservesOneCompleteIdentity(t *testing.T) {
 }
 
 func TestPublishFallbackLockRecoversAfterProcessExit(t *testing.T) {
-	const childDirectory = "LINGER_TEST_PRIVATEFS_LOCK_DIR"
+	const childDirectory = "TALOS_TEST_PRIVATEFS_LOCK_DIR"
 	if root := os.Getenv(childDirectory); root != "" {
-		file, err := openWrite(filepath.Join(root, ".linger-privatefs-publish.lock"), false)
+		file, err := openWrite(filepath.Join(root, ".talos-privatefs-publish.lock"), false)
 		if err != nil {
 			t.Fatal(err)
 		}

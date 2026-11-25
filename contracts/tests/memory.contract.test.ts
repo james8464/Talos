@@ -6,7 +6,7 @@ import {
   MEMORY_INTERNAL_AUDIENCE,
   PERSONAL_KNOWLEDGE_EVIDENCE_ID_PATTERN,
   type MemoryInternalFetch,
-} from "@linger/wire-contracts/node-services-internal/client";
+} from "@talos/wire-contracts/node-services-internal/client";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 

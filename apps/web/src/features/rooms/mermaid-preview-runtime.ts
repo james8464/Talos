@@ -12,7 +12,7 @@ if (mermaid) {
     if (event.source !== window.parent || !isRenderRequest(event.data)) return;
     void render(mermaid, event.data, event.origin);
   });
-  post({ kind: "linger.mermaid.ready" }, "*");
+  post({ kind: "talos.mermaid.ready" }, "*");
 }
 
 async function render(
@@ -31,7 +31,7 @@ async function render(
     );
     post(
       {
-        kind: "linger.mermaid.result",
+        kind: "talos.mermaid.result",
         requestId: request.requestId,
         svg: result.svg,
       },
@@ -44,7 +44,7 @@ async function render(
           error instanceof Error
             ? error.message
             : "Mermaid could not render this diagram.",
-        kind: "linger.mermaid.error",
+        kind: "talos.mermaid.error",
         requestId: request.requestId,
       },
       targetOrigin,
@@ -60,7 +60,7 @@ function isRenderRequest(value: unknown): value is MermaidPreviewRequest {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<MermaidPreviewRequest>;
   return (
-    candidate.kind === "linger.mermaid.render" &&
+    candidate.kind === "talos.mermaid.render" &&
     typeof candidate.requestId === "string" &&
     typeof candidate.source === "string"
   );

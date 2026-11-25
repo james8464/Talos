@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 func TestVoiceArchiveSplicePreservesGapSpeechAndBoundaries(t *testing.T) {

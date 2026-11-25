@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
 )
 
 // importConnection fetches one connection source for a generation. A mailbox

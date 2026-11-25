@@ -21,7 +21,7 @@ import {
   InvalidMemoryOutputError,
   memorySectionHeadings,
 } from "./sections.js";
-import { sha256Hex } from "@linger/service-kit/node";
+import { sha256Hex } from "@talos/service-kit/node";
 
 // A failed maintenance step waits before retrying: 1, 2, 4 ... 60 minutes.
 const RETRY_BASE_MS = 60_000;

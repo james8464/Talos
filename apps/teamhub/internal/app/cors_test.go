@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
 )
 
 func TestCORSAllowsConfiguredOriginAndPreflight(t *testing.T) {

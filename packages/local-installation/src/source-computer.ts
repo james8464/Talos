@@ -5,8 +5,8 @@ import { runProcess } from "./process.js";
 import { lineRedactor } from "./redaction.js";
 
 function meetsMinimum(output: string, minimumVersion: string): boolean {
-  if (output.trim() === "linger-computer dev") return true;
-  const version = /^linger-computer (\d+)\.(\d+)\.(\d+)\s*$/u.exec(
+  if (output.trim() === "talos-computer dev") return true;
+  const version = /^talos-computer (\d+)\.(\d+)\.(\d+)\s*$/u.exec(
     output.trim(),
   );
   if (!version) return false;
@@ -90,10 +90,10 @@ export async function prepareSourceComputer(
   };
   if (await suitable(instance.computerExecutable)) return;
   if (
-    instance.computerExecutable !== "linger-computer" &&
-    (await suitable("linger-computer"))
+    instance.computerExecutable !== "talos-computer" &&
+    (await suitable("talos-computer"))
   ) {
-    instance.computerExecutable = "linger-computer";
+    instance.computerExecutable = "talos-computer";
     await atomicPrivate(
       path.join(instance.root, "instance.json"),
       JSON.stringify(instance, null, 2) + "\n",
@@ -111,21 +111,21 @@ export async function prepareSourceComputer(
   await atomicPrivate(
     script,
     await installerScript(
-      `${instance.origin}/install/linger-computer.${windows ? "ps1" : "sh"}`,
+      `${instance.origin}/install/talos-computer.${windows ? "ps1" : "sh"}`,
       signal,
     ),
   );
   const env = Object.fromEntries(
     Object.entries(process.env).filter(
-      ([key]) => !key.startsWith("LINGER_COMPUTER_"),
+      ([key]) => !key.startsWith("TALOS_COMPUTER_"),
     ),
   );
   Object.assign(env, {
-    LINGER_COMPUTER_DATA_DIR: data,
-    LINGER_COMPUTER_BIN_DIR: bin,
-    LINGER_COMPUTER_CONFIG: instance.computerConfig,
-    LINGER_WEB_URL: instance.origin,
-    LINGER_COMPUTER_INSECURE_DEVELOPMENT_ORIGIN: instance.origin,
+    TALOS_COMPUTER_DATA_DIR: data,
+    TALOS_COMPUTER_BIN_DIR: bin,
+    TALOS_COMPUTER_CONFIG: instance.computerConfig,
+    TALOS_WEB_URL: instance.origin,
+    TALOS_COMPUTER_INSECURE_DEVELOPMENT_ORIGIN: instance.origin,
     PATH: `${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH ?? ""}`,
   });
   const output = lineRedactor((value) => onOutput?.(value));
@@ -153,7 +153,7 @@ export async function prepareSourceComputer(
     signal.throwIfAborted();
     const executable = path.join(
       bin,
-      windows ? "linger-computer.exe" : "linger-computer",
+      windows ? "talos-computer.exe" : "talos-computer",
     );
     if (result.code !== 0 || !(await suitable(executable)))
       throw new Error(

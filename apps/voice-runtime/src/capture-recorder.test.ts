@@ -10,7 +10,7 @@ import {
   TeamHubVoiceRuntimeError,
   type TeamHubVoiceRuntimeClient,
   type VoiceRecordingReport,
-} from "@linger/wire-contracts/teamhub-internal/client";
+} from "@talos/wire-contracts/teamhub-internal/client";
 
 import {
   CaptureRecorder,

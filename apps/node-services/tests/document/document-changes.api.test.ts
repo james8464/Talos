@@ -1,4 +1,4 @@
-import { readRoomDocumentBlocks } from "@linger/document-model";
+import { readRoomDocumentBlocks } from "@talos/document-model";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 

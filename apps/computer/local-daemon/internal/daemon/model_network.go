@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/http/httpproxy"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 // modelNetworkProbeTimeout bounds each connection the reachability check

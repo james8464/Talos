@@ -1562,7 +1562,7 @@ export interface components {
       /** @description Events from the user's connected apps that proactive reminders judged worth telling now and that wait for this call to end; the live voice tells them during the call. */
       alerts?: components["schemas"]["VoiceLiveAlert"][];
     };
-    /** @description Reliable LiveKit data packet on topic linger.voice.live sent by Voice Runtime to the VoiceSession publisher. user_partial and user_turn carry the Human's transcript; reply_delta and reply_done carry the live reply text for subtitles; reply_done also means the turn's whole reply, including its tool rounds, has finished, so the browser saves the turn after it; reply_interrupted stops playback of that turn; tool_request asks the browser to read or operate the page it shows, or to end Voice Mode; speech_started opens the bubble of a background update the runtime started saying, identified by speech_id, whose reply_delta/reply_done carry its actual spoken words without touching the turn's own reply. playout_done says the turn's reply audio has finished playing on the reply track. session_failure asks the browser to fall back to dictation. */
+    /** @description Reliable LiveKit data packet on topic talos.voice.live sent by Voice Runtime to the VoiceSession publisher. user_partial and user_turn carry the Human's transcript; reply_delta and reply_done carry the live reply text for subtitles; reply_done also means the turn's whole reply, including its tool rounds, has finished, so the browser saves the turn after it; reply_interrupted stops playback of that turn; tool_request asks the browser to read or operate the page it shows, or to end Voice Mode; speech_started opens the bubble of a background update the runtime started saying, identified by speech_id, whose reply_delta/reply_done carry its actual spoken words without touching the turn's own reply. playout_done says the turn's reply audio has finished playing on the reply track. session_failure asks the browser to fall back to dictation. */
     VoiceLiveRuntimeEvent: {
       /** @enum {string} */
       type:
@@ -1585,7 +1585,7 @@ export interface components {
       interrupted?: boolean;
       code?: string;
     };
-    /** @description Reliable LiveKit data packet on topic linger.voice.live sent by the VoiceSession publisher to Voice Runtime. tool_result answers one tool_request; context silently tells the live model where the Human is, such as the page they opened. These packets only steer the conversation and never authorize writes. */
+    /** @description Reliable LiveKit data packet on topic talos.voice.live sent by the VoiceSession publisher to Voice Runtime. tool_result answers one tool_request; context silently tells the live model where the Human is, such as the page they opened. These packets only steer the conversation and never authorize writes. */
     VoiceLiveClientEvent: {
       /** @enum {string} */
       type: "tool_result" | "context";
@@ -2741,7 +2741,7 @@ export interface components {
       /** @description Diagnostic text for display; never matched on. */
       detail?: string;
       /**
-       * @description Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Linger and renaming that folder lets the model load.
+       * @description Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Talos and renaming that folder lets the model load.
        * @enum {string}
        */
       cause?: "GATEWAY_HOME_NOT_PRIVATE";

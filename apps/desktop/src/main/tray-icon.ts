@@ -2,7 +2,7 @@ import { crc32, deflateSync, inflateSync } from "node:zlib";
 
 import type { StatusTone } from "./status.js";
 
-// Draws the tray icon for a status from the Linger logo at 16 and 32 px,
+// Draws the tray icon for a status from the Talos logo at 16 and 32 px,
 // so there are no binary assets per state. macOS gets a monochrome template
 // image of the L and dot with a status badge cut into the corner. Other
 // platforms get the logo on its dark tile, which reads on both light and dark

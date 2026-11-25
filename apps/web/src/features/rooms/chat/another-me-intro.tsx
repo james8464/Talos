@@ -13,7 +13,7 @@ const FLIGHT_MS = 700;
 const FLIGHT_EASING = "cubic-bezier(0.2, 0.8, 0.2, 1)";
 
 export function anotherMeIntroStorageKey(accountId: string) {
-  return `linger.another-me-intro.${accountId}`;
+  return `talos.another-me-intro.${accountId}`;
 }
 
 /**

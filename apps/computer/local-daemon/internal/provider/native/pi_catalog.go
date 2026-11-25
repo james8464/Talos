@@ -59,10 +59,10 @@ func DiscoverPiModels(ctx context.Context, invocation Invocation) (ModelList, er
 	invocation.Program = program
 	args := append([]string{"--mode", "rpc", "--no-session"}, PiRPCResourceArgs("")...)
 	requests := []any{
-		map[string]string{"id": "linger-state", "type": "get_state"},
-		map[string]string{"id": "linger-models", "type": "get_available_models"},
+		map[string]string{"id": "talos-state", "type": "get_state"},
+		map[string]string{"id": "talos-models", "type": "get_available_models"},
 	}
-	expected := map[string]string{"linger-state": "get_state", "linger-models": "get_available_models"}
+	expected := map[string]string{"talos-state": "get_state", "talos-models": "get_available_models"}
 	replies := map[string]json.RawMessage{}
 	receive := func(frame []byte, _ func(...any) error) (bool, error) {
 		reply, isReply := piCatalogReplyFrame(frame)
@@ -92,7 +92,7 @@ func DiscoverPiModels(ctx context.Context, invocation Invocation) (ModelList, er
 	var available struct {
 		Models []json.RawMessage `json:"models"`
 	}
-	if json.Unmarshal(replies["linger-state"], &state) != nil || json.Unmarshal(replies["linger-models"], &available) != nil {
+	if json.Unmarshal(replies["talos-state"], &state) != nil || json.Unmarshal(replies["talos-models"], &available) != nil {
 		return ModelList{}, errPiNoModels
 	}
 	return piCatalogList(state, available.Models)

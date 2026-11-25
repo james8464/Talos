@@ -11,7 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 func TestAgentCLIFileErrorReportsOutagesWithoutRetryHint(t *testing.T) {

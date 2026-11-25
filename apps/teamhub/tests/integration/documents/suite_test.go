@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/tests/testsupport/database"
+	"github.com/simplexai-labs/talos/apps/teamhub/tests/testsupport/database"
 )
 
 var databases database.Suite

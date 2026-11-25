@@ -318,7 +318,7 @@ func TestClaudeArgv(t *testing.T) {
 	if empty := claudeManagedSettings(&ClaudeToolPolicy{}); empty != `{"allowManagedPermissionRulesOnly":true,"permissions":{"disableBypassPermissionsMode":"disable"}}` {
 		t.Fatalf("empty managed = %s", empty)
 	}
-	t.Setenv("LINGER_GATEWAY_TOKEN", "daemon-secret")
+	t.Setenv("TALOS_GATEWAY_TOKEN", "daemon-secret")
 	if env := childEnvironment(map[string]string{"PATH": "/bin"}); len(env) != 1 || env[0] != "PATH=/bin" {
 		t.Fatalf("env = %v", env)
 	}

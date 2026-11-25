@@ -76,8 +76,8 @@ try {
     !/^[a-z-]+$/.test(job.name) ||
     !validRestart(job.restart) ||
     !job.env ||
-    job.env.LINGER_NATIVE_PROCESS_LEASE !==
-      process.env.LINGER_NATIVE_PROCESS_LEASE ||
+    job.env.TALOS_NATIVE_PROCESS_LEASE !==
+      process.env.TALOS_NATIVE_PROCESS_LEASE ||
     !Array.isArray(job.redactions) ||
     ![undefined, true].includes(job.withoutAdministrators)
   )
@@ -102,7 +102,7 @@ try {
       if (dropped) {
         writeSync(
           output.fd,
-          `[linger-supervisor] ${job.name} could not write ${dropped} log lines\n`,
+          `[talos-supervisor] ${job.name} could not write ${dropped} log lines\n`,
         );
         dropped = 0;
       }
@@ -122,7 +122,7 @@ try {
     }),
   );
   // One grep-friendly line per supervisor decision, beside the service's own.
-  const note = (text) => append(`[linger-supervisor] ${job.name} ${text}\n`);
+  const note = (text) => append(`[talos-supervisor] ${job.name} ${text}\n`);
   // Stay group leader after the service exits: descendants may still be alive.
   process.on("SIGINT", () => {});
   process.on("SIGTERM", () => {});
@@ -183,7 +183,7 @@ try {
   process.send?.("ready");
   process.on("disconnect", () => {});
   note(`started pid=${run.child.pid}`);
-  const lease = process.env.LINGER_NATIVE_PROCESS_LEASE;
+  const lease = process.env.TALOS_NATIVE_PROCESS_LEASE;
   // The installer writes this file before it signals an intended stop
   // (stopNativeProcess), so an exit it caused is never restarted.
   const stopRequest = file.replace(/\.job$/, ".stop");

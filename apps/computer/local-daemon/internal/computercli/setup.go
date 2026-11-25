@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const setupLockName = "setup.lock"
@@ -370,7 +370,7 @@ func stageSetup(normalized normalizedSetup, bundle credentialBundle) ([]byte, st
 		StateDirectory: normalized.stateDirectory, RuntimePaths: normalized.runtimePaths,
 		EnabledRuntimes: normalized.enabledRuntimes,
 		WorkspaceGrants: []stagedGrant{{
-			GrantID: "grant-" + hex.EncodeToString(digest[:])[:24], Label: "Linger managed workspace",
+			GrantID: "grant-" + hex.EncodeToString(digest[:])[:24], Label: "Talos managed workspace",
 			TenantID: bundle.TenantID, RootPath: normalized.managedWorkspacePath, Mode: "workspace-write", Scope: "owner",
 		}},
 	}
@@ -546,10 +546,10 @@ func discoverDefaultCodexAuthFile(environment map[string]string, homeDirectory s
 func requireWebOrigin(value string) (string, error) {
 	parsed, err := url.Parse(value)
 	if err != nil || parsed.Host == "" {
-		return "", newError(categoryConfiguration, "Linger Web URL is invalid")
+		return "", newError(categoryConfiguration, "Talos Web URL is invalid")
 	}
 	if (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" {
-		return "", newError(categoryConfiguration, "Linger Web URL must be an HTTP origin")
+		return "", newError(categoryConfiguration, "Talos Web URL must be an HTTP origin")
 	}
 	return strings.ToLower(parsed.Scheme) + "://" + strings.ToLower(parsed.Host), nil
 }

@@ -3,9 +3,9 @@ package collaboration
 import (
 	"context"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagereaction"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagereaction"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // SendAgentEmoji puts the credential's Agent's official Reaction on a Message

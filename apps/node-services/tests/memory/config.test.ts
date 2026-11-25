@@ -12,7 +12,7 @@ describe("readMemoryConfig", () => {
 
   it("schedules in the process time zone", () => {
     vi.stubEnv("TZ", "Europe/Berlin");
-    expect(readMemoryConfig({ LINGER_SECRET_SEED: seed })).toMatchObject({
+    expect(readMemoryConfig({ TALOS_SECRET_SEED: seed })).toMatchObject({
       dataRoot: contextHostRoot({}),
       schedule: {
         timeZone: "Europe/Berlin",
@@ -23,14 +23,14 @@ describe("readMemoryConfig", () => {
   it("writes into the Agent's Context Host root under AGENT_HOME", () => {
     expect(
       readMemoryConfig({
-        LINGER_SECRET_SEED: seed,
+        TALOS_SECRET_SEED: seed,
         AGENT_HOME: "/srv/mirror",
       }).dataRoot,
     ).toBe("/srv/mirror/agent-manager/workspaces/context-host");
   });
   it("requires the secret seed", () => {
     expect(() => readMemoryConfig({})).toThrow(
-      "LINGER_SECRET_SEED is required",
+      "TALOS_SECRET_SEED is required",
     );
   });
 });

@@ -8,7 +8,7 @@ export function panelSidebarMaxWidth() {
 }
 
 function storageKey(accountId: string) {
-  return `linger.panel-sidebar.width:v2:${encodeURIComponent(accountId)}`;
+  return `talos.panel-sidebar.width:v2:${encodeURIComponent(accountId)}`;
 }
 
 export function clampPanelSidebarWidth(width: number) {

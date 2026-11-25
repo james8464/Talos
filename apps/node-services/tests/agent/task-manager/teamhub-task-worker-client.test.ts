@@ -7,7 +7,7 @@ import {
   type TaskWorkerLease,
   type TeamHubTaskWorkerFetch,
 } from "../../../src/agent/task-manager/index.js";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("TeamHub Task Worker client", () => {
   it("claims with the service credential and treats 204 as no work", async () => {

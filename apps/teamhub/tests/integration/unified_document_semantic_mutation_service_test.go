@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	documentfixture "github.com/simplexai-labs/linger/apps/teamhub/tests/integration/documents/fixture"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	documentfixture "github.com/simplexai-labs/talos/apps/teamhub/tests/integration/documents/fixture"
 )
 
 func TestUnifiedDocumentSemanticMutationAppliesAndReplaysAtomically(t *testing.T) {

@@ -221,7 +221,7 @@ describe("Wiki knowledge reading projection", () => {
     "projects": ["../../projects/sample-project.md"]
   },
   "generated": {
-    "by": "linger-llm-wiki/1",
+    "by": "talos-llm-wiki/1",
     "at": "2026-09-29T11:54:08.958Z"
   }
 }
@@ -240,7 +240,7 @@ Readable body.`;
       blocks.filter((block) => !hidden.has(block.id)),
     );
     expect(visible).not.toMatch(
-      /session_id|source_kind|teamhub:\/\/|relations|linger-llm-wiki/u,
+      /session_id|source_kind|teamhub:\/\/|relations|talos-llm-wiki/u,
     );
     expect(visible).toContain("Readable body.");
     expect(JSON.stringify(blocks)).toBe(original);

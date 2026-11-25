@@ -10,16 +10,16 @@ import { localEnvironment } from "./with-local-env.mjs";
 // Workspace projects whose code the native services run; pnpm adds their
 // workspace dependencies and the root project. Nothing else is installed.
 export const NATIVE_SERVICE_PROJECTS = Object.freeze([
-  "@linger/node-services",
-  "@linger/web",
+  "@talos/node-services",
+  "@talos/web",
 ]);
 // Only a checkout that builds its own Computer release needs these.
 export const NATIVE_COMPUTER_PROJECTS = Object.freeze([
-  "@linger/computer",
-  "@linger/teamhub-cli",
+  "@talos/computer",
+  "@talos/teamhub-cli",
 ]);
 // A dependency bundle published with the source package unpacks here.
-export const NATIVE_DEPENDENCY_STORE = ".linger-runtime/pnpm-store";
+export const NATIVE_DEPENDENCY_STORE = ".talos-runtime/pnpm-store";
 
 /**
  * Locked installs tolerate slow registries: long timeouts and retries per
@@ -159,7 +159,7 @@ export function planNativeCommand(
       const args = [
         "create-owner",
         "--email",
-        environment.OWNER_EMAIL?.trim() || "owner@linger.local",
+        environment.OWNER_EMAIL?.trim() || "owner@talos.local",
         "--password-stdin",
       ];
       return prebuilt?.account
@@ -186,7 +186,7 @@ export function planNativeCommand(
           `${process.platform}-${process.arch}`,
           "--output",
           environment.COMPUTER_RELEASE_DIR ||
-            path.join(repo, ".linger-runtime/computer-release"),
+            path.join(repo, ".talos-runtime/computer-release"),
         ],
         cwd: repo,
         env,
@@ -219,7 +219,7 @@ export function planNativeCommand(
         return {
           command: node,
           args: [
-            "--conditions=linger-production",
+            "--conditions=talos-production",
             path.join(offline, "node-services/dist/supervisor.js"),
             "--compiled",
           ],
@@ -255,7 +255,7 @@ export function planNativeCommand(
         };
       return {
         command: pnpm,
-        args: ["--filter", "@linger/web", "dev"],
+        args: ["--filter", "@talos/web", "dev"],
         cwd: repo,
         env,
       };

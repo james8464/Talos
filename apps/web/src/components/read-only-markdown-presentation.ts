@@ -3,7 +3,7 @@ import {
   REPORT_SOURCES_SECTION,
   SESSION_ITEM_LABELS,
   SESSION_SECTIONS,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 
 export type ReadOnlyMarkdownPresentation = "default" | "knowledge";
 

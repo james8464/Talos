@@ -30,7 +30,7 @@ import { setMemoryModelCall } from "./llm.js";
 import { updatePocketNoteTrackingItems } from "./tracking-items.js";
 import { syncProfileMemoryForOwner } from "./user-memory-sync.js";
 import type { HttpHost } from "../http-host.js";
-import { type JsonLogger } from "@linger/service-kit/node";
+import { type JsonLogger } from "@talos/service-kit/node";
 
 export async function startMemoryService({
   http,

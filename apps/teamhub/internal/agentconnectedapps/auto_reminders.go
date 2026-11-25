@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // An Agent manages auto reminders only for connections its Sponsor's Account

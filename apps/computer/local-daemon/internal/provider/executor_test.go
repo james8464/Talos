@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 type fakeBackend struct {
@@ -211,7 +211,7 @@ func TestNormalizeMessagePreservesProviderMessageIdentity(t *testing.T) {
 	}
 }
 
-func TestExecutorRequiresLingerEventEmitter(t *testing.T) {
+func TestExecutorRequiresTalosEventEmitter(t *testing.T) {
 	_, err := (Executor{}).Start(context.Background(), OperationSpec{
 		Provider:       "codex",
 		ExecutablePath: "/bin/codex",

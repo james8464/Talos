@@ -46,7 +46,7 @@ export interface NativeProcessState {
   running: boolean;
   pid?: number;
 }
-const leaseKey = "LINGER_NATIVE_PROCESS_LEASE";
+const leaseKey = "TALOS_NATIVE_PROCESS_LEASE";
 /**
  * How the supervisor restarts a service that exits without being asked to:
  * after `delaysMs[n - 1]` for the n-th exit within `windowMs` (the last
@@ -110,7 +110,7 @@ async function stored(
   return record;
 }
 /**
- * Linger 0.1.2 recorded a macOS birth with lstart in the locale it ran in;
+ * Talos 0.1.2 recorded a macOS birth with lstart in the locale it ran in;
  * every check now reads it in the C locale, so a service it started in, for
  * example, a German region format never matched again. When ps in this
  * process's own locale still prints the recorded birth for the live leader
@@ -907,7 +907,7 @@ export async function reclaimNativeOrphans(
     if (!orphans.length) return ended;
     if (Date.now() >= deadline)
       throw new Error(
-        `Processes an earlier Linger started on this computer did not stop (PIDs ${orphans.join(", ")}).`,
+        `Processes an earlier Talos started on this computer did not stop (PIDs ${orphans.join(", ")}).`,
       );
     const refused: number[] = [];
     for (const pid of orphans)
@@ -920,7 +920,7 @@ export async function reclaimNativeOrphans(
       }
     if (refused.length === orphans.length)
       throw new Error(
-        `Processes an earlier Linger started on this computer could not be ended (PIDs ${refused.join(", ")}). End them in Task Manager, then try again.`,
+        `Processes an earlier Talos started on this computer could not be ended (PIDs ${refused.join(", ")}). End them in Task Manager, then try again.`,
       );
     await delay(100);
   }

@@ -1,8 +1,8 @@
 import {
   fingerprintRoomDocumentDeletes,
   fingerprintRoomDocumentState,
-} from "@linger/document-model";
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+} from "@talos/document-model";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 import * as Y from "yjs";
 import type { DocumentBodyStore } from "./bodies.js";
 import { DocumentFailureEvidenceStore } from "./failure-evidence.js";
@@ -13,8 +13,8 @@ import {
   type DurableMutation,
   type ImmutableMutationBatch,
 } from "./realtime-durability-batches.js";
-import { sleep } from "@linger/service-kit";
-import { sha256Hex } from "@linger/service-kit/node";
+import { sleep } from "@talos/service-kit";
+import { sha256Hex } from "@talos/service-kit/node";
 import { documentLogger } from "./log.js";
 
 type DocumentDurableHead = components["schemas"]["DocumentDurableHead"];

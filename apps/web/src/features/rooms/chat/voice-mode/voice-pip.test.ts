@@ -53,7 +53,7 @@ function installFakeDesktopVoiceWindow() {
   );
   const showMain = vi.fn(async () => {});
   defineGlobalProperty(window, "open", { value: open });
-  defineGlobalProperty(window, "lingerDesktop", {
+  defineGlobalProperty(window, "talosDesktop", {
     value: { voiceWindow: { showMainWindow: showMain } },
   });
   return { document, open, showMain, voiceWindow };
@@ -84,16 +84,16 @@ describe("Voice Mode picture-in-picture window", () => {
     const fake = installFakeVoicePip();
     const open = vi.fn();
     defineGlobalProperty(window, "open", { value: open });
-    const desktop = window as { lingerDesktop?: unknown };
+    const desktop = window as { talosDesktop?: unknown };
     for (const bridge of [{}, { voiceWindow: {} }]) {
-      desktop.lingerDesktop = bridge;
+      desktop.talosDesktop = bridge;
       try {
         expect(voicePipSupported()).toBe(false);
         await expect(openVoicePip("voice-mode")).resolves.toBeUndefined();
         expect(fake.requestWindow).not.toHaveBeenCalled();
         expect(open).not.toHaveBeenCalled();
       } finally {
-        delete desktop.lingerDesktop;
+        delete desktop.talosDesktop;
       }
     }
   });
@@ -109,7 +109,7 @@ describe("Voice Mode picture-in-picture window", () => {
     expect(fake.open).toHaveBeenCalledOnce();
     expect(fake.open).toHaveBeenCalledWith(
       "",
-      expect.stringMatching(/^linger-voice-window-\d+$/),
+      expect.stringMatching(/^talos-voice-window-\d+$/),
       "popup=yes,width=320,height=240",
     );
     expect(browser.requestWindow).not.toHaveBeenCalled();
@@ -123,7 +123,7 @@ describe("Voice Mode picture-in-picture window", () => {
     await openVoicePip("recording");
     expect(fake.open).toHaveBeenLastCalledWith(
       "",
-      expect.stringMatching(/^linger-voice-window-\d+$/),
+      expect.stringMatching(/^talos-voice-window-\d+$/),
       "popup=yes,width=420,height=720",
     );
     // A window still closing is never reused under the same name.

@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func TestUploadAgentSkillPackageCreatesUpgradesAndRejectsDefaults(t *testing.T) {

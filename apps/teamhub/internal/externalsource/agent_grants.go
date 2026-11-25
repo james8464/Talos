@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
 )
 
 type AgentConnectionAccess struct {

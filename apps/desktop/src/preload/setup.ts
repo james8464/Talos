@@ -1,4 +1,4 @@
-import { minNvidiaDriverForCuda } from "@linger/service-kit/nvidia-driver";
+import { minNvidiaDriverForCuda } from "@talos/service-kit/nvidia-driver";
 import { contextBridge, ipcRenderer } from "electron";
 
 import {
@@ -7,11 +7,11 @@ import {
   NVIDIA_DRIVER_GUIDE_URL,
   SETUP_IPC,
   type SetupState,
-  type LingerSetupApi,
+  type TalosSetupApi,
 } from "../shared/setup.js";
 
 // Sandboxed preload for the local setup page only.
-const api: LingerSetupApi = {
+const api: TalosSetupApi = {
   featuredAnnouncementUrl: INKLING_2_MINI_ANNOUNCEMENT_URL,
   nvidiaDriverDownloadUrl: NVIDIA_DRIVER_DOWNLOAD_URL,
   nvidiaDriverGuideUrl: NVIDIA_DRIVER_GUIDE_URL,
@@ -26,4 +26,4 @@ const api: LingerSetupApi = {
   run: (command) => ipcRenderer.invoke(SETUP_IPC.run, command),
 };
 
-contextBridge.exposeInMainWorld("lingerSetup", api);
+contextBridge.exposeInMainWorld("talosSetup", api);

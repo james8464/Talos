@@ -90,7 +90,7 @@ import {
 } from "./preview-views.js";
 import { session } from "electron";
 
-const server = "https://linger.example";
+const server = "https://talos.example";
 
 function setup() {
   const page = new state.MockContents();
@@ -208,7 +208,7 @@ describe("PreviewViews", () => {
     expect(done.mock.calls).toEqual([[false], [true]]);
   });
 
-  it("refuses calls from anything but the Linger page's main frame", () => {
+  it("refuses calls from anything but the Talos page's main frame", () => {
     const { page, mainFrame } = setup();
     const open = state.handlers.get(IPC.previewOpen)!;
     expect(() =>

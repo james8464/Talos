@@ -1,6 +1,6 @@
 import { startsMentionToken } from "./mention-boundary";
 import type { TeamHubActorRef, TeamHubMessageSegment } from "./teamhub-types";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 const messageIdPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 

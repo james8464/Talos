@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentmessages"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentmessages"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 func TestAgentRuntimeClearSessionRecoveryRules(t *testing.T) {

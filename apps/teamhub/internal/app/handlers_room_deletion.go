@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
 )
 
 func (a *App) deleteRoom(c *gin.Context) {

@@ -14,7 +14,7 @@ function status(screen: string, accessibility = "granted"): Json {
     host: "desktop",
     subjects: [
       {
-        subject: "linger",
+        subject: "talos",
         permissions: [
           entry("screen_recording", screen),
           entry("accessibility", accessibility),
@@ -84,7 +84,7 @@ describe("computer permissions status", () => {
     const text = f.output.join("");
     expect(text).toContain("Computer computer_one (darwin, desktop):");
     expect(text).toContain(
-      "Linger: screen_recording denied, accessibility granted",
+      "Talos: screen_recording denied, accessibility granted",
     );
     expect(text).toContain(
       "Computer use (CuaDriver): screen_recording denied, accessibility not_determined",
@@ -104,7 +104,7 @@ describe("computer permissions status", () => {
 });
 
 describe("computer permissions request", () => {
-  it("defaults to the Linger subject and tells the Agent to end its turn", async () => {
+  it("defaults to the Talos subject and tells the Agent to end its turn", async () => {
     const f = fixture([requested]);
     expect(
       await runCli(
@@ -124,7 +124,7 @@ describe("computer permissions request", () => {
       {
         url: requestURL,
         body: {
-          subject: "linger",
+          subject: "talos",
           permissions: ["screen_recording"],
           reason: "Take a screenshot of the report",
         },

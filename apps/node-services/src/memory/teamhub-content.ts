@@ -3,8 +3,8 @@ import { teamHubFetch } from "./teamhub-transport.js";
 import {
   fetchTeamHubSession,
   type TeamHubAgentCallbackFetch,
-} from "@linger/wire-contracts/teamhub-internal/client";
-import { serviceCredential } from "@linger/service-kit/node";
+} from "@talos/wire-contracts/teamhub-internal/client";
+import { serviceCredential } from "@talos/service-kit/node";
 
 export interface TeamHubContentAccess {
   baseUrl: string;
@@ -17,7 +17,7 @@ export function teamHubContentAccess(
 ): TeamHubContentAccess {
   const baseUrl = teamHubBaseUrl(environment);
   const token = memoryTeamHubToken(environment);
-  if (!token) throw new Error("LINGER_SECRET_SEED is required");
+  if (!token) throw new Error("TALOS_SECRET_SEED is required");
   return { baseUrl, token };
 }
 

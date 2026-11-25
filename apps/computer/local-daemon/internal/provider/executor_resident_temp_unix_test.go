@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 func TestExecutorCodexResidentOwnsTempAcrossOperations(t *testing.T) {

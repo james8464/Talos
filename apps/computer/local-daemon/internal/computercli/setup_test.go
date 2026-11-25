@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const fixtureGatewayToken = "sr1.eyJydW5uZXJfaWQiOiJ4In0.signature-padding-to-length"
@@ -189,7 +189,7 @@ func TestBrowserEnrollmentPersistsOwnerOnlyStateAndStartsTheDaemon(t *testing.T)
 	grant := config["workspace_grants"].([]any)[0].(map[string]any)
 	if config["runner_id"] != "runner-server-issued" || config["credential_expires_at"] != "2099-01-01T00:00:00Z" || config["display_name"] != "Alice's Mac" ||
 		config["state_directory"] != f.options.stateDirectory || gateway["url"] != "wss://agent.example.test/v1/runner-gateway" ||
-		grant["label"] != "Linger managed workspace" || grant["root_path"] != filepath.Join(f.options.stateDirectory, "workspaces") ||
+		grant["label"] != "Talos managed workspace" || grant["root_path"] != filepath.Join(f.options.stateDirectory, "workspaces") ||
 		grant["scope"] != "owner" || grant["mode"] != "workspace-write" || grant["tenant_id"] != "tenant-acme" || !strings.HasPrefix(grant["grant_id"].(string), "grant-") {
 		t.Fatalf("config=%s", encoded)
 	}

@@ -1,5 +1,5 @@
 import { TextSelection } from "@tiptap/pm/state";
-import { parseRoomDocumentAssetReference } from "@linger/document-model";
+import { parseRoomDocumentAssetReference } from "@talos/document-model";
 import * as Y from "yjs";
 
 import { roomDocumentBlocksAreEmpty } from "./room-document-blocks";

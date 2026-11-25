@@ -26,7 +26,7 @@
   On start it records the idle points that a stopped Runtime left for bodies
   that still carry editors, because a History point also queues the body's
   text. It exposes TeamHub-callable operations only through the
-  generated `@linger/wire-contracts/node-services-internal/server` export
+  generated `@talos/wire-contracts/node-services-internal/server` export
   and calls no TeamHub endpoint.
 
 ## Structure
@@ -50,7 +50,7 @@
   event cursor or fence that TeamHub waits on.
 - A connection authenticates once, in `onAuthenticate`: the
   Runtime verifies the HMAC connection token TeamHub signed with the key both
-  derive from `LINGER_SECRET_SEED` (label `document-connection-token`), then
+  derive from `TALOS_SECRET_SEED` (label `document-connection-token`), then
   loads the body and the Document's permission count in one statement and
   refuses the connection when the count differs from the token's or the
   Document is not an active native Document. A failed load is retried once
@@ -101,14 +101,14 @@ changed`, and each client reconnects with a fresh token. The Runtime counts
   open read the permission count before a disconnect is closed when it joins,
   and its frames and durable ACKs are refused. A failed call only leaves
   connections open until their tokens expire.
-- Session limits are the constants in `@linger/document-model`
+- Session limits are the constants in `@talos/document-model`
   (`ROOM_DOCUMENT_SESSION_LIMITS`). TeamHub keeps its own copy of the state
   bundle limit (`BundleDecodedBytesLimit`) only to check the bodies it
   inserts, because `importDocument` does not check it.
 
 ## Verification
 
-- Run `pnpm --filter @linger/node-services check` for this boundary.
+- Run `pnpm --filter @talos/node-services check` for this boundary.
   `tests/document` runs as the Vitest `document` project, one file at a time
   after the other roles' tests; use `--project document` for a focused run.
 - Realtime tests use public WebSocket and internal HTTP interfaces and never

@@ -1,5 +1,5 @@
 import { AlertCircleIcon } from "@hugeicons/core-free-icons";
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 import { useQuery } from "@tanstack/react-query";
 
 import { Icon } from "@/components/ui/icon";

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
 )
 
 const validInvocationID = "agent-invocation-sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"

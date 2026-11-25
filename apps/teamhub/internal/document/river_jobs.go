@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
 )
 
 // Document background jobs run on TeamHub's River client. A job is inserted in

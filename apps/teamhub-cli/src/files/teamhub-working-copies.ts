@@ -8,7 +8,7 @@ import path from "node:path";
 import {
   extractDocumentImages,
   DocumentImageError,
-} from "@linger/document-files";
+} from "@talos/document-files";
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 

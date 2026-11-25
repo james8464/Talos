@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
 )
 
 type workRoomResponse struct {

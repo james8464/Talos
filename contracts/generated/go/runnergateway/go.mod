@@ -1,3 +1,3 @@
-module github.com/simplexai-labs/linger/contracts-go/runnergateway
+module github.com/simplexai-labs/talos/contracts-go/runnergateway
 
 go 1.24.0

@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { isInkling2MiniModelId } from "@linger/service-kit/featured-models";
-import { minNvidiaDriverForCuda } from "@linger/service-kit/nvidia-driver";
+import { isInkling2MiniModelId } from "@talos/service-kit/featured-models";
+import { minNvidiaDriverForCuda } from "@talos/service-kit/nvidia-driver";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Language } from "../i18n/language.js";
@@ -88,14 +88,14 @@ const openPage = async (
   const run = vi.fn(async (command: SetupCommand) => {
     if (command.op === "local.account.show")
       current = state("ready", {
-        email: "owner@linger.local",
+        email: "owner@talos.local",
         ...(command.on ? { password: PASSWORD } : {}),
       });
     return current;
   });
   Object.assign(window, {
     matchMedia: () => ({ matches: true }),
-    lingerSetup: {
+    talosSetup: {
       featuredAnnouncementUrl: INKLING_2_MINI_ANNOUNCEMENT_URL,
       nvidiaDriverDownloadUrl: NVIDIA_DRIVER_DOWNLOAD_URL,
       nvidiaDriverGuideUrl: NVIDIA_DRIVER_GUIDE_URL,
@@ -141,12 +141,12 @@ beforeEach(() => {
 describe("setup page finish screen", () => {
   it("shows the account email with the password masked", async () => {
     const { push } = await openPage();
-    push(state("ready", { email: "owner@linger.local" }));
+    push(state("ready", { email: "owner@talos.local" }));
     expect(
       document.querySelector('section[data-step="ready"].active'),
     ).not.toBeNull();
     expect($("account").hidden).toBe(false);
-    expect($("account-email").textContent).toBe("owner@linger.local");
+    expect($("account-email").textContent).toBe("owner@talos.local");
     expect($("account-password").textContent).toBe("•".repeat(12));
     expect($("account").textContent).not.toContain(PASSWORD);
     expect($("account-show").textContent).toBe("Show");
@@ -158,7 +158,7 @@ describe("setup page finish screen", () => {
 
   it("shows the password only after Show and hides it again", async () => {
     const { push, run } = await openPage();
-    push(state("ready", { email: "owner@linger.local" }));
+    push(state("ready", { email: "owner@talos.local" }));
     $("account-show").click();
     await vi.waitFor(() =>
       expect($("account-password").textContent).toBe(PASSWORD),
@@ -177,7 +177,7 @@ describe("setup page finish screen", () => {
 
   it("asks the main process to copy the password and reveal the file", async () => {
     const { push, run } = await openPage();
-    push(state("ready", { email: "owner@linger.local" }));
+    push(state("ready", { email: "owner@talos.local" }));
     $("account-copy").click();
     await vi.waitFor(() =>
       expect($("account-copy").textContent).toBe("Copied"),
@@ -396,7 +396,7 @@ describe("setup page Quick Install recommendation", () => {
     for (const [code, expectWhy, expectSub] of [
       [
         "gateway-port-in-use",
-        "Another program is using the port Linger's local model gateway needs. Close the program using that port.",
+        "Another program is using the port Talos's local model gateway needs. Close the program using that port.",
         "On hold: free the gateway port, then Check again.",
       ],
       [
@@ -515,11 +515,11 @@ describe("setup page Quick Install recommendation", () => {
       ],
       [
         { ...small, reasons: [reason({ code: "gpu-ownership-unknown" })] },
-        "Linger couldn't tell which programs are using the GPU, so it can't share it. Close programs that use the GPU.",
+        "Talos couldn't tell which programs are using the GPU, so it can't share it. Close programs that use the GPU.",
       ],
       [
         { ...small, reasons: [reason({ code: "facts-unavailable" })] },
-        "Linger couldn't read this computer's memory, disk or GPU.",
+        "Talos couldn't read this computer's memory, disk or GPU.",
       ],
       [
         {
@@ -582,14 +582,14 @@ describe("setup page Quick Install recommendation", () => {
             }),
           ],
         },
-        "Linger couldn't read the CUDA version from your NVIDIA driver (requires CUDA 12.4 or newer). Update or reinstall your NVIDIA driver, then choose Check again.",
+        "Talos couldn't read the CUDA version from your NVIDIA driver (requires CUDA 12.4 or newer). Update or reinstall your NVIDIA driver, then choose Check again.",
       ],
       [
         {
           ...small,
           reasons: [reason({ code: "cuda-driver-version-unknown" })],
         },
-        "Linger couldn't read the CUDA version from your NVIDIA driver. Update or reinstall your NVIDIA driver, then choose Check again.",
+        "Talos couldn't read the CUDA version from your NVIDIA driver. Update or reinstall your NVIDIA driver, then choose Check again.",
       ],
       [
         { ...small, reasons: [reason({ code: "unsupported-platform" })] },
@@ -629,7 +629,7 @@ describe("setup page Quick Install recommendation", () => {
       "Not available on this computer",
     );
     expect($("local-model-needs").textContent).toBe(
-      "Linger couldn't tell which programs are using the GPU, so it can't share it. Close programs that use the GPU.",
+      "Talos couldn't tell which programs are using the GPU, so it can't share it. Close programs that use the GPU.",
     );
     expect(($("local-install") as HTMLButtonElement).disabled).toBe(true);
     expect(document.body.textContent).not.toContain(TOOL_WORDS);
@@ -1155,7 +1155,7 @@ describe("setup page slow runtime lookup", () => {
     );
     expect($("installing-waiting").hidden).toBe(true);
     expect($("installing-error").textContent).toBe(
-      "Checking the AI runtime did not finish in 10 minutes. Try Again picks up the same check; if it stops again, save diagnostics and send them to Linger support.",
+      "Checking the AI runtime did not finish in 10 minutes. Try Again picks up the same check; if it stops again, save diagnostics and send them to Talos support.",
     );
     expect($("installing-actions").hidden).toBe(false);
     expect($("local-retry").hidden).toBe(false);
@@ -1336,11 +1336,11 @@ describe("setup page refused install location", () => {
   const usual = "Your data is kept. Fix the problem and try again.";
 
   it("says where to install when a nested folder on a drive is refused", async () => {
-    const folder = "D:\\Software\\Linger";
+    const folder = "D:\\Software\\Talos";
     const { push } = await openPage(failed(folder, "UNSAFE_PARENT_ACCESS"));
     expect($("installing-error").textContent).toBe(message(folder));
     expect($("installing-plan").textContent).toBe(
-      "Go back and set the install location to the drive itself (Linger installs into D:\\Linger) or an empty folder directly on the drive.",
+      "Go back and set the install location to the drive itself (Talos installs into D:\\Talos) or an empty folder directly on the drive.",
     );
     // The hint leaves with the failure.
     push(state("installing"));
@@ -1351,15 +1351,15 @@ describe("setup page refused install location", () => {
 
   it("gives no hint the person has already followed", async () => {
     // Directly on the drive, the drive's own permissions are what refuse it.
-    await openPage(failed("E:\\Linger", "UNSAFE_PARENT_ACCESS"));
+    await openPage(failed("E:\\Talos", "UNSAFE_PARENT_ACCESS"));
     expect($("installing-plan").textContent).toBe(usual);
   });
 
   it("keeps the hint to this refusal, known by its code", async () => {
-    await openPage(failed("D:\\Software\\Linger", "UNSAFE_OWNER"));
+    await openPage(failed("D:\\Software\\Talos", "UNSAFE_OWNER"));
     expect($("installing-plan").textContent).toBe(usual);
     // The words alone do not bring the hint.
-    await openPage(failed("D:\\Software\\Linger"));
+    await openPage(failed("D:\\Software\\Talos"));
     expect($("installing-plan").textContent).toBe(usual);
   });
 });

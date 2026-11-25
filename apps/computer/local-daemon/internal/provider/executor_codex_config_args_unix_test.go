@@ -14,8 +14,8 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // #249: every Codex launch carries the sandbox and shell-environment `-c`
@@ -39,8 +39,8 @@ func TestExecutorCodexLaunchCarriesConfigArgsAndKeepsConfigStable(t *testing.T) 
 	if err := os.WriteFile(script, []byte(`#!/bin/sh
 printf '%s\n' "$*" > "$CODEX_HOME/argv"
 while read -r line; do
- id=$(printf '%s' "$line" | "$LINGER_TEST_SED" -n 's/.*"id":\([0-9][0-9]*\).*/\1/p')
- method=$(printf '%s' "$line" | "$LINGER_TEST_SED" -n 's/.*"method":"\([^"]*\)".*/\1/p')
+ id=$(printf '%s' "$line" | "$TALOS_TEST_SED" -n 's/.*"id":\([0-9][0-9]*\).*/\1/p')
+ method=$(printf '%s' "$line" | "$TALOS_TEST_SED" -n 's/.*"method":"\([^"]*\)".*/\1/p')
  [ -n "$id" ] || continue
  result='{}'
  case "$method" in
@@ -74,7 +74,7 @@ done
 		native.FlushTimings()
 	})
 	env := func() map[string]string {
-		return map[string]string{"HOME": root, "CODEX_HOME": shared, "TEAMHUB_CONFIG": "/private/teamhub.json", "TEAMHUB_PROFILE": "runtime", "PATH": "/trusted:/bin", "LINGER_TEST_SED": sedPath}
+		return map[string]string{"HOME": root, "CODEX_HOME": shared, "TEAMHUB_CONFIG": "/private/teamhub.json", "TEAMHUB_PROFILE": "runtime", "PATH": "/trusted:/bin", "TALOS_TEST_SED": sedPath}
 	}
 	var configs [][]byte
 	for run := 0; run < 2; run++ {
@@ -119,7 +119,7 @@ done
 			t.Fatal(err)
 		}
 		var parsed map[string]any
-		if err := toml.Unmarshal(data, &parsed); err != nil || strings.Contains(string(data), "linger-managed") && strings.Count(string(data), "sandbox_mode") > 1 {
+		if err := toml.Unmarshal(data, &parsed); err != nil || strings.Contains(string(data), "talos-managed") && strings.Count(string(data), "sandbox_mode") > 1 {
 			t.Fatalf("config.toml invalid or duplicated: %v\n%s", err, data)
 		}
 		configs = append(configs, data)

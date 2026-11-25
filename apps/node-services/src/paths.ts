@@ -5,13 +5,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 // The production bundle (apps/desktop/scripts/bundle-node-services.mjs)
 // defines it as the package directory relative to each bundled entry, since
 // every source file of an entry shares that entry's URL.
-declare const LINGER_PACKAGE_ROOT: string | undefined;
-const bundled = typeof LINGER_PACKAGE_ROOT === "string";
+declare const TALOS_PACKAGE_ROOT: string | undefined;
+const bundled = typeof TALOS_PACKAGE_ROOT === "string";
 const fromSource = import.meta.url.endsWith(".ts");
 
 /** The node-services package directory, from src/, the compiled dist/ or a bundle. */
 export const packageRoot = path.resolve(
-  fileURLToPath(new URL(bundled ? LINGER_PACKAGE_ROOT : "..", import.meta.url)),
+  fileURLToPath(new URL(bundled ? TALOS_PACKAGE_ROOT : "..", import.meta.url)),
 );
 
 /** The checkout; a bundle has none around it and runs in the checkout. */

@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/memoryclient"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/memoryclient"
 )
 
 func TestAgentKnowledgeDirectRequestUsesCurrentServerSourceAndAuthorizesOnce(t *testing.T) {

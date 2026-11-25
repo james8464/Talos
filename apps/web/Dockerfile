@@ -23,7 +23,7 @@ COPY packages/knowledge-format/package.json ./packages/knowledge-format/package.
 COPY packages/service-kit/package.json ./packages/service-kit/package.json
 
 RUN --mount=type=cache,id=pnpm-store-web-node26.5.0-pnpm11.7.0-linux-amd64,sharing=locked,target=/pnpm/store \
-    pnpm install --filter @linger/web... --frozen-lockfile --trust-lockfile \
+    pnpm install --filter @talos/web... --frozen-lockfile --trust-lockfile \
     --store-dir /pnpm/store --fetch-retries 5 --fetch-timeout 1800000
 
 FROM dependencies AS release-dependencies
@@ -40,7 +40,7 @@ COPY scripts/ci/build-web-runtime.sh ./scripts/ci/build-web-runtime.sh
 ENV NODE_ENV=production
 # Production browser URLs follow the page origin. The Agent Service serves the
 # Computer release on /install/.
-RUN pnpm --filter @linger/web build:assets \
+RUN pnpm --filter @talos/web build:assets \
     && bash scripts/ci/build-web-runtime.sh /app/web-static-host.mjs
 
 FROM node:26.5.0-bookworm-slim@sha256:2d49d876e96237d76de412761cf05dbfe5aee325cc4406a4d41d5824c5bb8beb AS runtime

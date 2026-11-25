@@ -5,7 +5,7 @@ import path from "node:path";
 
 export const installerTemplate = [
   "#!/usr/bin/env bash",
-  'web_origin="${LINGER_WEB_URL:-http://localhost:3000}"',
+  'web_origin="${TALOS_WEB_URL:-http://localhost:3000}"',
   'release_darwin_arm64=""',
   'release_darwin_x64=""',
   'release_linux_arm64=""',
@@ -16,15 +16,15 @@ export const installerTemplate = [
 
 export const uninstallerTemplate = [
   "#!/usr/bin/env bash",
-  'web_origin="${LINGER_WEB_URL:-http://localhost:3000}"',
+  'web_origin="${TALOS_WEB_URL:-http://localhost:3000}"',
   "echo uninstall",
   "",
 ].join("\n");
 
 export const windowsInstallerTemplate =
-  "$m = '__LINGER_RELEASE_METADATA_BASE64__'\nWrite-Host install\n";
+  "$m = '__TALOS_RELEASE_METADATA_BASE64__'\nWrite-Host install\n";
 export const windowsUninstallerTemplate =
-  "$m = '__LINGER_RELEASE_METADATA_BASE64__'\nWrite-Host uninstall\n";
+  "$m = '__TALOS_RELEASE_METADATA_BASE64__'\nWrite-Host uninstall\n";
 
 const sha256 = (content: Buffer) =>
   createHash("sha256").update(content).digest("hex");
@@ -61,19 +61,19 @@ export async function writeComputerRelease(
   const release = { version: "1.2.3", targets };
   await writeFile(path.join(root, "release.json"), JSON.stringify(release));
   await writeFile(
-    path.join(root, "linger-computer.sh"),
+    path.join(root, "talos-computer.sh"),
     options.template ?? installerTemplate,
   );
   await writeFile(
-    path.join(root, "uninstall-linger-computer.sh"),
+    path.join(root, "uninstall-talos-computer.sh"),
     uninstallerTemplate,
   );
   await writeFile(
-    path.join(root, "linger-computer.ps1"),
+    path.join(root, "talos-computer.ps1"),
     windowsInstallerTemplate,
   );
   await writeFile(
-    path.join(root, "uninstall-linger-computer.ps1"),
+    path.join(root, "uninstall-talos-computer.ps1"),
     windowsUninstallerTemplate,
   );
   return { root, target, archives, targets, release };

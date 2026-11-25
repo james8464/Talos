@@ -15,7 +15,7 @@ import {
   systemPreferences,
 } from "electron";
 
-import { lingerHome } from "@linger/local-installation/home";
+import { talosHome } from "@talos/local-installation/home";
 
 import { quitRequested } from "./app-window.js";
 import { CredentialStore } from "./computer-credential.js";
@@ -72,12 +72,12 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 let userDataMove: UserDataMove | undefined;
 // Development overrides; installed builds use the platform defaults.
-if (process.env.LINGER_DESKTOP_USER_DATA)
-  app.setPath("userData", path.resolve(process.env.LINGER_DESKTOP_USER_DATA));
+if (process.env.TALOS_DESKTOP_USER_DATA)
+  app.setPath("userData", path.resolve(process.env.TALOS_DESKTOP_USER_DATA));
 // The installed app's data folder holds the Computer's credential, identity
 // and enrollment. Installs from before the rename move theirs here once.
 else if (app.isPackaged) {
-  const userData = path.join(app.getPath("appData"), "Linger");
+  const userData = path.join(app.getPath("appData"), "Talos");
   try {
     userDataMove = moveLegacyUserData(
       path.join(app.getPath("appData"), "Simplex"),
@@ -85,7 +85,7 @@ else if (app.isPackaged) {
     );
   } catch (error) {
     dialog.showErrorBox(
-      "Linger could not start",
+      "Talos could not start",
       `Could not move the app data folder to ${userData}: ${error instanceof Error ? error.message : String(error)}`,
     );
     app.exit(1);
@@ -95,10 +95,10 @@ else if (app.isPackaged) {
 
 // Windows shows notifications only for an app id that a Start menu shortcut
 // carries. The installer makes the shortcut; the app writes the id into it.
-const APP_USER_MODEL_ID = "com.simplexai.linger.desktop.preview";
+const APP_USER_MODEL_ID = "com.simplexai.talos.desktop.preview";
 if (process.platform === "win32") app.setAppUserModelId(APP_USER_MODEL_ID);
 
-// `--quit` (the uninstaller) asks a running Linger to quit, and starts
+// `--quit` (the uninstaller) asks a running Talos to quit, and starts
 // nothing when none runs.
 if (!app.requestSingleInstanceLock() || quitRequested(process.argv)) {
   app.quit();
@@ -139,7 +139,7 @@ async function main(): Promise<void> {
         }),
     });
   const background = process.argv.includes("--background");
-  const envServer = parseServerUrl(process.env.LINGER_SERVER_URL ?? "");
+  const envServer = parseServerUrl(process.env.TALOS_SERVER_URL ?? "");
   const config = new ConfigStore(
     path.join(userData, "config.json"),
     envServer ? { serverUrl: envServer } : {},
@@ -162,8 +162,8 @@ async function main(): Promise<void> {
     log,
   );
 
-  // The default LINGER_HOME of the installer.
-  const home = lingerHome();
+  // The default TALOS_HOME of the installer.
+  const home = talosHome();
   // The cookie header of the window's session for a server.
   const webSessionCookie = async (
     serverUrl: string,
@@ -185,9 +185,9 @@ async function main(): Promise<void> {
     ...(__SOURCE_DEPENDENCIES__
       ? { sourceDependencies: __SOURCE_DEPENDENCIES__ }
       : {}),
-    // Developers install their own linger checkout instead.
-    ...(process.env.LINGER_CHECKOUT
-      ? { checkout: process.env.LINGER_CHECKOUT }
+    // Developers install their own talos checkout instead.
+    ...(process.env.TALOS_CHECKOUT
+      ? { checkout: process.env.TALOS_CHECKOUT }
       : {}),
     // The window's session is the default one, which enrollment reads too.
     signIn: (server, email, password) =>
@@ -351,7 +351,7 @@ async function main(): Promise<void> {
         });
         return result.canceled ? undefined : result.filePaths[0];
       },
-      defaultDirectory: path.join(app.getPath("home"), "Linger"),
+      defaultDirectory: path.join(app.getPath("home"), "Talos"),
     }),
     new ComputerDaemonModule({
       spawn: spawnDaemon(
@@ -456,23 +456,23 @@ async function main(): Promise<void> {
   } catch (error) {
     log.error("desktop.start_failed", { error: String(error) });
     dialog.showErrorBox(
-      "Linger",
+      "Talos",
       language.t(dialogMessages.startFailed, { error: String(error) }),
     );
     app.exit(1);
   }
 }
 
-// LINGER_COMPUTER_DAEMON overrides the daemon for development. Packaged
+// TALOS_COMPUTER_DAEMON overrides the daemon for development. Packaged
 // builds ship it under resources/computer; development builds it into
 // dist/computer/<platform>-<arch>.
 function daemonExecutable(): string {
   const name =
     process.platform === "win32"
-      ? "linger-computer-daemon.exe"
-      : "linger-computer-daemon";
-  if (process.env.LINGER_COMPUTER_DAEMON)
-    return path.resolve(process.env.LINGER_COMPUTER_DAEMON);
+      ? "talos-computer-daemon.exe"
+      : "talos-computer-daemon";
+  if (process.env.TALOS_COMPUTER_DAEMON)
+    return path.resolve(process.env.TALOS_COMPUTER_DAEMON);
   return app.isPackaged
     ? path.join(process.resourcesPath, "computer", name)
     : path.join(
@@ -502,7 +502,7 @@ function electronPower(): PowerApi {
 
 // The user's terminal environment, which runtimes inherit, without the app's
 // own control variables. The runtime paths stay for the daemon config; the
-// daemon keeps LINGER_* from runtimes.
+// daemon keeps TALOS_* from runtimes.
 async function daemonEnv(log: Logger): Promise<Record<string, string>> {
   const started = Date.now();
   const login = await loginShellEnvironment();
@@ -514,13 +514,13 @@ async function daemonEnv(log: Logger): Promise<Record<string, string>> {
   for (const [name, value] of Object.entries(
     withLoginShell(process.env as Record<string, string>, login),
   )) {
-    if (value === undefined || /^(ELECTRON_|LINGER_)/i.test(name)) continue;
+    if (value === undefined || /^(ELECTRON_|TALOS_)/i.test(name)) continue;
     env[name] = value;
   }
   for (const name of [
-    "LINGER_CODEX_PATH",
-    "LINGER_CLAUDE_PATH",
-    "LINGER_PI_PATH",
+    "TALOS_CODEX_PATH",
+    "TALOS_CLAUDE_PATH",
+    "TALOS_PI_PATH",
   ]) {
     const value = process.env[name];
     if (value) env[name] = value;
@@ -532,12 +532,12 @@ interface UserDataMove {
   readonly outcome: "moved" | "kept";
   readonly legacy: string;
   readonly userData: string;
-  /** Where a Linger folder without a Computer credential was set aside. */
+  /** Where a Talos folder without a Computer credential was set aside. */
   readonly setAside?: string;
 }
 
 // The data folder of the app as it was named before the rename moves once to
-// its Linger name. A Linger folder that already holds a Computer credential
+// its Talos name. A Talos folder that already holds a Computer credential
 // wins and the old one stays; one without a credential is set aside, so the
 // Computer keeps its identity instead of enrolling again under a new id.
 function moveLegacyUserData(

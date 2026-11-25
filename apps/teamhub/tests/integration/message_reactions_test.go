@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 type messageReactionResponse struct {

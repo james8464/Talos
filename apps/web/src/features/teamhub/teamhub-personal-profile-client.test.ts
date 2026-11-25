@@ -1,7 +1,7 @@
 import { sentRequests } from "./teamhub-client-test-support";
 import { describe, expect, it, vi } from "vitest";
 import { createHttpTeamHubClient } from "./teamhub-client";
-import { requestBodyText, requestUrlText } from "@linger/service-kit";
+import { requestBodyText, requestUrlText } from "@talos/service-kit";
 
 describe("TeamHub Personal Profile client", () => {
   it("maps Profile reads, generations and Insight deletion to the public contract", async () => {

@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   OperationResult,
   RunEvent,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import { createLocalContextRuntimeBackend } from "../../../src/agent/executor/local-backend.js";
 import type { ContextRuntimeBackendRequest } from "../../../src/agent/executor/activation.js";

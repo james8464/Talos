@@ -7,7 +7,7 @@ import { probePi } from "./windows-pi-smoke.mjs";
 const tempDirs: string[] = [];
 
 async function privateCwd() {
-  const dir = await mkdtemp(join(tmpdir(), "linger-windows-pi-smoke-"));
+  const dir = await mkdtemp(join(tmpdir(), "talos-windows-pi-smoke-"));
   tempDirs.push(dir);
   return dir;
 }

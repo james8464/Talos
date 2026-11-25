@@ -26,7 +26,7 @@ const wslAvailable =
 it.skipIf(!wslAvailable)(
   "sends a native WSL attachment and saves a native WSL output with Windows Node",
   () => {
-    const root = mkdtempSync(path.join(tmpdir(), "linger teamhub wsl "));
+    const root = mkdtempSync(path.join(tmpdir(), "talos teamhub wsl "));
     const wsl = (args: string[]) =>
       execFileSync(wslExecutable, ["--cd", "/tmp", "--exec", ...args], {
         encoding: "utf8",
@@ -77,9 +77,9 @@ it.skipIf(!wslAvailable)(
       const sandbox = wsl([
         "/bin/sh",
         "-c",
-        'base=$HOME; if [ -w /home ]; then base=/home; fi; mktemp -d -- "$base/linger-teamhub.XXXXXXXX"',
+        'base=$HOME; if [ -w /home ]; then base=/home; fi; mktemp -d -- "$base/talos-teamhub.XXXXXXXX"',
       ]);
-      expect(sandbox).toMatch(/^\/.*linger-teamhub\.[A-Za-z0-9]{8}$/u);
+      expect(sandbox).toMatch(/^\/.*talos-teamhub\.[A-Za-z0-9]{8}$/u);
       linuxRoot = sandbox;
       const attachment = sandbox + "/attachment with spaces.txt";
       const alias = sandbox + "/alias.txt";
@@ -100,7 +100,7 @@ it.skipIf(!wslAvailable)(
       const node = wsl(["wslpath", "-u", process.execPath]);
       const run = (...args: string[]) =>
         JSON.parse(
-          wsl(["env", `LINGER_NODE=${node}`, "/bin/sh", launcher, ...args]),
+          wsl(["env", `TALOS_NODE=${node}`, "/bin/sh", launcher, ...args]),
         );
       const send = (...args: string[]) =>
         run("message", "send", "--content", content, ...args);

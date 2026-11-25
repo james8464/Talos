@@ -1,4 +1,4 @@
-import type { RunnerHello } from "@linger/wire-contracts/runner-gateway/types";
+import type { RunnerHello } from "@talos/wire-contracts/runner-gateway/types";
 
 import { RunnerGatewayProtocolError } from "./runner-operation.js";
 

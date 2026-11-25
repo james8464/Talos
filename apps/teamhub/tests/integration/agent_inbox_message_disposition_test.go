@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 // TestAgentInboxMessageDisposition pins the one decision the batch read, the

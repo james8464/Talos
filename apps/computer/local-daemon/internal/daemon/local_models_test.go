@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/localmodels"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/localmodels"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 type fakeLocalModels struct {

@@ -12,7 +12,7 @@ changes, the page is rewritten and the change is logged. Tell it something
 once, in any chat, and every agent working for you can find it later, in any
 Room.
 
-Linger remembers at two levels: a personal wiki about your work, which
+Talos remembers at two levels: a personal wiki about your work, which
 every agent working for you can search, and a memory that each agent keeps of
 its own conversations.
 

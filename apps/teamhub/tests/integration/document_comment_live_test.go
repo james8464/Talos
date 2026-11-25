@@ -92,7 +92,7 @@ func TestDocumentConsecutiveCommentsLiveAgent(t *testing.T) {
 	command.Dir = repositoryPath()
 	command.Env = append(os.Environ(), "NODE_ENV=test", "TEAMHUB_BASE_URL="+env.server.URL, "NODE_SERVICES_ROLES=agent",
 		"AGENT_HOME="+t.TempDir(), "NODE_SERVICES_HTTP_ADDRESS=127.0.0.1:"+strconv.Itoa(agentPort),
-		"LINGER_SECRET_SEED="+integrationSecretSeed,
+		"TALOS_SECRET_SEED="+integrationSecretSeed,
 		"AGENT_LOG_LEVEL=info",
 	)
 	command.Stdout, command.Stderr = logFile, logFile

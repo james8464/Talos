@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // TestNativeClaudeFirstRunResume drives a real Claude Code through the
@@ -22,7 +22,7 @@ import (
 // model calls Bash, then a Run that resumes the same Session in a new process
 // and must send the first Run's history back. It needs no credentials.
 func TestNativeClaudeFirstRunResume(t *testing.T) {
-	executable := os.Getenv("LINGER_CLAUDE_COMPAT_EXECUTABLE")
+	executable := os.Getenv("TALOS_CLAUDE_COMPAT_EXECUTABLE")
 	if executable == "" {
 		t.Skip("requires an explicitly selected native Claude executable")
 	}
@@ -72,7 +72,7 @@ func TestNativeClaudeFirstRunResume(t *testing.T) {
 }
 
 const (
-	claudeCompatMarker      = "linger-claude-compat"
+	claudeCompatMarker      = "talos-claude-compat"
 	claudeCompatFirstReply  = "compatibility check finished"
 	claudeCompatResumeReply = "earlier check confirmed"
 )

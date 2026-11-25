@@ -34,7 +34,7 @@ export function renderWikiSurfaces(
   initialEntry = "/t/tenant-northstar/library/wiki?tab=wiki",
 ) {
   window.sessionStorage.setItem(
-    "linger:library-owned-collapsed:v2:tenant-northstar",
+    "talos:library-owned-collapsed:v2:tenant-northstar",
     "false",
   );
   const router = createMemoryRouter(

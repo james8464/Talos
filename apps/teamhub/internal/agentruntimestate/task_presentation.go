@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // Task inputs stay private. Only an exact participant Context may publish its

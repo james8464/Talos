@@ -3,7 +3,7 @@ package voicemedia
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 func TestRemapRecoverySpeakersUsesOverlapAndAllocatesNewIDs(t *testing.T) {

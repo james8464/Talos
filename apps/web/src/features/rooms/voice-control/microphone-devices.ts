@@ -1,4 +1,4 @@
-import { displayText } from "@linger/service-kit";
+import { displayText } from "@talos/service-kit";
 
 import { translate } from "@/i18n/language";
 import type { Message } from "@/i18n/messages";
@@ -88,7 +88,7 @@ export function describeMicrophoneRefused(inBrowser: Message) {
   const desktop =
     typeof window === "undefined"
       ? undefined
-      : (window as { lingerDesktop?: { platform?: string } }).lingerDesktop;
+      : (window as { talosDesktop?: { platform?: string } }).talosDesktop;
   return translate(
     desktop?.platform === "darwin" ? m.microphoneBlockedOnMac : inBrowser,
   );

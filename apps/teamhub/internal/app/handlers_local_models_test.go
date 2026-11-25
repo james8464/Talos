@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 const storedLocalModelsSnapshotJSON = `{"available":true,"observed_at":"2026-11-13T10:00:00Z","tool_version":"2.0.0",

@@ -612,7 +612,7 @@ revoke_agent() {
 }
 
 computer() {
-  "$ROOT/apps/computer/dist/cli/linger-computer" "$@" --config "$CONFIG"
+  "$ROOT/apps/computer/dist/cli/talos-computer" "$@" --config "$CONFIG"
 }
 
 # Register the Computer as production does: TeamHub's enrollment exchange
@@ -742,7 +742,7 @@ PROXY_PORT="$(free_port)"
 cd "$ROOT"
 
 printf 'Building Local Runner process boundaries...\n'
-pnpm --filter @linger/node-services... --filter @linger/teamhub-cli... build >/dev/null
+pnpm --filter @talos/node-services... --filter @talos/teamhub-cli... build >/dev/null
 node "$ROOT/apps/computer/scripts/bundle-teamhub-cli.mjs"
 mkdir -p "$ROOT/apps/computer/dist/cli"
 cp "$ROOT/apps/computer/dist/bundle/cli/teamhub" \
@@ -755,9 +755,9 @@ mkdir -p "$ROOT/apps/computer/dist/daemon" "$ROOT/apps/computer/dist/runtime/bin
 ln -sfn "$(command -v node)" "$ROOT/apps/computer/dist/runtime/bin/node"
 (
   cd "$ROOT/apps/computer/local-daemon"
-  go build -o ../dist/daemon/linger-computer-daemon \
-    ./cmd/linger-computer-daemon
-  go build -o ../dist/cli/linger-computer ./cmd/linger-computer
+  go build -o ../dist/daemon/talos-computer-daemon \
+    ./cmd/talos-computer-daemon
+  go build -o ../dist/cli/talos-computer ./cmd/talos-computer
 )
 
 cat >"$CODEX_FIXTURE" <<EOF
@@ -787,8 +787,8 @@ if [[ "\$PWD" == "$TMP_ROOT"/* ]]; then
 fi
 exec "$(command -v node)" \
   "$ROOT/scripts/test-fixtures/claude-runtime-auth-fixture.mjs" \
-  --linger-login-marker "$CLAUDE_LOGIN_MARKER" \
-  --linger-workspace-marker .issue159-smoke-workspace \
+  --talos-login-marker "$CLAUDE_LOGIN_MARKER" \
+  --talos-workspace-marker .issue159-smoke-workspace \
   "\$@"
 EOF
 chmod 0700 "$CODEX_FIXTURE" "$CLAUDE_FIXTURE"
@@ -822,22 +822,22 @@ PROXY_PID=$!
 wait_for_file "$TMP_ROOT/proxy.ready"
 
 TEAMHUB_BASE_URL="http://127.0.0.1:$CALLBACK_PORT" \
-LINGER_SECRET_SEED="$SECRET_SEED" \
+TALOS_SECRET_SEED="$SECRET_SEED" \
 NODE_SERVICES_ROLES="agent" NODE_SERVICES_HTTP_ADDRESS="127.0.0.1:$AGENT_PORT" \
 AGENT_HOME="$TMP_ROOT/agent-home" \
 AGENT_RUNNER_PUBLIC_GATEWAY_URL="ws://127.0.0.1:$AGENT_PORT/v1/runner-gateway" \
 CODEX_HOME="$TMP_ROOT/agent-codex-home" \
 CODEX_CLI_PATH="$CODEX_FIXTURE" \
-node --conditions=linger-production \
+node --conditions=talos-production \
   "$ROOT/apps/node-services/dist/main.js" \
   >"$TMP_ROOT/agent.log" 2>&1 &
 AGENT_PID=$!
 wait_for_http "http://127.0.0.1:$AGENT_PORT/startupz"
 enroll_computer "Fixture Local Computer"
 
-printf 'workspace-agent-a\n' >"$TMP_ROOT/workspace-a/.linger-smoke-marker"
-printf 'workspace-agent-b\n' >"$TMP_ROOT/workspace-b/.linger-smoke-marker"
-printf 'workspace-agent-c\n' >"$TMP_ROOT/workspace-c/.linger-smoke-marker"
+printf 'workspace-agent-a\n' >"$TMP_ROOT/workspace-a/.talos-smoke-marker"
+printf 'workspace-agent-b\n' >"$TMP_ROOT/workspace-b/.talos-smoke-marker"
+printf 'workspace-agent-c\n' >"$TMP_ROOT/workspace-c/.talos-smoke-marker"
 
 jq -n \
   --arg computer "$COMPUTER_ID" \

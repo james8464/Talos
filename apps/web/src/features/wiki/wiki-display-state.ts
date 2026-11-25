@@ -69,7 +69,7 @@ export function useWikiDisplayState(tenantId: string) {
   const { client } = useTeamHubRuntime();
   const identity = useQuery(teamHubIdentityQueryOptions(client));
   const accountId = identity.data?.account.id;
-  const key = `linger:wiki-display:v1:${tenantId}:${accountId ?? "pending"}`;
+  const key = `talos:wiki-display:v1:${tenantId}:${accountId ?? "pending"}`;
   const [decisions, setDecisions] = useLibraryTreeState<WikiDisplayDecisions>(
     tenantId,
     key,

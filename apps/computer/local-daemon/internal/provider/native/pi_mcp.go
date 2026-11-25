@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	piMCPConfigEnvKey = "LINGER_PI_MANAGED_MCP_CONFIG"
+	piMCPConfigEnvKey = "TALOS_PI_MANAGED_MCP_CONFIG"
 	piNodePathKey     = "NODE_PATH"
 	// The NODE_PATH Pi would have had without the Computer tools.
-	piInheritedNodePathKey = "LINGER_PI_INHERITED_NODE_PATH"
+	piInheritedNodePathKey = "TALOS_PI_INHERITED_NODE_PATH"
 	// The Daemon executable the managed extension runs as shell-text-hook.
-	piShellTextHookEnvKey = "LINGER_PI_SHELL_TEXT_HOOK"
+	piShellTextHookEnvKey = "TALOS_PI_SHELL_TEXT_HOOK"
 )
 
 // piMCPWiring is the managed MCP set prepared for one Pi process. A zero

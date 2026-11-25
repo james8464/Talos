@@ -111,7 +111,7 @@ function defaultSpawnNodeServices(): NodeServicesChild {
 function spawnCompiledNodeServices(): NodeServicesChild {
   return spawn(
     process.execPath,
-    ["--conditions=linger-production", path.join(packageRoot, "dist/main.js")],
+    ["--conditions=talos-production", path.join(packageRoot, "dist/main.js")],
     { stdio: "inherit", windowsHide: true },
   );
 }

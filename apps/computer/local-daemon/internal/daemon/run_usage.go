@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // Matches the TeamHub model pattern; it also rejects placeholders such as "<synthetic>".

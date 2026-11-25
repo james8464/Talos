@@ -17,7 +17,7 @@ export interface PreparationOptions {
   signal: AbortSignal;
   onEvent: (event: InstallerEvent) => void;
   interactive?: boolean;
-  /** Desktop installers use the OS agent; passwords never pass through Linger. */
+  /** Desktop installers use the OS agent; passwords never pass through Talos. */
   env?: NodeJS.ProcessEnv;
   platform?: NodeJS.Platform;
 }

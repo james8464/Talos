@@ -1,7 +1,7 @@
 import type {
   RunnerCapability,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 // A current Computer declares only host features; these fixtures have none.
 export const CURRENT_RUNNER_CAPABILITIES: readonly RunnerCapability[] = [];

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 // A transient key-read failure must fail the materialize step so River

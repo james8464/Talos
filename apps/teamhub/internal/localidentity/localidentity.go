@@ -12,7 +12,7 @@ import (
 	"regexp"
 )
 
-const label = "linger-local-identity"
+const label = "talos-local-identity"
 
 var noncePattern = regexp.MustCompile(`^[A-Za-z0-9_-]{43}$`)
 

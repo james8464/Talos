@@ -194,7 +194,7 @@ describe("Library Documents", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     window.sessionStorage.setItem(
-      "linger:library-shared-collapsed:v2:tenant-northstar",
+      "talos:library-shared-collapsed:v2:tenant-northstar",
       "false",
     );
   });
@@ -425,7 +425,7 @@ describe("Library Documents", () => {
       false,
     );
     dragDataProtected = false;
-    expect(readDragData("application/x-linger-shared-placement")).toBe(
+    expect(readDragData("application/x-talos-shared-placement")).toBe(
       "shared-document-drag",
     );
     await waitFor(() =>
@@ -1482,7 +1482,7 @@ describe("Library Documents", () => {
     expect(screen.queryByText("Release to upload to My pages")).toBeNull();
 
     const internal = createDataTransfer();
-    internal.setData("application/x-linger-placement", "placement-1");
+    internal.setData("application/x-talos-placement", "placement-1");
     fireEvent.dragEnter(target, { dataTransfer: internal });
     expect(screen.queryByText("Release to upload to My pages")).toBeNull();
   });

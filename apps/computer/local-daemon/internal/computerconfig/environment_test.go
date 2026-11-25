@@ -7,15 +7,15 @@ func TestRuntimeEnvironmentRejectsControlPlaneCredentials(t *testing.T) {
 		"PATH":                            "/usr/bin",
 		"ANTHROPIC_API_KEY":               "provider-key",
 		"CODEX_AGENT_TIMEOUT":             "30m",
-		"LINGER_SERVER_URL":               "https://linger.example",
-		"linger_token":                    "linger-token",
-		"LINGER_LLM_API_KEY":              "linger-llm-key",
-		"LINGER_GATEWAY_TOKEN":            "linger-token",
-		"UNRELATED_GATEWAY_TOKEN_COPY":    "linger-token",
-		"LINGER_COMPUTER_SERVICE_COMMAND": `["/bin/linger-computer","--config","/c.json"]`,
+		"TALOS_SERVER_URL":               "https://talos.example",
+		"talos_token":                    "talos-token",
+		"TALOS_LLM_API_KEY":              "talos-llm-key",
+		"TALOS_GATEWAY_TOKEN":            "talos-token",
+		"UNRELATED_GATEWAY_TOKEN_COPY":    "talos-token",
+		"TALOS_COMPUTER_SERVICE_COMMAND": `["/bin/talos-computer","--config","/c.json"]`,
 	}
-	got := RuntimeEnvironment(source, "linger-token")
-	for _, key := range []string{"LINGER_SERVER_URL", "linger_token", "LINGER_LLM_API_KEY", "LINGER_GATEWAY_TOKEN", "UNRELATED_GATEWAY_TOKEN_COPY", "LINGER_COMPUTER_SERVICE_COMMAND"} {
+	got := RuntimeEnvironment(source, "talos-token")
+	for _, key := range []string{"TALOS_SERVER_URL", "talos_token", "TALOS_LLM_API_KEY", "TALOS_GATEWAY_TOKEN", "UNRELATED_GATEWAY_TOKEN_COPY", "TALOS_COMPUTER_SERVICE_COMMAND"} {
 		if _, exists := got[key]; exists {
 			t.Fatalf("control value %q reached Runtime environment", key)
 		}

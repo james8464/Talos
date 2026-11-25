@@ -107,13 +107,13 @@ describe.skipIf(process.platform === "win32")("legacy bridge socket", () => {
 describe("defaultBridgeStateDirectory", () => {
   it("matches the 0.16 bridge layout after the data folder moved", () => {
     expect(defaultBridgeStateDirectory("darwin", {}, "/Users/a")).toBe(
-      path.normalize("/Users/a/Library/Application Support/Linger/bridge"),
+      path.normalize("/Users/a/Library/Application Support/Talos/bridge"),
     );
     expect(defaultBridgeStateDirectory("linux", {}, "/home/a")).toBe(
       path.normalize("/home/a/.local/state/simplex/bridge"),
     );
     expect(
-      defaultBridgeStateDirectory("linux", { LINGER_BRIDGE_STATE_DIR: "/x" }),
+      defaultBridgeStateDirectory("linux", { TALOS_BRIDGE_STATE_DIR: "/x" }),
     ).toBe(path.resolve("/x"));
   });
 });

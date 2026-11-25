@@ -70,7 +70,7 @@ export async function observeRoom({
 }
 
 async function main() {
-  const base = new URL(required("LINGER_ACCEPTANCE_BASE_URL"));
+  const base = new URL(required("TALOS_ACCEPTANCE_BASE_URL"));
   if (
     !["http:", "https:"].includes(base.protocol) ||
     !["127.0.0.1", "localhost", "[::1]"].includes(base.hostname) ||
@@ -82,7 +82,7 @@ async function main() {
   )
     throw new Error("The test server must be a loopback HTTP(S) origin");
   const timeoutSeconds = Number(
-    process.env.LINGER_ACCEPTANCE_TIMEOUT_SECONDS ?? 180,
+    process.env.TALOS_ACCEPTANCE_TIMEOUT_SECONDS ?? 180,
   );
   if (
     !Number.isInteger(timeoutSeconds) ||
@@ -90,11 +90,11 @@ async function main() {
     timeoutSeconds > 600
   )
     throw new Error(
-      "LINGER_ACCEPTANCE_TIMEOUT_SECONDS must be an integer from 10 to 600",
+      "TALOS_ACCEPTANCE_TIMEOUT_SECONDS must be an integer from 10 to 600",
     );
-  const computerID = required("LINGER_ACCEPTANCE_COMPUTER_ID");
+  const computerID = required("TALOS_ACCEPTANCE_COMPUTER_ID");
   const ownerText = await readFile(
-    required("LINGER_ACCEPTANCE_OWNER_FILE"),
+    required("TALOS_ACCEPTANCE_OWNER_FILE"),
     "utf8",
   );
   let owner;
@@ -108,10 +108,10 @@ async function main() {
     typeof owner.owner_password !== "string"
   )
     throw new Error("Owner file does not contain local owner credentials");
-  const workspace = process.env.LINGER_ACCEPTANCE_WORKSPACE?.trim();
-  const views = process.env.LINGER_ACCEPTANCE_CONTEXT_VIEWS?.trim();
-  const log = process.env.LINGER_ACCEPTANCE_AGENT_LOG?.trim();
-  const logRoot = process.env.LINGER_ACCEPTANCE_AGENT_LOG_ROOT?.trim();
+  const workspace = process.env.TALOS_ACCEPTANCE_WORKSPACE?.trim();
+  const views = process.env.TALOS_ACCEPTANCE_CONTEXT_VIEWS?.trim();
+  const log = process.env.TALOS_ACCEPTANCE_AGENT_LOG?.trim();
+  const logRoot = process.env.TALOS_ACCEPTANCE_AGENT_LOG_ROOT?.trim();
   if (
     (workspace && views) ||
     (log && logRoot) ||
@@ -178,7 +178,7 @@ async function main() {
   );
   if (!pi?.models?.length)
     throw new Error("Selected Computer has no ready Pi model");
-  const requestedModel = process.env.LINGER_ACCEPTANCE_MODEL?.trim();
+  const requestedModel = process.env.TALOS_ACCEPTANCE_MODEL?.trim();
   const model = requestedModel
     ? pi.models.find((entry) => entry.id === requestedModel)
     : (pi.models.find((entry) => entry.is_default) ?? pi.models[0]);
@@ -191,12 +191,12 @@ async function main() {
     throw new Error("Selected Computer has no writable workspace grant");
 
   const suffix = randomBytes(8).toString("hex");
-  const filename = `linger-acceptance-${suffix}.txt`;
-  const marker = `LINGER_ACCEPTANCE_${suffix.toUpperCase()}`;
-  const reply = `LINGER_REPLY_${suffix.toUpperCase()}`;
+  const filename = `talos-acceptance-${suffix}.txt`;
+  const marker = `TALOS_ACCEPTANCE_${suffix.toUpperCase()}`;
+  const reply = `TALOS_REPLY_${suffix.toUpperCase()}`;
   const expectedFileSha256 = sha256Hex(marker);
   const expectedReplySha256 = sha256Hex(reply);
-  const name = `Linger Acceptance ${suffix}`;
+  const name = `Talos Acceptance ${suffix}`;
   const agent = await post(`/v0/tenants/${tenant}/agents`, {
     name,
     instructions:

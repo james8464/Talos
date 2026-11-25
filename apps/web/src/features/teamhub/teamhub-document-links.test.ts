@@ -3,7 +3,7 @@ import { expect, it, vi } from "vitest";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
 import { createHttpTeamHubClient } from "./teamhub-client";
-import { requestBodyText, requestUrlText } from "@linger/service-kit";
+import { requestBodyText, requestUrlText } from "@talos/service-kit";
 
 it("starts content and access reads together and cancels content when access fails", async () => {
   let denyAccess!: (response: Response) => void;

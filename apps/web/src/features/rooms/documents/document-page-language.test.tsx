@@ -1,5 +1,5 @@
 import { useLayoutEffect } from "react";
-import { materializeRoomDocument } from "@linger/document-model";
+import { materializeRoomDocument } from "@talos/document-model";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";

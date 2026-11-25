@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 import type { BuiltinAgentFeatures } from "../agent-features/builtin.js";
 import type { ContextBootstrap } from "../agent-features/contracts.js";
 import type { RunWakeKind } from "../agent-features/inbox-source/types.js";

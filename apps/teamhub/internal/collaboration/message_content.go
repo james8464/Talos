@@ -10,8 +10,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/secretbox"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/secretbox"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 const (

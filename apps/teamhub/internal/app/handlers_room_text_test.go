@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
 )
 
 func TestValidRoomTextCountsCharacters(t *testing.T) {

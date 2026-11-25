@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/teammd"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/teammd"
 )
 
 func TestTeamMdAnnouncementNotifiesAppointedOrchestrator(t *testing.T) {

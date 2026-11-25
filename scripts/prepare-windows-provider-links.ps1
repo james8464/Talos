@@ -1,7 +1,7 @@
 #requires -Version 5.1
 # The ordinary test user creates two directories, diagnostic and model, each
 # containing a regular retained file with the text "unchanged". Run elevated;
-# set LINGER_TEST_PROVIDER_LINK_ROOT to this directory for the provider suite.
+# set TALOS_TEST_PROVIDER_LINK_ROOT to this directory for the provider suite.
 # The two model links are consumed by the suite; prepare a fresh root per run.
 param([Parameter(Mandatory = $true)][string] $FixtureDirectory)
 Set-StrictMode -Version Latest

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { orderByRegion, sourceRegion, type Region } from "@linger/service-kit";
+import { orderByRegion, sourceRegion, type Region } from "@talos/service-kit";
 import { downloadVerified, type DownloadTiming } from "./download.js";
 import { npmMirrorRegistry, probeNpmRegistries } from "./npm-registry.js";
 import { atomicPrivate, privateDirectory } from "./private-files.js";

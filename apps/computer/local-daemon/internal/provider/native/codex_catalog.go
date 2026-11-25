@@ -19,7 +19,7 @@ const (
 func discoverCodexProtocolCatalog(ctx context.Context, inv Invocation) (ModelList, error) {
 	initialize := map[string]any{
 		"jsonrpc": "2.0", "id": 1, "method": "initialize",
-		"params": map[string]any{"clientInfo": map[string]any{"name": "linger-catalog", "version": "1"}, "capabilities": nil},
+		"params": map[string]any{"clientInfo": map[string]any{"name": "talos-catalog", "version": "1"}, "capabilities": nil},
 	}
 	var models catalogModels
 	expected := int64(1)

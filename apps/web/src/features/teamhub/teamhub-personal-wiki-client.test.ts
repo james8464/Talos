@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createHttpTeamHubClient } from "./teamhub-client";
 import { FakeXmlHttpRequest } from "./teamhub-client-test-support";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("TeamHub unified Wiki Document client", () => {
   it("does not expose retired Wiki input, output, or Artifact import methods", () => {

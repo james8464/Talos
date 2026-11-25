@@ -50,14 +50,14 @@ function Test-CodexCapSid([string]$Value) {
 }
 # Emit Win32 P/Invoke stubs directly in memory without invoking csc.exe or
 # writing temporary assemblies that AV/WDAC/AppLocker may block.
-function Ensure-LingerWin32Native {
-  if ('LingerWin32Native' -as [type]) { return }
+function Ensure-TalosWin32Native {
+  if ('TalosWin32Native' -as [type]) { return }
   $asm = [Reflection.Emit.AssemblyBuilder]::DefineDynamicAssembly(
-    [Reflection.AssemblyName]::new('LingerWin32'),
+    [Reflection.AssemblyName]::new('TalosWin32'),
     [Reflection.Emit.AssemblyBuilderAccess]::Run
   )
-  $mod = $asm.DefineDynamicModule('LingerWin32')
-  $tb = $mod.DefineType('LingerWin32Native', [Reflection.TypeAttributes]'Public,Abstract,Sealed')
+  $mod = $asm.DefineDynamicModule('TalosWin32')
+  $tb = $mod.DefineType('TalosWin32Native', [Reflection.TypeAttributes]'Public,Abstract,Sealed')
   $ma = [Reflection.MethodAttributes]'Public,Static,HideBySig,PinvokeImpl'
   $cc = [Runtime.InteropServices.CallingConvention]::Winapi
   $cs = [Runtime.InteropServices.CharSet]::Unicode
@@ -76,25 +76,25 @@ function Ensure-LingerWin32Native {
   $null = $tb.CreateType()
 }
 function Test-LinkedTokenAdministrator {
-  Ensure-LingerWin32Native
+  Ensure-TalosWin32Native
   $administrators = [Security.Principal.SecurityIdentifier]::new('S-1-5-32-544')
   $binary = [byte[]]::new($administrators.BinaryLength)
   $administrators.GetBinaryForm($binary, 0)
   $token = [IntPtr]::Zero
-  if (-not [LingerWin32Native]::OpenProcessToken([LingerWin32Native]::GetCurrentProcess(), [uint32]0x0008, [ref]$token)) { return $false }
+  if (-not [TalosWin32Native]::OpenProcessToken([TalosWin32Native]::GetCurrentProcess(), [uint32]0x0008, [ref]$token)) { return $false }
   $linked = [IntPtr]::Zero
   $returned = 0
   try {
-    if (-not [LingerWin32Native]::GetTokenInformation($token, 19, [ref]$linked, [IntPtr]::Size, [ref]$returned)) { return $false }
+    if (-not [TalosWin32Native]::GetTokenInformation($token, 19, [ref]$linked, [IntPtr]::Size, [ref]$returned)) { return $false }
   } finally {
-    $null = [LingerWin32Native]::CloseHandle($token)
+    $null = [TalosWin32Native]::CloseHandle($token)
   }
   try {
     $member = $false
-    $checked = [LingerWin32Native]::CheckTokenMembership($linked, $binary, [ref]$member)
+    $checked = [TalosWin32Native]::CheckTokenMembership($linked, $binary, [ref]$member)
     return [bool]($checked -and $member)
   } finally {
-    $null = [LingerWin32Native]::CloseHandle($linked)
+    $null = [TalosWin32Native]::CloseHandle($linked)
   }
 }
 # Administrators enabled in this token, or in the elevated token UAC links to
@@ -113,7 +113,7 @@ function Test-Administrator {
 function Get-LocalAdminMemberSids {
   $sids = @{}
   try {
-    Ensure-LingerWin32Native
+    Ensure-TalosWin32Native
     $groupName = ([Security.Principal.SecurityIdentifier]::new('S-1-5-32-544')).Translate([Security.Principal.NTAccount]).Value
     $slash = $groupName.IndexOf('\')
     if ($slash -ge 0) { $groupName = $groupName.Substring($slash + 1) }
@@ -122,7 +122,7 @@ function Get-LocalAdminMemberSids {
       $buf = [IntPtr]::Zero
       $read = [uint32]0
       $total = [uint32]0
-      $status = [LingerWin32Native]::NetLocalGroupGetMembers([IntPtr]::Zero, $groupName, [uint32]0, [ref]$buf, [uint32]::MaxValue, [ref]$read, [ref]$total, [ref]$resume)
+      $status = [TalosWin32Native]::NetLocalGroupGetMembers([IntPtr]::Zero, $groupName, [uint32]0, [ref]$buf, [uint32]::MaxValue, [ref]$read, [ref]$total, [ref]$resume)
       try {
         if ($buf -ne [IntPtr]::Zero -and ($status -eq 0 -or $status -eq 234)) {
           for ($i = 0; $i -lt [int]$read; $i++) {
@@ -134,7 +134,7 @@ function Get-LocalAdminMemberSids {
           }
         }
       } finally {
-        if ($buf -ne [IntPtr]::Zero) { $null = [LingerWin32Native]::NetApiBufferFree($buf) }
+        if ($buf -ne [IntPtr]::Zero) { $null = [TalosWin32Native]::NetApiBufferFree($buf) }
       }
       if ($status -ne 234) { break }
     }
@@ -327,8 +327,8 @@ ${WINDOWS_PRIVATE_CHECK_BODY}
 }
 `;
 
-const WORKER_OK = "__LINGER_ACL_OK__";
-const WORKER_ERR = "__LINGER_ACL_ERR__:";
+const WORKER_OK = "__TALOS_ACL_OK__";
+const WORKER_ERR = "__TALOS_ACL_ERR__:";
 
 // Reuses one PowerShell process across sequential ACL checks instead of paying
 // a full .NET CLR startup (~1s) for every private directory and file.

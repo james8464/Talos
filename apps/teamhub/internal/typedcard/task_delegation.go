@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskexecution"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/workitem"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskexecution"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/workitem"
 )
 
 // DelegatedTaskInput is one Task a Room's Meta delegates to its own AlterEgo.

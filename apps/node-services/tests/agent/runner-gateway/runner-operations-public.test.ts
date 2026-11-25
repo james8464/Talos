@@ -4,7 +4,7 @@ import type {
   AgentToDaemonEnvelope,
   DaemonToAgentEnvelope,
   OperationStart,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { LocalComputerOfflineError } from "../../../src/agent/runner-gateway/local-computer-management.js";
 import {
   RunnerGatewayProtocolError,
@@ -1312,7 +1312,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-repo",
             tenant_id: "tenant-acme",
-            label: "Linger workspace",
+            label: "Talos workspace",
             mode: "workspace-write",
             scope: "owner",
           },
@@ -1353,7 +1353,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-repo",
             tenant_id: "tenant-acme",
-            label: "Linger workspace",
+            label: "Talos workspace",
             mode: "workspace-write",
             scope: "owner",
           },

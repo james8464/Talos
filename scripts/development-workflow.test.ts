@@ -247,7 +247,7 @@ describe("active product development commands", () => {
     expect(runtimeStage).not.toMatch(/\bgit\b/);
     expect(runtimeStage).toContain("USER node");
     expect(runtimeStage).toContain(
-      'CMD ["node", "--conditions=linger-production", "apps/node-services/dist/main.js"]',
+      'CMD ["node", "--conditions=talos-production", "apps/node-services/dist/main.js"]',
     );
     expect(runtimeStage).toContain(
       "COPY apps/node-services/prompts ./apps/node-services/prompts",
@@ -314,16 +314,16 @@ describe("active product development commands", () => {
       "apps/node-services/Dockerfile",
     );
 
-    expect(nodeServicesPackage.name).toBe("@linger/node-services");
+    expect(nodeServicesPackage.name).toBe("@talos/node-services");
     expect(nodeServicesPackage.dependencies).toEqual({
       "@hocuspocus/server": "^4.3.0",
       "@hono/node-server": "^1.19.14",
-      "@linger/document-files": "workspace:*",
-      "@linger/document-model": "workspace:*",
-      "@linger/knowledge-format": "workspace:*",
-      "@linger/service-kit": "workspace:*",
-      "@linger/voice-runtime": "workspace:*",
-      "@linger/wire-contracts": "workspace:*",
+      "@talos/document-files": "workspace:*",
+      "@talos/document-model": "workspace:*",
+      "@talos/knowledge-format": "workspace:*",
+      "@talos/service-kit": "workspace:*",
+      "@talos/voice-runtime": "workspace:*",
+      "@talos/wire-contracts": "workspace:*",
       ajv: "8.17.1",
       hono: "^4.12.31",
       jszip: "3.10.1",
@@ -344,7 +344,7 @@ describe("active product development commands", () => {
     expect(nodeServicesPackage.devDependencies).toEqual({
       "@hocuspocus/provider": "^4.3.0",
       "@modelcontextprotocol/sdk": "^1.29.0",
-      "@linger/teamhub-cli": "workspace:*",
+      "@talos/teamhub-cli": "workspace:*",
       "@types/mailparser": "3.9.0",
       "@types/jsdom": "^21.1.7",
       "@types/node": "26.0.1",
@@ -364,9 +364,9 @@ describe("active product development commands", () => {
       "COPY apps/node-services/package.json ./apps/node-services/package.json",
     );
     expect(dockerfile).toContain(
-      "pnpm install --filter @linger/node-services... --frozen-lockfile",
+      "pnpm install --filter @talos/node-services... --frozen-lockfile",
     );
-    expect(dockerfile).not.toContain("--filter linger");
+    expect(dockerfile).not.toContain("--filter talos");
   });
 
   it("installs image dependencies from the root lockfile before application source", async () => {
@@ -382,7 +382,7 @@ describe("active product development commands", () => {
     expect(dockerignore).toContain("!apps/**");
 
     const webInstall = dockerfiles.web.indexOf(
-      "pnpm install --filter @linger/web...",
+      "pnpm install --filter @talos/web...",
     );
     expect(dockerfiles.web.indexOf("COPY apps/web/package.json")).toBeLessThan(
       webInstall,
@@ -426,7 +426,7 @@ describe("active product development commands", () => {
 
   it("serves the Computer release from the Agent Service, not the Web image", async () => {
     const compose = await readRepositoryFile("docker-compose.yml");
-    expect(compose).not.toContain("LINGER_COMPUTER_RELEASE_BASE_URL");
+    expect(compose).not.toContain("TALOS_COMPUTER_RELEASE_BASE_URL");
     expect(compose).toContain(
       "TEAMHUB_NODE_SERVICES_URL: http://node-services:4319",
     );
@@ -511,7 +511,7 @@ describe("active product development commands", () => {
     );
     expect(scripts["dev:agent"]).toBeUndefined();
     expect(scripts["dev:node-services"]).toBe(
-      "node scripts/with-local-env.mjs -- pnpm --filter @linger/node-services start",
+      "node scripts/with-local-env.mjs -- pnpm --filter @talos/node-services start",
     );
     // pnpm dev supervises the merged process: it waits for TeamHub and
     // restarts after a crash, without watching files.
@@ -527,7 +527,7 @@ describe("active product development commands", () => {
     expect(scripts["dev:web"]).toContain("${teamhub%/}/healthz");
     expect(
       scripts["dev:web"].indexOf("wait-for-http-services.ts"),
-    ).toBeLessThan(scripts["dev:web"].indexOf("pnpm --filter @linger/web dev"));
+    ).toBeLessThan(scripts["dev:web"].indexOf("pnpm --filter @talos/web dev"));
     expect(scripts["dev:check"]).not.toContain(":4320/");
     expect(scripts["dev:check"]).not.toContain(":4323/");
     expect(preCommit).toContain("pnpm lint:staged");
@@ -592,7 +592,7 @@ ${scripts[name].replace(/^node scripts\/with-local-env\.mjs -- sh -c '(.*)'$/s, 
           expect(stdout.trim().split("\n")[0]).toBe(
             "node --import tsx scripts/wait-for-http-services.ts http://teamhub.test:8080/healthz",
           );
-          expect(stdout).toContain("pnpm --filter @linger/web");
+          expect(stdout).toContain("pnpm --filter @talos/web");
         } else {
           expect(stdout).toContain("curl http://localhost:8080/healthz");
           expect(stdout).not.toContain(":4324/");
@@ -662,7 +662,7 @@ ${scripts[name].replace(/^node scripts\/with-local-env\.mjs -- sh -c '(.*)'$/s, 
       "AGENT_HOME",
       "AGENT_RUNNER_PUBLIC_GATEWAY_URL",
       "COMPUTER_RELEASE_DIR",
-      "LINGER_SECRET_SEED",
+      "TALOS_SECRET_SEED",
       "TEAMHUB_DATABASE_URL",
       "TEAMHUB_SECRET_ENCRYPTION_KEY",
       "TEAMHUB_TRUSTED_PROXIES",
@@ -704,7 +704,7 @@ ${scripts[name].replace(/^node scripts\/with-local-env\.mjs -- sh -c '(.*)'$/s, 
     );
     expect(environment.CODEX_HOME).toBeUndefined();
     // Service credentials derive only from one seed; no overrides.
-    expect(environment.LINGER_SECRET_SEED?.length).toBeGreaterThanOrEqual(32);
+    expect(environment.TALOS_SECRET_SEED?.length).toBeGreaterThanOrEqual(32);
     for (const name of [
       "TEAMHUB_AGENT_SERVICE_TOKEN",
       "TEAMHUB_AGENT_RUN_TOKEN_SECRET",

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/feishu"
-	nodeapi "github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/feishu"
+	nodeapi "github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 type unusedFeishuComputer struct{}

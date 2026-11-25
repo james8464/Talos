@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/workitem"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/workitem"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func (a *App) listAgentWorkItems(c *gin.Context) {

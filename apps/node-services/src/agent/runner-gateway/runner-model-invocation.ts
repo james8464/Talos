@@ -2,12 +2,12 @@ import { isBackgroundModelCall, type ModelLease } from "../../model-tasks.js";
 import type {
   ModelInvoke,
   ModelInvoked,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   RUNNER_GATEWAY_PROTOCOL_VERSION,
   parseAgentToDaemonEnvelope,
   RUNNER_GATEWAY_FRAME_LIMITS,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 import { LocalComputerOfflineError } from "./local-computer-management.js";
 import type { ModelSignal } from "./adaptive-limit.js";
 import type { ModelEndpoint, ModelWork } from "./model-queue.js";

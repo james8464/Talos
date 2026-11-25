@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 
 	"github.com/jackc/pgx/v5"
 )

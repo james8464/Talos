@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
 )
 
 // Without a Composio key every connected app command asks the Human for the

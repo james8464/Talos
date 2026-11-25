@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // These wire structs are frozen from the f09e7dfc generated TeamHub public

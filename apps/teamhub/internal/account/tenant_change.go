@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // tenantInvalidations maps each Tenant-level change to the browser hint it

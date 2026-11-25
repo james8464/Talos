@@ -5,7 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
-import { parseDaemonToAgentEnvelope } from "@linger/wire-contracts/runner-gateway/validator";
+import { parseDaemonToAgentEnvelope } from "@talos/wire-contracts/runner-gateway/validator";
 import { expect, it } from "vitest";
 
 it.skipIf(process.platform === "win32")(
@@ -20,7 +20,7 @@ it.skipIf(process.platform === "win32")(
         "go",
         [
           "test",
-          "./internal/linger/transport",
+          "./internal/talos/transport",
           "-run",
           "^TestClaudeInputWireOutcomes$",
           "-count=1",
@@ -29,7 +29,7 @@ it.skipIf(process.platform === "win32")(
           cwd: fileURLToPath(new URL("../local-daemon/", import.meta.url)),
           env: {
             ...process.env,
-            LINGER_CLAUDE_INPUT_WIRE_FIXTURE: fixtureFile,
+            TALOS_CLAUDE_INPUT_WIRE_FIXTURE: fixtureFile,
           },
           timeout: 120_000,
         },

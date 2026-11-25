@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 // ClaudeToolPolicy is the product limit on what a Claude Run may call. It is
@@ -50,7 +50,7 @@ func claudeLaunchTools(withoutWebTools bool) []string {
 }
 
 const (
-	claudeInitializeRequestID = "linger-session-restore"
+	claudeInitializeRequestID = "talos-session-restore"
 	claudeHookCallbackID      = "hook_0"
 	// claudeSteerHookID answers the main agent's tool results, which carry
 	// steered input.

@@ -17,7 +17,7 @@ export interface SetupAccountOptions {
 
 type Cached = Pick<LocalAccount, "email" | "file"> | { readonly error: string };
 
-// The owner account the setup page shows once Linger is installed. Only the
+// The owner account the setup page shows once Talos is installed. Only the
 // email and the file are kept; the password is read from the file when the
 // person shows or copies it, and is held only while it is shown.
 export class SetupAccount {

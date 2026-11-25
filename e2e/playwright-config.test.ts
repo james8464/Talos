@@ -177,7 +177,7 @@ describe("Playwright suite layering", () => {
         : [config.webServer];
 
       expect(webServers).toHaveLength(2);
-      expect(webServers[0]?.command).toContain("@linger/web run build:assets");
+      expect(webServers[0]?.command).toContain("@talos/web run build:assets");
       expect(webServers[0]?.command).toContain(
         "room-startup-production-server.mjs",
       );
@@ -190,7 +190,7 @@ describe("Playwright suite layering", () => {
       expect(webServers[0]?.command).toContain(
         `PLAYWRIGHT_ROOM_DOCUMENT_RUNTIME_PORT=${runtimePort}`,
       );
-      expect(webServers[0]?.command).not.toContain("@linger/web exec vite");
+      expect(webServers[0]?.command).not.toContain("@talos/web exec vite");
       expect(webServers[0]?.timeout).toBe(180_000);
       expect(webServers[1]?.command).toContain("realtime-e2e-harness.ts");
       expect(webServers[1]?.command).toContain(

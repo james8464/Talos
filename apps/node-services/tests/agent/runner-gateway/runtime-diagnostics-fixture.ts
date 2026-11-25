@@ -1,4 +1,4 @@
-import type { RuntimeDiagnostic } from "@linger/wire-contracts/runner-gateway/types";
+import type { RuntimeDiagnostic } from "@talos/wire-contracts/runner-gateway/types";
 
 const checkedAt = "2026-07-29T00:00:00.000Z";
 

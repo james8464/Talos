@@ -16,12 +16,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentconnectedapps"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentconnectedapps"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // The live voice sends Slack messages and finds what came to the user on

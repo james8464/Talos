@@ -252,9 +252,9 @@ describe("Context Skill folder packer", () => {
     const external = path.join(fixture.rootPath, "outside.txt");
     await writeFile(external, "outside");
     if (process.platform === "win32") {
-      const fixtureRoot = process.env.LINGER_TEST_WINDOWS_FILE_LINKS;
+      const fixtureRoot = process.env.TALOS_TEST_WINDOWS_FILE_LINKS;
       if (!fixtureRoot)
-        throw new Error("LINGER_TEST_WINDOWS_FILE_LINKS is required");
+        throw new Error("TALOS_TEST_WINDOWS_FILE_LINKS is required");
       await rename(
         path.join(fixtureRoot, "standalone", "skill"),
         path.join(fixture.folderPath, "linked.txt"),

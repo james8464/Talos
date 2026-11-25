@@ -1,13 +1,13 @@
 import { isDeepStrictEqual } from "node:util";
 import { Ajv } from "ajv";
-import { parseOkfFrontmatter } from "@linger/knowledge-format";
+import { parseOkfFrontmatter } from "@talos/knowledge-format";
 import {
   EMPTY_SECTION_TEXT,
   ENTITY_SECTIONS,
   SESSION_ACTION_PRIORITIES,
   SESSION_ITEM_LABELS,
   SESSION_SECTIONS,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 import { validateOkfFrontmatter } from "openwiki/dist/okf/frontmatter.js";
 
 import {
@@ -18,7 +18,7 @@ import {
   personalWikiSectionUpdate,
   type PersonalWikiNodeType,
 } from "./personal-wiki-node-types.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import { isRawSourceUrl, rawSourceReference } from "./personal-wiki-policy.js";
 
 /**
@@ -863,7 +863,7 @@ export function renderWikiPage(
             ),
           }
         : {}),
-      generated: { by: "linger-llm-wiki/1", at: now.toISOString() },
+      generated: { by: "talos-llm-wiki/1", at: now.toISOString() },
     },
     null,
     2,

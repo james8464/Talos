@@ -274,7 +274,7 @@ type serverToken struct {
 	ExpiresAt         string `json:"expires_at"`
 }
 
-const serverTokenPrefix = "linger-connect-v1."
+const serverTokenPrefix = "talos-connect-v1."
 
 var (
 	tokenPayload = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
@@ -561,17 +561,17 @@ var (
 		Hint:    "Run the login command again to start a new setup.",
 	}
 	completedCallbackPage = callbackPage{
-		Tone: "success", Title: "Linger Computer setup complete", Heading: "Computer connected",
-		Message: "This Local Computer is connected to Linger.",
+		Tone: "success", Title: "Talos Computer setup complete", Heading: "Computer connected",
+		Message: "This Local Computer is connected to Talos.",
 		Hint:    "You can close this page.",
 	}
 	cancelledCallbackPage = callbackPage{
-		Tone: "neutral", Title: "Linger Computer setup cancelled", Heading: "Setup cancelled",
+		Tone: "neutral", Title: "Talos Computer setup cancelled", Heading: "Setup cancelled",
 		Message: "The existing Local Computer remains connected.",
 		Hint:    "You can close this page.",
 	}
 	failedCallbackPage = callbackPage{
-		Tone: "danger", Title: "Linger Computer setup failed", Heading: "Setup did not finish",
+		Tone: "danger", Title: "Talos Computer setup failed", Heading: "Setup did not finish",
 		Message: "The Computer could not be connected.",
 		Hint:    "Return to the terminal for details.",
 	}
@@ -637,7 +637,7 @@ func writeCallbackPage(writer http.ResponseWriter, status int, page callbackPage
 
 func writePendingCallback(writer http.ResponseWriter, state, progress string) {
 	page := callbackPage{
-		Tone: "pending", Title: "Linger Computer setup", Heading: "Connecting this Computer",
+		Tone: "pending", Title: "Talos Computer setup", Heading: "Connecting this Computer",
 		Message:  pendingCallbackMessage(progress),
 		Hint:     "Keep the terminal open until this page shows that the Computer is connected.",
 		Refresh:  "/callback/status?state=" + url.QueryEscape(state),

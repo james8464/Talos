@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 // A new Agent is only TeamHub rows: Agent Service materializes it from the

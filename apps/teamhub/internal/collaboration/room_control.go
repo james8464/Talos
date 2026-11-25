@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagereaction"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagereaction"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func subtractRoomIDs(ids, exclude []string) []string {

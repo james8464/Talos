@@ -16,7 +16,7 @@ import {
 } from "./instance.js";
 const homes: string[] = [];
 async function home() {
-  const value = await mkdtemp(path.join(tmpdir(), "linger-instance-"));
+  const value = await mkdtemp(path.join(tmpdir(), "talos-instance-"));
   homes.push(value);
   return value;
 }
@@ -196,8 +196,8 @@ it.each(["httpPort", "rtcPort"] as const)(
   },
 );
 it("isolates the Compose project when two homes use the same instance name", async () => {
-  const firstHome = await mkdtemp(path.join(tmpdir(), "linger-first-"));
-  const secondHome = await mkdtemp(path.join(tmpdir(), "linger-second-"));
+  const firstHome = await mkdtemp(path.join(tmpdir(), "talos-first-"));
+  const secondHome = await mkdtemp(path.join(tmpdir(), "talos-second-"));
   homes.push(firstHome, secondHome);
   const first = await initializeInstance({ name: "default", home: firstHome });
   const second = await initializeInstance({

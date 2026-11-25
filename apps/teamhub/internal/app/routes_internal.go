@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // agentServiceRoutes mounts the teamhub-internal operations Node Services call.

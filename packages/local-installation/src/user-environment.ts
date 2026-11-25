@@ -19,13 +19,13 @@ export const USER_ENVIRONMENT_KEYS = [
 export type UserEnvironmentKey = (typeof USER_ENVIRONMENT_KEYS)[number];
 export type UserEnvironment = Partial<Record<UserEnvironmentKey, string>>;
 
-const TEMPLATE = `# Your own keys for this Linger instance. Linger reads only the names below
+const TEMPLATE = `# Your own keys for this Talos instance. Talos reads only the names below
 # and keeps this file through upgrades and reinstalls. After a change, quit
-# and reopen the Linger app. Keep it private (chmod 600).
+# and reopen the Talos app. Keep it private (chmod 600).
 
 # Connected apps such as Gmail, GitHub and Slack (Composio).
 COMPOSIO_API_KEY=
-# Voice keys are normally saved in the Linger app; a key here overrides the
+# Voice keys are normally saved in the Talos app; a key here overrides the
 # app's.
 # Recording, dictation and meeting transcripts (Soniox).
 SONIOX_API_KEY=
@@ -102,7 +102,7 @@ export async function readUserEnvironment(
   for (const [name, raw] of Object.entries(parseEnv(contents))) {
     if (!isUserKey(name)) {
       onWarning(
-        `user.env sets ${name}, which Linger does not take from there; it is ignored. Only ${USER_ENVIRONMENT_KEYS.join(", ")} are read.`,
+        `user.env sets ${name}, which Talos does not take from there; it is ignored. Only ${USER_ENVIRONMENT_KEYS.join(", ")} are read.`,
       );
       continue;
     }

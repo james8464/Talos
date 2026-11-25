@@ -10,10 +10,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentregistry"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 // askAgentUser posts a question card for the Agent's Sponsor in its Context

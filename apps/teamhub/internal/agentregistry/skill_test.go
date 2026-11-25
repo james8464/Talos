@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/skill"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
 )
 
 func TestDecodeJSONObjectPreservesJSONNumbers(t *testing.T) {

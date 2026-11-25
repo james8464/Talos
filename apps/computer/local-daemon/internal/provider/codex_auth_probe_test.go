@@ -325,7 +325,7 @@ printf '{"id":2,"result":%s}\n' "$ACCOUNT_RESULT"
 }
 
 func TestNativeCodexAuthenticationWithoutAuthFile(t *testing.T) {
-	executable := os.Getenv("LINGER_CODEX_COMPAT_EXECUTABLE")
+	executable := os.Getenv("TALOS_CODEX_COMPAT_EXECUTABLE")
 	if executable == "" {
 		t.Skip("requires an explicitly selected native Codex executable")
 	}
@@ -354,7 +354,7 @@ func TestNativeCodexAuthenticationWithoutAuthFile(t *testing.T) {
 }
 
 func TestNativeClaudeAuthenticationDoesNotCallModel(t *testing.T) {
-	executable := os.Getenv("LINGER_CLAUDE_COMPAT_EXECUTABLE")
+	executable := os.Getenv("TALOS_CLAUDE_COMPAT_EXECUTABLE")
 	if executable == "" {
 		t.Skip("requires an explicitly selected native Claude executable")
 	}

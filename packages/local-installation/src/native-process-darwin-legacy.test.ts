@@ -31,7 +31,7 @@ const { atomicPrivate, privateDirectory } = await import("./instance.js");
 const { inspectNativeProcess } = await import("./native-process.js");
 
 const lease = "a".repeat(64);
-// What Linger 0.1.2 recorded for that process: the localized start time.
+// What Talos 0.1.2 recorded for that process: the localized start time.
 const legacyBirth = `darwin:Mi:18:Nov:06:04:14:2026:${ps.uid}:73285`;
 const platform = process.platform;
 // Simulated Darwin still needs a real POSIX file owner on the host.
@@ -43,7 +43,7 @@ const birth = async () =>
   (JSON.parse(await readFile(recordFile(), "utf8")) as { birth: string }).birth;
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(tmpdir(), "linger-darwin-legacy-"));
+  root = await mkdtemp(path.join(tmpdir(), "talos-darwin-legacy-"));
   await privateDirectory(path.join(root, "native", "processes"));
   await atomicPrivate(
     recordFile(),
@@ -59,7 +59,7 @@ beforeEach(async () => {
   Object.defineProperty(process, "platform", { value: "darwin" });
   vi.stubEnv("LANG", "de_DE.UTF-8");
   ps.localized = `Mi 18 Nov 06:04:14 2026   ${ps.uid} 73285 Ss\n`;
-  ps.environment = `node worker.mjs LINGER_NATIVE_PROCESS_LEASE=${lease}\n`;
+  ps.environment = `node worker.mjs TALOS_NATIVE_PROCESS_LEASE=${lease}\n`;
 });
 afterEach(async () => {
   Object.defineProperty(process, "platform", { value: platform });

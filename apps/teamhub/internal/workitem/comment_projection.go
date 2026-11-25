@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func loadComments(ctx context.Context, queries *store.Queries, records []store.WorkItemComment) ([]Comment, error) {

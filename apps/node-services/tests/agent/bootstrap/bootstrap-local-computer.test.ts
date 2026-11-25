@@ -44,7 +44,7 @@ afterEach(async () => {
 describe("Agent Service Local Computer composition", () => {
   it("accepts the Gateway connection of a Computer credential TeamHub signed", async () => {
     const dataRoot = await mkdtemp(
-      path.join(os.tmpdir(), "linger-agent-local-computer-"),
+      path.join(os.tmpdir(), "talos-agent-local-computer-"),
     );
     temporaryDirectories.push(dataRoot);
     const runnerGateway = createTestRunnerGateway({
@@ -182,7 +182,7 @@ describe("Agent Service Local Computer composition", () => {
           {
             grant_id: "grant-repo",
             tenant_id: "tenant-acme",
-            label: "Linger",
+            label: "Talos",
             mode: "workspace-write",
             scope: "owner",
           },

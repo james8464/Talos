@@ -7,41 +7,41 @@ Gateway and runs Agents. The daemon exits with the app.
 
 ## Common Commands
 
-- `pnpm --filter @linger/desktop test`: unit tests (no Electron binary needed).
-- `pnpm --filter @linger/desktop typecheck`: typecheck the app.
-- `pnpm --filter @linger/desktop build`: bundle `dist/` with esbuild and
+- `pnpm --filter @talos/desktop test`: unit tests (no Electron binary needed).
+- `pnpm --filter @talos/desktop typecheck`: typecheck the app.
+- `pnpm --filter @talos/desktop build`: bundle `dist/` with esbuild and
   build the Go daemon for this machine into `dist/computer/<platform>-<arch>/`
-  (needs Go). `LINGER_DESKTOP_DAEMON_TARGETS=darwin-arm64,darwin-x64` (or
+  (needs Go). `TALOS_DESKTOP_DAEMON_TARGETS=darwin-arm64,darwin-x64` (or
   `win32-x64`) builds the targets a package needs;
   `node scripts/build-daemon.mjs --all` builds every shipped target.
-- `pnpm --filter @linger/desktop electron:install`: download the Electron
+- `pnpm --filter @talos/desktop electron:install`: download the Electron
   binary; pnpm does not run its install script. Set `ELECTRON_MIRROR` when the
   default host is unreachable.
-- `pnpm --filter @linger/desktop start`: build and run from source.
+- `pnpm --filter @talos/desktop start`: build and run from source.
 - `python3 packaging/mac/package.py [--arch arm64|x64]`: build
-  `out/Linger-<version>-<arch>.dmg` for Apple silicon and Intel on Linux
+  `out/Talos-<version>-<arch>.dmg` for Apple silicon and Intel on Linux
   after `node build.mjs` with the darwin daemon targets. The daemon is signed
   with the app. Needs the `dmgtool` image from
   `packaging/mac/Dockerfile` and `rcodesign` (ad-hoc signature). Add
   `--developer-id P12 --developer-id-password FILE` for a Developer ID
   signature with the hardened runtime, and `--notary-key JSON` to notarize and
-  staple the DMG in one Apple submission (stapling `Linger.app` separately for
-  `--update-archive`; `Linger.app` inside the DMG is notarized by Apple with
+  staple the DMG in one Apple submission (stapling `Talos.app` separately for
+  `--update-archive`; `Talos.app` inside the DMG is notarized by Apple with
   the DMG submission but not separately stapled); see the script's docstring.
   Notarizing needs the bundled macOS
   archives Developer ID signed first: the Sign macOS native archives workflow
   runs `packaging/mac/sign_native_archives.py` with the release secrets (see
   [Bundled archives](../../docs/desktop-release.md#bundled-archives)).
 - `python3 packaging/win/package.py`: build
-  `out/Linger-<version>-x64-setup.exe` (per-user NSIS installer) and
-  `out/Linger-<version>-x64.zip` on Linux after `node build.mjs` with the
+  `out/Talos-<version>-x64-setup.exe` (per-user NSIS installer) and
+  `out/Talos-<version>-x64.zip` on Linux after `node build.mjs` with the
   `win32-x64` daemon target. Needs the
   `wintool` image from `packaging/win/Dockerfile`. Neither is
   Authenticode-signed. The updater runs the setup program with
   `/update /relaunch` (a progress page only; Retry/Cancel prompts stay
   visible); the portable folder only links to the release page.
 - `python3 packaging/linux/package.py`: build
-  `out/Linger-<version>-linux-x64.tar.gz` (one folder with the `linger`
+  `out/Talos-<version>-linux-x64.tar.gz` (one folder with the `talos`
   executable) after `node build.mjs` with the `linux-x64` daemon target.
 
 ## Structure
@@ -56,11 +56,11 @@ Gateway and runs Agents. The daemon exits with the app.
   `WebContentsView` the page asks for by id (at most eight) and lays over its
   panel; a top-level page ignores framing rules (`X-Frame-Options`, CSP
   `frame-ancestors`), so every site shows. Previews share the persistent
-  `persist:linger-preview` session, apart from the app's session with the
-  Linger server: sign-ins made there last across restarts, and sites get no
+  `persist:talos-preview` session, apart from the app's session with the
+  Talos server: sign-ins made there last across restarts, and sites get no
   permissions beyond clipboard writes. They keep Electron's user agent, so
   sites that refuse embedded browsers, such as Google sign-in, need the
-  system browser. Only the Linger page's main frame may drive the views. It
+  system browser. Only the Talos page's main frame may drive the views. It
   learns each view's address and history after every navigation, never its
   content. A view loads only http and https; links asking for a new tab load
   in place, and only script popups (sign-in windows) open a window: at most
@@ -72,7 +72,7 @@ Gateway and runs Agents. The daemon exits with the app.
   page navigates, crashes or its window closes.
 - Web builds without native previews still frame sites. The window drops
   framing refusals for frames of the app, except the panel's frame, named
-  `linger-url-preview:<id>`. When that frame's final response refuses
+  `talos-url-preview:<id>`. When that frame's final response refuses
   framing, the window sends `preview.frame-refused`, and the panel offers
   the system browser instead.
 
@@ -88,7 +88,7 @@ Gateway and runs Agents. The daemon exits with the app.
   `windowsPrivateLocation` before fetching Node or unpacking, so ancestor ACL
   refusals fail immediately with the offending ancestor path and SID instead of
   after enrollment. It fetches the pinned Node runtime (sources in the download region's
-  order, `scripts/installs/README.md`) and unpacks the linger source package
+  order, `scripts/installs/README.md`) and unpacks the talos source package
   into the install location (the default home, or a folder picked under
   Customize; tar runs inside the target with relative paths, falling back to
   the pure-Node extractor when `tar.exe` is missing with `ENOENT` on stripped
@@ -147,7 +147,7 @@ Gateway and runs Agents. The daemon exits with the app.
   `preferred`, so TeamHub creates Another Me and the starter Agents on it
   while it is ready instead of on the first ready runtime. Then it signs in
   with the local owner account, switches the window to the server and
-  enrolls this computer, so setup ends on "Linger is ready". That screen shows the owner account from the instance's
+  enrolls this computer, so setup ends on "Talos is ready". That screen shows the owner account from the instance's
   owner-only `local-account.json` (`setup-account.ts`): the email, the
   password masked until Show, Copy (the main process writes the clipboard
   and clears it after 60 s if it still holds the password) and "Open account
@@ -160,7 +160,7 @@ Gateway and runs Agents. The daemon exits with the app.
   enrollment so it enrolls this computer again in the fresh database, keeps
   that folder as `legacyBackup` in its config so this happens once, and the
   ready screen says where the earlier data went. After a logout
-  the SPA's login page asks `window.lingerDesktop.localAccount.available()`
+  the SPA's login page asks `window.talosDesktop.localAccount.available()`
   on load, every 15 s and when the window comes back into view; it is true
   only while the window shows the origin in `local-server.json`, the
   services are `ready` and TeamHub proves it is this installation's server
@@ -179,7 +179,7 @@ Gateway and runs Agents. The daemon exits with the app.
   which proves the server first and only then posts the password to the
   same TeamHub port, setting the cookies for the origin; the install-time
   sign-in does the same. A failed proof logs `local_server.identity_unverified`
-  with a reason (never the key, nonce or proof) and says "Linger on this
+  with a reason (never the key, nonce or proof) and says "Talos on this
   computer is not responding."; the page gets only `{ ok }` or the reason it
   failed (mapped by status and error kind by `signInFailure`), never the
   password. Known gap: the proof covers TeamHub, not the web listener. If
@@ -194,7 +194,7 @@ Gateway and runs Agents. The daemon exits with the app.
   On a Mac older than `MIN_MACOS` (14.0, the `LSMinimumSystemVersion`
   `packaging/mac/package.py` writes), read with Electron's
   `process.getSystemVersion()`, it neither fetches Node.js nor runs the
-  installer, and the failed step says "Linger needs macOS 14.0 or later.
+  installer, and the failed step says "Talos needs macOS 14.0 or later.
   This Mac runs macOS <version>. Update macOS in System Settings > General >
   Software Update, then try again."; see
   [Packaging Details](../../docs/desktop-release.md#packaging-details) for
@@ -215,7 +215,7 @@ Gateway and runs Agents. The daemon exits with the app.
   model card stays visible once the check ends: disabled, "Not available on
   this computer", with that reason. For `cuda-driver-update-required` and
   `cuda-driver-version-unknown`, the page explains the NVIDIA graphics driver
-  requirement (with required driver branch via `@linger/service-kit/nvidia-driver`),
+  requirement (with required driver branch via `@talos/service-kit/nvidia-driver`),
   offers one-click verified Windows GeForce RTX driver installation
   (`driver.start-install`, downloading from NVIDIA's allowlisted CDN, verifying
   NVIDIA Authenticode signature before elevated silent install, and persisting
@@ -263,7 +263,7 @@ Gateway and runs Agents. The daemon exits with the app.
   `session.resolveProxy` for the Soniox websocket URL (`system-proxy.ts`,
   at most 1.5 s, alongside the Node runtime check) and passes an HTTP
   proxy, the first choice of a fixed or PAC setting, as
-  `LINGER_SYSTEM_HTTPS_PROXY`; the installer gives it to TeamHub and
+  `TALOS_SYSTEM_HTTPS_PROXY`; the installer gives it to TeamHub and
   node-services only. `DIRECT`, SOCKS, a failure or a timeout pass none,
   and an `HTTPS_PROXY` in the app's own environment wins. It logs
   `local_server.system_proxy` (`source`, `ms`), never the address. A
@@ -284,13 +284,13 @@ Gateway and runs Agents. The daemon exits with the app.
   `computer.changed` to restart the daemon on the new port without changing the
   Computer identity or token; remote gateway URLs are never rewritten). The
   record and `serverUrl` change only together, so a later launch still resumes. A source folder removed since, or
-  one the installer no longer accepts as a Linger checkout (such as one the
+  one the installer no longer accepts as a Talos checkout (such as one the
   earlier Simplex app unpacked, or this package's own folder with files
   missing since), is unpacked again from the app's package first and
   replaces the recorded one. The record also names the app
   version that unpacked the source; when this app brings another source
   package (it was installed over an older one), that launch unpacks it and
-  resumes on it, with the "Updating Linger" page instead of the older
+  resumes on it, with the "Updating Talos" page instead of the older
   interface. Only when the installer reports the services serving from the
   new folder (`details.source`) and the origin answers does it record that
   folder and prune the older one; otherwise the older services keep running
@@ -358,7 +358,7 @@ Gateway and runs Agents. The daemon exits with the app.
   Before installing or resuming it moves the
   `COMPOSIO_API_KEY`, `SONIOX_API_KEY`, `XAI_API_KEY` and `TZ` of an unpacked
   source package's `.env` into `<home>/instances/desktop/user.env` once and
-  deletes that `.env` (never a `LINGER_CHECKOUT`'s), logging only the names
+  deletes that `.env` (never a `TALOS_CHECKOUT`'s), logging only the names
   of other values it drops; the installer reads only `user.env` for the
   desktop. Setup fails immediately on `identity_conflict`, `auth_failed`, or
   `upgrade_required` daemon connection states (`computer-daemon.ts` maps
@@ -383,7 +383,7 @@ Gateway and runs Agents. The daemon exits with the app.
   after setup yet: keys change on the next Install or Try Again.
 - `src/main/diagnostics.ts`: Diagnostics, "Show Logs" (opens
   `<userData>/logs`) and "Save Diagnostics" (a redacted
-  `linger-diagnostics-<time>.zip` in Downloads) for the setup page's failed
+  `talos-diagnostics-<time>.zip` in Downloads) for the setup page's failed
   step, the start failure page and the tray; the Web client's Settings runs
   the same save through the preload's `diagnostics.save`. The zip holds the
   Desktop logs and `config.json`, the installer job JSON and logs, the
@@ -403,11 +403,11 @@ Gateway and runs Agents. The daemon exits with the app.
 - `src/main/diagnostics-upload.ts`: "Send Diagnostics" on the setup page, the
   start failure page and the tray, shown only while a receiver is set up
   (`diagnosticsUploadUrl` in `config.json`, else `HOSTED_DIAGNOSTICS_UPLOAD_URL`, which `build.mjs` bakes
-  in from the release pipeline's `LINGER_DIAGNOSTICS_UPLOAD_URL` secret and
+  in from the release pipeline's `TALOS_DIAGNOSTICS_UPLOAD_URL` secret and
   leaves unset in other builds). `DiagnosticsSender` builds the zip
   into `<userData>/diagnostics-outbox`, waits for consent showing every file,
   the size and the host, uploads it with the
-  [`linger.diagnostics-upload/v1`](../../docs/diagnostics-upload.md)
+  [`talos.diagnostics-upload/v1`](../../docs/diagnostics-upload.md)
   protocol and shows the receiver's report id; a retryable failure keeps the
   zip for Try Again. The setup page draws the flow itself; the tray and the
   start failure page use native dialogs (`diagnostics-dialogs.ts`).
@@ -415,7 +415,7 @@ Gateway and runs Agents. The daemon exits with the app.
   (`app://shell/titlebar`) and the SPA. macOS keeps native traffic lights,
   Windows uses `titleBarOverlay`, Linux draws its own controls. Closing hides
   the window to the tray. Closing the setup window does not quit either: an
-  installation keeps running, and opening Linger again (a second launch, the
+  installation keeps running, and opening Talos again (a second launch, the
   Dock, the tray) shows setup until the computer is enrolled
   (`app-window.ts`), the main window after. The main window's server form
   without a server says Back to Setup instead of Cancel.
@@ -457,7 +457,7 @@ Gateway and runs Agents. The daemon exits with the app.
   one; a resume that fails shows the start failure page as on launch.
 - `src/main/voice-window.ts`: the floating voice window. Electron cannot open
   Document Picture-in-Picture windows, so the SPA opens a small native window
-  with `window.open("")` under the target `linger-voice-window-<n>`
+  with `window.open("")` under the target `talos-voice-window-<n>`
   (`voiceWindowRequest` in `navigation.ts` allows only that, from the server's
   page; every other `window.open` is still denied) and renders its Voice Mode
   or Recording window into it, so the call and its state stay in the main
@@ -468,7 +468,7 @@ Gateway and runs Agents. The daemon exits with the app.
   itself opened is kept; one from a frame in it is destroyed. It opens at the
   bottom right of the main window's screen and resizes down to 240x96. Its
   native close button ends the call or the recording;
-  `lingerDesktop.voiceWindow.showMainWindow()` (its presence is how the SPA
+  `talosDesktop.voiceWindow.showMainWindow()` (its presence is how the SPA
   knows the app supports this) restores and focuses the main window, on macOS
   bringing the app in front of the active one, and the SPA then closes the
   floating window and keeps the session in the page. An app without
@@ -482,13 +482,13 @@ Gateway and runs Agents. The daemon exits with the app.
   fill-in). Markup carries message names, never English or translated text.
   The setup page stays sandboxed with `window.open` and navigation blocked;
   the main process flags checked Inkling 2 Mini models with `featuredInkling`
-  via `@linger/service-kit/featured-models`, preload exposes
+  via `@talos/service-kit/featured-models`, preload exposes
   `featuredAnnouncementUrl`, and external partner links call
   `setup.run({ op: "external.open", url })`, which accepts only the exact
   HTTPS URLs listed in `SETUP_EXTERNAL_URLS` (`src/shared/setup.ts`) and opens
   them through `shell.openExternal`.
 - `src/i18n`: the shell's languages (English and Simplified Chinese) on the
-  shared core `@linger/service-kit/messages`. `language.ts` matches a language
+  shared core `@talos/service-kit/messages`. `language.ts` matches a language
   and formats messages; `locales/zh-CN.json` is the shell's Chinese catalog,
   one namespace per `*.messages.ts`, following the Web glossary
   (`apps/web/src/i18n/locales/zh-CN.glossary.md`). `catalog.test.ts` finds
@@ -506,7 +506,7 @@ Gateway and runs Agents. The daemon exits with the app.
   dialogs, notifications) uses `Language.t` with the messages in
   `src/main/*.messages.ts`; a message missing from the catalog shows in
   English. Errors from transfers and servers stay in English.
-- `src/preload/index.ts`: the only SPA API, `window.lingerDesktop`. Its
+- `src/preload/index.ts`: the only SPA API, `window.talosDesktop`. Its
   `update` reads the Updater's state (without the release page URL) and runs
   the tray's install and check, for the SPA's account menu; `settings` exposes
   `preventSleep` (`get`, `set`, `onChange`) so Settings › Computers mirrors and
@@ -527,8 +527,8 @@ Gateway and runs Agents. The daemon exits with the app.
 - `src/main/computer-daemon.ts`: ComputerDaemon. While the computer is
   enrolled it writes `<userData>/computer/config.json` (owner-only; Computer
   id, name, Gateway URL, workspace grants and the bundled teamhub CLI
-  directory) and starts `linger-computer-daemon --config <file>` with the
-  credential in `LINGER_COMPUTER_TOKEN` (`gateway.token_env`). The config's
+  directory) and starts `talos-computer-daemon --config <file>` with the
+  credential in `TALOS_COMPUTER_TOKEN` (`gateway.token_env`). The config's
   `desktop` section puts the daemon in Desktop mode: no self-update, it exits
   when its stdin closes, and it reports `{"type":"status",...}` lines on
   stdout (`gateway_state`, `active_operations`, `active_model_invokes`).
@@ -553,18 +553,18 @@ Gateway and runs Agents. The daemon exits with the app.
   own Screen Recording and Accessibility, which shell commands of Agents
   are attributed to); a `relaunch` request is answered, then quits and
   relaunches the app. The permission card in the SPA running this
-  computer's own Computer takes Linger's steps (prompt, System Settings,
+  computer's own Computer takes Talos's steps (prompt, System Settings,
   relaunch) and opens CuaDriver's System Settings pane through
-  `lingerDesktop.permissions.act` instead; CuaDriver's prompt and restart,
+  `talosDesktop.permissions.act` instead; CuaDriver's prompt and restart,
   and every step from another page, go through TeamHub to the daemon.
 - `src/main/computer-credential.ts`: the Gateway credential in
   `<userData>/computer/credential.json` (0600).
-- Installs from before the product was renamed Linger move once on start.
+- Installs from before the product was renamed Talos move once on start.
   `index.ts` renames the packaged app's data folder from `<appData>/Simplex`
-  to `<appData>/Linger` before `app.setPath("userData")`. A `Linger` folder
+  to `<appData>/Talos` before `app.setPath("userData")`. A `Talos` folder
   that already holds `computer/credential.json` wins and the old folder stays
   (logged as `desktop.legacy_user_data_kept`); one without a credential is set
-  aside as `Linger.before-move-<time>`, so the Computer keeps its identity.
+  aside as `Talos.before-move-<time>`, so the Computer keeps its identity.
   LocalServer runs `installer.js --migrate` when an instance record still
   carries a `simplex-` project name, in the default home and in the home
   `desktop/local-server.json` names when the person chose another install
@@ -577,16 +577,16 @@ Gateway and runs Agents. The daemon exits with the app.
   failed state with that reason, and Retry runs the migration again. There is
   no downgrade path: an older build reads neither the converted instances nor
   the moved data folder. The bundle ID and
-  Windows AppUserModelID are `com.simplexai.linger.desktop.preview`. On
+  Windows AppUserModelID are `com.simplexai.talos.desktop.preview`. On
   Windows, `markStartMenuShortcut` (`src/main/start-menu-shortcut.ts`) updates
-  `Linger.lnk` only when `LINGER_DESKTOP_USER_DATA` is unset and the shortcut
+  `Talos.lnk` only when `TALOS_DESKTOP_USER_DATA` is unset and the shortcut
   already targets the current executable (after canonicalizing both absolute
   paths); write failures log a warning without aborting startup. The
-  Windows setup installs into `%LOCALAPPDATA%\Programs\Linger`; on upgrade it
+  Windows setup installs into `%LOCALAPPDATA%\Programs\Talos`; on upgrade it
   closes and removes `%LOCALAPPDATA%\Programs\Simplex` and moves the
   "Open at login" Run value from `ai.simplex.desktop.preview` to the new id.
-  The uninstaller (per-user, like the setup) first runs `Linger.exe --quit`,
-  which a running Linger obeys without asking, then the bundled
+  The uninstaller (per-user, like the setup) first runs `Talos.exe --quit`,
+  which a running Talos obeys without asking, then the bundled
   `installer.js --instance desktop --stop` under `ELECTRON_RUN_AS_NODE`. That
   stops the installation manager the desktop started (cancelling a running
   job) and the `desktop` instance's services in the default home and in the
@@ -598,15 +598,15 @@ Gateway and runs Agents. The daemon exits with the app.
   and retains the first failure in `stop-first-failure.json`. These bounded
   records contain only allowlisted failure stages, codes and service names,
   never error text or paths; a successful retry keeps the first failure.
-  It keeps `%APPDATA%\Linger` and the Linger home with all their data; a
+  It keeps `%APPDATA%\Talos` and the Talos home with all their data; a
   later install starts the services again (resume, or setup's Install).
   Setup over an installed release stops it the same way before it replaces
-  the files, since the services run on `Linger.exe` and hold it open. Setup
+  the files, since the services run on `Talos.exe` and hold it open. Setup
   always stops them with its own `installer.js`, copied to the plugins
-  folder, on the old `Linger.exe`: an earlier release's script may not stop
+  folder, on the old `Talos.exe`: an earlier release's script may not stop
   them (0.1.2's left TeamHub, web and node-services running on Windows). Each
   install writes `resources\stops-services`; a release without it would start
-  on `--quit`, so setup skips `--quit` for it (CloseLinger asks the person to
+  on `--quit`, so setup skips `--quit` for it (CloseTalos asks the person to
   quit a running app). Retry in that prompt runs the stop again. Nothing running: the stop finds nothing and setup goes on. The
   stop also asks the pinned localmodels kit, when that kit is installed in the
   home, to unload every model its model library loaded (`library status`,
@@ -616,7 +616,7 @@ Gateway and runs Agents. The daemon exits with the app.
   failure), to end its foundations
   controller under `runtime/model-services` (`foundations stop`), and to stop
   the stack's processes and the gateway the tool started, the library's
-  Bifrost included (`stack down`); it downloads nothing, and Linger does not
+  Bifrost included (`stack down`); it downloads nothing, and Talos does not
   end the tool's processes itself. Every stop command runs even when an
   earlier command fails. A present tool kit that fails verification makes
   the stop fail, so the uninstaller retains the application for repair and
@@ -673,7 +673,7 @@ home> --stop-local-models` under `ELECTRON_RUN_AS_NODE`, detached, with
    PostgreSQL (the Web dev server on `http://127.0.0.1:3000`, TeamHub, the
    Agent Service and the rest), or with `docker compose up --build`.
 2. Install the DMG from `packaging/mac/package.py` (or run
-   `pnpm --filter @linger/desktop start`) and enter
+   `pnpm --filter @talos/desktop start`) and enter
    `http://127.0.0.1:3000` as the server address during setup. That is the
    only value the user enters; enrollment returns the rest.
 3. With the default local configuration the computer connects to the Agent
@@ -702,27 +702,27 @@ building a package.
 
 ## Development Environment
 
-- `LINGER_SERVER_URL`: initial server origin.
-- `LINGER_CHECKOUT`: a linger checkout that local installs use instead of
+- `TALOS_SERVER_URL`: initial server origin.
+- `TALOS_CHECKOUT`: a talos checkout that local installs use instead of
   the source package; the setup page does not show it. Keys come from the
   instance's `user.env` there too: the checkout's `.env` is not read.
-- `LINGER_DESKTOP_USER_DATA`: separate user data directory.
-- `LINGER_COMPUTER_DAEMON`: daemon executable to run instead of the bundled
+- `TALOS_DESKTOP_USER_DATA`: separate user data directory.
+- `TALOS_COMPUTER_DAEMON`: daemon executable to run instead of the bundled
   one (`resources/computer/` when packaged, `dist/computer/` from source).
-- `LINGER_BRIDGE_STATE_DIR`: where an older version's bridge kept its state,
+- `TALOS_BRIDGE_STATE_DIR`: where an older version's bridge kept its state,
   for the one-time migration.
-- `LINGER_CODEX_PATH`, `LINGER_CLAUDE_PATH`, `LINGER_PI_PATH`: absolute
-  runtime paths for the daemon config. Other `LINGER_*` and `ELECTRON_*`
+- `TALOS_CODEX_PATH`, `TALOS_CLAUDE_PATH`, `TALOS_PI_PATH`: absolute
+  runtime paths for the daemon config. Other `TALOS_*` and `ELECTRON_*`
   variables do not reach the daemon. The config's
   `runtimeEnvironment` (the local server's runtime: these paths plus
   `CODEX_HOME`, `CLAUDE_CONFIG_DIR`, `PI_CODING_AGENT_DIR`) replaces them,
   names compared case-insensitively for Windows. Its four
-  `LINGER_LOCALMODELS_*` paths become the daemon config's `local_models`
+  `TALOS_LOCALMODELS_*` paths become the daemon config's `local_models`
   section, which the daemon's model library runs. Every `--resume` reports
   the runtime again; a change updates `runtimeEnvironment` and restarts the
   daemon once its tasks end (`computer.runtime`), so an install from before
   the daemon knew the tool gains it.
-- `LINGER_LOCALMODELS_DEV_PYTHON`, `LINGER_LOCALMODELS_DEV_MODULE_DIR`:
+- `TALOS_LOCALMODELS_DEV_PYTHON`, `TALOS_LOCALMODELS_DEV_MODULE_DIR`:
   absolute Python and module directory for running a local `localmodels`
   checkout in Quick Install and the Desktop Computer without fetching the
   published kit. `LOCALMODELS_DEBUG` (`simulate` or `tiny`) or

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // Scripts Agents ran in Rooms, named the same for every Runtime's shell tool.
@@ -56,7 +56,7 @@ func TestShellScriptsAreNamedByTheirSteps(t *testing.T) {
 		{"ls -la && cat team.md", "read", []string{"Looking through files", "Reading team.md"}},
 		{"echo 'teamhub message send' && ls", "search", []string{"Looking through files"}},
 		{"git status && git diff", "command", []string{"Checking changes"}},
-		{"pnpm --filter @linger/web test src/a.test.ts", "command", []string{"Running tests"}},
+		{"pnpm --filter @talos/web test src/a.test.ts", "command", []string{"Running tests"}},
 		{"go test ./... && go vet ./...", "command", []string{"Running tests", "Checking code"}},
 		{"./scripts/build.sh --prod", "command", []string{"Running a script"}},
 		{"sed -i '' 's/a/b/' notes.md", "file_change", []string{"Editing notes.md"}},

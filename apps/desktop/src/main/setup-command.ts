@@ -1,7 +1,7 @@
 import {
   BYOK_URL_PATH_PATTERN,
   MAX_BYOK_URL_PATH,
-} from "@linger/service-kit/byok-endpoint";
+} from "@talos/service-kit/byok-endpoint";
 import { z } from "zod";
 
 import { SETUP_EXTERNAL_URLS, type SetupCommand } from "../shared/setup.js";

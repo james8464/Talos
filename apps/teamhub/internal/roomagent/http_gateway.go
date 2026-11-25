@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	agentapi "github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	agentapi "github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 var opaqueIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`)

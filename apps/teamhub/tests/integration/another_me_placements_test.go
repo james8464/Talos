@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // The Agent Service runs background model calls on the Computer of each live

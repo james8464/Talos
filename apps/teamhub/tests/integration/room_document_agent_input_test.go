@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	documentservice "github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	documentservice "github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // TestStandaloneDocumentCommentMentionStartsRun covers Library comments without a Room binding.

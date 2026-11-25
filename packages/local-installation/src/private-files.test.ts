@@ -40,7 +40,7 @@ afterEach(async () => {
 it.each(["write", "sync"] as const)(
   "removes a temporary private file after a %s failure and permits retry",
   async (stage) => {
-    const root = await mkdtemp(path.join(tmpdir(), "linger-private-write-"));
+    const root = await mkdtemp(path.join(tmpdir(), "talos-private-write-"));
     roots.push(root);
     const file = path.join(root, "settings.json");
     await writeFile(file, "previous private contents", { mode: 0o600 });

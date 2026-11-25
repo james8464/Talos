@@ -110,7 +110,7 @@ Go service owning Human HTTP/SSE, Agent callbacks, and active product state.
   out when it appears, when its reason changes and when it clears; a higher
   count alone shows on the next fetch. Reason codes TeamHub does not know are
   stored as `unknown`.
-- The Human's default Another Me Agent is named `Linger`. Changing the Human's
+- The Human's default Another Me Agent is named `Talos`. Changing the Human's
   name updates the delegate description, never the Agent's display name.
   A forward migration renames generated names; custom Agent names stay.
   The instruction template describes the delegate's role without overriding
@@ -244,7 +244,7 @@ Go service owning Human HTTP/SSE, Agent callbacks, and active product state.
   second handwritten Go module. Use the repository-local `replace` for the
   generated contracts module.
 - The generated contracts module ID is
-  `github.com/simplexai-labs/linger/contracts-go`; it resolves only
+  `github.com/simplexai-labs/talos/contracts-go`; it resolves only
   through that `replace`.
 - Commit a persisted collaboration fact and its Room Event in the same transaction.
 - PostgreSQL is recovery authority; SSE is a low-latency wake signal.
@@ -352,7 +352,7 @@ Go service owning Human HTTP/SSE, Agent callbacks, and active product state.
   Meetings browser still lists only recordings with audio. Without speech,
   integrity or coverage within the transcript wait, the Capture fails.
 - Voice: `TEAMHUB_VOICE_MEDIA` (`on` by default) builds the voice media plane
-  over LiveKit; `off`, a missing `LINGER_SECRET_SEED`, or missing ffmpeg keep
+  over LiveKit; `off`, a missing `TALOS_SECRET_SEED`, or missing ffmpeg keep
   voice off (the last two log `voice.media_unavailable`) without stopping
   TeamHub.
   `internal/voicekey` resolves the Soniox and xAI keys at each use, the

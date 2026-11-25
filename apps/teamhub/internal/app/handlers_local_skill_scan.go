@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 const localSkillScanLifetime = 10 * time.Minute

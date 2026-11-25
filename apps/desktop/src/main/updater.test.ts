@@ -17,7 +17,7 @@ import {
   updateInstallFor,
 } from "./updater.js";
 
-const RELEASES = "https://github.com/simplexai-labs/linger/releases";
+const RELEASES = "https://github.com/simplexai-labs/talos/releases";
 const PACKAGE = Buffer.from("new app archive");
 
 const release = (
@@ -25,7 +25,7 @@ const release = (
   {
     body = PACKAGE,
     target = "darwin-arm64",
-    file = `Linger-${version}-macos-arm64.app.tar.gz`,
+    file = `Talos-${version}-macos-arm64.app.tar.gz`,
     feed = RELEASES,
   } = {},
 ) => {
@@ -73,7 +73,7 @@ const setup = async (
 ) => {
   const root = tempDirectory();
   const applications = path.join(root, "Applications");
-  const bundle = path.join(applications, "Linger.app");
+  const bundle = path.join(applications, "Talos.app");
   mkdirSync(bundle, { recursive: true });
   writeFileSync(path.join(bundle, "version"), "0.16.7");
   const downloads = path.join(root, "updates");
@@ -107,7 +107,7 @@ const setup = async (
     checkDelayMs: 60 * 60_000,
     // The test archive holds the new version marker, not a real tarball.
     extract: async (archive, directory) => {
-      const app = path.join(directory, "Linger.app");
+      const app = path.join(directory, "Talos.app");
       mkdirSync(app);
       writeFileSync(path.join(app, "version"), readFileSync(archive));
     },
@@ -152,7 +152,7 @@ describe("UpdaterModule", () => {
       `${RELEASES}/latest/download/manifest.json.sig`,
       // From the release the signed manifest names, not whatever is latest
       // by the time of the download.
-      `${RELEASES}/download/desktop-v0.17.0/Linger-0.17.0-macos-arm64.app.tar.gz`,
+      `${RELEASES}/download/desktop-v0.17.0/Talos-0.17.0-macos-arm64.app.tar.gz`,
     ]);
     expect(announced).toEqual([{ kind: "ready", version: "0.17.0" }]);
     expect(readFileSync(path.join(bundle, "version"), "utf8")).toBe("0.16.7");
@@ -169,8 +169,8 @@ describe("UpdaterModule", () => {
     );
     // The replaced bundle stays until the next launch cleans it up.
     expect(readdirSync(applications).sort()).toEqual([
-      expect.stringMatching(/^\.Linger-old-/),
-      "Linger.app",
+      expect.stringMatching(/^\.Talos-old-/),
+      "Talos.app",
     ]);
     await host.stop("update");
     const next = new UpdaterModule({
@@ -187,7 +187,7 @@ describe("UpdaterModule", () => {
     await testHost([stubModule("Config"), stubModule("ComputerDaemon"), next])
       .start()
       .then(() => waitFor(() => readdirSync(applications).length === 1));
-    expect(readdirSync(applications)).toEqual(["Linger.app"]);
+    expect(readdirSync(applications)).toEqual(["Talos.app"]);
   });
 
   it("refuses a manifest signed by another key", async () => {
@@ -213,7 +213,7 @@ describe("UpdaterModule", () => {
       error: "Update package does not match its checksum",
     });
     expect(readdirSync(downloads)).toEqual([]);
-    expect(readdirSync(applications)).toEqual(["Linger.app"]);
+    expect(readdirSync(applications)).toEqual(["Talos.app"]);
     await updater.install();
     expect(updater.state().kind).toBe("failed");
   });
@@ -492,7 +492,7 @@ describe("UpdaterModule", () => {
   });
 
   it("reads the feed the config names and refuses one without https", async () => {
-    const own = "https://releases.example.com/linger";
+    const own = "https://releases.example.com/talos";
     const feed = release("0.17.0", { feed: own });
     const { updater } = await setup(feed, {}, { updateFeedUrl: own });
     await updater.check();
@@ -502,7 +502,7 @@ describe("UpdaterModule", () => {
     const plain = await setup(
       release("0.17.0"),
       {},
-      { updateFeedUrl: "http://releases.example.com/linger" },
+      { updateFeedUrl: "http://releases.example.com/talos" },
     );
     await plain.updater.check();
     expect(plain.updater.state()).toEqual({
@@ -513,7 +513,7 @@ describe("UpdaterModule", () => {
 });
 
 describe("UpdaterModule with the Windows setup program", () => {
-  const SETUP = "Linger-0.17.0-windows-x64-setup.exe";
+  const SETUP = "Talos-0.17.0-windows-x64-setup.exe";
   const windows = async (spawn: SpawnSetup) => {
     const feed = release("0.17.0", { target: "win32-x64", file: SETUP });
     return {
@@ -601,7 +601,7 @@ describe("UpdaterModule for a download", () => {
   it("links a newer release without downloading it", async () => {
     const feed = release("0.17.0", {
       target: "linux-x64",
-      file: "Linger-0.17.0-linux-x64.tar.gz",
+      file: "Talos-0.17.0-linux-x64.tar.gz",
     });
     const { updater, opened, announced, downloads } = await setup(feed, {
       platform: "linux",
@@ -643,26 +643,26 @@ describe("updateInstallFor", () => {
     expect(
       updateInstallFor(
         "darwin",
-        "/Applications/Linger.app/Contents/MacOS/Linger",
+        "/Applications/Talos.app/Contents/MacOS/Talos",
         none,
       ),
     ).toEqual({
       kind: "app-bundle",
-      appBundle: path.resolve("/Applications/Linger.app"),
+      appBundle: path.resolve("/Applications/Talos.app"),
     });
-    const installed = "C:\\Users\\a\\AppData\\Local\\Programs\\Linger";
+    const installed = "C:\\Users\\a\\AppData\\Local\\Programs\\Talos";
     expect(
       updateInstallFor(
         "win32",
-        `${installed}\\Linger.exe`,
-        (file) => file === `${installed}\\Uninstall Linger.exe`,
+        `${installed}\\Talos.exe`,
+        (file) => file === `${installed}\\Uninstall Talos.exe`,
       ),
     ).toEqual({ kind: "windows-setup" });
     // The portable folder has no uninstaller.
-    expect(updateInstallFor("win32", "D:\\Linger\\Linger.exe", none)).toEqual({
+    expect(updateInstallFor("win32", "D:\\Talos\\Talos.exe", none)).toEqual({
       kind: "download",
     });
-    expect(updateInstallFor("linux", "/opt/linger/linger", none)).toEqual({
+    expect(updateInstallFor("linux", "/opt/talos/talos", none)).toEqual({
       kind: "download",
     });
   });
@@ -670,8 +670,8 @@ describe("updateInstallFor", () => {
 
 describe("appBundleOf", () => {
   it("finds the app bundle around the executable", () => {
-    expect(appBundleOf("/Applications/Linger.app/Contents/MacOS/Linger")).toBe(
-      path.resolve("/Applications/Linger.app"),
+    expect(appBundleOf("/Applications/Talos.app/Contents/MacOS/Talos")).toBe(
+      path.resolve("/Applications/Talos.app"),
     );
     expect(appBundleOf("/usr/lib/electron/electron")).toBeUndefined();
   });

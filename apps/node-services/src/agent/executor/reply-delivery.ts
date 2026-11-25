@@ -1,4 +1,4 @@
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import type { RunEvent } from "./provider.js";
 import type { Message } from "./types.js";
 

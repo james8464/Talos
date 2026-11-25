@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func TestNativeCodexFirstRunResume(t *testing.T) {
-	executable, endpoint := os.Getenv("LINGER_CODEX_COMPAT_EXECUTABLE"), os.Getenv("LINGER_CODEX_COMPAT_BASE_URL")
+	executable, endpoint := os.Getenv("TALOS_CODEX_COMPAT_EXECUTABLE"), os.Getenv("TALOS_CODEX_COMPAT_BASE_URL")
 	if executable == "" || endpoint == "" {
 		t.Skip("requires native Codex and an isolated loopback model")
 	}

@@ -6,7 +6,7 @@ import { mkdir, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
-import type { JsonLogger } from "@linger/service-kit/node";
+import type { JsonLogger } from "@talos/service-kit/node";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { HttpHost } from "../src/http-host.js";
@@ -329,7 +329,7 @@ describe("features that need model packages", () => {
       http: { mount: () => () => {} } as unknown as HttpHost,
       environment: {
         ...environment,
-        LINGER_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
+        TALOS_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
       },
       fetch: async () => Response.json({ xai_api_key: "test" }),
       spawnWorker,
@@ -364,7 +364,7 @@ describe("features that need model packages", () => {
       http: { mount: () => () => {} } as unknown as HttpHost,
       environment: {
         ...environment,
-        LINGER_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
+        TALOS_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
       },
       fetch: async () => Response.json({}),
       spawnWorker,
@@ -405,7 +405,7 @@ describe("features that need model packages", () => {
         environment: {
           ...environment,
           SIMPLEX_REGION: "cn",
-          LINGER_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
+          TALOS_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
         },
         fetch: async () => Response.json({}),
         spawnWorker: vi.fn(),
@@ -443,7 +443,7 @@ describe("features that need model packages", () => {
       http: { mount: () => () => {} } as unknown as HttpHost,
       environment: {
         ...environment,
-        LINGER_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
+        TALOS_SECRET_SEED: "model-packages-test-seed-0123456789abcdef",
       },
       fetch: async () => Response.json(keys),
       spawnWorker,

@@ -8,8 +8,8 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 // A finished sweep must not block the next period. River keeps completed jobs

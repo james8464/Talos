@@ -1,4 +1,4 @@
-import { inferDocumentMediaType } from "@linger/document-files/media-type";
+import { inferDocumentMediaType } from "@talos/document-files/media-type";
 import { translate } from "@/i18n/language";
 import { type TeamHubAuthenticationReason } from "./teamhub-authentication";
 import { readTeamHubError } from "./teamhub-error";

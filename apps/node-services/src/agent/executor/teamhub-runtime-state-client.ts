@@ -4,9 +4,9 @@ import { logAgentEvent } from "../observability/agent-log.js";
 import {
   createTeamHubAgentRuntimeStateClient,
   type TeamHubAgentCallbackFetch,
-} from "@linger/wire-contracts/teamhub-internal/client";
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
-import { isRecord } from "@linger/service-kit";
+} from "@talos/wire-contracts/teamhub-internal/client";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
+import { isRecord } from "@talos/service-kit";
 
 export type RuntimeStateSchemas = components["schemas"];
 export type RuntimeConfigSnapshot =

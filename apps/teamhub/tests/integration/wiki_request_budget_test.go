@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/memoryclient"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/memoryclient"
 )
 
 // Real cross-process acceptance: no substitutes for waiting, publication/outbox,
@@ -139,7 +139,7 @@ func TestWikiMemoryRequestBudget(t *testing.T) {
 			}
 			mu.Lock()
 			counts[fmt.Sprintf("%s_%d", kind, recorder.Code)]++
-			if r.UserAgent() != "linger-memory/budget-test" {
+			if r.UserAgent() != "talos-memory/budget-test" {
 				badUA++
 			}
 			mu.Unlock()
@@ -158,7 +158,7 @@ func TestWikiMemoryRequestBudget(t *testing.T) {
 	}
 	command := exec.CommandContext(t.Context(), "node", "--import", "tsx", "tests/memory/wiki-request-budget-process.ts")
 	command.Dir = directory
-	command.Env = append(os.Environ(), "TEAMHUB_DATABASE_URL="+databaseURL, "TEAMHUB_BASE_URL="+server.URL, "LINGER_SECRET_SEED="+integrationSecretSeed, "APP_VERSION=budget-test")
+	command.Env = append(os.Environ(), "TEAMHUB_DATABASE_URL="+databaseURL, "TEAMHUB_BASE_URL="+server.URL, "TALOS_SECRET_SEED="+integrationSecretSeed, "APP_VERSION=budget-test")
 	output, err := command.CombinedOutput()
 	if err != nil {
 		t.Fatalf("memory acceptance: %v\n%s", err, output)

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
 )
 
 // The CLI's transcript, receipt file and activity lifecycle are not evidence of

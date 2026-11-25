@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 type agyHarness struct {

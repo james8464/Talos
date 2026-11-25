@@ -46,7 +46,7 @@ const newMac: LocalComputer = {
   workspace_grants: [
     {
       grant_id: "grant-managed",
-      label: "Linger managed workspace",
+      label: "Talos managed workspace",
       mode: "workspace-write",
     },
   ],
@@ -201,14 +201,14 @@ describe("Local Computer gate", () => {
 
   describe("in the desktop app's local server", () => {
     afterEach(() => {
-      delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+      delete (window as { talosDesktop?: unknown }).talosDesktop;
     });
 
     const stubDesktopLocalServer = (
       computerId?: string,
       bridge = "connecting",
     ) => {
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         computer: {
           getStatus: async () => ({
             bridge,
@@ -234,9 +234,9 @@ describe("Local Computer gate", () => {
         await within(gate).findByText(/Looking for Codex and Claude Code/),
       ).toBeVisible();
       expect(
-        within(gate).queryByText(/install\/linger-computer\.sh/),
+        within(gate).queryByText(/install\/talos-computer\.sh/),
       ).toBeNull();
-      expect(within(gate).queryByText(/linger-computer-local/)).toBeNull();
+      expect(within(gate).queryByText(/talos-computer-local/)).toBeNull();
     });
 
     it("shows the Computer online without CLI install commands while waiting for an AI app", async () => {
@@ -248,7 +248,7 @@ describe("Local Computer gate", () => {
       });
       expect(await within(gate).findByText("New Mac is online.")).toBeVisible();
       expect(
-        within(gate).queryByText(/install\/linger-computer\.sh/),
+        within(gate).queryByText(/install\/talos-computer\.sh/),
       ).toBeNull();
     });
   });

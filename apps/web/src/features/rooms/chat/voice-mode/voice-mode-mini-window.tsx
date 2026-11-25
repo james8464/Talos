@@ -76,7 +76,7 @@ const windowSizes = {
 /** Still shows the header's controls and a few lines of the conversation. */
 const minWindowSize = { height: 200, width: 260 };
 const windowGap = 16;
-const positionKey = "linger:voice-mode-window";
+const positionKey = "talos:voice-mode-window";
 /** Above this level the Human is speaking, not just breathing near the mic. */
 const speakingLevel = 0.08;
 
@@ -409,7 +409,7 @@ function MiniWindow({
               the desktop app's main window or this browser tab. */}
             {pip ? (
               <Button
-                aria-label={t(m.returnToLinger)}
+                aria-label={t(m.returnToTalos)}
                 onClick={() => returnVoicePipToPage("voice-mode")}
                 size="compactIcon"
                 title={t(m.returnHint)}

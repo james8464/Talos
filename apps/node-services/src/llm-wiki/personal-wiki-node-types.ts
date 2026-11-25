@@ -6,7 +6,7 @@ import {
   ENTITY_SECTIONS,
   SESSION_ACTION_PRIORITIES,
   SESSION_SECTIONS,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 
 export type PersonalWikiNodeTypeId =
   | "client"

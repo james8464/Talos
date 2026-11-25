@@ -8,7 +8,7 @@ keep talking to an agent hands-free.**
 ## Turning voice on
 
 Voice runs wherever the deployment can run it: TeamHub's
-`TEAMHUB_VOICE_MEDIA` is `on` (the default), `LINGER_SECRET_SEED` is set, and
+`TEAMHUB_VOICE_MEDIA` is `on` (the default), `TALOS_SECRET_SEED` is set, and
 `ffmpeg` and `ffprobe` are on `PATH`. `TEAMHUB_VOICE_MEDIA=off`, a missing seed,
 or missing ffmpeg keep voice off; TeamHub still starts and logs
 `voice.media_unavailable` for the last two.
@@ -27,7 +27,7 @@ the Soniox account whose key is in effect, so on a server several people
 share, set `SONIOX_API_KEY` and `XAI_API_KEY` in the environment: that locks
 the keys against replacement from the app.
 
-- The Linger app always runs the LiveKit server and ffmpeg it bundles; save
+- The Talos app always runs the LiveKit server and ffmpeg it bundles; save
   the keys in the app. Keys written by hand into `user.env` in the instance
   folder (`~/.simplexai/instances/desktop/`) act as environment keys: they win
   over the app, and changing or removing one means editing that file and

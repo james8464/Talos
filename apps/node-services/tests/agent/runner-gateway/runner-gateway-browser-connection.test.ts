@@ -2,7 +2,7 @@ import type {
   AgentToDaemonEnvelope,
   CapabilityBrowserConnect,
   BrowserConnectionStatus,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {

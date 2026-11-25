@@ -12,16 +12,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskdelegation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskexecution"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/tenantmembership"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskdelegation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskexecution"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/tenantmembership"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // voiceLiveTaskViews reports the user's tasks in the session's Room from

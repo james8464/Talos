@@ -424,12 +424,12 @@ it("checks the installation target while keeping tool state in the existing home
 it("preserves WINDOWS_PRIVATE_PATH_UNSAFE refusals instead of wrapping them as LOCALMODELS_SETUP_UNAVAILABLE", async () => {
   const refusalError = Object.assign(
     new Error(
-      "Windows private path validation failed: C:\\Shared\\Linger is inside a folder other accounts on this computer can rename or replace. Use a current-user owned local directory without links or shared access.",
+      "Windows private path validation failed: C:\\Shared\\Talos is inside a folder other accounts on this computer can rename or replace. Use a current-user owned local directory without links or shared access.",
     ),
     {
       code: WINDOWS_PRIVATE_PATH_UNSAFE,
       reason: "UNSAFE_PARENT_ACCESS",
-      path: "C:\\Shared\\Linger",
+      path: "C:\\Shared\\Talos",
     },
   );
   await expect(

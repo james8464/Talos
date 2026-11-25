@@ -57,7 +57,7 @@ function repairUnreadablePptxBackgrounds(container: HTMLElement) {
     }
 
     canvas.style.backgroundColor = "rgb(255, 255, 255)";
-    canvas.dataset.lingerBackgroundRepaired = "true";
+    canvas.dataset.talosBackgroundRepaired = "true";
   }
 }
 

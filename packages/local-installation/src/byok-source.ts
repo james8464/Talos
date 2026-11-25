@@ -5,7 +5,7 @@ import {
   isByokProtocol,
   validByokPath,
   type ByokProtocol,
-} from "@linger/service-kit/byok-endpoint";
+} from "@talos/service-kit/byok-endpoint";
 import { atomicPrivate, readPrivate } from "./instance.js";
 import {
   localmodelsBaseDirectory,

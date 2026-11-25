@@ -1,7 +1,7 @@
 import { sentRequests } from "./teamhub-client-test-support";
 import { describe, expect, it, vi } from "vitest";
 import { createHttpTeamHubClient } from "./teamhub-client";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("Agent Skill upload HTTP client", () => {
   it("uploads a Skill package without caller-chosen identity fields", async () => {

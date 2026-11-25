@@ -9,13 +9,13 @@ describe("windowsCommandLine", () => {
   it("quotes paths with spaces and leaves plain arguments alone", () => {
     expect(
       windowsCommandLine("C:\\Program Files\\nodejs\\node.exe", [
-        "C:\\Users\\Ada Lovelace\\linger\\scripts\\source-native.mjs",
+        "C:\\Users\\Ada Lovelace\\talos\\scripts\\source-native.mjs",
         "--include",
         "apps/node-services/src/**/*",
         "-p=2",
       ]),
     ).toBe(
-      '"C:\\Program Files\\nodejs\\node.exe" "C:\\Users\\Ada Lovelace\\linger\\scripts\\source-native.mjs" --include "apps/node-services/src/**/*" -p=2',
+      '"C:\\Program Files\\nodejs\\node.exe" "C:\\Users\\Ada Lovelace\\talos\\scripts\\source-native.mjs" --include "apps/node-services/src/**/*" -p=2',
     );
   });
   it("refuses characters cmd.exe would reinterpret", () => {
@@ -27,9 +27,9 @@ describe("windowsCommandLine", () => {
 describe("windowsLaunch", () => {
   it("runs a program file as a direct child, so it ends with its supervisor", () => {
     expect(
-      windowsLaunch("C:\\Users\\Ada Lovelace\\linger\\teamhub.exe", ["-x"]),
+      windowsLaunch("C:\\Users\\Ada Lovelace\\talos\\teamhub.exe", ["-x"]),
     ).toEqual({
-      file: "C:\\Users\\Ada Lovelace\\linger\\teamhub.exe",
+      file: "C:\\Users\\Ada Lovelace\\talos\\teamhub.exe",
       args: ["-x"],
       shell: false,
     });
@@ -65,7 +65,7 @@ describe("formatWindowsSpawnError", () => {
       code: "EACCES",
       errno: -4092,
     });
-    expect(formatWindowsSpawnError("C:\\linger\\teamhub.exe", denied)).toMatch(
+    expect(formatWindowsSpawnError("C:\\talos\\teamhub.exe", denied)).toMatch(
       /teamhub\.exe.*code=EACCES.*errno=-4092.*SmartScreen/i,
     );
 
@@ -74,7 +74,7 @@ describe("formatWindowsSpawnError", () => {
       errno: -4058,
     });
     const formattedMissing = formatWindowsSpawnError(
-      "C:\\linger\\teamhub.exe",
+      "C:\\talos\\teamhub.exe",
       missing,
     );
     expect(formattedMissing).toContain("teamhub.exe");

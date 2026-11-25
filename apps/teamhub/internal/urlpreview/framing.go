@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-// refusesFraming reports whether a response forbids framing by the Linger
+// refusesFraming reports whether a response forbids framing by the Talos
 // Web page served over pageScheme ("http", "https", or empty when unknown).
 // CSP frame-ancestors, when present, overrides X-Frame-Options, as in
 // browsers. Only *, a scheme source, or a host source with a wildcard host
 // matching the page's scheme allows the frame; 'self' and named hosts never
-// name the Linger server.
+// name the Talos server.
 func refusesFraming(header http.Header, pageScheme string) bool {
 	found := false
 	for _, value := range header.Values("Content-Security-Policy") {

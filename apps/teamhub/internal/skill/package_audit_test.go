@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 )
 
 type packageAuditCountingStore struct {

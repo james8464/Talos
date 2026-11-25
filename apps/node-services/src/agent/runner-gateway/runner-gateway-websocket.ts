@@ -15,12 +15,12 @@ import type {
   AgentToDaemonEnvelope,
   DaemonToAgentEnvelope,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   RUNNER_GATEWAY_FRAME_LIMITS,
   RUNNER_GATEWAY_PROTOCOL_VERSION,
   parseDaemonToAgentEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 
 import type { OperationEnvelope } from "./runner-operation.js";
 import {
@@ -70,7 +70,7 @@ const MAX_QUEUED_FRAMES = 1_024;
 const MAX_QUEUED_BYTES = 16 * 1024 * 1024;
 const MAX_TIMER_DELAY_MS = 2_147_000_000;
 export const RUNNER_UPGRADE_REQUIRED_CLOSE_REASON =
-  "upgrade_required: rerun the Linger Computer installer";
+  "upgrade_required: rerun the Talos Computer installer";
 export const RUNNER_DAEMON_IDENTITY_IN_USE_CLOSE_REASON =
   "daemon_identity_in_use: reconnect this Computer";
 // Every Computer release that can update itself declares this in its hello.

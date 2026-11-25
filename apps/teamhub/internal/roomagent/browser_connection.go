@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // ConnectLocalBrowser forwards one browser connection command to the owner's Computer.

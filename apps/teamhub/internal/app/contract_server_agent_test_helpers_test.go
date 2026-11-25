@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	teamhubagentapi "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	teamhubagentapi "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 // Kept as the historical helper name while the task-list endpoint is retired;

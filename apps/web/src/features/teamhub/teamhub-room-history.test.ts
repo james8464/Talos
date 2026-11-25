@@ -1,7 +1,7 @@
 import { sentRequests } from "./teamhub-client-test-support";
 import { describe, expect, it, vi } from "vitest";
 import { createHttpTeamHubClient } from "./teamhub-client";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("Room history anonymous transport", () => {
   it("posts secrets in the body, omits session cookies and calls fetch without a receiver", async () => {

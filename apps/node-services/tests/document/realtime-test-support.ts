@@ -5,7 +5,7 @@ import { HocuspocusProvider } from "@hocuspocus/provider";
 import {
   inspectRoomDocumentState,
   materializeRoomDocument,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import * as Y from "yjs";
 
 import type {

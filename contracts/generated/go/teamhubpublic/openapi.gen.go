@@ -797,7 +797,7 @@ func (e ComputerPermissionStatusPlatform) Valid() bool {
 // Defines values for ComputerPermissionSubject.
 const (
 	ComputerPermissionSubjectComputerUse ComputerPermissionSubject = "computer_use"
-	ComputerPermissionSubjectLinger      ComputerPermissionSubject = "linger"
+	ComputerPermissionSubjectTalos      ComputerPermissionSubject = "talos"
 )
 
 // Valid indicates whether the value is a known member of the ComputerPermissionSubject enum.
@@ -805,7 +805,7 @@ func (e ComputerPermissionSubject) Valid() bool {
 	switch e {
 	case ComputerPermissionSubjectComputerUse:
 		return true
-	case ComputerPermissionSubjectLinger:
+	case ComputerPermissionSubjectTalos:
 		return true
 	default:
 		return false
@@ -5562,14 +5562,14 @@ type CompleteExternalConnectionAuthorizationRequest struct {
 	ConnectedAccountId *string `json:"connected_account_id,omitempty"`
 }
 
-// ComputerPermissionAction One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Linger desktop app so a new grant takes effect.
+// ComputerPermissionAction One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Talos desktop app so a new grant takes effect.
 type ComputerPermissionAction struct {
 	Action ComputerPermissionActionAction `json:"action"`
 
 	// Permission A macOS privacy permission an Agent can ask its Computer owner to grant.
 	Permission *ComputerPermissionId `json:"permission,omitempty"`
 
-	// Subject The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+	// Subject The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
 	Subject ComputerPermissionSubject `json:"subject"`
 }
 
@@ -5582,7 +5582,7 @@ type ComputerPermissionDecisionView struct {
 	Permissions []ComputerPermissionId `json:"permissions"`
 	Reason      *string                `json:"reason,omitempty"`
 
-	// Subject The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+	// Subject The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
 	Subject ComputerPermissionSubject `json:"subject"`
 }
 
@@ -5610,26 +5610,26 @@ type ComputerPermissionState string
 
 // ComputerPermissionStatus The macOS privacy permissions of one Local Computer. Other platforms have no such permissions and report no subjects.
 type ComputerPermissionStatus struct {
-	// Host desktop when the Linger desktop app runs the Computer; standalone otherwise.
+	// Host desktop when the Talos desktop app runs the Computer; standalone otherwise.
 	Host     ComputerPermissionStatusHost      `json:"host"`
 	Platform ComputerPermissionStatusPlatform  `json:"platform"`
 	Subjects []ComputerPermissionSubjectStatus `json:"subjects"`
 }
 
-// ComputerPermissionStatusHost desktop when the Linger desktop app runs the Computer; standalone otherwise.
+// ComputerPermissionStatusHost desktop when the Talos desktop app runs the Computer; standalone otherwise.
 type ComputerPermissionStatusHost string
 
 // ComputerPermissionStatusPlatform defines model for ComputerPermissionStatus.Platform.
 type ComputerPermissionStatusPlatform string
 
-// ComputerPermissionSubject The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+// ComputerPermissionSubject The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
 type ComputerPermissionSubject string
 
 // ComputerPermissionSubjectStatus defines model for ComputerPermissionSubjectStatus.
 type ComputerPermissionSubjectStatus struct {
 	Permissions []ComputerPermissionEntry `json:"permissions"`
 
-	// Subject The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+	// Subject The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
 	Subject ComputerPermissionSubject `json:"subject"`
 }
 
@@ -7339,7 +7339,7 @@ type LocalModelEngine string
 
 // LocalModelError defines model for LocalModelError.
 type LocalModelError struct {
-	// Cause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Linger and renaming that folder lets the model load.
+	// Cause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Talos and renaming that folder lets the model load.
 	Cause *LocalModelErrorCause `json:"cause,omitempty"`
 
 	// Code Closed localmodels library error set. It is extended only together with the localmodels library contract; UNKNOWN_ERROR preserves forward compatibility with newer localmodels releases.
@@ -7352,7 +7352,7 @@ type LocalModelError struct {
 	Path *string `json:"path,omitempty"`
 }
 
-// LocalModelErrorCause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Linger and renaming that folder lets the model load.
+// LocalModelErrorCause Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local gateway's private folder at path has another owner; closing Talos and renaming that folder lets the model load.
 type LocalModelErrorCause string
 
 // LocalModelErrorCode Closed localmodels library error set. It is extended only together with the localmodels library contract; UNKNOWN_ERROR preserves forward compatibility with newer localmodels releases.
@@ -9712,11 +9712,11 @@ type UnifiedDocumentVersionRef struct {
 
 // UrlPreviewFraming defines model for UrlPreviewFraming.
 type UrlPreviewFraming struct {
-	// Framing refused: the final response forbids framing by another site (X-Frame-Options DENY or SAMEORIGIN, or a CSP frame-ancestors that allows no page of the Linger page's scheme), so the panel offers a new tab instead of a frame. allowed: it does not. unknown: TeamHub did not read the page, because it was unreachable, slow or redirected too often, TeamHub was busy with other probes, or it is on a non-public address or a port other than 80 and 443, which TeamHub never requests; the panel frames it and lets the browser decide.
+	// Framing refused: the final response forbids framing by another site (X-Frame-Options DENY or SAMEORIGIN, or a CSP frame-ancestors that allows no page of the Talos page's scheme), so the panel offers a new tab instead of a frame. allowed: it does not. unknown: TeamHub did not read the page, because it was unreachable, slow or redirected too often, TeamHub was busy with other probes, or it is on a non-public address or a port other than 80 and 443, which TeamHub never requests; the panel frames it and lets the browser decide.
 	Framing UrlPreviewFramingFraming `json:"framing"`
 }
 
-// UrlPreviewFramingFraming refused: the final response forbids framing by another site (X-Frame-Options DENY or SAMEORIGIN, or a CSP frame-ancestors that allows no page of the Linger page's scheme), so the panel offers a new tab instead of a frame. allowed: it does not. unknown: TeamHub did not read the page, because it was unreachable, slow or redirected too often, TeamHub was busy with other probes, or it is on a non-public address or a port other than 80 and 443, which TeamHub never requests; the panel frames it and lets the browser decide.
+// UrlPreviewFramingFraming refused: the final response forbids framing by another site (X-Frame-Options DENY or SAMEORIGIN, or a CSP frame-ancestors that allows no page of the Talos page's scheme), so the panel offers a new tab instead of a frame. allowed: it does not. unknown: TeamHub did not read the page, because it was unreachable, slow or redirected too often, TeamHub was busy with other probes, or it is on a non-public address or a port other than 80 and 443, which TeamHub never requests; the panel frames it and lets the browser decide.
 type UrlPreviewFramingFraming string
 
 // VoiceCapture defines model for VoiceCapture.
@@ -10877,7 +10877,7 @@ type GetUrlPreviewFramingParams struct {
 	// Url The http or https page to preview.
 	Url string `form:"url" json:"url"`
 
-	// PageScheme The scheme of the Linger page that frames the site; frame-ancestors scheme sources are matched against it. Without it, http and https sources both allow the frame.
+	// PageScheme The scheme of the Talos page that frames the site; frame-ancestors scheme sources are matched against it. Without it, http and https sources both allow the frame.
 	PageScheme *GetUrlPreviewFramingParamsPageScheme `form:"page_scheme,omitempty" json:"page_scheme,omitempty"`
 }
 

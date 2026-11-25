@@ -1,5 +1,5 @@
 import { setTimeout as delay } from "node:timers/promises";
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 
 type VoiceInputReadiness = Pick<
   components["schemas"]["VoiceSession"],

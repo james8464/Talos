@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
 )
 
 // A recorder that never saved audio must not cost the meeting its transcript:

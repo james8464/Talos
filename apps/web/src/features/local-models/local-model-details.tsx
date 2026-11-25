@@ -4,7 +4,7 @@ import {
   LinkSquare02Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
-import { NVIDIA_DRIVER_GUIDE_URL } from "@linger/service-kit/nvidia-driver";
+import { NVIDIA_DRIVER_GUIDE_URL } from "@talos/service-kit/nvidia-driver";
 
 import { Button } from "@/components/ui/button";
 import { FormFeedback } from "@/components/ui/form-feedback";

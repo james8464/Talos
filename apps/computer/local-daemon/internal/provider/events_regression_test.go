@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 func TestFailedToolRemainsFailed(t *testing.T) {

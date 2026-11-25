@@ -3,7 +3,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type postgres from "postgres";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import { ModelCallError } from "../runtime-model-call.js";
 import { requestMemoryStructuredOutput } from "./llm.js";
 import { promptRoot } from "./paths.js";

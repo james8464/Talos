@@ -8,7 +8,7 @@ import type {
   DebugHistoryInspectionResult,
   LocalMcpRelayDescriptor,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { AgentRunnerLifecycle } from "./agent-runner-lifecycle.js";
 import {
   type LocalAgentRunnerManagement,

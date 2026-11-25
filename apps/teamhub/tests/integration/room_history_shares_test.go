@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func TestRoomHistorySharingSnapshotAndRevocation(t *testing.T) {

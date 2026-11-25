@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { Hono, type Context } from "hono";
-import * as AgentManagementRoutes from "@linger/wire-contracts/node-services-internal/server";
+import * as AgentManagementRoutes from "@talos/wire-contracts/node-services-internal/server";
 import type {
   AgentDebugInspectionApi,
   AgentManagerApi,
@@ -37,9 +37,9 @@ import {
   type HttpHost,
   type RoleReadiness,
 } from "../../../http-host.js";
-import type { components as AgentManagementSchemas } from "@linger/wire-contracts/node-services-internal/types";
+import type { components as AgentManagementSchemas } from "@talos/wire-contracts/node-services-internal/types";
 import { redactRuntimeHistoryPage } from "../history.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import {
   ModelCallError,
   type ModelCall,

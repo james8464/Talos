@@ -280,7 +280,7 @@ func parseLogin(args []string, configPath string, options parseOptions) (command
 		return command{}, err
 	}
 	if parsed.webURL == "" {
-		parsed.webURL = options.environment["LINGER_WEB_URL"]
+		parsed.webURL = options.environment["TALOS_WEB_URL"]
 	}
 	if parsed.webURL == "" {
 		parsed.webURL = "http://localhost:3000"
@@ -418,10 +418,10 @@ func validRuntimeSelection(types []string) bool {
 func resolveConfigPath(explicit string, options parseOptions) string {
 	value := explicit
 	if value == "" {
-		value = options.environment["LINGER_COMPUTER_CONFIG"]
+		value = options.environment["TALOS_COMPUTER_CONFIG"]
 	}
 	if value == "" {
-		if dataDirectory := strings.TrimSpace(options.environment["LINGER_COMPUTER_DATA_DIR"]); dataDirectory != "" {
+		if dataDirectory := strings.TrimSpace(options.environment["TALOS_COMPUTER_DATA_DIR"]); dataDirectory != "" {
 			value = filepath.Join(dataDirectory, "config.json")
 		} else {
 			value = filepath.Join(defaultDataRoot(options), "config.json")
@@ -436,9 +436,9 @@ func defaultDataRoot(options parseOptions) string {
 		if local == "" {
 			local = filepath.Join(options.homeDirectory, "AppData", "Local")
 		}
-		return filepath.Join(local, "Linger", "Computer")
+		return filepath.Join(local, "Talos", "Computer")
 	}
-	return filepath.Join(options.homeDirectory, ".local", "share", "linger", "computer")
+	return filepath.Join(options.homeDirectory, ".local", "share", "talos", "computer")
 }
 
 func resolvePath(workingDirectory, value string) string {

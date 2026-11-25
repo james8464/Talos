@@ -412,7 +412,7 @@ export function VoiceFocusSurface({
       ) : null}
       {onReturn ? (
         <button
-          aria-label={t(m.returnToLinger)}
+          aria-label={t(m.returnToTalos)}
           className={styles.windowButton}
           onClick={onReturn}
           title={t(m.returnHint)}

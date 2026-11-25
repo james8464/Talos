@@ -8,7 +8,7 @@ import { AudioStream, type RemoteAudioTrack } from "@livekit/rtc-node";
 import {
   type TeamHubVoiceRuntimeClient,
   TeamHubVoiceRuntimeError,
-} from "@linger/wire-contracts/teamhub-internal/client";
+} from "@talos/wire-contracts/teamhub-internal/client";
 
 // Recorded Capture media matches the archive the materializer expects:
 // mono 48 kHz AAC in MPEG-TS HLS segments.

@@ -20,9 +20,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 // Defaults for Options left zero.

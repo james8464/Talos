@@ -33,8 +33,8 @@ it("binds selected Codex argv and environment while an unsupported unselected gl
     claude = path.join(root, "claude-2.0.24");
   await writeFile(codex, "fixture");
   await writeFile(claude, "unsupported global Claude");
-  vi.stubEnv("LINGER_CLAUDE_PATH", claude);
-  vi.stubEnv("LINGER_PI_PATH", "/unselected/pi");
+  vi.stubEnv("TALOS_CLAUDE_PATH", claude);
+  vi.stubEnv("TALOS_PI_PATH", "/unselected/pi");
   vi.stubEnv("CLAUDE_CONFIG_DIR", "/unselected/claude-profile");
   vi.mocked(runLocalmodels).mockResolvedValue({
     code: 0,
@@ -63,7 +63,7 @@ it("binds selected Codex argv and environment while an unsupported unselected gl
   });
   await writeFile(
     computer,
-    `#!${process.execPath}\nconst fs=require('fs');const args=process.argv.slice(2),env=process.env;fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify({args,claude:env.LINGER_CLAUDE_PATH,pi:env.LINGER_PI_PATH,claudeProfile:env.CLAUDE_CONFIG_DIR,codex:env.LINGER_CODEX_PATH,codexProfile:env.CODEX_HOME})+'\\n');if(args[0]==='login'){if(args.includes('--claude-path')||env.LINGER_CLAUDE_PATH||env.LINGER_PI_PATH)process.exit(9);fs.writeFileSync(args[args.indexOf('--config')+1],'{}');}if(args[0]==='daemon'&&args[1]==='status')console.log(JSON.stringify({daemon:{state:'running',reconciled: true, gateway_state:'connected',active_operations:0},runtimes:[{type:'codex',status:'ready'}]}));\n`,
+    `#!${process.execPath}\nconst fs=require('fs');const args=process.argv.slice(2),env=process.env;fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify({args,claude:env.TALOS_CLAUDE_PATH,pi:env.TALOS_PI_PATH,claudeProfile:env.CLAUDE_CONFIG_DIR,codex:env.TALOS_CODEX_PATH,codexProfile:env.CODEX_HOME})+'\\n');if(args[0]==='login'){if(args.includes('--claude-path')||env.TALOS_CLAUDE_PATH||env.TALOS_PI_PATH)process.exit(9);fs.writeFileSync(args[args.indexOf('--config')+1],'{}');}if(args[0]==='daemon'&&args[1]==='status')console.log(JSON.stringify({daemon:{state:'running',reconciled: true, gateway_state:'connected',active_operations:0},runtimes:[{type:'codex',status:'ready'}]}));\n`,
     { mode: 0o700 },
   );
   const instance = await initializeInstance({

@@ -17,7 +17,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 // Context length lookup bounds. The lookup runs during discovery, off every

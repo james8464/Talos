@@ -1,7 +1,7 @@
 import { appendFile, mkdir, readdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { JsonLogger } from "@linger/service-kit/node";
+import type { JsonLogger } from "@talos/service-kit/node";
 
 /** How long a work's record is kept after its last write. */
 const RETENTION_MS = 3 * 24 * 60 * 60_000;

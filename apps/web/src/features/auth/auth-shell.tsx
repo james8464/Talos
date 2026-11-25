@@ -15,11 +15,11 @@ export function AuthShell({
     <main className="auth-page min-h-dvh text-foreground">
       <header className="auth-brand">
         <img
-          alt="Linger"
+          alt="Talos"
           className="auth-brand-wordmark"
           draggable={false}
           height={386}
-          src="/linger-wordmark.svg"
+          src="/talos-wordmark.svg"
           width={1225}
         />
       </header>
@@ -40,7 +40,7 @@ export function AuthShell({
         </section>
       </div>
 
-      <footer className="auth-footer">&copy; 2026 Linger</footer>
+      <footer className="auth-footer">&copy; 2026 Talos</footer>
     </main>
   );
 }

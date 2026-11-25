@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 )
 
 // Imported mail feeds the Wiki without becoming pages the Human wrote, so it

@@ -17,7 +17,7 @@ afterEach(async () => {
 });
 
 async function scratch(): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), "linger-archive-"));
+  const dir = await mkdtemp(path.join(tmpdir(), "talos-archive-"));
   roots.push(dir);
   return dir;
 }
@@ -109,9 +109,9 @@ describe("extractArchiveFallback", () => {
 
   it("extracts .tar.gz and .tar.zst archives with strip=1", async () => {
     const root = await scratch();
-    const src = path.join(root, "src", "linger-source");
+    const src = path.join(root, "src", "talos-source");
     await mkdir(path.join(src, "nested"), { recursive: true });
-    await writeFile(path.join(src, "package.json"), '{"name":"linger"}\n');
+    await writeFile(path.join(src, "package.json"), '{"name":"talos"}\n');
     await writeFile(path.join(src, "nested", "marker.txt"), "ok\n");
 
     const tarPath = path.join(root, "source.tar");
@@ -121,14 +121,14 @@ describe("extractArchiveFallback", () => {
       tarPath,
       "-C",
       path.join(root, "src"),
-      "linger-source",
+      "talos-source",
     ]);
     execFileSync("tar", [
       "-czf",
       tgzPath,
       "-C",
       path.join(root, "src"),
-      "linger-source",
+      "talos-source",
     ]);
     const zstPath = path.join(root, "source.tar.zst");
     await writeFile(zstPath, zstdCompressSync(await readFile(tarPath)));
@@ -137,7 +137,7 @@ describe("extractArchiveFallback", () => {
     await mkdir(tgzOut, { recursive: true });
     await extractArchiveFallback(tgzPath, tgzOut, { strip: 1 });
     expect(await readFile(path.join(tgzOut, "package.json"), "utf8")).toBe(
-      '{"name":"linger"}\n',
+      '{"name":"talos"}\n',
     );
     expect(
       await readFile(path.join(tgzOut, "nested", "marker.txt"), "utf8"),
@@ -147,7 +147,7 @@ describe("extractArchiveFallback", () => {
     await mkdir(zstOut, { recursive: true });
     await extractArchiveFallback(zstPath, zstOut, { strip: 1 });
     expect(await readFile(path.join(zstOut, "package.json"), "utf8")).toBe(
-      '{"name":"linger"}\n',
+      '{"name":"talos"}\n',
     );
     expect(
       await readFile(path.join(zstOut, "nested", "marker.txt"), "utf8"),

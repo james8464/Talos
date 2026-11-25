@@ -91,7 +91,7 @@ Daily items. Neither takes it from the prompt, an earlier report or another
 participant, so a Chinese-speaking Human gets Chinese reports. The
 application renders the whole file: YAML frontmatter, the fixed English H2
 headings (`DAILY_REPORT_SECTIONS` / `WEEKLY_REPORT_SECTIONS` in
-`@linger/knowledge-format/sections`), one bullet per item, `None observed.`
+`@talos/knowledge-format/sections`), one bullet per item, `None observed.`
 for an empty section, the fixed no-baseline sentence when there is no
 yesterday Daily or previous Weekly, and a final `## Sources` section. Daily
 writes only the day's report and Weekly only the week's user dynamic; neither
@@ -145,7 +145,7 @@ When TeamHub changes a table these views depend on, update the views in the same
 ## Starting
 
 ```bash
-NODE_SERVICES_ROLES=memory pnpm --filter @linger/node-services dev
+NODE_SERVICES_ROLES=memory pnpm --filter @talos/node-services dev
 ```
 
 The root `pnpm dev` already starts Memory in the node-services process.
@@ -155,7 +155,7 @@ Core configuration:
 - `AGENT_HOME`: the Agent state directory, `~/.mirror` by default. Memory writes to the Agent Context Host root
   `<AGENT_HOME>/agent-manager/workspaces/context-host`, the same directory the Agent role mounts; both come from the
   same function in `src/paths.ts`.
-- `LINGER_SECRET_SEED`: the service credential seed; Memory refuses to start without it. The credential derived
+- `TALOS_SECRET_SEED`: the service credential seed; Memory refuses to start without it. The credential derived
   from it with the `node-services-internal` label authenticates internal clients calling Memory (shared with
   TeamHub's other calls to Node Services): today MCP Server queries, development LLM Wiki generation log reports,
   TeamHub's Wiki graph update commands and the rebuild CLI. The Agent Service's flashback calls Memory directly in
@@ -682,7 +682,7 @@ subject's lane is free, so a subject still busy with its own earlier work does n
   Daily output is rewritten unchanged. Each person runs independently: scheduling isolates people and retries only
   those who failed; a manual `daily` without a subject keeps going after one person fails and reports the errors at
   the end.
-- The day read maintains memory.md in the same task as the Daily, before it: the day's raw conversations go to the model, which returns only add, replace and delete edits (a day too large for one task falls back to separate calls that read it in parts above 100,000 characters, with the Daily); an edit drawn from a Session must quote the Human's words found in that Session. The checked edits become one new TeamHub `user_memory_revisions` version for the day, projected to the read-only `me/memory.md`. Days without Sessions skip the step. Each written Weekly updates it the same way, and TeamHub calls `POST /internal/v1/profile-memory-syncs` about a minute after each Profile publication, merging the newer Revision against memory.md's `base_profile_revision_id` (the first one builds memory.md); a sync that keeps failing leaves the last good version. Apart from those Profile syncs, memory.md has no daytime writes. Rollback: `pnpm --filter @linger/node-services memory:user-memory:rollback <memory-subject-key> <version>`.
+- The day read maintains memory.md in the same task as the Daily, before it: the day's raw conversations go to the model, which returns only add, replace and delete edits (a day too large for one task falls back to separate calls that read it in parts above 100,000 characters, with the Daily); an edit drawn from a Session must quote the Human's words found in that Session. The checked edits become one new TeamHub `user_memory_revisions` version for the day, projected to the read-only `me/memory.md`. Days without Sessions skip the step. Each written Weekly updates it the same way, and TeamHub calls `POST /internal/v1/profile-memory-syncs` about a minute after each Profile publication, merging the newer Revision against memory.md's `base_profile_revision_id` (the first one builds memory.md); a sync that keeps failing leaves the last good version. Apart from those Profile syncs, memory.md has no daytime writes. Rollback: `pnpm --filter @talos/node-services memory:user-memory:rollback <memory-subject-key> <version>`.
 - Weekly on its set day (`weekly`): per AnotherMe, isolated and in parallel, each Subject with its own collection and
   prompt. It still waits for the same midnight's Daily task to succeed (when every AnotherMe fails, Daily still blocks
   Weekly). One person's Weekly failure does not interrupt others; when a person finishes, `timeline/weekly/<weekStart>.md`
@@ -734,9 +734,9 @@ that made the tool call. LLM Wiki generates candidate pages step by step through
 ### Manual commands
 
 ```bash
-pnpm --filter @linger/node-services memory:daily -- --date 2026-09-01
-pnpm --filter @linger/node-services memory:weekly -- --week-start 2026-08-31
-pnpm --filter @linger/node-services memory:wiki-sync -- --date 2026-09-01
+pnpm --filter @talos/node-services memory:daily -- --date 2026-09-01
+pnpm --filter @talos/node-services memory:weekly -- --week-start 2026-08-31
+pnpm --filter @talos/node-services memory:wiki-sync -- --date 2026-09-01
 ```
 
 The `:collect`, `:prompt` and `:apply` actions of `memory:daily` and `memory:weekly` remain for manual inspection.
@@ -808,8 +808,8 @@ zero attempts and the request wakes the scheduler, which runs them within about 
 request itself does not run them. The response holds only the requested parts and their counts.
 
 ```bash
-# The service token derives from LINGER_SECRET_SEED with the node-services-internal label.
-MEMORY_TOKEN="$(node -e 'const c=require("node:crypto");process.stdout.write(Buffer.from(c.hkdfSync("sha256",process.env.LINGER_SECRET_SEED,"simplexai/service-credential/v1","node-services-internal",32)).toString("base64url"))')"
+# The service token derives from TALOS_SECRET_SEED with the node-services-internal label.
+MEMORY_TOKEN="$(node -e 'const c=require("node:crypto");process.stdout.write(Buffer.from(c.hkdfSync("sha256",process.env.TALOS_SECRET_SEED,"simplexai/service-credential/v1","node-services-internal",32)).toString("base64url"))')"
 curl -s -H "Authorization: Bearer $MEMORY_TOKEN" \
   http://127.0.0.1:4319/internal/v1/health/failures
 curl -s -X POST -H "Authorization: Bearer $MEMORY_TOKEN" \
@@ -827,14 +827,14 @@ the Wiki has not published, so pages already written stay as they are. A Human w
 initialized by the first step. Start the rebuild inside the Node Services Pod:
 
 ```bash
-node --conditions=linger-production apps/node-services/dist/memory/rebuild-cli.js start --owner <Human Actor ID>
+node --conditions=talos-production apps/node-services/dist/memory/rebuild-cli.js start --owner <Human Actor ID>
 # Pilot: replay only the Sessions of the last few days
-node --conditions=linger-production apps/node-services/dist/memory/rebuild-cli.js start --owner <Human Actor ID> --from 2026-09-23
-node --conditions=linger-production apps/node-services/dist/memory/rebuild-cli.js status --owner <Human Actor ID>
+node --conditions=talos-production apps/node-services/dist/memory/rebuild-cli.js start --owner <Human Actor ID> --from 2026-09-23
+node --conditions=talos-production apps/node-services/dist/memory/rebuild-cli.js status --owner <Human Actor ID>
 ```
 
 `--owner` without a matching Another Me returns 404 (each Human has at most one); with a known Subject use
-`--subject <memory_subject_key>` instead. The CLI derives the service token from `LINGER_SECRET_SEED` in the Pod
+`--subject <memory_subject_key>` instead. The CLI derives the service token from `TALOS_SECRET_SEED` in the Pod
 environment, reads the port from `NODE_SERVICES_HTTP_ADDRESS` (4319 by default), calls `POST` / `GET
 /internal/v1/rebuild` on the local `127.0.0.1` and prints JSON. The production calendar must be running, or it returns 409.
 

@@ -196,7 +196,7 @@ func TestReviewerDeniesSystemPrivacyUICommands(t *testing.T) {
 	reviewer := &Reviewer{Requester: requester}
 	for _, command := range []string{
 		"tccutil reset ScreenCapture",
-		"/usr/bin/tccutil reset All com.linger.desktop",
+		"/usr/bin/tccutil reset All com.talos.desktop",
 		`osascript -e 'tell application "System Settings" to activate'`,
 		"osascript <<'EOF'\ntell application \"System Preferences\"\nreveal anchor \"Privacy_ScreenCapture\" of pane id \"com.apple.preference.security\"\nend tell\nEOF",
 	} {

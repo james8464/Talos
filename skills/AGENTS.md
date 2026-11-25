@@ -1,6 +1,6 @@
 # Built-in Skill assets
 
-This module owns versioned Skill packages shipped with Linger.
+This module owns versioned Skill packages shipped with Talos.
 TeamHub embeds these assets and owns their persistence, lifecycle policy, and
 runtime authorization.
 

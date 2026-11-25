@@ -7,10 +7,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/localtools"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/localtools"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 // BrowserConnections owns the private everyday-browser records. Only the

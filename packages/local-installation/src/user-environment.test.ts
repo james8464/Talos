@@ -19,7 +19,7 @@ import {
   userEnvironmentPending,
 } from "./user-environment.js";
 
-const root = () => mkdtemp(path.join(tmpdir(), "linger-user-env-"));
+const root = () => mkdtemp(path.join(tmpdir(), "talos-user-env-"));
 
 describe("readUserEnvironment", () => {
   it("creates a private commented template once and never rewrites it", async () => {
@@ -46,7 +46,7 @@ describe("readUserEnvironment", () => {
     const directory = await root();
     await writeFile(
       userEnvironmentFile(directory),
-      "LINGER_SECRET_SEED=override\nLINGER_HTTP_PORT=1\nXAI_API_KEY=xai\n",
+      "TALOS_SECRET_SEED=override\nTALOS_HTTP_PORT=1\nXAI_API_KEY=xai\n",
       { mode: 0o600 },
     );
     const warnings: string[] = [];
@@ -54,7 +54,7 @@ describe("readUserEnvironment", () => {
       await readUserEnvironment(directory, (message) => warnings.push(message)),
     ).toEqual({ XAI_API_KEY: "xai" });
     expect(warnings).toHaveLength(2);
-    expect(warnings.join("\n")).toContain("LINGER_SECRET_SEED");
+    expect(warnings.join("\n")).toContain("TALOS_SECRET_SEED");
     expect(warnings.join("\n")).not.toContain("override");
   });
 
@@ -294,7 +294,7 @@ describe("updateUserKeys", () => {
   it("rejects unknown names and values that would break env files, never echoing them", async () => {
     const directory = await root();
     for (const changes of [
-      { LINGER_SECRET_SEED: "x" },
+      { TALOS_SECRET_SEED: "x" },
       { TZ: "UTC" },
       { SONIOX_API_KEY: "two words" },
       { SONIOX_API_KEY: "a\nXAI_API_KEY=b" },

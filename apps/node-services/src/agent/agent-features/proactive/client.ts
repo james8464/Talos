@@ -1,4 +1,4 @@
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
 
 export type ProactiveWindow = components["schemas"]["ProactiveWindow"];
 

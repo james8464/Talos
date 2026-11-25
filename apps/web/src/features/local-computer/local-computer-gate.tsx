@@ -65,7 +65,7 @@ export function LocalComputerGate({
   const desktop = useDesktopComputer();
   const cliInstallAvailable = useCliInstallAvailable();
   const [platform, setPlatform] = useState(browserComputerPlatform);
-  // The desktop preloads this page hidden so "Open Linger" can reveal a
+  // The desktop preloads this page hidden so "Open Talos" can reveal a
   // rendered Room, and the realtime stream is closed while hidden, so the gate
   // keeps polling in the background or it never sees Another Me arrive.
   const computers = useQuery({

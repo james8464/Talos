@@ -3,7 +3,7 @@ package agentsendmessage
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
 )
 
 func TestAgentMessageInputDoesNotRequireRuntimeProvenance(t *testing.T) {

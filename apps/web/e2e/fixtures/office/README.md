@@ -3,7 +3,7 @@
 Real Office files for the real-stack Room Document E2E specs.
 
 - `sample.docx`, `sample.pptx` and `sample.xlsx` are small, sanitized OOXML
-  files that contain the marker `Linger Office Preview`. They were
+  files that contain the marker `Talos Office Preview`. They were
   generated with document tooling; never rename another file to an Office
   extension.
 - `single-100kb.docx` (98,982 bytes) is the single-file cold-open sample. It

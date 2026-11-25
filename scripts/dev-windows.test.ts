@@ -49,21 +49,21 @@ describe("Windows development launcher", () => {
   it.each([
     [environment.TEAMHUB_DATABASE_URL, "localhost", 5432],
     ["postgresql://user:pass@10.0.0.5:6432/database", "10.0.0.5", 6432],
-    ["postgres://[::1]:55971/linger?sslmode=disable", "::1", 55971],
-    ["postgresql://[::1]/linger", "::1", 5432],
+    ["postgres://[::1]:55971/talos?sslmode=disable", "::1", 55971],
+    ["postgresql://[::1]/talos", "::1", 5432],
   ])("reads the TCP endpoint from %s", (url, host, port) => {
     expect(parsePostgresAddress(url)).toEqual({ host, port });
   });
 
   it.each([
-    "postgres://localhost,backup/linger",
-    "postgres://localhost:5432,backup:6432/linger",
-    "postgres://localhost/linger?host=other",
-    "postgres://localhost/linger?port=6432",
-    "postgres://localhost/linger?service=local",
-    "postgres:///linger?host=%2Fvar%2Frun%2Fpostgresql",
-    "host=localhost dbname=linger",
-    "postgres://localhost:65536/linger",
+    "postgres://localhost,backup/talos",
+    "postgres://localhost:5432,backup:6432/talos",
+    "postgres://localhost/talos?host=other",
+    "postgres://localhost/talos?port=6432",
+    "postgres://localhost/talos?service=local",
+    "postgres:///talos?host=%2Fvar%2Frun%2Fpostgresql",
+    "host=localhost dbname=talos",
+    "postgres://localhost:65536/talos",
     undefined,
   ])("leaves %s to the migration without a TCP probe", async (url) => {
     expect(parsePostgresAddress(url)).toBeUndefined();
@@ -81,7 +81,7 @@ describe("Windows development launcher", () => {
     expect(message).toContain("ASCII");
     expect(message).toContain("0xbc");
     expect(
-      databaseUnavailableMessage("postgres://[::1]:55971/linger"),
+      databaseUnavailableMessage("postgres://[::1]:55971/talos"),
     ).toContain("Cannot reach PostgreSQL at [::1]:55971");
   });
 
@@ -125,13 +125,13 @@ describe("Windows development launcher", () => {
     expect(plan.nodeServices.args.slice(2)).toEqual([
       "pnpm",
       "--filter",
-      "@linger/node-services",
+      "@talos/node-services",
       "start",
     ]);
     expect(plan.web.args.slice(2)).toEqual([
       "pnpm",
       "--filter",
-      "@linger/web",
+      "@talos/web",
       "dev",
     ]);
     expect(plan.livekit.args.slice(2)).toEqual([
@@ -144,15 +144,15 @@ describe("Windows development launcher", () => {
 
   it("points the first sign-in at the owner credentials", () => {
     const directory = checkout({
-      ".linger-runtime/local-owner.json": JSON.stringify({
-        owner_email: "owner@linger.local",
+      ".talos-runtime/local-owner.json": JSON.stringify({
+        owner_email: "owner@talos.local",
         owner_password: "one-time-password",
       }),
     });
     const message = signInGuidance(directory);
     expect(message).toContain("Open http://localhost:3000 and sign in as");
-    expect(message).toContain("owner@linger.local");
-    expect(message).toContain(path.join(".linger-runtime", "local-owner.json"));
+    expect(message).toContain("owner@talos.local");
+    expect(message).toContain(path.join(".talos-runtime", "local-owner.json"));
     expect(message).toContain("Your session has expired");
   });
 
@@ -163,9 +163,9 @@ describe("Windows development launcher", () => {
   });
 
   it("reports the configured local default when a release was built there", () => {
-    const release = path.join(".linger-runtime", "computer-release");
+    const release = path.join(".talos-runtime", "computer-release");
     const directory = checkout({
-      ".linger-runtime/computer-release/release.json": '{"version":"1.2.3"}',
+      ".talos-runtime/computer-release/release.json": '{"version":"1.2.3"}',
     });
     expect(computerReleaseNote(directory, release)).toBe(
       `Computer installers are served from ${path.join(directory, release)}.`,
@@ -174,7 +174,7 @@ describe("Windows development launcher", () => {
 
   it("reports the custom release even when the default one exists", () => {
     const directory = checkout({
-      ".linger-runtime/computer-release/release.json": "{}",
+      ".talos-runtime/computer-release/release.json": "{}",
       "custom-release/release.json": "{}",
     });
     const absoluteRelease = path.join(directory, "custom-release");
@@ -187,7 +187,7 @@ describe("Windows development launcher", () => {
 
   it("reports a missing configured release even when the default exists", () => {
     const directory = checkout({
-      ".linger-runtime/computer-release/release.json": "{}",
+      ".talos-runtime/computer-release/release.json": "{}",
     });
     const missingRelease = path.join(directory, "missing-release");
     const note = computerReleaseNote(directory, "missing-release");
@@ -198,7 +198,7 @@ describe("Windows development launcher", () => {
 
   it("uses the service fallback when the configured release path is blank", () => {
     const directory = checkout({
-      ".linger-runtime/computer-release/release.json": "{}",
+      ".talos-runtime/computer-release/release.json": "{}",
     });
     const fallback = path.resolve(directory, "/app/computer-release");
     expect(computerReleaseNote(directory, " ")).toContain(fallback);

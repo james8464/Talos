@@ -41,9 +41,9 @@ type Entry =
 type CardState = "waiting" | "relaunch" | "granted" | "declined" | "expired";
 type FinishedState = Extract<CardState, "granted" | "declined" | "expired">;
 
-// "Linger" is the product's name; the other subject is described.
+// "Talos" is the product's name; the other subject is described.
 const subjectLabels: Record<Subject, Message<string> | string> = {
-  linger: "Linger",
+  talos: "Talos",
   computer_use: cardsMessages.subjectComputerUse,
 };
 const permissionLabels: Record<PermissionId, Message<string>> = {
@@ -88,10 +88,10 @@ function nextAction(
   entry: Entry,
 ): { action: ComputerPermissionAction; label: Message<string> } | undefined {
   if (entry.state === "granted") return undefined;
-  if (entry.relaunch_required && subject === "linger")
+  if (entry.relaunch_required && subject === "talos")
     return {
       action: { action: "relaunch", subject },
-      label: cardsMessages.relaunchLinger,
+      label: cardsMessages.relaunchTalos,
     };
   if (entry.prompt === "available" && entry.state === "not_determined")
     return {
@@ -110,14 +110,14 @@ function desktopStep(
 ): DesktopPermissionStep | undefined {
   const { permission } = action;
   if (action.action === "relaunch")
-    return action.subject === "linger"
-      ? { action: "relaunch", subject: "linger" }
+    return action.subject === "talos"
+      ? { action: "relaunch", subject: "talos" }
       : undefined;
   if (!permission) return undefined;
   if (action.action === "open_settings")
     return { action: "open_settings", subject: action.subject, permission };
-  return action.subject === "linger"
-    ? { action: "prompt", subject: "linger", permission }
+  return action.subject === "talos"
+    ? { action: "prompt", subject: "talos", permission }
     : undefined;
 }
 
@@ -144,7 +144,7 @@ export function ComputerPermissionDecision({
 }) {
   const view = card.computer_permission;
   const computerId = view?.computer_id ?? "";
-  const subject: Subject = view?.subject ?? "linger";
+  const subject: Subject = view?.subject ?? "talos";
   const requested = view?.permissions ?? [];
   const t = useT();
   const { client } = useTeamHubRuntime();
@@ -304,7 +304,7 @@ export function ComputerPermissionDecision({
           <>
             {interactive && offline ? (
               <p className="pb-1 text-xs text-app-muted">
-                {t(cardsMessages.openLingerOnThatMac)}
+                {t(cardsMessages.openTalosOnThatMac)}
               </p>
             ) : null}
             {interactive && status.data && !local ? (

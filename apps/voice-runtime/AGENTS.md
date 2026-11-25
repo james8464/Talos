@@ -5,7 +5,7 @@
 - This directory is the worker package used by the node-services voice supervisor; it has no standalone deployment image.
 - It subscribes to LiveKit microphone tracks, runs the configured streaming ASR adapter, and reports normalized observations through the generated TeamHub Voice Runtime client.
 - ASR serves `hardware_control` and `chat_dictation` and publishes no audio or data tracks. The dedicated `--live` worker serves `chat_live` and publishes its reply audio and structured events.
-- The supervisor starts isolated LiveKit workers: `start` (`linger-voice-runtime`) transcribes; `start --recorder` (`linger-voice-recorder`) records Capture media. While the Room metadata names an epoch, the recorder encodes the publisher track into AAC HLS segments with ffmpeg and uploads them and its state to TeamHub. It holds no object-store credentials.
+- The supervisor starts isolated LiveKit workers: `start` (`talos-voice-runtime`) transcribes; `start --recorder` (`talos-voice-recorder`) records Capture media. While the Room metadata names an epoch, the recorder encodes the publisher track into AAC HLS segments with ffmpeg and uploads them and its state to TeamHub. It holds no object-store credentials.
 - It owns no product database, Room permission, Capture classification, command execution, Artifact, Document, or Message state.
 - Do not import source from another `apps/*` directory. Cross-process calls use generated contracts.
 
@@ -27,16 +27,16 @@ Live answers personal questions from supplied Room history, notes and prior tool
 
 ## Commands
 
-- `pnpm --filter @linger/voice-runtime typecheck`
-- `pnpm --filter @linger/voice-runtime test`
-- `pnpm --filter @linger/voice-runtime build`
+- `pnpm --filter @talos/voice-runtime typecheck`
+- `pnpm --filter @talos/voice-runtime test`
+- `pnpm --filter @talos/voice-runtime build`
 
 ## Invariants
 
 - Live speech is warm and short: every reply, a quick yes or a lookup included, opens with a brief reaction or light touch and then the point, within two or three short sentences (about fifteen seconds). Words before a tool react to the user and say the plan in the first person, never a progress label, the user's own sentence or an opener already used in the call. A tool result that leads to another call gets that call without words. Task reports pass on what the user cares about, leaving out technical details unless asked. Accepted work is not finished work. TeamHub owns the matching persona and tool-result guidance; change both together.
 
 - Never log audio bytes, transcript text, LiveKit tokens, TeamHub tokens, or provider credentials.
-- A fatal `chat_dictation` failure sets three Agent participant attributes for the Web client: `linger.voice_dictation_failure` (always `transcript_unconfirmed`; older clients read only this flag), `linger.voice_dictation_failure_code` (the logged failure code), and `linger.voice_dictation_failure_generation`. Soniox's `error_code` 401, 402 and 403 become `asr_auth_rejected`, `asr_balance_exhausted` and `asr_permission_denied`; a connection that never reaches the provider is `network_dns`, `network_refused`, `network_tls`, `network_reset`, `network_pipe` or `network_timeout`, and a proxy that refuses the tunnel is `network_proxy`. The Soniox key goes with the connection (`Authorization`), never in the start request, so Soniox may refuse it on the handshake with 401, 402 or 403, which map to the same three codes. The Web client words the codes it knows and shows its generic message for any other, so adding a code needs no client release.
+- A fatal `chat_dictation` failure sets three Agent participant attributes for the Web client: `talos.voice_dictation_failure` (always `transcript_unconfirmed`; older clients read only this flag), `talos.voice_dictation_failure_code` (the logged failure code), and `talos.voice_dictation_failure_generation`. Soniox's `error_code` 401, 402 and 403 become `asr_auth_rejected`, `asr_balance_exhausted` and `asr_permission_denied`; a connection that never reaches the provider is `network_dns`, `network_refused`, `network_tls`, `network_reset`, `network_pipe` or `network_timeout`, and a proxy that refuses the tunnel is `network_proxy`. The Soniox key goes with the connection (`Authorization`), never in the start request, so Soniox may refuse it on the handshake with 401, 402 or 403, which map to the same three codes. The Web client words the codes it knows and shows its generic message for any other, so adding a code needs no client release.
 - Partial observations are transient; TeamHub decides which final observations become product truth.
 - A duplicated provider event reuses the same stable `event_id`.
 - Every track consumer attempt claims its transcript media epoch from TeamHub (`claimVoiceMediaEpoch`) and never counts epochs in memory: a job restarted mid-session (deploy, crash, key change) must not reuse an epoch whose coverage stream an earlier job started.

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 func TestEmbeddedPersonalProfileSkillMatchesManifest(t *testing.T) {

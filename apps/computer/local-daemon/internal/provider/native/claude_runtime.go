@@ -15,7 +15,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
 )
 
 type claudeRuntime struct{ profile Profile }

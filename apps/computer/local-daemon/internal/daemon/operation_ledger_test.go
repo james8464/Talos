@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 // testContextViewRef is a Context View reference spelled with the spacing an

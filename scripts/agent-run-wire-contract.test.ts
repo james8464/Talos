@@ -40,7 +40,7 @@ interface OpenApiDocument {
 }
 
 const temporaryDirectory = mkdtempSync(
-  join(tmpdir(), "linger-agent-run-contract-"),
+  join(tmpdir(), "talos-agent-run-contract-"),
 );
 
 afterAll(() => {

@@ -1,6 +1,6 @@
 #requires -Version 5.1
 # The test user owns FixtureDirectory and creates an empty outside directory.
-# Run this script elevated, then set LINGER_TEST_WINDOWS_WORKSPACE_LINK_FIXTURE
+# Run this script elevated, then set TALOS_TEST_WINDOWS_WORKSPACE_LINK_FIXTURE
 # for TestWindowsPrecreatedWorkspaceLinks under the ordinary test account.
 param([Parameter(Mandatory = $true)][string] $FixtureDirectory)
 Set-StrictMode -Version Latest

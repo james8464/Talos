@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 )
 
 func TestValidateCreateSourcesAcceptsMixedInputAndConnection(t *testing.T) {

@@ -1,4 +1,4 @@
-"""Export and synchronize the approved Linger identity (Pillow and CairoSVG)."""
+"""Export and synchronize the approved Talos identity (Pillow and CairoSVG)."""
 
 from pathlib import Path
 from io import BytesIO
@@ -46,8 +46,8 @@ def fit(image, size, fraction=1, background=(0, 0, 0, 0)):
     return result
 
 
-source = Image.open(ROOT/'source/linger.png').convert('RGBA')
-mark = (ROOT/'source/linger.svg').read_text()
+source = Image.open(ROOT/'source/talos.png').convert('RGBA')
+mark = (ROOT/'source/talos.svg').read_text()
 dark_word = (ROOT/'source/wordmark.svg').read_text()
 horizontal = dark_word.replace('#F6F5F1', '#141414')
 word_box = list(map(float, ET.fromstring(dark_word).attrib['viewBox'].split()))
@@ -57,7 +57,7 @@ for name, svg in [('logo-mark', mark), ('logo-wordmark', horizontal), ('logo-hor
     save(name+'.png', source if name == 'logo-mark' else raster(svg, 1280))
 save('app-icon.png',source)
 for size in [16,24,32,48,64,128,256,512,1024]:
-    save(f'linux/{size}x{size}/linger.png',fit(source,size))
+    save(f'linux/{size}x{size}/talos.png',fit(source,size))
 for size in [16,32,48,64]:
     save(f'web/favicon-{size}.png',fit(source,size))
 save('web/favicon.png',fit(source,512))
@@ -68,17 +68,17 @@ for size in [192,512]:
     # The entire tile fits inside the maskable icon's central safe circle.
     save(f'web/icon-maskable-{size}.png',fit(source,size,0.56,INK))
 (ROOT/'windows').mkdir(exist_ok=True)
-fit(source,256).save(ROOT/'windows/linger.ico',sizes=[(s,s) for s in [16,24,32,48,64,128,256]])
+fit(source,256).save(ROOT/'windows/talos.ico',sizes=[(s,s) for s in [16,24,32,48,64,128,256]])
 fit(source,64).save(ROOT/'web/favicon.ico',sizes=[(s,s) for s in [16,32,48,64]])
 tile=fit(source,1024,0.875)
-save('macos/linger.png',tile)
-iconset=ROOT/'macos/linger.iconset'
+save('macos/talos.png',tile)
+iconset=ROOT/'macos/talos.iconset'
 iconset.mkdir(parents=True,exist_ok=True)
 for size in [16,32,128,256,512]:
     for scale in [1,2]:
         suffix='@2x' if scale==2 else ''
         tile.resize((size*scale,size*scale),Image.Resampling.LANCZOS).save(iconset/f'icon_{size}x{size}{suffix}.png')
-tile.save(ROOT/'macos/linger.icns',format='ICNS')
+tile.save(ROOT/'macos/talos.icns',format='ICNS')
 # Template artwork contains only the L and dot, never the dark app tile.
 template_root=ET.fromstring(mark)
 for child in list(template_root):
@@ -93,7 +93,7 @@ write('tray/template.svg',template)
 for size in [16,32]:
     save(f'tray/mark-{size}.png',raster(template,size,size))
     save(f'tray/tile-{size}.png',fit(source,size))
-manifest={'name':'Linger','short_name':'Linger','icons':[
+manifest={'name':'Talos','short_name':'Talos','icons':[
     {'src':f'icon-{size}.png','sizes':f'{size}x{size}','type':'image/png','purpose':'any'} for size in [192,512]
 ]+[
     {'src':f'icon-maskable-{size}.png','sizes':f'{size}x{size}','type':'image/png','purpose':'maskable'} for size in [192,512]
@@ -102,7 +102,7 @@ write('web/site.webmanifest',json.dumps(manifest,indent=2)+'\n')
 for name in ['favicon.svg','favicon.png','favicon.ico','apple-touch-icon.png']:
     shutil.copyfile(ROOT/'web'/name,REPO/'apps/web/public'/name)
 resources=REPO/'apps/desktop/resources'
-for src,dst in [('app-icon.png','icon.png'),('macos/linger.icns','linger.icns'),('windows/linger.ico','linger.ico')]:
+for src,dst in [('app-icon.png','icon.png'),('macos/talos.icns','talos.icns'),('windows/talos.ico','talos.ico')]:
     shutil.copyfile(ROOT/src,resources/dst)
 raster(horizontal,horizontal_width,72).save(resources/'logo-horizontal.png')
 for size in [16,32]:

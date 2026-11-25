@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
 )
 
 // fakeManagedComposio serves the managed auth configs.

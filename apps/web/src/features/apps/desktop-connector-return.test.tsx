@@ -16,7 +16,7 @@ afterEach(() => vi.unstubAllGlobals());
 it("asks the signed-in client to verify the return and refreshes connector queries", async () => {
   let returned: ((account?: string) => void) | undefined;
   const unsubscribe = vi.fn();
-  vi.stubGlobal("lingerDesktop", {
+  vi.stubGlobal("talosDesktop", {
     connectorOAuth: {
       onReturn(listener: (account?: string) => void) {
         returned = listener;

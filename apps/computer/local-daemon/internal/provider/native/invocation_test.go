@@ -62,7 +62,7 @@ func TestOpenSupportsExactlyThreeKinds(t *testing.T) {
 }
 
 func TestChildEnvironmentUsesOnlyProfileEnv(t *testing.T) {
-	for _, key := range []string{"LINGER_GATEWAY_TOKEN", "MIRROR_AGENT_SERVICE_TOKEN", "LINGER_SECRET_SEED", "UNRELATED_AMBIENT_SECRET"} {
+	for _, key := range []string{"TALOS_GATEWAY_TOKEN", "MIRROR_AGENT_SERVICE_TOKEN", "TALOS_SECRET_SEED", "UNRELATED_AMBIENT_SECRET"} {
 		t.Setenv(key, "daemon-secret")
 	}
 	if got := childEnvironment(map[string]string{"PATH": "/usr/bin"}); !reflect.DeepEqual(got, []string{"PATH=/usr/bin"}) {

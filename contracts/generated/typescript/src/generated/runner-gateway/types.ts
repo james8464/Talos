@@ -97,7 +97,7 @@ export type CapabilityComputerPermission = LocalSkillCommandIdentity & {
   /**
    * Required for every action except status.
    */
-  subject?: "linger" | "computer_use";
+  subject?: "talos" | "computer_use";
   /**
    * Required for prompt and open_settings.
    */
@@ -2019,7 +2019,7 @@ export interface ComputerPermissionStatus {
     | []
     | [
         {
-          subject: "linger" | "computer_use";
+          subject: "talos" | "computer_use";
           /**
            * @maxItems 2
            */
@@ -2051,7 +2051,7 @@ export interface ComputerPermissionStatus {
       ]
     | [
         {
-          subject: "linger" | "computer_use";
+          subject: "talos" | "computer_use";
           /**
            * @maxItems 2
            */
@@ -2081,7 +2081,7 @@ export interface ComputerPermissionStatus {
               ];
         },
         {
-          subject: "linger" | "computer_use";
+          subject: "talos" | "computer_use";
           /**
            * @maxItems 2
            */

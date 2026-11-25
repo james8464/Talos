@@ -56,7 +56,7 @@ public sealed class TestHttpMockServer : IDisposable {
                         var line = reader.ReadLine();
                         if (string.IsNullOrEmpty(line)) break;
                     }
-                    if (requestLine.StartsWith("GET /install/linger-computer.ps1 ", StringComparison.Ordinal)) {
+                    if (requestLine.StartsWith("GET /install/talos-computer.ps1 ", StringComparison.Ordinal)) {
                         Interlocked.Increment(ref InstallerRequests);
                         var bytes = Encoding.UTF8.GetBytes(_body);
                         var header = Encoding.ASCII.GetBytes(
@@ -474,16 +474,16 @@ exit 0
     $psBody = $psTemplate.Replace('__COMP_LOG__', $compLog.Replace("'", "''")).Replace('__AUTH_LIT__', $authLit)
     $psB64 = [Convert]::ToBase64String($script:Utf8NoBom.GetBytes($psBody))
     $launcherTemplate = (@'
-# LingerInstallerEmbedded = $true
-$LingerInstallerEmbedded = $true
-$web = $env:LINGER_WEB_URL
+# TalosInstallerEmbedded = $true
+$TalosInstallerEmbedded = $true
+$web = $env:TALOS_WEB_URL
 $uri = [Uri]$web
 $h = $uri.Host.ToLowerInvariant()
 $envName = if ($h -eq 'localhost' -or $h -eq '127.0.0.1') { 'local-' + $uri.Port } else { 'env-' + $uri.Port }
-$bin = if ($env:LINGER_COMPUTER_BIN_DIR) { $env:LINGER_COMPUTER_BIN_DIR } else { Join-Path $env:LOCALAPPDATA 'Linger\bin' }
+$bin = if ($env:TALOS_COMPUTER_BIN_DIR) { $env:TALOS_COMPUTER_BIN_DIR } else { Join-Path $env:LOCALAPPDATA 'Talos\bin' }
 $null = New-Item -ItemType Directory -Path $bin -Force
-$cmdFile = Join-Path $bin "linger-computer-$envName.cmd"
-$psHelper = Join-Path $bin "linger-computer-$envName-mock.ps1"
+$cmdFile = Join-Path $bin "talos-computer-$envName.cmd"
+$psHelper = Join-Path $bin "talos-computer-$envName-mock.ps1"
 $exe = (Get-Process -Id $PID).Path
 $utf8 = New-Object Text.UTF8Encoding($false)
 [IO.File]::WriteAllText($psHelper, [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('__PS_B64__')), $utf8)
@@ -496,7 +496,7 @@ exit 0
 
 $baseParent = if ($WorkParent) { $WorkParent } else { [IO.Path]::GetTempPath() }
 if (-not (Test-Path -LiteralPath $baseParent)) { $null = New-Item -ItemType Directory -Path $baseParent -Force }
-$workRoot = Join-Path $baseParent ("linger-ps-branches-" + [Guid]::NewGuid().ToString('N'))
+$workRoot = Join-Path $baseParent ("talos-ps-branches-" + [Guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $workRoot -Force
 
 try {
@@ -511,7 +511,7 @@ try {
     # 2. CLI flags, conflicts, elevation & standalone
     $d1 = Join-Path $workRoot 't1'
     $f1 = New-FakeStack $d1
-    $env1 = @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); LINGER_STACK_SCRIPT = $f1.StackPath; LINGER_INSTALL_TEST_ELEVATED = '0' }
+    $env1 = @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); TALOS_STACK_SCRIPT = $f1.StackPath; TALOS_INSTALL_TEST_ELEVATED = '0' }
 
     $rHelp = Invoke-Script @('--help') $env1
     Assert-Exit $rHelp 0 '--help exit code'
@@ -546,7 +546,7 @@ try {
 
     $rBadUrl = Invoke-Script @('--web-url=not-an-origin') $env1
     Assert-Exit $rBadUrl 1 'bad url'
-    Assert-Contains $rBadUrl.StdErr 'Invalid Linger server URL' 'bad url msg'
+    Assert-Contains $rBadUrl.StdErr 'Invalid Talos server URL' 'bad url msg'
 
     $standaloneDir = Join-Path $d1 'standalone'
     $null = New-Item -ItemType Directory -Path $standaloneDir -Force
@@ -560,24 +560,24 @@ try {
     Assert-Contains $rSaBad.StdErr 'Invalid choice: 9' 'standalone invalid choice'
 
     # Elevation guards (test hook in any session, plus real token check when the host shell itself is elevated)
-    $rHookElevConn = Invoke-Script @('--connect', '--web-url', 'http://127.0.0.1:9') @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); LINGER_STACK_SCRIPT = $f1.StackPath; LINGER_INSTALL_TEST_ELEVATED = '1' }
+    $rHookElevConn = Invoke-Script @('--connect', '--web-url', 'http://127.0.0.1:9') @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); TALOS_STACK_SCRIPT = $f1.StackPath; TALOS_INSTALL_TEST_ELEVATED = '1' }
     Assert-Exit $rHookElevConn 1 'elevated hook rejected on --connect'
     Assert-Contains $rHookElevConn.StdErr 'non-elevated PowerShell' 'elevated hook --connect message'
 
     $idNow = [Security.Principal.WindowsIdentity]::GetCurrent()
     $isHostElev = (New-Object Security.Principal.WindowsPrincipal($idNow)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if ($isHostElev) {
-        $rRealElev = Invoke-Script @('--connect', '--web-url', 'http://127.0.0.1:9') @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); LINGER_STACK_SCRIPT = $f1.StackPath; LINGER_INSTALL_TEST_ELEVATED = $null }
+        $rRealElev = Invoke-Script @('--connect', '--web-url', 'http://127.0.0.1:9') @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); TALOS_STACK_SCRIPT = $f1.StackPath; TALOS_INSTALL_TEST_ELEVATED = $null }
         Assert-Exit $rRealElev 1 'real elevated token rejected on --connect'
         Assert-Contains $rRealElev.StdErr 'non-elevated PowerShell' 'real elevated message'
     }
 
-    $rElevGuideCancel = Invoke-Script @('--web-url', 'http://127.0.0.1:9') @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); LINGER_STACK_SCRIPT = $f1.StackPath; LINGER_INSTALL_TEST_ELEVATED = '1' } "n`n"
+    $rElevGuideCancel = Invoke-Script @('--web-url', 'http://127.0.0.1:9') @{ USERPROFILE = $f1.HomeDir; HOME = $f1.HomeDir; LOCALAPPDATA = (Join-Path $d1 'localapp'); TALOS_STACK_SCRIPT = $f1.StackPath; TALOS_INSTALL_TEST_ELEVATED = '1' } "n`n"
     Assert-Exit $rElevGuideCancel 0 'elevated guide cancel exit 0'
     Assert-Contains $rElevGuideCancel.StdOut 'running as Administrator' 'elevated warning printed'
     Assert-Contains $rElevGuideCancel.StdOut 'Installation cancelled.' 'elevated guide cancelled'
 
-    # 3. ACL fallback (junction in LOCALAPPDATA -> falls back to .linger\localmodels\kits; junction in USERPROFILE -> temp dir)
+    # 3. ACL fallback (junction in LOCALAPPDATA -> falls back to .talos\localmodels\kits; junction in USERPROFILE -> temp dir)
     $dAcl = Join-Path $workRoot 't-acl'
     $fAcl = New-FakeStack $dAcl
     $jTarget = Join-Path $dAcl 'jtarget'
@@ -587,22 +587,22 @@ try {
     cmd /c mklink /J "$jLocal" "$jTarget" | Out-Null
     cmd /c mklink /J "$jHome" "$jTarget" | Out-Null
 
-    $rAcl1 = Invoke-Script @('--status') @{ USERPROFILE = $fAcl.HomeDir; HOME = $fAcl.HomeDir; LOCALAPPDATA = $jLocal; LINGER_STACK_SCRIPT = $fAcl.StackPath }
-    Assert-Exit $rAcl1 0 'acl fallback to .linger'
+    $rAcl1 = Invoke-Script @('--status') @{ USERPROFILE = $fAcl.HomeDir; HOME = $fAcl.HomeDir; LOCALAPPDATA = $jLocal; TALOS_STACK_SCRIPT = $fAcl.StackPath }
+    Assert-Exit $rAcl1 0 'acl fallback to .talos'
     $kLogged1 = @(Get-Content -LiteralPath $fAcl.KitLogPath)
-    Assert-Equal $kLogged1[0] (Join-Path $fAcl.HomeDir '.linger\localmodels\kits') 'fallback 1 uses .linger'
+    Assert-Equal $kLogged1[0] (Join-Path $fAcl.HomeDir '.talos\localmodels\kits') 'fallback 1 uses .talos'
 
     $privTmp = Join-Path $dAcl 'priv-tmp'
     $null = New-Item -ItemType Directory -Path $privTmp -Force
-    $rAcl2 = Invoke-Script @('--status') @{ USERPROFILE = $jHome; HOME = $jHome; LOCALAPPDATA = $jLocal; TEMP = $privTmp; TMP = $privTmp; LINGER_STACK_SCRIPT = $fAcl.StackPath }
+    $rAcl2 = Invoke-Script @('--status') @{ USERPROFILE = $jHome; HOME = $jHome; LOCALAPPDATA = $jLocal; TEMP = $privTmp; TMP = $privTmp; TALOS_STACK_SCRIPT = $fAcl.StackPath }
     Assert-Exit $rAcl2 0 'acl fallback to temp'
     $kLogged2 = @(Get-Content -LiteralPath $fAcl.KitLogPath)
-    Assert-True ($kLogged2[1].StartsWith((Join-Path $privTmp 'linger-kit.'))) 'fallback 2 uses private temp'
+    Assert-True ($kLogged2[1].StartsWith((Join-Path $privTmp 'talos-kit.'))) 'fallback 2 uses private temp'
 
     # Non-ACL bootstrap error sanitization
     $dBoot = Join-Path $workRoot 't-boot'
     $fBoot = New-FakeStack $dBoot @{ BootstrapError = "stack: GPU service owners unknown`nstack.ps1: internal failure" }
-    $rBoot = Invoke-Script @('--status') @{ USERPROFILE = $fBoot.HomeDir; HOME = $fBoot.HomeDir; LOCALAPPDATA = (Join-Path $dBoot 'la'); LINGER_STACK_SCRIPT = $fBoot.StackPath }
+    $rBoot = Invoke-Script @('--status') @{ USERPROFILE = $fBoot.HomeDir; HOME = $fBoot.HomeDir; LOCALAPPDATA = (Join-Path $dBoot 'la'); TALOS_STACK_SCRIPT = $fBoot.StackPath }
     Assert-Exit $rBoot 1 'bootstrap err exit 1'
     Assert-Contains $rBoot.StdErr 'install.ps1: GPU service owners unknown' 'sanitized stack:'
     Assert-Contains $rBoot.StdErr 'install.ps1: internal failure' 'sanitized stack.ps1:'
@@ -648,8 +648,8 @@ exit 0
             HOME = $fComp.HomeDir
             LOCALAPPDATA = (Join-Path $dComp 'la')
             PATH = "$fakeBin;$env:PATH"
-            LINGER_INSTALL_TEST_ELEVATED = '0'
-            LINGER_INSTALL_BUSY_PORTS = '3000,17880,7881,7882'
+            TALOS_INSTALL_TEST_ELEVATED = '0'
+            TALOS_INSTALL_BUSY_PORTS = '3000,17880,7881,7882'
         }
 
         $rDecline = Invoke-Script @('--web-url', 'http://127.0.0.1:9') $envComp "1`nn`n" $copiedCompInstall $fakeRepo
@@ -658,14 +658,14 @@ exit 0
 
         [IO.File]::WriteAllText((Join-Path $fakeRepo '.env'), "WEB_PUBLIC_ORIGIN=$($mComp.Server.BaseUrl)`nWEB_HTTP_PORT=$mockPort`nLIVEKIT_URL=ws://127.0.0.1:17880`n", $script:Utf8NoBom)
         $envCompFail = $envComp.Clone()
-        $envCompFail['LINGER_INSTALL_BUSY_PORTS'] = '17880,7881,7882'
+        $envCompFail['TALOS_INSTALL_BUSY_PORTS'] = '17880,7881,7882'
         $envCompFail['FAKE_OWNER_FAIL'] = '1'
         $rRemap = Invoke-Script @('--web-url', 'http://127.0.0.1:9') $envCompFail "1`ny`ny`n`nshort`n`nn`nn`n" $copiedCompInstall $fakeRepo
         Assert-Exit $rRemap 0 'compose remap + decline download'
         Assert-Contains $rRemap.StdOut 'Port(s) already in use: 17880, 7881, 7882' 'busy ports listed'
         Assert-Contains $rRemap.StdOut 'Password must be at least 8 characters' 'short password warning'
         Assert-Contains $rRemap.StdOut 'Could not create owner account' 'owner create fail msg'
-        Assert-Contains $rRemap.StdOut "Linger server is ready at $($mComp.Server.BaseUrl)" 'reset explicit url to compose origin'
+        Assert-Contains $rRemap.StdOut "Talos server is ready at $($mComp.Server.BaseUrl)" 'reset explicit url to compose origin'
 
         $envTxt = [IO.File]::ReadAllText((Join-Path $fakeRepo '.env'), $script:Utf8NoBom)
         $envBytes = [IO.File]::ReadAllBytes((Join-Path $fakeRepo '.env'))
@@ -680,17 +680,17 @@ exit 0
 
         # Verify owner default password 'test1234' arrives via stdin when owner succeeds
         $envCompOk = $envComp.Clone()
-        $envCompOk['LINGER_INSTALL_BUSY_PORTS'] = ''
+        $envCompOk['TALOS_INSTALL_BUSY_PORTS'] = ''
         $rOwnerOk = Invoke-Script @('--web-url', 'http://127.0.0.1:9') $envCompOk "1`ny`n`n`nn`nn`n" $copiedCompInstall $fakeRepo
         Assert-Exit $rOwnerOk 0 'owner success flow'
         Assert-Contains $rOwnerOk.StdOut 'Reminder: change the default password in Settings -> Security.' 'default owner password reminder'
         Assert-Equal ([IO.File]::ReadAllText($teamhubLog, $script:Utf8NoBom).Trim()) 'test1234' 'default owner password sent'
 
-        # Custom URL, force unreachable, Choice 3 local-only, LINGER_WEB_URL
+        # Custom URL, force unreachable, Choice 3 local-only, TALOS_WEB_URL
         $rCustom = Invoke-Script @('--web-url', 'http://127.0.0.1:9') $envCompOk "2`nnot-a-url`nhttp://127.0.0.1:9`nn`n$($mComp.Server.BaseUrl)`nn`nn`n" $copiedCompInstall $fakeRepo
         Assert-Exit $rCustom 0 'custom url retry'
         Assert-Contains $rCustom.StdOut 'Invalid URL' 'invalid url prompt'
-        Assert-Contains $rCustom.StdOut "Found Linger server at $($mComp.Server.BaseUrl)" 'found server after retry'
+        Assert-Contains $rCustom.StdOut "Found Talos server at $($mComp.Server.BaseUrl)" 'found server after retry'
 
         $rForce = Invoke-Script @('--web-url', 'http://127.0.0.1:9') $envCompOk "2`nhttp://127.0.0.1:8`ny`nn`nn`n" $copiedCompInstall $fakeRepo
         Assert-Exit $rForce 0 'force unreachable url'
@@ -708,7 +708,7 @@ exit 0
     $fZero = New-FakeStack $dZero @{ Picks = @() }
     $mZero = Start-MockServer $dZero $false
     try {
-        $rZero = Invoke-Script @('--web-url', $mZero.Server.BaseUrl) @{ USERPROFILE = $fZero.HomeDir; HOME = $fZero.HomeDir; LOCALAPPDATA = (Join-Path $dZero 'la'); LINGER_STACK_SCRIPT = $fZero.StackPath; LINGER_INSTALL_TEST_ELEVATED = '0' }
+        $rZero = Invoke-Script @('--web-url', $mZero.Server.BaseUrl) @{ USERPROFILE = $fZero.HomeDir; HOME = $fZero.HomeDir; LOCALAPPDATA = (Join-Path $dZero 'la'); TALOS_STACK_SCRIPT = $fZero.StackPath; TALOS_INSTALL_TEST_ELEVATED = '0' }
         Assert-Exit $rZero 1 'zero picks exits 1'
         Assert-Contains $rZero.StdErr 'No supported local model fits' 'zero picks msg'
     } finally {
@@ -728,7 +728,7 @@ exit 0
     $fPre = New-FakeStack $dPre @{ Picks = $multiPicks; Findings = $findings }
     $mPre = Start-MockServer $dPre $false
     try {
-        $envPre = @{ USERPROFILE = $fPre.HomeDir; HOME = $fPre.HomeDir; LOCALAPPDATA = (Join-Path $dPre 'la'); LINGER_STACK_SCRIPT = $fPre.StackPath; LINGER_INSTALL_TEST_ELEVATED = '0' }
+        $envPre = @{ USERPROFILE = $fPre.HomeDir; HOME = $fPre.HomeDir; LOCALAPPDATA = (Join-Path $dPre 'la'); TALOS_STACK_SCRIPT = $fPre.StackPath; TALOS_INSTALL_TEST_ELEVATED = '0' }
         $rBadPick = Invoke-Script @('--web-url', $mPre.Server.BaseUrl) $envPre "9`n"
         Assert-Exit $rBadPick 1 'bad model pick'
         Assert-Contains $rBadPick.StdErr 'Invalid choice: 9' 'bad model pick msg'
@@ -762,13 +762,13 @@ exit 0
             USERPROFILE = $fFull.HomeDir
             HOME = $fFull.HomeDir
             LOCALAPPDATA = (Join-Path $dFull 'la')
-            LINGER_COMPUTER_BIN_DIR = (Join-Path $dFull 'cbin')
-            LINGER_STACK_SCRIPT = $fFull.StackPath
-            LINGER_INSTALL_TEST_ELEVATED = '0'
+            TALOS_COMPUTER_BIN_DIR = (Join-Path $dFull 'cbin')
+            TALOS_STACK_SCRIPT = $fFull.StackPath
+            TALOS_INSTALL_TEST_ELEVATED = '0'
         }
         $rFull = Invoke-Script @('--web-url', $mFull.Server.BaseUrl) $envFull "n`ny`n"
         Assert-Exit $rFull 0 'full flow exit 0'
-        Assert-Contains $rFull.StdOut '[4/4] Connecting this computer to Linger' 'step 4 header'
+        Assert-Contains $rFull.StdOut '[4/4] Connecting this computer to Talos' 'step 4 header'
         Assert-Contains $rFull.StdOut 'Done.' 'done printed'
         Assert-NotContains $rFull.StdOut 'stack.ps1' 'apply sanitized stack.ps1'
         Assert-NotContains $rFull.StdOut 'stack:' 'apply sanitized stack:'
@@ -803,9 +803,9 @@ exit 0
             USERPROFILE = $fDay2.HomeDir
             HOME = $fDay2.HomeDir
             LOCALAPPDATA = (Join-Path $dDay2 'la')
-            LINGER_COMPUTER_BIN_DIR = (Join-Path $dDay2 'cbin')
-            LINGER_STACK_SCRIPT = $fDay2.StackPath
-            LINGER_INSTALL_TEST_ELEVATED = '0'
+            TALOS_COMPUTER_BIN_DIR = (Join-Path $dDay2 'cbin')
+            TALOS_STACK_SCRIPT = $fDay2.StackPath
+            TALOS_INSTALL_TEST_ELEVATED = '0'
         }
         $rReuseNo = Invoke-Script @('--web-url', $mDay2.Server.BaseUrl) $envDay2 "1`nn`n"
         Assert-Exit $rReuseNo 3 'reuse share decline preserves up exit code'
@@ -881,10 +881,10 @@ exit 0
             USERPROFILE = $hPkg
             HOME = $hPkg
             LOCALAPPDATA = $laPkg
-            LINGER_STACK_SCRIPT = $null
-            LINGER_STACK_URL = $null
+            TALOS_STACK_SCRIPT = $null
+            TALOS_STACK_URL = $null
             SIMPLEX_NPM_REGISTRY = $srvBad.BaseUrl
-            LINGER_INSTALL_TEST_ELEVATED = '0'
+            TALOS_INSTALL_TEST_ELEVATED = '0'
         }
         $rTampered = Invoke-Script @('--status') $envBad '' $saPs1 $saPkgDir
         Assert-Exit $rTampered 1 'tampered npm tgz rejected'
@@ -923,10 +923,10 @@ exit 0
             USERPROFILE = $hPkg
             HOME = $hPkg
             LOCALAPPDATA = $laPkg
-            LINGER_STACK_SCRIPT = $null
-            LINGER_STACK_URL = $null
+            TALOS_STACK_SCRIPT = $null
+            TALOS_STACK_URL = $null
             SIMPLEX_NPM_REGISTRY = $srvGood.BaseUrl
-            LINGER_INSTALL_TEST_ELEVATED = '0'
+            TALOS_INSTALL_TEST_ELEVATED = '0'
         }
         $rGood = Invoke-Script @('--status') $envGood '' $pinnedSaPs1 $saPkgDir
         Assert-Exit $rGood 0 'verified npm tgz executes status'

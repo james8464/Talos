@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 func runFakeSourceTool(state string, args []string) int {

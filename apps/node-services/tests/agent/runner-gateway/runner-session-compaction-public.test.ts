@@ -1,4 +1,4 @@
-import type { RunnerHello } from "@linger/wire-contracts/runner-gateway/types";
+import type { RunnerHello } from "@talos/wire-contracts/runner-gateway/types";
 import { describe, expect, it, vi } from "vitest";
 import { LocalComputerOfflineError } from "../../../src/agent/runner-gateway/local-computer-management.js";
 import type {

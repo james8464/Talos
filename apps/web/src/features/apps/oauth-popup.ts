@@ -1,6 +1,6 @@
 import { desktopConnectorOAuth } from "./desktop-connector-oauth";
 
-const OAUTH_POPUP_NAME = "linger_composio_oauth";
+const OAUTH_POPUP_NAME = "talos_composio_oauth";
 const OAUTH_POPUP_WIDTH = 560;
 const OAUTH_POPUP_HEIGHT = 720;
 

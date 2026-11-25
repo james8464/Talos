@@ -138,7 +138,7 @@ start_teamhub() {
 		"TEAMHUB_DATABASE_URL=$database_url"
 		"TEAMHUB_HTTP_ADDRESS=127.0.0.1:$http_port"
 		"TEAMHUB_ARTIFACT_STORAGE_ROOT=$work_dir/artifacts"
-		"LINGER_SECRET_SEED=$secret_seed"
+		"TALOS_SECRET_SEED=$secret_seed"
 	)
 	if [[ $registry_mode == configured ]]; then
 		environment+=("TEAMHUB_NODE_SERVICES_URL=$agent_url")

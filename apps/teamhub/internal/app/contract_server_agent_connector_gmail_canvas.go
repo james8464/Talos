@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentconnectedapps"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentconnectedapps"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 // saveConnectorGmailCanvasDraft saves a canvas as a draft of the connection's

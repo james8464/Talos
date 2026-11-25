@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 type fakeAdmission struct {
@@ -212,7 +212,7 @@ func writeBundle(t *testing.T, root, bundle string) {
 	t.Helper()
 	writeFile(t, filepath.Join(root, bundle, appSHA256File), buildSHA(bundle)+"\n", 0o600)
 	writeFile(t, filepath.Join(root, bundle, "daemon", daemonEntry), "#!/bin/sh\nexit 0\n", 0o755)
-	writeFile(t, filepath.Join(root, bundle, "cli", "linger-computer"), "", 0o755)
+	writeFile(t, filepath.Join(root, bundle, "cli", "talos-computer"), "", 0o755)
 	writeFile(t, filepath.Join(root, bundle, "runtime", "bin", "node"), "", 0o755)
 }
 
@@ -242,7 +242,7 @@ func testOptions(executable string, admission Admission, stager Stager, stop fun
 		Executable:     executable,
 		ConfigPath:     "/cfg/config.json",
 		Args:           []string{executable, "--config", "/cfg/config.json"},
-		Env:            []string{"PATH=/bin", "KEEP=1", "LINGER_COMPUTER_SERVICE_COMMAND=[\"old\"]"},
+		Env:            []string{"PATH=/bin", "KEEP=1", "TALOS_COMPUTER_SERVICE_COMMAND=[\"old\"]"},
 		Admission:      admission,
 		Stager:         stager,
 		Stop:           stop,
@@ -678,7 +678,7 @@ func assertServiceCommand(t *testing.T, environment []string, root, bundle strin
 	if err := json.Unmarshal([]byte(strings.TrimPrefix(found[0], serviceCommandEnv+"=")), &command); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{filepath.Join(root, bundle, "cli", "linger-computer"), "--config", "/cfg/config.json"}
+	want := []string{filepath.Join(root, bundle, "cli", "talos-computer"), "--config", "/cfg/config.json"}
 	if strings.Join(command, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("service command = %q, want %q", command, want)
 	}

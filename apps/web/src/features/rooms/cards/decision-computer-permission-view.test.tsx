@@ -31,7 +31,7 @@ const card: Card = {
   title: "System permission needed on your Mac",
   computer_permission: {
     computer_id: "computer-mac",
-    subject: "linger",
+    subject: "talos",
     permissions: ["screen_recording", "accessibility"],
     reason: "Take a screenshot of the report",
   },
@@ -54,12 +54,12 @@ function status(...permissions: Entry[]) {
   return {
     platform: "darwin",
     host: "desktop",
-    subjects: [{ subject: "linger", permissions }],
+    subjects: [{ subject: "talos", permissions }],
   };
 }
 
 function desktopOn(computerId: string, act?: (step: unknown) => unknown) {
-  (window as { lingerDesktop?: unknown }).lingerDesktop = {
+  (window as { talosDesktop?: unknown }).talosDesktop = {
     ...(act ? { permissions: { act } } : {}),
     computer: {
       enroll: vi.fn(),
@@ -75,7 +75,7 @@ function desktopOn(computerId: string, act?: (step: unknown) => unknown) {
 }
 
 afterEach(() => {
-  delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+  delete (window as { talosDesktop?: unknown }).talosDesktop;
 });
 
 function setup({
@@ -175,8 +175,8 @@ describe("Computer permission card", () => {
     ).toHaveLength(1);
     expect(document.querySelector(".card-prompt")).toBeNull();
     expect(screen.queryByText(/Asks you|wants to use/)).not.toBeInTheDocument();
-    expect(screen.getByText("Linger · Screen Recording")).toBeVisible();
-    expect(screen.getByText("Linger · Accessibility")).toBeVisible();
+    expect(screen.getByText("Talos · Screen Recording")).toBeVisible();
+    expect(screen.getByText("Talos · Accessibility")).toBeVisible();
     fireEvent.click(await screen.findByRole("button", { name: "Request" }));
     // One step runs at a time; the next button returns once it answered.
     const settings = screen.getByRole("button", { name: "Open Settings" });
@@ -189,7 +189,7 @@ describe("Computer permission card", () => {
           path: permissionsPath,
           body: {
             action: "prompt",
-            subject: "linger",
+            subject: "talos",
             permission: "screen_recording",
           },
         },
@@ -198,7 +198,7 @@ describe("Computer permission card", () => {
           path: permissionsPath,
           body: {
             action: "open_settings",
-            subject: "linger",
+            subject: "talos",
             permission: "accessibility",
           },
         },
@@ -241,15 +241,15 @@ describe("Computer permission card", () => {
       ),
     });
     fireEvent.click(
-      await screen.findByRole("button", { name: "Relaunch Linger" }),
+      await screen.findByRole("button", { name: "Relaunch Talos" }),
     );
-    expect(screen.getByText("Relaunch Linger to apply")).toBeVisible();
+    expect(screen.getByText("Relaunch Talos to apply")).toBeVisible();
     expect(screen.getByText("Granted")).toBeVisible();
     await waitFor(() =>
       expect(requests.at(-1)).toEqual({
         method: "POST",
         path: permissionsPath,
-        body: { action: "relaunch", subject: "linger" },
+        body: { action: "relaunch", subject: "talos" },
       }),
     );
   });
@@ -278,7 +278,7 @@ describe("Computer permission card", () => {
     await waitFor(() =>
       expect(act).toHaveBeenCalledWith({
         action: "prompt",
-        subject: "linger",
+        subject: "talos",
         permission: "screen_recording",
       }),
     );
@@ -337,7 +337,7 @@ describe("Computer permission card", () => {
           path: permissionsPath,
           body: {
             action: "prompt",
-            subject: "linger",
+            subject: "talos",
             permission: "screen_recording",
           },
         },
@@ -355,7 +355,7 @@ describe("Computer permission card", () => {
     });
     expect(
       await screen.findByText(
-        "Open Linger on that Mac to grant these permissions.",
+        "Open Talos on that Mac to grant these permissions.",
       ),
     ).toBeVisible();
     expect(
@@ -379,7 +379,7 @@ describe("Computer permission card", () => {
   it("gives other members no buttons", async () => {
     desktopOn("computer-mac");
     const { requests } = setup({ actorId: "bob" });
-    expect(await screen.findByText("Linger · Screen Recording")).toBeVisible();
+    expect(await screen.findByText("Talos · Screen Recording")).toBeVisible();
     expect(screen.queryByText(/Waiting for Alice/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(requests).toEqual([]);
@@ -409,7 +409,7 @@ describe("Computer permission card", () => {
       // A granted card marks each row Granted too; the done line is last.
       const line = (await screen.findAllByText(done)).at(-1)!;
       expect(line.closest("p")?.querySelector("svg")).toHaveClass(tone);
-      expect(screen.getByText("Linger · Screen Recording")).toBeVisible();
+      expect(screen.getByText("Talos · Screen Recording")).toBeVisible();
       expect(
         screen.getByRole("heading", {
           level: 3,

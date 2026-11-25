@@ -10,7 +10,7 @@ import type {
   AgentRunnerRemove,
   AgentRunnerRemoved,
   AgentRunnerSnapshot,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import { assertRunnerGatewayTopology } from "../contracts/codegen/runner-asyncapi-topology.mjs";
 

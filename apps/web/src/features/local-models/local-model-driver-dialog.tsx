@@ -12,7 +12,7 @@ import {
   minNvidiaDriverForCuda,
   type DesktopDriverInstallState,
   type LinuxNvidiaDistro,
-} from "@linger/service-kit/nvidia-driver";
+} from "@talos/service-kit/nvidia-driver";
 import { useEffect, useRef, useState } from "react";
 
 import { Button, buttonClassName } from "@/components/ui/button";
@@ -66,7 +66,7 @@ function isDirectInstallBusy(state: DesktopDriverInstallState): boolean {
 
 /**
  * Guides the owner through updating an outdated NVIDIA graphics driver:
- * supports signed one-click Windows installation when available on Linger
+ * supports signed one-click Windows installation when available on Talos
  * Desktop, launches NVIDIA App when installed, links to NVIDIA's official
  * download portal, shows copyable Linux distro commands, and auto-rechecks
  * when installation completes or the window regains focus.

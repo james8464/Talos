@@ -1,4 +1,4 @@
-const recoveredBuildStorageKey = "linger.web.vite-preload-recovery.v1";
+const recoveredBuildStorageKey = "talos.web.vite-preload-recovery.v1";
 
 interface VitePreloadRecoveryOptions {
   buildId: string;

@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/keywordsearch"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/keywordsearch"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // searchTenantMessages answers GET /v0/tenants/{tenantId}/messages/search:

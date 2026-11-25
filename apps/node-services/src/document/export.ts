@@ -3,9 +3,9 @@ import {
   ROOM_DOCUMENT_MAX_STATE_BYTES,
   type RoomDocumentAssetManifestEntry,
   type RoomDocumentExportFormat,
-} from "@linger/document-model";
-import type { DocumentRuntimeHandlers } from "@linger/wire-contracts/node-services-internal/server";
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+} from "@talos/document-model";
+import type { DocumentRuntimeHandlers } from "@talos/wire-contracts/node-services-internal/server";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 
 import type { DocumentComputation } from "./computation-pool.js";
 import { RuntimeInputError, sha256Pattern } from "./runtime-input.js";

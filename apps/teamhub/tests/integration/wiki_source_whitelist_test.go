@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 // whitelistPDF assembles a one-page PDF that either draws text or only an

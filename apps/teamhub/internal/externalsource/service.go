@@ -13,11 +13,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/proactive"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/proactive"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 var (

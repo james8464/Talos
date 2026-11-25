@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/personalprofile"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/personalprofile"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 type Service struct {

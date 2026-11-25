@@ -11,7 +11,7 @@ import (
 
 // The link is provisioned separately because an ordinary user may not create symlinks.
 func TestWindowsSetupRejectsPrecreatedFileSymlink(t *testing.T) {
-	root := os.Getenv("LINGER_TEST_WINDOWS_SYMLINK_FIXTURE")
+	root := os.Getenv("TALOS_TEST_WINDOWS_SYMLINK_FIXTURE")
 	if root == "" {
 		t.Skip("requires an administrator-provisioned symlink fixture")
 	}

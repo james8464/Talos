@@ -146,10 +146,10 @@ export async function verifyWindowsAuthenticode(
       windowsPowerShellPath(),
       [
         ...BASE_ARGS,
-        "$sig = Get-AuthenticodeSignature -LiteralPath $env:LINGER_DRIVER_EXE; [PSCustomObject]@{ Status = [string]$sig.Status; Subject = if ($sig.SignerCertificate) { [string]$sig.SignerCertificate.Subject } else { '' }; SimpleName = if ($sig.SignerCertificate) { [string]$sig.SignerCertificate.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false) } else { '' } } | ConvertTo-Json -Compress",
+        "$sig = Get-AuthenticodeSignature -LiteralPath $env:TALOS_DRIVER_EXE; [PSCustomObject]@{ Status = [string]$sig.Status; Subject = if ($sig.SignerCertificate) { [string]$sig.SignerCertificate.Subject } else { '' }; SimpleName = if ($sig.SignerCertificate) { [string]$sig.SignerCertificate.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false) } else { '' } } | ConvertTo-Json -Compress",
       ],
       {
-        env: { ...process.env, LINGER_DRIVER_EXE: exePath },
+        env: { ...process.env, TALOS_DRIVER_EXE: exePath },
         timeout: 30_000,
         windowsHide: true,
       },
@@ -171,7 +171,7 @@ export async function verifyWindowsAuthenticode(
  * exceptions in `MethodInvocationException`.
  */
 export const WINDOWS_DRIVER_INSTALLER_SCRIPT =
-  "$ErrorActionPreference = 'Stop'; try { $psi = [System.Diagnostics.ProcessStartInfo]::new($env:LINGER_DRIVER_EXE, '-s -noreboot -noeula'); $psi.UseShellExecute = $true; $psi.Verb = 'runas'; $p = [System.Diagnostics.Process]::Start($psi); if ($null -eq $p) { [PSCustomObject]@{ win32Error = $null } | ConvertTo-Json -Compress } else { try { $p.WaitForExit(); [PSCustomObject]@{ exitCode = $p.ExitCode } | ConvertTo-Json -Compress } finally { $p.Dispose() } } } catch [System.ComponentModel.Win32Exception] { $e = $_.Exception; $win32 = $null; while ($e) { if ($e -is [System.ComponentModel.Win32Exception]) { $win32 = $e.NativeErrorCode; break }; $e = $e.InnerException }; [PSCustomObject]@{ win32Error = $win32 } | ConvertTo-Json -Compress } catch { [PSCustomObject]@{ win32Error = $null } | ConvertTo-Json -Compress }";
+  "$ErrorActionPreference = 'Stop'; try { $psi = [System.Diagnostics.ProcessStartInfo]::new($env:TALOS_DRIVER_EXE, '-s -noreboot -noeula'); $psi.UseShellExecute = $true; $psi.Verb = 'runas'; $p = [System.Diagnostics.Process]::Start($psi); if ($null -eq $p) { [PSCustomObject]@{ win32Error = $null } | ConvertTo-Json -Compress } else { try { $p.WaitForExit(); [PSCustomObject]@{ exitCode = $p.ExitCode } | ConvertTo-Json -Compress } finally { $p.Dispose() } } } catch [System.ComponentModel.Win32Exception] { $e = $_.Exception; $win32 = $null; while ($e) { if ($e -is [System.ComponentModel.Win32Exception]) { $win32 = $e.NativeErrorCode; break }; $e = $e.InnerException }; [PSCustomObject]@{ win32Error = $win32 } | ConvertTo-Json -Compress } catch { [PSCustomObject]@{ win32Error = $null } | ConvertTo-Json -Compress }";
 
 /**
  * Runs a verified NVIDIA Windows DCH installer with UAC elevation in silent,
@@ -186,7 +186,7 @@ export async function runWindowsDriverInstaller(
       windowsPowerShellPath(),
       [...BASE_ARGS, WINDOWS_DRIVER_INSTALLER_SCRIPT],
       {
-        env: { ...process.env, LINGER_DRIVER_EXE: exePath },
+        env: { ...process.env, TALOS_DRIVER_EXE: exePath },
         timeout: 30 * 60_000,
         windowsHide: true,
       },

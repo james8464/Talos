@@ -1,13 +1,13 @@
 import { createServer, type Server } from "node:net";
 import { Worker } from "node:worker_threads";
 
-import type { JsonLogger } from "@linger/service-kit/node";
+import type { JsonLogger } from "@talos/service-kit/node";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { startDocumentService } from "../../src/document/main.js";
 
 const environment = {
-  LINGER_SECRET_SEED: "test-seed-0123456789abcdef0123456789",
+  TALOS_SECRET_SEED: "test-seed-0123456789abcdef0123456789",
   // Nothing listens here. The body store connects on its first statement, and
   // these tests open no Document.
   TEAMHUB_DATABASE_URL: "postgres://teamhub@127.0.0.1:9/teamhub",

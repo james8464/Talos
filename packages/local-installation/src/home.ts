@@ -10,19 +10,19 @@ export const INSTANCE_NAME = /^[a-z][a-z0-9-]{0,39}$/;
 // Simplex; it marks an instance legacy-migration.ts has not converted yet.
 export const LEGACY_PROJECT_PREFIX = "simplex-";
 
-/** The installation home: LINGER_HOME, else ~/.simplexai. */
-export function lingerHome(
+/** The installation home: TALOS_HOME, else ~/.simplexai. */
+export function talosHome(
   environment: NodeJS.ProcessEnv = process.env,
   userHome: string = homedir(),
 ): string {
   return path.resolve(
-    environment.LINGER_HOME || path.join(userHome, ".simplexai"),
+    environment.TALOS_HOME || path.join(userHome, ".simplexai"),
   );
 }
 
 /**
- * An instance record from before the rename that Linger converts. One from a
- * Docker-mode install (mode "source" or "release") is left as it is: Linger
+ * An instance record from before the rename that Talos converts. One from a
+ * Docker-mode install (mode "source" or "release") is left as it is: Talos
  * no longer runs it, says so when it is opened, and its compose project
  * name is what removes its containers.
  */

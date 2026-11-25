@@ -19,8 +19,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -39,7 +39,7 @@ type AssetOptions struct {
 // assetObjectID derives the object an Asset's bytes are stored under, the same
 // for every way a Document gains an Asset, so a retried upload finds its bytes.
 func assetObjectID(assetID string) string {
-	digest := sha256.Sum256([]byte("linger/room-document/asset-object/" + assetID))
+	digest := sha256.Sum256([]byte("talos/room-document/asset-object/" + assetID))
 	return "object_" + hex.EncodeToString(digest[:16])
 }
 

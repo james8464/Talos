@@ -35,8 +35,8 @@ import { useAgentMentionStyle } from "./agent-mention-style";
 import { chatMessages } from "./chat.messages";
 import { followChatExternalLink } from "./chat-external-link";
 
-const mentionUrlPrefix = "linger-actor:";
-const documentUrlPrefix = "linger-document:";
+const mentionUrlPrefix = "talos-actor:";
+const documentUrlPrefix = "talos-document:";
 
 const humanElements = [
   "a",
@@ -500,7 +500,7 @@ function prepareMentionContent(
   }
 
   // Preserve each reference's position and identity through Markdown parsing.
-  const literalTokens = new Set(body.match(/LINGERMENTION\d+END/g) ?? []);
+  const literalTokens = new Set(body.match(/TALOSMENTION\d+END/g) ?? []);
   let tokenId = 0;
   const content = segments
     .map((segment, index) => {
@@ -517,8 +517,8 @@ function prepareMentionContent(
       ) {
         return gap + segment.content;
       }
-      let token = `LINGERMENTION${tokenId++}END`;
-      while (literalTokens.has(token)) token = `LINGERMENTION${tokenId++}END`;
+      let token = `TALOSMENTION${tokenId++}END`;
+      while (literalTokens.has(token)) token = `TALOSMENTION${tokenId++}END`;
       const actor = mentions.find((item) => item.id === segment.target);
       tokens.set(token, {
         actorId: segment.target,

@@ -3,7 +3,7 @@ import type {
   CapabilityComputerPermission,
   ComputerPermissionStatus,
   RunnerCapability,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -25,7 +25,7 @@ const granted: ComputerPermissionStatus = {
   host: "desktop",
   subjects: [
     {
-      subject: "linger",
+      subject: "talos",
       permissions: [
         {
           id: "screen_recording",
@@ -115,13 +115,13 @@ describe("Runner Gateway computer permissions", () => {
     const prompting = gateway.computerPermissions({
       ...target,
       action: "prompt",
-      subject: "linger",
+      subject: "talos",
       permission: "screen_recording",
     });
     const request = await command();
     expect(request).toMatchObject({
       action: "prompt",
-      subject: "linger",
+      subject: "talos",
       permission: "screen_recording",
       runner_id: "computer-local",
       tenant_id: "tenant-1",
@@ -175,7 +175,7 @@ describe("Runner Gateway computer permissions", () => {
       gateway.computerPermissions({
         ...target,
         action: "prompt",
-        subject: "linger",
+        subject: "talos",
       }),
     ).rejects.toBeInstanceOf(LocalComputerPermissionError);
     expect(sent.some(isPermissionCommand)).toBe(false);

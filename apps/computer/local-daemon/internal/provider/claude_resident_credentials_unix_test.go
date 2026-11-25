@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // The fake serves stream-json turns and stays parked. On TERM it waits, then
@@ -25,7 +25,7 @@ trap 'sleep 0.3; sed -n "s/.*\"accessToken\":\"\([^\"]*\)\".*/\1/p" "$CLAUDE_CON
 while IFS= read -r line; do
   case "$line" in
     *'"subtype":"initialize"'*)
-      printf '{"type":"control_response","response":{"subtype":"success","request_id":"linger-session-restore","response":{}}}\n'
+      printf '{"type":"control_response","response":{"subtype":"success","request_id":"talos-session-restore","response":{}}}\n'
       continue ;;
   esac
   uuid=$(printf '%s' "$line" | sed 's/.*"uuid":"\([^"]*\)".*/\1/')

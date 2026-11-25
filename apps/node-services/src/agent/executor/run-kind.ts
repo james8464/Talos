@@ -1,4 +1,4 @@
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import { runPriorities, type RunKind } from "../../model-tasks.js";
 import type { ExecutionContextRef } from "./context-ref.js";
 import type { RuntimeStateSchemas } from "./teamhub-runtime-state-client.js";

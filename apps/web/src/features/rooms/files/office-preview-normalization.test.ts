@@ -39,7 +39,7 @@ describe("Office preview normalization", () => {
       "rgb(255, 255, 255)",
     );
     expect(pptxCanvas(container)).toHaveAttribute(
-      "data-linger-background-repaired",
+      "data-talos-background-repaired",
       "true",
     );
   });
@@ -54,7 +54,7 @@ describe("Office preview normalization", () => {
 
     expect(pptxCanvas(container).style.backgroundColor).toBe("rgb(0, 0, 0)");
     expect(pptxCanvas(container)).not.toHaveAttribute(
-      "data-linger-background-repaired",
+      "data-talos-background-repaired",
     );
   });
 });

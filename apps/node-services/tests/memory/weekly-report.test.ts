@@ -53,7 +53,7 @@ week_start: 2026-10-12
 memory_subject_key: agent_alice
 status: stable
 generated:
-  by: linger-memory/1
+  by: talos-memory/1
   at: 2026-10-19T00:00:00.000Z
 sources:
   - title: Daily 2026-10-13

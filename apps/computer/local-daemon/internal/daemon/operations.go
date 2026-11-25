@@ -9,11 +9,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/mcpproxy"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
 )
 
 func (d *Daemon) awaitOperation(ctx context.Context, command protocol.Command, spec provider.OperationSpec, resultCh <-chan provider.Result) {
@@ -311,7 +311,7 @@ func terminalPayload(spec provider.OperationSpec, result provider.Result) json.R
 	case "codex", "antigravity":
 		session = map[string]any{"threadId": sessionID}
 	case "claude", "pi":
-		session = map[string]any{"provider": spec.Provider, "sessionId": sessionID, "lingerMaterialized": true}
+		session = map[string]any{"provider": spec.Provider, "sessionId": sessionID, "talosMaterialized": true}
 	default:
 		session = map[string]any{"thread_id": sessionID}
 	}

@@ -7,11 +7,11 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomcreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // ErrAgentTemplateUnavailable reports a template an Agent creation cannot install.

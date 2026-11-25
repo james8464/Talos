@@ -100,7 +100,7 @@ function unavailable(failed?: {
     if (code === "RUNTIME_EXTENSIONS_FAILED")
       return Object.assign(
         new Error(
-          "Pi cannot load extensions, which Linger needs on every run. If you installed Pi yourself, update or remove it, then try again.",
+          "Pi cannot load extensions, which Talos needs on every run. If you installed Pi yourself, update or remove it, then try again.",
         ),
         { code },
       );
@@ -180,7 +180,7 @@ function inspectionFromDescriptor(
       ? {}
       : {
           loginInstructions:
-            "Choose an API provider and enter its key in Linger.",
+            "Choose an API provider and enter its key in Talos.",
         }),
     descriptor: row,
   };
@@ -251,7 +251,7 @@ export function runtimeEnvironmentFromDescriptors(
     ]) {
       if (row.environment?.[key] !== undefined) env[key] = row.environment[key];
     }
-    const key = `LINGER_${row.runtime.toUpperCase()}_PATH`;
+    const key = `TALOS_${row.runtime.toUpperCase()}_PATH`;
     if (row.installed && row.executable) {
       if (row.argvPrefix.length)
         throw new Error(
@@ -467,7 +467,7 @@ export async function prepareRuntime(
       message: `${runtime} is installed and authenticated.`,
       details: state,
     };
-  const message = `${runtime} requires authentication. Continue in Linger or choose to sign in later; business services remain available.`;
+  const message = `${runtime} requires authentication. Continue in Talos or choose to sign in later; business services remain available.`;
   options.onEvent({
     kind: "stage",
     stage: "runtime",

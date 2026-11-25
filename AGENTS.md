@@ -1,4 +1,4 @@
-# Linger: Human and Agent collaboration centered on Rooms
+# Talos: Human and Agent collaboration centered on Rooms
 
 This monorepo uses React/Vite for Web, Go for TeamHub and the Local Computer
 Daemon, and TypeScript for the Agent Service, Document Runtime, LLM Wiki,
@@ -15,8 +15,8 @@ Memory, and Voice services.
   PostgreSQL.
 - `docker compose up --build`: build and run every service in containers,
   PostgreSQL and LiveKit included.
-- `pnpm --filter @linger/web test <test-file>`: run one Web test (the script sets the Node flags jsdom needs).
-- `pnpm --filter @linger/node-services exec vitest run <test-file>`: run one
+- `pnpm --filter @talos/web test <test-file>`: run one Web test (the script sets the Node flags jsdom needs).
+- `pnpm --filter @talos/node-services exec vitest run <test-file>`: run one
   Node Services test, including the Agent Service's under `tests/agent/`.
 - `make -C apps/teamhub test`: run TeamHub unit tests.
 - `pnpm contracts:generate && pnpm contracts:verify`: regenerate and verify OpenAPI consumers.
@@ -47,9 +47,9 @@ Memory, and Voice services.
   schemas and host file helpers.
 - `contracts`: authoritative cross-process OpenAPI and generated Go/TypeScript modules.
 - `packages/document-model`: shared Room Document schema inspection and deterministic state helpers.
-- `packages/service-kit`: shared isomorphic guards and helpers (`@linger/service-kit`) and the Node JSON logger and SHA-256 helper (`@linger/service-kit/node`).
+- `packages/service-kit`: shared isomorphic guards and helpers (`@talos/service-kit`) and the Node JSON logger and SHA-256 helper (`@talos/service-kit/node`).
 - `skills`: versioned built-in Skill assets embedded into TeamHub.
-- `.agents/skills/verify-linger`: acceptance recipes and an isolated
+- `.agents/skills/verify-talos`: acceptance recipes and an isolated
   real-service proof for a coding Agent verifying user journeys.
 
 ## Important Conventions
@@ -85,7 +85,7 @@ Memory, and Voice services.
 - Before opening a pull request, run the fast checks for every touched app:
   - Web: `make check-web` (typecheck, unit tests, and React Doctor). If the
     change adds a static import on the Room or app initial graph, also run
-    `pnpm --filter @linger/web run build:assets` to check the initial JS
+    `pnpm --filter @talos/web run build:assets` to check the initial JS
     budget.
   - TeamHub: `make -C apps/teamhub fmt-check` and
     `go test ./tests/integration/layout -count=1` (structural layout rules, no
@@ -144,14 +144,14 @@ to comply.
   the teamhub CLI passes through (see `apps/teamhub-cli/AGENTS.md`). Go handlers write it through
   `writeError`; never return a bare `{"error": "..."}` or a hand-built `gin.H`.
 - Logging: Go uses `slog`; Node services log through the injected
-  `createJsonLogger` from `@linger/service-kit/node`, never `console.*`
+  `createJsonLogger` from `@talos/service-kit/node`, never `console.*`
   (CLIs print plain text). Events are `<area>.<what>` with snake_case fields.
 - Configuration: each app reads the environment in one config module
   (`config.ts`, `internal/config`) and passes typed values down. Do not read
   `process.env` or `os.Getenv` elsewhere or write to `process.env`; each
   default lives in exactly one place.
 - Shared helpers: guards, hashing, sleep, and IDs come from
-  `@linger/service-kit` or `internal/ids`. Add a helper there once a second
+  `@talos/service-kit` or `internal/ids`. Add a helper there once a second
   app needs it; never copy one.
 - Naming: `TeamHub`/`teamHub` in identifiers (`teamhub` only in paths,
   packages, and CLI names). Handwritten Go uses initialisms (`ID`, `URL`,

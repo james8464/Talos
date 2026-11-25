@@ -99,7 +99,7 @@ func newLocalProcessComputer(t *testing.T, port int, owner localProcessComputerO
 	t.Helper()
 	root := t.TempDir()
 	fixture := &localBusinessProcessFixture{
-		root: root, computerID: computerID, daemon: filepath.Join(root, "bin", "linger-computer-daemon"),
+		root: root, computerID: computerID, daemon: filepath.Join(root, "bin", "talos-computer-daemon"),
 		port: port, owner: owner,
 	}
 	seedProcessFixtureComputer(t, owner, computerID, grantID)
@@ -133,7 +133,7 @@ func newLocalProcessComputer(t *testing.T, port int, owner localProcessComputerO
 		t.Fatalf("read Local Computer release version: %v", err)
 	}
 	build := exec.CommandContext(buildContext, filepath.Join(runtime.GOROOT(), "bin", "go"), "build", "-ldflags",
-		"-X github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport.ReleaseVersion="+manifest.Version, "-o", fixture.daemon, "./cmd/linger-computer-daemon")
+		"-X github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport.ReleaseVersion="+manifest.Version, "-o", fixture.daemon, "./cmd/talos-computer-daemon")
 	build.Dir = filepath.Join(repositoryPath(), "apps/computer/local-daemon")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build real Local Daemon: %v\n%s", err, output)
@@ -185,7 +185,7 @@ fi
 	}
 	daemon := exec.Command(fixture.daemon, "--config", filepath.Join(fixture.root, "computer.json"))
 	daemon.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	daemon.Env = []string{"PATH=" + filepath.Join(fixture.root, "bin") + ":/usr/bin:/bin", "HOME=" + filepath.Join(fixture.root, "daemon-home"), "LINGER_DAEMON_LAUNCH_NONCE=isolated-business-process"}
+	daemon.Env = []string{"PATH=" + filepath.Join(fixture.root, "bin") + ":/usr/bin:/bin", "HOME=" + filepath.Join(fixture.root, "daemon-home"), "TALOS_DAEMON_LAUNCH_NONCE=isolated-business-process"}
 	output, exited, stopDaemon := startBusinessFixtureProcess(t, daemon, "Local Daemon")
 	fixture.daemonOutput = output
 	fixture.stops = append(fixture.stops, stopDaemon)
@@ -329,7 +329,7 @@ func startLocalFixtureAgentProcess(t *testing.T, fixture *localBusinessProcessFi
 	command.Dir = repositoryPath()
 	command.Env = append(withoutEnv(os.Environ(), "CODEX_HOME", "CODEX_CLI_PATH", "TEAMHUB_CLI_BASE_URL", "NODE_SERVICES_ROLES",
 		"AGENT_RUNNER_PUBLIC_GATEWAY_URL", "AWS_PROFILE", "AWS_REGION", "AWS_ENDPOINT_URL", "AWS_ENDPOINT_URL_EC2"),
-		"NODE_SERVICES_ROLES=agent", "NODE_SERVICES_HTTP_ADDRESS=127.0.0.1:"+strconv.Itoa(port), "LINGER_SECRET_SEED="+integrationSecretSeed,
+		"NODE_SERVICES_ROLES=agent", "NODE_SERVICES_HTTP_ADDRESS=127.0.0.1:"+strconv.Itoa(port), "TALOS_SECRET_SEED="+integrationSecretSeed,
 		"AGENT_HOME="+root, "AGENT_LOG_LEVEL=info", "NODE_ENV=test", "TEAMHUB_BASE_URL="+teamHubURL,
 		fmt.Sprintf("AGENT_RUNNER_PUBLIC_GATEWAY_URL=ws://127.0.0.1:%d/v1/runner-gateway", port), "AWS_ENDPOINT_URL_EC2=http://127.0.0.1:1", "AWS_EC2_METADATA_DISABLED=true")
 	output, exited, stop := startBusinessFixtureProcess(t, command, "Agent Service")

@@ -1,4 +1,4 @@
-export const htmlFragmentSizeMessageType = "linger-html-fragment-size";
+export const htmlFragmentSizeMessageType = "talos-html-fragment-size";
 
 function fragmentSizeReporterScript() {
   return `<script>

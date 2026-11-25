@@ -26,8 +26,8 @@ const GZIP_LEVEL = 9;
 export function parseSourceArchiveArguments(arguments_) {
   const options = {
     label: null,
-    name: "linger",
-    output: path.join(repositoryRoot, ".linger-runtime/source-archive"),
+    name: "talos",
+    output: path.join(repositoryRoot, ".talos-runtime/source-archive"),
     ref: "HEAD",
     "url-base": null,
   };
@@ -165,15 +165,15 @@ export async function prepareSourceArchive(
   return result;
 }
 
-/** Reads the manifest for `LINGER_SOURCE_ARCHIVE_URL`/`_SHA256`. */
+/** Reads the manifest for `TALOS_SOURCE_ARCHIVE_URL`/`_SHA256`. */
 export async function sourceArchiveEnvironment(output) {
   const manifest = JSON.parse(
     await readFile(path.join(output, "source-archive.json"), "utf8"),
   );
   if (!manifest.url) throw new Error("source-archive.json has no url");
   return {
-    LINGER_SOURCE_ARCHIVE_URL: manifest.url,
-    LINGER_SOURCE_ARCHIVE_SHA256: manifest.sha256,
+    TALOS_SOURCE_ARCHIVE_URL: manifest.url,
+    TALOS_SOURCE_ARCHIVE_SHA256: manifest.sha256,
   };
 }
 

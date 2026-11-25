@@ -1,5 +1,5 @@
-import { isMuted } from "@linger/service-kit";
-import { serviceCredential } from "@linger/service-kit/node";
+import { isMuted } from "@talos/service-kit";
+import { serviceCredential } from "@talos/service-kit/node";
 
 import { providerProxy, type ProviderProxy } from "./provider-proxy.js";
 
@@ -75,7 +75,7 @@ export const loadConfig = (
     livekitApiSecret: withDefault("LIVEKIT_API_SECRET"),
     teamhubBaseUrl: required("TEAMHUB_BASE_URL"),
     teamhubToken:
-      serviceCredential("voice-runtime", env) ?? required("LINGER_SECRET_SEED"),
+      serviceCredential("voice-runtime", env) ?? required("TALOS_SECRET_SEED"),
     // Each provider key turns on only its own workers: Soniox transcribes,
     // xAI runs Live.
     sonioxApiKey: env.SONIOX_API_KEY?.trim() ?? "",

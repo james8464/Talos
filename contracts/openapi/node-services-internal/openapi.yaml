@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Linger Node Services Internal API
+  title: Talos Node Services Internal API
   version: 0.1.0
   description:
     TeamHub calls into Node Services. Agent management, Memory, and LLM
@@ -482,7 +482,7 @@ paths:
       security:
         - agentManagementBearer: []
     post:
-      summary: Raise a macOS permission prompt, open its Settings pane, or relaunch Linger on an owned Local Computer
+      summary: Raise a macOS permission prompt, open its Settings pane, or relaunch Talos on an owned Local Computer
       operationId: actOnLocalComputerPermission
       requestBody:
         required: true

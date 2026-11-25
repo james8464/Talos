@@ -5,7 +5,7 @@ installation core.
 
 ## Common Commands
 
-- `pnpm --filter @linger/service-kit check`: typecheck, lint, and test the package.
+- `pnpm --filter @talos/service-kit check`: typecheck, lint, and test the package.
 
 ## Structure
 
@@ -18,15 +18,15 @@ installation core.
 - `src/byok-endpoint.ts`: isomorphic BYOK address entry (`byokProtocolFor`,
   `defaultByokEndpoint`, `normalizeByokPath`, `normalizeByokBaseUrl`,
   `validByokPath`, `isByokProtocol`, and the BYOK path pattern and runtime
-  default constants), exported as `@linger/service-kit/byok-endpoint`.
+  default constants), exported as `@talos/service-kit/byok-endpoint`.
 - `src/featured-models.ts`: isomorphic featured partner model constants and
   structured model-ID matching (`INKLING_2_MINI_ANNOUNCEMENT_URL`,
   `INKLING_2_MINI_HF_URL`, `isInkling2MiniModelId`), exported as
-  `@linger/service-kit/featured-models` for Web, Desktop, and the installer.
+  `@talos/service-kit/featured-models` for Web, Desktop, and the installer.
 - `src/messages.ts`: isomorphic message formatting (`defineMessages`,
   `formatMessage`, `resolveMessage`; plurals through `Intl.PluralRules`,
   `{name}` placeholders and `<tag>` spans), exported as
-  `@linger/service-kit/messages` for the Web client and the desktop shell.
+  `@talos/service-kit/messages` for the Web client and the desktop shell.
   It holds no catalog and no language choice.
 - `src/node.ts`: Node-only entry (`sha256Hex`, `createJsonLogger`,
   `serviceCredential`). `serviceCredential` takes the environment from its

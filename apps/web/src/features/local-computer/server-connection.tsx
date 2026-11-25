@@ -52,7 +52,7 @@ export function ServerConnection({ tenantId }: { tenantId: string }) {
         }),
       );
       const token =
-        "linger-connect-v1." +
+        "talos-connect-v1." +
         base64url(
           new TextEncoder().encode(
             JSON.stringify({

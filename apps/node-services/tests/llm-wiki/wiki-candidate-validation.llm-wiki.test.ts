@@ -31,7 +31,7 @@ title: Adapter
 description: Durable adapter behavior.
 tags: [adapter]
 status: stable
-generated: { by: linger-llm-wiki/1, at: 2026-09-08T10:00:00Z }
+generated: { by: talos-llm-wiki/1, at: 2026-09-08T10:00:00Z }
 sources:
   - resource: document://source/1
 graph:

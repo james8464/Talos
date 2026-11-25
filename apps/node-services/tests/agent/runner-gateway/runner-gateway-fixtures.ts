@@ -12,7 +12,7 @@ import type {
   OperationStart,
   RunnerHello,
   RuntimeRegistrationSnapshot,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   RunnerGateway,
   type AgentRunnerPlacement,
@@ -53,7 +53,7 @@ export const hello = (
     {
       grant_id: "grant-repo",
       tenant_id: "tenant-acme",
-      label: "Linger workspace",
+      label: "Talos workspace",
       mode: "workspace-write",
       scope: "bindings",
     },
@@ -70,7 +70,7 @@ export const contextHello = (
     {
       grant_id: "grant-owner",
       tenant_id: "tenant-acme",
-      label: "Linger managed workspace",
+      label: "Talos managed workspace",
       mode: "workspace-write",
       scope: "owner",
     },

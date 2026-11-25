@@ -141,7 +141,7 @@ describe("CreateAgentFromTemplateDialog", () => {
       computer_id: "computer-jenny-mac",
       runtime_type: "codex",
       type: "local",
-      workspace_grant_id: "grant-linger-workspace",
+      workspace_grant_id: "grant-talos-workspace",
     });
     expect(input.skill_bindings).toEqual([
       {
@@ -251,7 +251,7 @@ describe("CreateAgentFromTemplateDialog", () => {
     // copied still appears in the Skills list, marked, rather than in a note.
     const shared = {
       manifest_version: "1.0.0",
-      name: "debug-linger-runtime-incidents",
+      name: "debug-talos-runtime-incidents",
       skill_id: "skill_publisher_private",
     };
     const gone = {

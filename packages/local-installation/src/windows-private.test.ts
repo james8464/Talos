@@ -48,11 +48,11 @@ it("sends paths through stdin and launches a fixed PowerShell command without Ad
 it("checks candidate locations non-destructively with kind location and repair false", async () => {
   const run = vi.fn().mockResolvedValue({ code: 0, stdout: "", stderr: "" });
   await windowsPrivateLocation(
-    "C:\\Users\\person\\AppData\\Roaming\\Linger\\computer",
+    "C:\\Users\\person\\AppData\\Roaming\\Talos\\computer",
     run,
   );
   expect(JSON.parse(run.mock.calls[0]![2].input)).toEqual({
-    path: path.resolve("C:\\Users\\person\\AppData\\Roaming\\Linger\\computer"),
+    path: path.resolve("C:\\Users\\person\\AppData\\Roaming\\Talos\\computer"),
     kind: "location",
     repair: false,
   });
@@ -100,7 +100,7 @@ it("names the path, offending ancestor, offending SID, and sanitized UNCHECKED d
     stderr: "",
   });
   const parentError = await windowsPrivateLocation(
-    "C:\\Users\\person\\AppData\\Roaming\\Linger\\computer",
+    "C:\\Users\\person\\AppData\\Roaming\\Talos\\computer",
     ancestorFail,
   ).catch(
     (failure: unknown) =>
@@ -228,7 +228,7 @@ it("ignores inherit-only ACEs only for effective ancestor permissions", () => {
   expect(WINDOWS_PRIVATE_WORKER_SCRIPT).toContain("ReparsePoint");
   expect(WINDOWS_PRIVATE_WORKER_SCRIPT).toContain("SHARED_ACCESS");
   expect(WINDOWS_PRIVATE_WORKER_SCRIPT).toContain("Test-Administrator");
-  expect(WINDOWS_PRIVATE_WORKER_SCRIPT).toContain("Ensure-LingerWin32Native");
+  expect(WINDOWS_PRIVATE_WORKER_SCRIPT).toContain("Ensure-TalosWin32Native");
   expect(WINDOWS_PRIVATE_WORKER_SCRIPT).not.toContain("Add-Type");
   expect(WINDOWS_PRIVATE_WORKER_SCRIPT).toContain("$script:isAdministrator");
   expect(WINDOWS_PRIVATE_WORKER_SCRIPT).toContain(
@@ -243,7 +243,7 @@ it("hands on the code and reason of a refusal, and nothing else", async () => {
     stderr: "",
   });
   const error: unknown = await windowsPrivatePath(
-    "D:\\Apps\\Linger",
+    "D:\\Apps\\Talos",
     "directory",
     true,
     run,
@@ -326,12 +326,12 @@ it("reuses one persistent worker across concurrent requests, captures sanitized 
       const w = fakeWorker((line, stdout, emitClose, emitError) => {
         const req = JSON.parse(line) as { path: string };
         if (req.path === "ok-1" || req.path === "ok-2")
-          stdout.write("__LINGER_ACL_OK__\n");
+          stdout.write("__TALOS_ACL_OK__\n");
         else if (req.path === "bad-owner")
-          stdout.write("__LINGER_ACL_ERR__:UNSAFE_OWNER\n");
+          stdout.write("__TALOS_ACL_ERR__:UNSAFE_OWNER\n");
         else if (req.path === "clm") {
           stdout.write(
-            '__LINGER_ACL_ERR__:{"code":"UNCHECKED","stage":"language_mode","errorType":"ConstrainedLanguage"}\n',
+            '__TALOS_ACL_ERR__:{"code":"UNCHECKED","stage":"language_mode","errorType":"ConstrainedLanguage"}\n',
           );
           emitClose(1);
         } else if (req.path === "crash") {
@@ -422,7 +422,7 @@ it("closes an idle persistent worker after the idle period", async () => {
     idleMs: 30,
     spawnWorker: () => {
       const w = fakeWorker((_line, stdout) => {
-        stdout.write("__LINGER_ACL_OK__\n");
+        stdout.write("__TALOS_ACL_OK__\n");
       });
       workers.push(w);
       return w.child;

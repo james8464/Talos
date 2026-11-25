@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { ProviderSessionOptions } from "../../../src/agent/executor/provider.js";
-import type { RunEvent as WireRunEvent } from "@linger/wire-contracts/runner-gateway/types";
+import type { RunEvent as WireRunEvent } from "@talos/wire-contracts/runner-gateway/types";
 
 import {
   RemoteCodexProvider,
@@ -204,7 +204,7 @@ describe("RemoteCodexProvider provider prepare", () => {
       {
         provider: "claude",
         sessionId: "uuid-1",
-        lingerMaterialized: true,
+        talosMaterialized: true,
       },
       sessionOptions(),
     );
@@ -219,7 +219,7 @@ describe("RemoteCodexProvider provider prepare", () => {
       {
         provider: "pi",
         sessionId: "uuid-pi-1",
-        lingerMaterialized: true,
+        talosMaterialized: true,
       },
       sessionOptions(),
     );
@@ -345,7 +345,7 @@ describe("RemoteCodexProvider presence prepare", () => {
       {
         provider: "claude",
         sessionId: "12345678-1234-4234-8234-123456789012",
-        lingerMaterialized: false,
+        talosMaterialized: false,
       },
       sessionOptions(),
     );
@@ -381,7 +381,7 @@ describe("RemoteCodexProvider presence prepare", () => {
     );
     expect(dispatcher.prepares[0]!.options.session).toMatchObject({
       provider: "pi",
-      lingerMaterialized: false,
+      talosMaterialized: false,
     });
   });
 
@@ -464,7 +464,7 @@ describe("RemoteCodexProvider presence prepare after the CLI credential", () => 
       {
         provider: "claude",
         sessionId: "12345678-1234-4234-8234-123456789012",
-        lingerMaterialized: false,
+        talosMaterialized: false,
       },
       sessionOptions(),
     );

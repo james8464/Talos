@@ -72,7 +72,7 @@ beforeEach(() => {
     },
   });
   window.localStorage.setItem(
-    "linger.voice.device.tenant-northstar",
+    "talos.voice.device.tenant-northstar",
     JSON.stringify({ deviceId: "microphone", groupId: "desk", label: "Desk" }),
   );
 });
@@ -198,7 +198,7 @@ it("observes a Stop saved by another page while automatic policy refresh was pen
     }),
   );
   window.localStorage.setItem(
-    "linger.voice.listening.tenant-northstar",
+    "talos.voice.listening.tenant-northstar",
     JSON.stringify({
       captureId: capture.id,
       createdAt: capture.created_at,
@@ -382,7 +382,7 @@ it.each([false, true])(
     );
     if (stale)
       window.sessionStorage.setItem(
-        "linger.voice.target.tenant-northstar",
+        "talos.voice.target.tenant-northstar",
         anotherMe.room_id!,
       );
     runtime.server.on("GET", "/v0/rooms/{roomId}", () => ({

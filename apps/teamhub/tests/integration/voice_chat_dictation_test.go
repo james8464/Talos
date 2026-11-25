@@ -12,9 +12,9 @@ import (
 	"testing"
 
 	"github.com/livekit/protocol/livekit"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -46,7 +46,7 @@ func TestVoiceChatDictationKeepsCommandsAsSpeechAndFinalizesAuthorizedTurns(t *t
 			if err := proto.Unmarshal(body, &input); err != nil {
 				t.Error(err)
 			}
-			if input.GetTopic() != "linger.voice.dictation.commit" || input.Kind != livekit.DataPacket_RELIABLE || string(input.Data) != `{"request_id":"manual-turn-1"}` {
+			if input.GetTopic() != "talos.voice.dictation.commit" || input.Kind != livekit.DataPacket_RELIABLE || string(input.Data) != `{"request_id":"manual-turn-1"}` {
 				t.Errorf("unexpected dictation commit packet")
 			}
 			commits.Add(1)

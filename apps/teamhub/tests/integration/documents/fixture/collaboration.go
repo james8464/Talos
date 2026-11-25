@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 // RuntimeBodySaveSQL is the one statement the Document Runtime runs for every

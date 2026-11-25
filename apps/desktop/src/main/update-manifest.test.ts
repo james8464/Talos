@@ -26,7 +26,7 @@ const manifest = {
   version: "0.16.1",
   packages: {
     "darwin-arm64": {
-      file: "Linger-0.16.1-arm64.tar.gz",
+      file: "Talos-0.16.1-arm64.tar.gz",
       sha256: "a".repeat(64),
       size: 10,
     },
@@ -44,7 +44,7 @@ describe("update manifest", () => {
     const { bytes, signature } = signed(manifest, privateKey);
     const parsed = verifyManifest(bytes, signature, publicPem);
     expect(packageFor(parsed, "darwin", "arm64")?.file).toBe(
-      "Linger-0.16.1-arm64.tar.gz",
+      "Talos-0.16.1-arm64.tar.gz",
     );
     expect(packageFor(parsed, "darwin", "x64")).toBeUndefined();
   });
@@ -73,7 +73,7 @@ describe("update manifest", () => {
   it("rejects package paths outside the release", () => {
     const { privateKey, publicPem } = keys();
     const bad = structuredClone(manifest);
-    bad.packages["darwin-arm64"].file = "../Linger.tar.gz";
+    bad.packages["darwin-arm64"].file = "../Talos.tar.gz";
     const { bytes, signature } = signed(bad, privateKey);
     expect(() => verifyManifest(bytes, signature, publicPem)).toThrow(
       "Update manifest is invalid",
@@ -99,23 +99,23 @@ describe("update manifest", () => {
   it("finds the manifest in the latest release and packages in its own", () => {
     expect(feedUrls(DEFAULT_FEED_URL)).toEqual({
       manifest: new URL(
-        "https://github.com/simplexai-labs/linger/releases/latest/download/manifest.json",
+        "https://github.com/simplexai-labs/talos/releases/latest/download/manifest.json",
       ),
       signature: new URL(
-        "https://github.com/simplexai-labs/linger/releases/latest/download/manifest.json.sig",
+        "https://github.com/simplexai-labs/talos/releases/latest/download/manifest.json.sig",
       ),
     });
     expect(
       packageUrl(
-        "https://releases.example.com/linger/",
+        "https://releases.example.com/talos/",
         "0.17.0",
-        "Linger-0.17.0-windows-x64-setup.exe",
+        "Talos-0.17.0-windows-x64-setup.exe",
       ).toString(),
     ).toBe(
-      "https://releases.example.com/linger/download/desktop-v0.17.0/Linger-0.17.0-windows-x64-setup.exe",
+      "https://releases.example.com/talos/download/desktop-v0.17.0/Talos-0.17.0-windows-x64-setup.exe",
     );
     expect(releasePageUrl(DEFAULT_FEED_URL, "0.17.0")).toBe(
-      "https://github.com/simplexai-labs/linger/releases/tag/desktop-v0.17.0",
+      "https://github.com/simplexai-labs/talos/releases/tag/desktop-v0.17.0",
     );
   });
 });

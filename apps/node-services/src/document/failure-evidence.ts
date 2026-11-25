@@ -13,7 +13,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 import type { DocumentDurabilityFailureCode } from "./realtime-durability.js";
 import { documentLogger } from "./log.js";
 

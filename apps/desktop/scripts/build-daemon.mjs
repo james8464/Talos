@@ -26,8 +26,8 @@ const ALL_TARGETS = ["darwin-arm64", "darwin-x64", "linux-x64", "win32-x64"];
 
 export const daemonFileName = (target) =>
   target.startsWith("win32-")
-    ? "linger-computer-daemon.exe"
-    : "linger-computer-daemon";
+    ? "talos-computer-daemon.exe"
+    : "talos-computer-daemon";
 
 export function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -65,10 +65,10 @@ export const buildDaemon = async (targets) => {
           "build",
           "-trimpath",
           "-ldflags",
-          `-s -w -X github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport.ReleaseVersion=${version}`,
+          `-s -w -X github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport.ReleaseVersion=${version}`,
           "-o",
           output,
-          "./cmd/linger-computer-daemon",
+          "./cmd/talos-computer-daemon",
         ],
         {
           cwd: localDaemon,

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 // A meeting refresh admits only that meeting's recording Session. Every other

@@ -6,7 +6,7 @@ const navigationScript = `(function () {
     try {
       var next = new URL(String(value), base);
       if (next.protocol !== "http:" && next.protocol !== "https:") return;
-      parent.postMessage({ type: "linger-preview-navigate", url: next.href }, "*");
+      parent.postMessage({ type: "talos-preview-navigate", url: next.href }, "*");
     } catch (error) {}
   }
   var base = document.baseURI;
@@ -20,7 +20,7 @@ const navigationScript = `(function () {
     if (next.href.split("#")[0] === base.split("#")[0] && next.hash) return;
     event.preventDefault();
     event.stopPropagation();
-    parent.postMessage({ type: "linger-preview-navigate", url: next.href }, "*");
+    parent.postMessage({ type: "talos-preview-navigate", url: next.href }, "*");
   }, true);
   window.open = function (url) {
     if (url) report(url, base);
@@ -63,7 +63,7 @@ export function rewritePreviewHtml(html, pageUrl) {
 
 export function panelUrlPreviewPlugin() {
   return {
-    name: "linger-panel-url-preview",
+    name: "talos-panel-url-preview",
     configureServer(server) {
       server.middlewares.use(async (request, response, next) => {
         let target;

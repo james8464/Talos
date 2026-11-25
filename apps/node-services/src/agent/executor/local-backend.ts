@@ -1,15 +1,15 @@
 import type { ExecutionContextRef } from "./context-ref.js";
 import type { CliRunContext, AgentInput } from "./provider.js";
 import type { ToolRunContext } from "./types.js";
-import { displayText } from "@linger/service-kit";
+import { displayText } from "@talos/service-kit";
 import type {
   OpaqueObject,
   ContextViewRef,
   LocalMcpRelayDescriptor,
   LocalRunResources,
   RuntimeConfig,
-} from "@linger/wire-contracts/runner-gateway/types";
-import { createTeamHubAgentRuntimeStateClient } from "@linger/wire-contracts/teamhub-internal/client";
+} from "@talos/wire-contracts/runner-gateway/types";
+import { createTeamHubAgentRuntimeStateClient } from "@talos/wire-contracts/teamhub-internal/client";
 import type { AgentLogger } from "../observability/agent-log.js";
 import type {
   ContextViewContent,
@@ -529,7 +529,7 @@ async function activateLocalContextRuntime(
               const response = await client.createRuntimePermissionReview(
                 {
                   ...(review as Omit<
-                    import("@linger/wire-contracts/teamhub-internal/types").components["schemas"]["CreateRuntimePermissionReviewRequest"],
+                    import("@talos/wire-contracts/teamhub-internal/types").components["schemas"]["CreateRuntimePermissionReviewRequest"],
                     | "context_key"
                     | "execution_run_ref"
                     | "operation_id"
@@ -550,7 +550,7 @@ async function activateLocalContextRuntime(
                   `Runtime permission review failed (${response.status})`,
                 );
               }
-              return (await response.json()) as import("@linger/wire-contracts/runner-gateway/types").OpaqueObject;
+              return (await response.json()) as import("@talos/wire-contracts/runner-gateway/types").OpaqueObject;
             },
           }
         : {}),

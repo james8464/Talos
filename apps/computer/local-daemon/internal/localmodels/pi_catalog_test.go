@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 const (

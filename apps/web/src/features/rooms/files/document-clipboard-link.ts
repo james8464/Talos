@@ -12,7 +12,7 @@ export interface DocumentClipboardLink {
 export async function writeDocumentLinkClipboard(link: DocumentClipboardLink) {
   if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
     try {
-      const html = `<a href="${escapeHtml(link.url)}" data-linger-document-id="${escapeHtml(link.documentId)}" data-linger-tenant-id="${escapeHtml(link.tenantId)}">${escapeHtml(link.title)}</a>`;
+      const html = `<a href="${escapeHtml(link.url)}" data-talos-document-id="${escapeHtml(link.documentId)}" data-talos-tenant-id="${escapeHtml(link.tenantId)}">${escapeHtml(link.title)}</a>`;
       await navigator.clipboard.write([
         new ClipboardItem({
           "text/html": new Blob([html], { type: "text/html" }),
@@ -36,7 +36,7 @@ export function readDocumentClipboardLink(
   const html = clipboardData.getData("text/html");
   if (!parsedPlain || !html) return undefined;
   const document = new DOMParser().parseFromString(html, "text/html");
-  const anchor = document.querySelector("a[data-linger-document-id]");
+  const anchor = document.querySelector("a[data-talos-document-id]");
   return parseDocumentClipboardAnchor(anchor, origin, parsedPlain, plain);
 }
 
@@ -48,8 +48,8 @@ export function parseDocumentClipboardAnchor(
 ): DocumentClipboardLink | undefined {
   if (!(element instanceof HTMLAnchorElement)) return undefined;
   const parsed = parseInternalRoomDocumentLink(element.href, origin);
-  const documentId = element.dataset.lingerDocumentId;
-  const tenantId = element.dataset.lingerTenantId;
+  const documentId = element.dataset.talosDocumentId;
+  const tenantId = element.dataset.talosTenantId;
   const title = element.textContent?.trim();
   if (
     !parsed ||

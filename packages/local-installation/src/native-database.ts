@@ -13,7 +13,7 @@ import {
   startNativeProcess,
   stopNativeProcess,
 } from "./native-process.js";
-import { preLingerSchema, setAsideLegacyData } from "./legacy-database.js";
+import { preTalosSchema, setAsideLegacyData } from "./legacy-database.js";
 import { runProcess } from "./process.js";
 import { excerptLine, redact } from "./redaction.js";
 import { parseEnv } from "node:util";
@@ -53,7 +53,7 @@ export async function windowsElevated(
 const POSTGRES_READY_TIMEOUT_MS = 120_000;
 const POSTGRES_READY_PROGRESS_MS = 15_000;
 
-// Prepares the instance's private PostgreSQL. A database from before Linger
+// Prepares the instance's private PostgreSQL. A database from before Talos
 // is set aside with its data for a fresh one, and `legacyBackup` names the
 // folder it went to.
 export async function prepareNativeDatabase(options: {
@@ -67,7 +67,7 @@ export async function prepareNativeDatabase(options: {
   const { instance, postgresBin, signal } = options;
   if (process.getuid?.() === 0)
     throw new Error(
-      "Native PostgreSQL must run as a normal user; run Linger without sudo.",
+      "Native PostgreSQL must run as a normal user; run Talos without sudo.",
     );
   const withoutAdministrators =
     process.platform === "win32" && (await windowsElevated());
@@ -79,7 +79,7 @@ export async function prepareNativeDatabase(options: {
   await privateDirectory(data);
   const password = parseEnv(
     (await readPrivate(path.join(instance.root, "services.env")))!,
-  ).LINGER_POSTGRES_PASSWORD!;
+  ).TALOS_POSTGRES_PASSWORD!;
   await atomicPrivate(passwordFile, `${password}\n`);
   const env = { ...options.env, PGPASSWORD: password, PGCONNECT_TIMEOUT: "3" };
   const command = async (name: string, args: string[], timeoutMs = 60_000) => {
@@ -274,7 +274,7 @@ export async function prepareNativeDatabase(options: {
         sql,
       ])
     ).stdout;
-  if (!(await preLingerSchema(query))) return {};
+  if (!(await preTalosSchema(query))) return {};
   await stopNativeProcess(instance.root, "postgres");
   const legacyBackup = await setAsideLegacyData(instance.root, signal);
   await privateDirectory(data);

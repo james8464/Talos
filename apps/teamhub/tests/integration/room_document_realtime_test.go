@@ -18,11 +18,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
-	documentfixture "github.com/simplexai-labs/linger/apps/teamhub/tests/integration/documents/fixture"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
+	documentfixture "github.com/simplexai-labs/talos/apps/teamhub/tests/integration/documents/fixture"
 )
 
 type roomDocumentCollaborationCredential struct {

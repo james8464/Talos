@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
-	migrationfiles "github.com/simplexai-labs/linger/apps/teamhub/migrations"
+	migrationfiles "github.com/simplexai-labs/talos/apps/teamhub/migrations"
 )
 
 // Up runs the database migrations compiled into the binary, serially.

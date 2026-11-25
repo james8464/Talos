@@ -1,4 +1,4 @@
-import type { PersonalKnowledgeQueryRequest } from "@linger/wire-contracts/node-services-internal/client";
+import type { PersonalKnowledgeQueryRequest } from "@talos/wire-contracts/node-services-internal/client";
 import type { ChunkSearchProvider, IndexedChunkMatch } from "../chunk-index.js";
 import type { RawSourceReference } from "./source-store.js";
 import { searchBm25, tokenizeSearchText } from "../../bm25.js";

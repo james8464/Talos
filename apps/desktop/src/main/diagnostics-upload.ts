@@ -13,10 +13,10 @@ import { dialogMessages as m } from "./dialogs.messages.js";
 // docs/diagnostics-upload.md: one POST asks for a report id and a
 // one-time upload URL, one PUT sends the zip there.
 
-export const DIAGNOSTICS_UPLOAD_SCHEMA = "linger.diagnostics-upload/v1";
+export const DIAGNOSTICS_UPLOAD_SCHEMA = "talos.diagnostics-upload/v1";
 
 // The hosted receiver, which the release pipeline provides at build time
-// (LINGER_DIAGNOSTICS_UPLOAD_URL, see build.mjs). Builds without it (forks,
+// (TALOS_DIAGNOSTICS_UPLOAD_URL, see build.mjs). Builds without it (forks,
 // local and self-hosted builds) and tests have none, so Send Diagnostics
 // shows only when config.json names a receiver in diagnosticsUploadUrl.
 declare const __HOSTED_DIAGNOSTICS_UPLOAD_URL__: string | null | undefined;
@@ -156,7 +156,7 @@ export const uploadDiagnostics = async (
         schema: DIAGNOSTICS_UPLOAD_SCHEMA,
         size: options.bytes,
         sha256: await sha256File(options.file),
-        client: { name: "linger-desktop", ...options.client },
+        client: { name: "talos-desktop", ...options.client },
       }),
       // A redirect could leave https; receivers answer directly.
       redirect: "error",
@@ -176,7 +176,7 @@ export const uploadDiagnostics = async (
   );
   if (!ticket.success)
     throw new DiagnosticsUploadError(
-      "The server gave an answer this version of Linger doesn't understand",
+      "The server gave an answer this version of Talos doesn't understand",
       false,
     );
   const headers: Record<string, string> = {};

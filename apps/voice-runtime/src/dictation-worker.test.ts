@@ -155,7 +155,7 @@ async function harness(finalAck?: Promise<void>, startSpeaking = true) {
   const track = new rtc.Track();
   const participant = {
     identity: "publisher-voice_session_test",
-    attributes: { "linger.voice_generation": "1" },
+    attributes: { "talos.voice_generation": "1" },
   };
   room.emit("subscribed", track, { source: 1 }, participant);
   if (startSpeaking) track.speech();
@@ -244,8 +244,8 @@ describe("dictation worker boundary", () => {
     try {
       expect(test.attributes).toHaveBeenCalledWith(
         expect.objectContaining({
-          "linger.voice_purpose": "chat_dictation",
-          "linger.voice_ready_generation": "1",
+          "talos.voice_purpose": "chat_dictation",
+          "talos.voice_ready_generation": "1",
         }),
       );
       const source = test.sources[0]!;
@@ -383,9 +383,9 @@ describe("dictation worker boundary", () => {
         );
         await vi.waitFor(() =>
           expect(test.attributes).toHaveBeenCalledWith({
-            "linger.voice_dictation_failure": "transcript_unconfirmed",
-            "linger.voice_dictation_failure_code": failureCode,
-            "linger.voice_dictation_failure_generation": "1",
+            "talos.voice_dictation_failure": "transcript_unconfirmed",
+            "talos.voice_dictation_failure_code": failureCode,
+            "talos.voice_dictation_failure_generation": "1",
           }),
         );
         const sameGeneration = new rtc.Track();

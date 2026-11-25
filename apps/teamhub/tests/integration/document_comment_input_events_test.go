@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
 )
 
 // waitForRiverSweepRan waits until a periodic sweep of kind has finished since

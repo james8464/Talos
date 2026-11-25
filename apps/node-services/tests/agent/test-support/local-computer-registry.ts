@@ -1,7 +1,7 @@
 import type {
   LocalModelsSnapshot,
   RuntimeDiagnostics,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import type { LocalRuntimeType } from "../../../src/agent/runner-gateway/local-computer-management.js";
 import {

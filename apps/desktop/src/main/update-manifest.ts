@@ -9,7 +9,7 @@ import { z } from "zod";
 // <feed>/download/desktop-v<version>/. A prerelease never becomes the latest
 // release, so it is never offered.
 export const DEFAULT_FEED_URL =
-  "https://github.com/simplexai-labs/linger/releases";
+  "https://github.com/simplexai-labs/talos/releases";
 export const MANIFEST_FILE = "manifest.json";
 export const SIGNATURE_FILE = "manifest.json.sig";
 

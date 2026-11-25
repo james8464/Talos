@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { components } from "@linger/wire-contracts/teamhub-agent-api/types";
+import type { components } from "@talos/wire-contracts/teamhub-agent-api/types";
 import {
   encodeAgentCommandBody,
   decodeAgentCommandResult,

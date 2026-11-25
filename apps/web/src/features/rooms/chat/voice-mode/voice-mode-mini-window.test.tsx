@@ -427,8 +427,8 @@ describe("Voice Mode mini window", () => {
         floating.queryByRole("button", { name: "Resize Voice Mode window" }),
       ).not.toBeInTheDocument();
       expect(
-        floating.getByRole("button", { name: "Return Voice Mode to Linger" }),
-      ).toHaveAttribute("title", "Back to Linger; Voice Mode continues");
+        floating.getByRole("button", { name: "Return Voice Mode to Talos" }),
+      ).toHaveAttribute("title", "Back to Talos; Voice Mode continues");
       expect(
         floating.queryByRole("button", { name: "End Voice Mode" }),
       ).not.toBeInTheDocument();
@@ -521,7 +521,7 @@ describe("Voice Mode mini window", () => {
       await act(async () => {
         fireEvent.click(
           await floating.findByRole("button", {
-            name: "Return Voice Mode to Linger",
+            name: "Return Voice Mode to Talos",
           }),
         );
       });
@@ -538,7 +538,7 @@ describe("Voice Mode mini window", () => {
         screen.getByRole("region", { name: "Voice Mode window" }),
       ).toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "Return Voice Mode to Linger" }),
+        screen.queryByRole("button", { name: "Return Voice Mode to Talos" }),
       ).not.toBeInTheDocument();
       expect(voice.exit).not.toHaveBeenCalled();
     } finally {
@@ -555,8 +555,8 @@ describe("Voice Mode mini window", () => {
     const showMain = vi.fn(async () => {});
     const originalOpen = window.open;
     window.open = open;
-    const desktop = window as { lingerDesktop?: unknown };
-    desktop.lingerDesktop = {
+    const desktop = window as { talosDesktop?: unknown };
+    desktop.talosDesktop = {
       voiceWindow: { showMainWindow: showMain },
     };
     try {
@@ -566,7 +566,7 @@ describe("Voice Mode mini window", () => {
       await act(async () => {
         fireEvent.click(
           await floating.findByRole("button", {
-            name: "Return Voice Mode to Linger",
+            name: "Return Voice Mode to Talos",
           }),
         );
       });
@@ -582,7 +582,7 @@ describe("Voice Mode mini window", () => {
         screen.getByRole("region", { name: "Voice Mode window" }),
       ).toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "Return Voice Mode to Linger" }),
+        screen.queryByRole("button", { name: "Return Voice Mode to Talos" }),
       ).not.toBeInTheDocument();
       expect(voice.exit).not.toHaveBeenCalled();
 
@@ -604,7 +604,7 @@ describe("Voice Mode mini window", () => {
       expect(showMain).toHaveBeenCalledOnce();
     } finally {
       window.open = originalOpen;
-      delete desktop.lingerDesktop;
+      delete desktop.talosDesktop;
       fake.frame.remove();
       Reflect.deleteProperty(window, "documentPictureInPicture");
       resetVoicePipForTest();

@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { TeamHubAgentCallbackFetch } from "@linger/wire-contracts/teamhub-internal/client";
+import type { TeamHubAgentCallbackFetch } from "@talos/wire-contracts/teamhub-internal/client";
 
 const traceContext = new AsyncLocalStorage<string>();
 const traceparentPattern =
@@ -26,7 +26,7 @@ export function teamHubFetch(
         0,
         128,
       ) || "dev";
-    headers.set("user-agent", `linger-memory/${version}`);
+    headers.set("user-agent", `talos-memory/${version}`);
     const traceparent = traceContext.getStore();
     if (traceparent) headers.set("traceparent", traceparent);
     return fetcher(input, { ...init, headers });

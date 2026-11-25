@@ -80,7 +80,7 @@ describe("RunLoop", () => {
       const harness = createHarness(undefined, undefined, undefined, {
         provider: "pi",
         sessionId: "pi-session",
-        lingerMaterialized: materialized,
+        talosMaterialized: materialized,
       });
       const claim = harness.state.claimLocalRun.bind(harness.state);
       vi.spyOn(harness.state, "claimLocalRun").mockImplementation(() => {
@@ -3600,7 +3600,7 @@ describe("RunLoop restart", () => {
       const harness = createHarness(undefined, undefined, undefined, {
         provider: "pi",
         sessionId: "pi-session",
-        lingerMaterialized: materialized,
+        talosMaterialized: materialized,
       });
       const claim = harness.state.claimLocalRun.bind(harness.state);
       vi.spyOn(harness.state, "claimLocalRun").mockImplementation(() => {

@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 // The timing/word correspondence comes from 18 failed archive splices. Speech

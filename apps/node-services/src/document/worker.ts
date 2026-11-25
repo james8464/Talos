@@ -13,7 +13,7 @@ import {
   readListenAddress,
 } from "../listen-address.js";
 import { mirrorHome } from "../paths.js";
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 import { documentLogger } from "./log.js";
 
 // Half of the host's 20 s default, so the roles that stop after the Document
@@ -38,7 +38,7 @@ const connectionTokenKey = serviceCredential(
   process.env,
 );
 if (!teamHubToken || !connectionTokenKey) {
-  throw new TypeError("LINGER_SECRET_SEED is required");
+  throw new TypeError("TALOS_SECRET_SEED is required");
 }
 // The Runtime saves Document bodies in TeamHub's database.
 const databaseUrl = process.env.TEAMHUB_DATABASE_URL?.trim();

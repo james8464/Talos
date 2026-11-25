@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { validateToolSource } from "@linger/local-installation/localmodels-tool";
+import { validateToolSource } from "@talos/local-installation/localmodels-tool";
 import {
   validateNativeSource,
   validateNativeVoiceTools,
-} from "@linger/local-installation/native-dependencies";
+} from "@talos/local-installation/native-dependencies";
 import { describe, expect, it } from "vitest";
 
 // The tracked distribution/<target>.json that build.mjs puts beside the

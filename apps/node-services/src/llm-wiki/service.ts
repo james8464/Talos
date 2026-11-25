@@ -1,5 +1,5 @@
 import { type DocumentNormalizer } from "../document-normalizer/document-normalizer.js";
-import { type JsonLogger } from "@linger/service-kit/node";
+import { type JsonLogger } from "@talos/service-kit/node";
 
 import type { ModelCall } from "../runtime-model-call.js";
 import { loadLlmWikiConfig } from "./config.js";
@@ -26,7 +26,7 @@ export async function startLlmWikiService({
   setWikiLogger(logger);
   const config = loadLlmWikiConfig();
   if (!config.teamHubServiceToken) {
-    throw new Error("LINGER_SECRET_SEED is required for serve");
+    throw new Error("TALOS_SECRET_SEED is required for serve");
   }
   const candidateService = new WikiRefreshCandidateService({
     dataDirectory: config.dataDirectory,

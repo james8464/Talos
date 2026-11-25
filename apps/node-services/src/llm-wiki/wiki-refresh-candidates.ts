@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 
 import type {
   LlmWikiBackend,
@@ -24,7 +24,7 @@ import {
   renderSessionSource,
   type WikiSessionDescriptor,
 } from "./wiki-session-source.js";
-import { sha256Hex } from "@linger/service-kit/node";
+import { sha256Hex } from "@talos/service-kit/node";
 import type { AnotherMeActor } from "../runtime-model-call.js";
 
 type CandidateResult =

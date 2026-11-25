@@ -3,8 +3,8 @@ services:
     container_name: "${TEAMHUB_TEST_CONTAINER_NAME:?managed test container name is required}"
     image: "pgvector/pgvector:0.8.6-pg17-bookworm@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f"
     labels:
-      com.linger.teamhub.test-managed: "true"
-      com.linger.teamhub.test-run-token: "${TEAMHUB_TEST_RUN_TOKEN:?managed test run token is required}"
+      com.talos.teamhub.test-managed: "true"
+      com.talos.teamhub.test-run-token: "${TEAMHUB_TEST_RUN_TOKEN:?managed test run token is required}"
     environment:
       POSTGRES_DB: teamhub_test_control
       POSTGRES_USER: teamhub
@@ -49,5 +49,5 @@ networks:
   default:
     name: "${TEAMHUB_TEST_NETWORK_NAME:?managed test network name is required}"
     labels:
-      com.linger.teamhub.test-managed: "true"
-      com.linger.teamhub.test-run-token: "${TEAMHUB_TEST_RUN_TOKEN:?managed test run token is required}"
+      com.talos.teamhub.test-managed: "true"
+      com.talos.teamhub.test-run-token: "${TEAMHUB_TEST_RUN_TOKEN:?managed test run token is required}"

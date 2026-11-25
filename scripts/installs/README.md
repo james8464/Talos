@@ -11,8 +11,8 @@ Releases do not attach those scripts).
 
 ## Your own API keys: `user.env`
 
-The Linger app keeps the keys you supply in `user.env` in its instance
-folder, `~/.simplexai/instances/desktop/user.env` (`LINGER_HOME` replaces
+The Talos app keeps the keys you supply in `user.env` in its instance
+folder, `~/.simplexai/instances/desktop/user.env` (`TALOS_HOME` replaces
 `~/.simplexai`). The installer creates the file with comments on first start;
 starting the services never changes it after that (the app's setup page
 saves the keys typed there into it), and upgrades and reinstalls keep it. It
@@ -35,10 +35,10 @@ XAI_API_KEY=xai-...
 SONIOX_API_KEY=...
 ```
 
-Quit and reopen the Linger app after editing it: services whose configuration
+Quit and reopen the Talos app after editing it: services whose configuration
 changed restart. LiveKit runs whenever the app has voice tools for this
 computer, with or without a voice key. Other names,
-such as `LINGER_SECRET_SEED` or ports, are ignored with a warning, because the
+such as `TALOS_SECRET_SEED` or ports, are ignored with a warning, because the
 installer manages them. Keys never appear in installer logs or the app's
 diagnostics.
 
@@ -83,7 +83,7 @@ Environment variables:
 - `SIMPLEX_REGION`: `global` uses `registry.npmjs.org`; `cn` uses `registry.npmmirror.com`; `auto` probes both.
 - `LOCALMODELS_KIT_BASE_URL`: legacy mirror layout serving the same pinned npm archives as `<target>.tgz`.
 
-The Linger installer does not go through `stack.sh`; it calls the same kind of localmodels kit
+The Talos installer does not go through `stack.sh`; it calls the same kind of localmodels kit
 directly and by convention pins the same version as here.
 
 Run the pinned script without cloning the repository:
@@ -110,7 +110,7 @@ runs; it does not state which platforms or GPUs are supported.
 
 ## Download region: `SIMPLEX_REGION` and `region.json`
 
-Linger and localmodels share one download region, so a computer in mainland
+Talos and localmodels share one download region, so a computer in mainland
 China gets the China mirrors without first waiting for a foreign host to time
 out. The region only orders the sources of a download: no source is ever
 dropped, and the pinned SHA256, SHA512 or lockfile integrity still decides
@@ -120,7 +120,7 @@ The installer resolves the region once per process, in this order:
 
 1. `SIMPLEX_REGION`: `cn` or `global` forces that region; `auto` or unset
    does not. Any other value is an error.
-2. `<LINGER_HOME>/runtime/region.json` when it was resolved within the last
+2. `<TALOS_HOME>/runtime/region.json` when it was resolved within the last
    24 hours.
 3. A probe: up to three rounds racing the first 1 MiB of the pinned pnpm
    tarball from `registry.npmjs.org` and `cdn.npmmirror.com` (4 seconds per

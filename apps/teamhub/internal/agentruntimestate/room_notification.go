@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // validateRoomRuntimeInput lets a trusted turn name Room Messages only when

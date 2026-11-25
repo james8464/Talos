@@ -3,7 +3,7 @@ import {
   DAILY_REPORT_SECTIONS,
   EMPTY_SECTION_TEXT,
   SUGGESTED_FOCUS_LABEL,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 import { Icon } from "@/components/ui/icon";
 import { type Translate, formatLocale, translate } from "@/i18n/language";
 import { useT } from "@/i18n/use-translation";

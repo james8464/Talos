@@ -2,11 +2,11 @@ import type { ModelLease } from "../../model-tasks.js";
 import type {
   SessionCompact,
   SessionCompacted,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   RUNNER_GATEWAY_PROTOCOL_VERSION,
   parseAgentToDaemonEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 import { COMPACTION_PRIORITY } from "../../model-tasks.js";
 import { LocalComputerOfflineError } from "./local-computer-management.js";
 import type {

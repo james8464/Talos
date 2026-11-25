@@ -9,7 +9,7 @@ import {
 import { join, posix } from "node:path";
 
 import { parseFrontmatterFields } from "openwiki/dist/okf/frontmatter.js";
-import { isNodeError } from "@linger/service-kit";
+import { isNodeError } from "@talos/service-kit";
 
 import { isComputerOffline, ModelCallError } from "../runtime-model-call.js";
 import { checkpointTree } from "./actor-wiki/wiki-workspace.js";

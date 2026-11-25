@@ -4,7 +4,7 @@ import type { HocuspocusProvider } from "@hocuspocus/provider";
 import {
   fingerprintRoomDocumentDeletes,
   readRoomDocumentBlocks,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import { afterEach, describe, expect, it } from "vitest";
 import * as Y from "yjs";
 

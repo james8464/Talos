@@ -5,7 +5,7 @@ import { useT } from "@/i18n/use-translation";
 
 import { settingsMessages } from "./settings.messages";
 
-// The desktop app's Save Diagnostics… (`window.lingerDesktop.diagnostics`);
+// The desktop app's Save Diagnostics… (`window.talosDesktop.diagnostics`);
 // absent in a browser, which cannot read the app's logs, and in desktop
 // builds that predate it.
 interface DesktopDiagnostics {
@@ -15,8 +15,8 @@ interface DesktopDiagnostics {
 function desktopDiagnostics(): DesktopDiagnostics | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { diagnostics?: DesktopDiagnostics } })
-        .lingerDesktop?.diagnostics;
+    : (window as { talosDesktop?: { diagnostics?: DesktopDiagnostics } })
+        .talosDesktop?.diagnostics;
 }
 
 /**

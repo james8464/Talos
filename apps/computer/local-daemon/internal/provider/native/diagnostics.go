@@ -7,7 +7,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
 )
 
 // RuntimeFailureDiagnostics is logging-only metadata about a terminal

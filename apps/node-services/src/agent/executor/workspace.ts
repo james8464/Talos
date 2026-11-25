@@ -19,7 +19,7 @@ import {
   createAgentLogger,
   type AgentLogger,
 } from "../observability/agent-log.js";
-import { isNodeError } from "@linger/service-kit";
+import { isNodeError } from "@talos/service-kit";
 import type { DocumentInputContent } from "./teamhub-context-resolvers.js";
 
 export interface AgentContextRoots {

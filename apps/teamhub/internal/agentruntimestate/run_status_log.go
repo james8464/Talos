@@ -8,10 +8,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomevent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomevent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // runStatusLog appends to one Run's event log. It holds the Run's status Room

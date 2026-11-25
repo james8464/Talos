@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/personalprofile"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/personalprofile"
 )
 
 func TestBuildEvidenceRoutesStructuredGmail(t *testing.T) {

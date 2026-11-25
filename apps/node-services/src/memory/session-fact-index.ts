@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { PersonalKnowledgeQueryResponse } from "@linger/wire-contracts/node-services-internal/client";
-import type { components as NodeServicesInternal } from "@linger/wire-contracts/node-services-internal/types";
+import type { PersonalKnowledgeQueryResponse } from "@talos/wire-contracts/node-services-internal/client";
+import type { components as NodeServicesInternal } from "@talos/wire-contracts/node-services-internal/types";
 import type postgres from "postgres";
 import { tokenizeSearchText } from "../bm25.js";
 import { chunkSource, type SourceChunk } from "./search/chunks.js";
@@ -25,7 +25,7 @@ import { isComputerOffline, ModelCallError } from "../runtime-model-call.js";
 import { memoryDatabase } from "./database.js";
 import { localDateWindow } from "./date.js";
 import { memoryLogger } from "./run-telemetry.js";
-import { sha256Hex } from "@linger/service-kit/node";
+import { sha256Hex } from "@talos/service-kit/node";
 
 /** Facts each recall branch contributes before fusion. Hindsight reads up to
  * 1,000 per arm at its high budget; facts are short, so 100 stays cheap. */

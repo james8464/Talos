@@ -32,7 +32,7 @@ describe("CopyValueButton", () => {
     );
     await vi.waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(
-        "irm 'http://localhost:3000/install/linger-computer.ps1' | iex",
+        "irm 'http://localhost:3000/install/talos-computer.ps1' | iex",
       ),
     );
     expect(screen.queryByText(/curl -fsSL/)).not.toBeInTheDocument();
@@ -44,7 +44,7 @@ describe("CopyValueButton", () => {
     expect(
       screen.getByRole("combobox", { name: "Computer operating system" }),
     ).toHaveValue("win32");
-    expect(screen.getByText(/linger-computer.ps1/)).toBeVisible();
+    expect(screen.getByText(/talos-computer.ps1/)).toBeVisible();
   });
 
   it("copies both commands from the setup instructions", async () => {
@@ -59,12 +59,12 @@ describe("CopyValueButton", () => {
     await vi.waitFor(() =>
       expect(writeText).toHaveBeenNthCalledWith(
         1,
-        'curl -fsSL "http://localhost:3000/install/linger-computer.sh" | bash',
+        'curl -fsSL "http://localhost:3000/install/talos-computer.sh" | bash',
       ),
     );
     expect(writeText).toHaveBeenNthCalledWith(
       2,
-      "linger-computer-local-3000 login",
+      "talos-computer-local-3000 login",
     );
   });
 
@@ -107,8 +107,8 @@ describe("CopyValueButton", () => {
       ).toHaveLength(2),
     );
     expect(copiedValues).toEqual([
-      'curl -fsSL "http://localhost:3000/install/linger-computer.sh" | bash',
-      "linger-computer-local-3000 login",
+      'curl -fsSL "http://localhost:3000/install/talos-computer.sh" | bash',
+      "talos-computer-local-3000 login",
     ]);
   });
 
@@ -119,7 +119,7 @@ describe("CopyValueButton", () => {
     renderCopyButton();
     fireEvent.click(screen.getByRole("button", { name: "Copy command" }));
 
-    expect(writeText).toHaveBeenCalledWith("linger-computer login");
+    expect(writeText).toHaveBeenCalledWith("talos-computer login");
     expect(
       await screen.findByRole("button", { name: "Command copied" }),
     ).toBeVisible();
@@ -167,7 +167,7 @@ describe("CopyValueButton", () => {
     expect(
       await screen.findByRole("button", { name: "Command selected" }),
     ).toBeVisible();
-    expect(window.getSelection()?.toString()).toBe("linger-computer login");
+    expect(window.getSelection()?.toString()).toBe("talos-computer login");
   });
 
   it("does not report success when every copy mechanism fails", async () => {
@@ -177,7 +177,7 @@ describe("CopyValueButton", () => {
     render(
       <CopyValueButton
         selectionTargetRef={{ current: null }}
-        value="linger-computer login"
+        value="talos-computer login"
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Copy command" }));
@@ -206,7 +206,7 @@ function setClipboard(clipboard: Pick<Clipboard, "writeText"> | undefined) {
 }
 
 function renderCopyButton() {
-  render(<CopyButtonHarness value="linger-computer login" />);
+  render(<CopyButtonHarness value="talos-computer login" />);
 }
 
 function CopyButtonHarness({ value }: { value: string }) {

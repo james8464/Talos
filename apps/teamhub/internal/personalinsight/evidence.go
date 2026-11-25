@@ -7,8 +7,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/personalprofile"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/personalprofile"
 )
 
 // buildEvidence turns the Gmail message inputs of one Profile generation to

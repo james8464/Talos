@@ -4,8 +4,8 @@ import type {
   OperationPrepare,
   OperationPrepared,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
-import { isRecord } from "@linger/service-kit";
+} from "@talos/wire-contracts/runner-gateway/types";
+import { isRecord } from "@talos/service-kit";
 import { isDeepStrictEqual } from "node:util";
 import {
   admissionLimit,

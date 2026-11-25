@@ -1,7 +1,7 @@
 import {
   EMPTY_SECTION_TEXT,
   REPORT_SOURCES_SECTION,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 import { Ajv } from "ajv";
 import { stringify } from "yaml";
 import type { ReportSourceReference } from "./report-source-references.js";

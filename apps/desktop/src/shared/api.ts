@@ -1,12 +1,12 @@
 // Contract between the remote SPA (through preload) and the main process.
-// The SPA detects the desktop shell with `typeof window.lingerDesktop`.
+// The SPA detects the desktop shell with `typeof window.talosDesktop`.
 
 import type {
   DesktopDriverActionResult,
   DesktopDriverCapabilities,
   DesktopDriverInstallRequest,
   DesktopDriverInstallState,
-} from "@linger/service-kit/nvidia-driver";
+} from "@talos/service-kit/nvidia-driver";
 
 export type {
   DesktopDriverActionResult,
@@ -44,7 +44,7 @@ export interface DesktopSettings {
   readonly preventSleep: boolean;
 }
 
-// Signing in with the owner account of the Linger this app installed; the
+// Signing in with the owner account of the Talos this app installed; the
 // password stays in the main process.
 export type LocalAccountSignIn =
   | { readonly ok: true }
@@ -56,21 +56,21 @@ export type DesktopPermissionId =
   | "camera"
   | "microphone";
 
-// A permission step this app takes on its own Mac. Linger is this app, so
+// A permission step this app takes on its own Mac. Talos is this app, so
 // every step for it runs here; CuaDriver's own prompt and restart belong to
 // the daemon, so only its System Settings pane opens from here.
 export type DesktopPermissionStep =
   | {
       readonly action: "prompt";
-      readonly subject: "linger";
+      readonly subject: "talos";
       readonly permission: DesktopPermissionId;
     }
   | {
       readonly action: "open_settings";
-      readonly subject: "linger" | "computer_use";
+      readonly subject: "talos" | "computer_use";
       readonly permission: DesktopPermissionId;
     }
-  | { readonly action: "relaunch"; readonly subject: "linger" };
+  | { readonly action: "relaunch"; readonly subject: "talos" };
 
 // The updater's progress as the page sees it; the same states the tray shows.
 export type DesktopUpdateState =
@@ -117,7 +117,7 @@ export interface PreviewViewApi {
   onState(callback: (id: string, state: PreviewViewState) => void): () => void;
 }
 
-export interface LingerDesktopApi {
+export interface TalosDesktopApi {
   readonly version: string;
   readonly platform: "darwin" | "win32" | "linux";
   readonly computer: {
@@ -139,9 +139,9 @@ export interface LingerDesktopApi {
     }): Promise<DesktopSettings>;
     onChange(callback: (settings: DesktopSettings) => void): () => void;
   };
-  // The owner account of the Linger installed on this computer.
+  // The owner account of the Talos installed on this computer.
   readonly localAccount: {
-    // Whether the window shows that Linger; false for any other server.
+    // Whether the window shows that Talos; false for any other server.
     available(): Promise<boolean>;
     signIn(): Promise<LocalAccountSignIn>;
   };

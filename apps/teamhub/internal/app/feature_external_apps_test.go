@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentregistry"
 )
 
 // Saving or removing a Composio key, or connecting an app, changes the

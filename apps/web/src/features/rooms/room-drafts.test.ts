@@ -233,7 +233,7 @@ describe("Room drafts", () => {
 
   it("keeps draft text opaque, including JSON-shaped text with a format marker", () => {
     const protocolShapedText =
-      '{"format":"linger-composer-draft-v1","body":"must stay JSON"}';
+      '{"format":"talos-composer-draft-v1","body":"must stay JSON"}';
     writeRoomComposerDraft(firstRoom, textDraft(protocolShapedText));
 
     expect(readRoomComposerDraft(firstRoom)).toEqual(
@@ -243,7 +243,7 @@ describe("Room drafts", () => {
 
   it("filters malformed structured references and removes an empty structured draft", () => {
     window.localStorage.setItem(
-      "linger.room-composer-draft:account-1:tenant-1:room-1",
+      "talos.room-composer-draft:account-1:tenant-1:room-1",
       JSON.stringify({
         artifactContexts: [
           {
@@ -260,7 +260,7 @@ describe("Room drafts", () => {
           { documentId: "document-plan", token: "@Launch_plan" },
           { documentId: 42, token: "@Broken" },
         ],
-        format: "linger-composer-draft-v3",
+        format: "talos-composer-draft-v3",
         mentions: [{ display_name: "Broken" }],
         skillReferences: [{ skillId: "missing-fields" }],
       }),
@@ -285,7 +285,7 @@ describe("Room drafts", () => {
     });
     expect(
       window.localStorage.getItem(
-        "linger.room-composer-draft:account-1:tenant-1:room-1",
+        "talos.room-composer-draft:account-1:tenant-1:room-1",
       ),
     ).toBeNull();
   });

@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 )
 
 type immutableContentMetadata struct {

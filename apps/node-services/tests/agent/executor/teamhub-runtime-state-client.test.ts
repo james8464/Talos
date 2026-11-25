@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, type Mock } from "vitest";
 
 import { createTeamHubRuntimeStateClient } from "../../../src/agent/executor/teamhub-runtime-state-client.js";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("TeamHubRuntimeStateClient retries", () => {
   it("reads deletion identity through the distinct service endpoint without caching", async () => {

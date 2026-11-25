@@ -40,8 +40,8 @@ export const DEPENDENCY_TARGETS = Object.freeze([
 export function parseSourceDependenciesArguments(arguments_) {
   const options = {
     label: null,
-    name: "linger",
-    output: path.join(repositoryRoot, ".linger-runtime/source-archive"),
+    name: "talos",
+    output: path.join(repositoryRoot, ".talos-runtime/source-archive"),
     ref: "HEAD",
     target: `${process.platform}-${process.arch}`,
     "url-base": null,
@@ -178,7 +178,7 @@ export async function prepareSourceDependencies(
   }
 }
 
-/** Reads the manifest for `LINGER_SOURCE_DEPENDENCIES_URL`/`_SHA256`. */
+/** Reads the manifest for `TALOS_SOURCE_DEPENDENCIES_URL`/`_SHA256`. */
 export async function sourceDependenciesEnvironment(output, target) {
   const manifest = JSON.parse(
     await readFile(
@@ -189,8 +189,8 @@ export async function sourceDependenciesEnvironment(output, target) {
   if (!manifest.url)
     throw new Error(`source-dependencies-${target}.json has no url`);
   return {
-    LINGER_SOURCE_DEPENDENCIES_URL: manifest.url,
-    LINGER_SOURCE_DEPENDENCIES_SHA256: manifest.sha256,
+    TALOS_SOURCE_DEPENDENCIES_URL: manifest.url,
+    TALOS_SOURCE_DEPENDENCIES_SHA256: manifest.sha256,
   };
 }
 

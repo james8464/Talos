@@ -27,7 +27,7 @@ import {
 import { readLiveKitSettings, startNativeLiveKit } from "./native-livekit.js";
 import { checkNativeRuntime } from "./native-runtime.js";
 import { checkTeamhubBinaries } from "./teamhub-binaries.js";
-import { sourceRegion } from "@linger/service-kit";
+import { sourceRegion } from "@talos/service-kit";
 import { npmRegistryEnvironment } from "./npm-registry.js";
 import { recordRegionFallback, resolveRegion } from "./region.js";
 import { prepareNativeDatabase } from "./native-database.js";
@@ -528,7 +528,7 @@ async function runNativeSource(
         emit({
           kind: "log",
           stage: "runtime",
-          message: `${degraded.message} (${degraded.code}) Linger is starting without local models; open the Models page to manage local models or switch to another AI runtime.\n`,
+          message: `${degraded.message} (${degraded.code}) Talos is starting without local models; open the Models page to manage local models or switch to another AI runtime.\n`,
         });
       };
       const restoreSavedLocalModel = async () => {
@@ -1065,7 +1065,7 @@ async function runNativeSource(
           emit({
             kind: "log",
             stage,
-            message: `The data from the earlier Simplex app can't be upgraded to Linger, so Linger starts with a fresh workspace. The earlier data was moved, not deleted, to ${legacyBackup}.\n`,
+            message: `The data from the earlier Simplex app can't be upgraded to Talos, so Talos starts with a fresh workspace. The earlier data was moved, not deleted, to ${legacyBackup}.\n`,
           });
         // Emits the services stage and captures the log ends that
         // waitHealthy reads, before any service starts.
@@ -1595,7 +1595,7 @@ async function reclaimEarlierProcesses(
     onEvent?.({
       kind: "log",
       stage: "services",
-      message: `Ended ${ended.length} Linger processes an earlier run left behind (PIDs ${ended.join(", ")}).\n`,
+      message: `Ended ${ended.length} Talos processes an earlier run left behind (PIDs ${ended.join(", ")}).\n`,
     });
 }
 export async function stopNativeSource(

@@ -2,7 +2,7 @@ import type { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 export function windowsTreeTermination(
   child: {
     pid?: number;

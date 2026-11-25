@@ -63,7 +63,7 @@ rows.sort(
 );
 const out = join(
   process.cwd(),
-  "../../.linger-runtime/live-scenarios",
+  "../../.talos-runtime/live-scenarios",
   `${new Date().toISOString().replaceAll(":", "-")}.json`,
 );
 mkdirSync(dirname(out), { recursive: true });

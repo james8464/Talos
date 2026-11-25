@@ -20,7 +20,7 @@ const repository = () => {
   const root = mkdtempSync(path.join(os.tmpdir(), "source-archive-"));
   mkdirSync(path.join(root, "scripts"));
   writeFileSync(path.join(root, "scripts/source-native.mjs"), "");
-  writeFileSync(path.join(root, "README.md"), "linger\n");
+  writeFileSync(path.join(root, "README.md"), "talos\n");
   git(root, "init", "-q");
   git(root, "add", ".");
   git(root, "commit", "-q", "--date=2026-01-01T00:00:00Z", "-m", "init");
@@ -38,16 +38,16 @@ describe("source archive", () => {
       "--output",
       output,
       "--url-base",
-      "https://github.com/simplexai-labs/linger/releases/download/v1.0.0",
+      "https://github.com/simplexai-labs/talos/releases/download/v1.0.0",
     ];
     // Uncommitted changes never reach the archive.
     writeFileSync(path.join(root, "README.md"), "dirty\n");
     const first = await prepareSourceArchive(args, { cwd: root });
     const bytes = readFileSync(first.archive);
-    expect(path.basename(first.archive)).toBe("linger-v1.0.0.tar.gz");
+    expect(path.basename(first.archive)).toBe("talos-v1.0.0.tar.gz");
     expect(first.sha256).toBe(createHash("sha256").update(bytes).digest("hex"));
     expect(readFileSync(`${first.archive}.sha256`, "utf8")).toBe(
-      `${first.sha256}  linger-v1.0.0.tar.gz\n`,
+      `${first.sha256}  talos-v1.0.0.tar.gz\n`,
     );
     expect(
       execFileSync("tar", ["-tzf", first.archive], { encoding: "utf8" })
@@ -55,23 +55,23 @@ describe("source archive", () => {
         .split("\n")
         .sort(),
     ).toEqual([
-      "linger-v1.0.0/",
-      "linger-v1.0.0/README.md",
-      "linger-v1.0.0/scripts/",
-      "linger-v1.0.0/scripts/source-native.mjs",
+      "talos-v1.0.0/",
+      "talos-v1.0.0/README.md",
+      "talos-v1.0.0/scripts/",
+      "talos-v1.0.0/scripts/source-native.mjs",
     ]);
     expect(
-      execFileSync("tar", ["-xzOf", first.archive, "linger-v1.0.0/README.md"], {
+      execFileSync("tar", ["-xzOf", first.archive, "talos-v1.0.0/README.md"], {
         encoding: "utf8",
       }),
-    ).toBe("linger\n");
+    ).toBe("talos\n");
 
     const second = await prepareSourceArchive(args, { cwd: root });
     expect(second.sha256).toBe(first.sha256);
     expect(await sourceArchiveEnvironment(output)).toEqual({
-      LINGER_SOURCE_ARCHIVE_URL:
-        "https://github.com/simplexai-labs/linger/releases/download/v1.0.0/linger-v1.0.0.tar.gz",
-      LINGER_SOURCE_ARCHIVE_SHA256: first.sha256,
+      TALOS_SOURCE_ARCHIVE_URL:
+        "https://github.com/simplexai-labs/talos/releases/download/v1.0.0/talos-v1.0.0.tar.gz",
+      TALOS_SOURCE_ARCHIVE_SHA256: first.sha256,
     });
   });
 
@@ -82,7 +82,7 @@ describe("source archive", () => {
       { cwd: root },
     );
     expect(path.basename(result.archive)).toBe(
-      `linger-${result.commit.slice(0, 12)}.tar.gz`,
+      `talos-${result.commit.slice(0, 12)}.tar.gz`,
     );
   });
 

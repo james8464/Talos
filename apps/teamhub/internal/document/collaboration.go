@@ -22,7 +22,7 @@ type IssueCollaborationCredentialInput struct {
 }
 
 // ConfigureConnectionTokens sets the key that signs Document connection
-// tokens. TeamHub and the Document Runtime derive it from LINGER_SECRET_SEED
+// tokens. TeamHub and the Document Runtime derive it from TALOS_SECRET_SEED
 // with the same label, so the Runtime verifies every token itself.
 func (s *Service) ConfigureConnectionTokens(key string) {
 	s.connectionTokenKey = []byte(key)

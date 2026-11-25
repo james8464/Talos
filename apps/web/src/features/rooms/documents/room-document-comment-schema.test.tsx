@@ -23,7 +23,7 @@ describe("Room Document inline schema", () => {
       {
         getData: (type) =>
           type === "text/html"
-            ? `<a href="${url}" data-linger-document-id="document-1" data-linger-tenant-id="tenant-1">Launch plan</a>`
+            ? `<a href="${url}" data-talos-document-id="document-1" data-talos-tenant-id="tenant-1">Launch plan</a>`
             : url,
       },
       window.location.origin,

@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 const operationMCPPrepareKind = "internal.mcp.prepare"
@@ -390,7 +390,7 @@ func (e Executor) Start(ctx context.Context, spec OperationSpec, emit EmitFunc) 
 		if environment == nil {
 			environment = make(map[string]string)
 		}
-		environment["LINGER_CLAUDE_SESSION_ROOT"] = filepath.Join(runtimeHome.Path, "sessions")
+		environment["TALOS_CLAUDE_SESSION_ROOT"] = filepath.Join(runtimeHome.Path, "sessions")
 	}
 	var piConfigDigest string
 	if spec.Provider == "pi" {
@@ -411,7 +411,7 @@ func (e Executor) Start(ctx context.Context, spec OperationSpec, emit EmitFunc) 
 			}
 			return nil, err
 		}
-		environment["LINGER_PI_SESSION_ROOT"] = filepath.Join(runtimeHome.Path, "sessions")
+		environment["TALOS_PI_SESSION_ROOT"] = filepath.Join(runtimeHome.Path, "sessions")
 	}
 	var codexConfigArgs []string
 	var codexConfigDigest string
@@ -791,7 +791,7 @@ func cloneEnvironment(input map[string]string) map[string]string {
 }
 
 // retireClaudeResident stops the parked Claude process of a Runtime home, keyed
-// like the Operation's LINGER_CLAUDE_SESSION_ROOT.
+// like the Operation's TALOS_CLAUDE_SESSION_ROOT.
 func retireClaudeResident(home string) error {
 	return native.StopParkedClaudeResidentForCredentials(filepath.Join(home, "sessions"))
 }

@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
 )
 
 // piResidentHome is one Context with the resident fake Pi and residency on.

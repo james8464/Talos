@@ -384,7 +384,7 @@ export function connectorDefinition(spec: ConnectorSpec): CommandDefinition {
         throw invalidFlag(
           "--attach",
           "out_of_range",
-          `Feishu Mail attachments sent through Linger are limited to about 640 KiB in total; got ${mebibytes(feishuEncoded)}. Share a link instead.`,
+          `Feishu Mail attachments sent through Talos are limited to about 640 KiB in total; got ${mebibytes(feishuEncoded)}. Share a link instead.`,
         );
       const large = files.find((file) => file.sizeBytes > 150 * 1024 * 1024);
       if (app === "outlook" && large)

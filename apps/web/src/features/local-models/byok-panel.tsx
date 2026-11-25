@@ -11,7 +11,7 @@ import {
   normalizeByokBaseUrl,
   normalizeByokPath,
   validByokPath,
-} from "@linger/service-kit/byok-endpoint";
+} from "@talos/service-kit/byok-endpoint";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   type CSSProperties,
@@ -94,7 +94,7 @@ function abortController(ref: { current: AbortController | null }) {
 
 /**
  * The person's own endpoint, addressed as base URL + path + endpoint. The API
- * key goes to the Computer, which keeps it private; Linger never shows it
+ * key goes to the Computer, which keeps it private; Talos never shows it
  * again.
  */
 export function ByokPanel({

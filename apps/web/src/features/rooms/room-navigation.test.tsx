@@ -27,7 +27,7 @@ describe("Room navigation", () => {
 
   it("opens the Room list at the threads sidebar width and preserves resize preferences", async () => {
     const fixture = await navigationFixture();
-    const key = `linger:room-list-width:${fixture.tenant.id}`;
+    const key = `talos:room-list-width:${fixture.tenant.id}`;
     localStorage.removeItem(key);
     renderNavigation(fixture, new QueryClient());
     const resize = screen.getByRole("separator", {
@@ -135,7 +135,7 @@ describe("Room navigation", () => {
       name: "Collapse sidebar",
     }).parentElement;
     expect(header).toContainElement(
-      screen.getByRole("img", { name: "Linger" }),
+      screen.getByRole("img", { name: "Talos" }),
     );
     expect(screen.getByTestId("location")).toHaveTextContent(pathname);
     fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
@@ -148,8 +148,8 @@ describe("Room navigation", () => {
   });
 
   it("keeps the web rail in the desktop app and lets the Chat list collapse", async () => {
-    const desktop = window as { lingerDesktop?: unknown };
-    desktop.lingerDesktop = {};
+    const desktop = window as { talosDesktop?: unknown };
+    desktop.talosDesktop = {};
     try {
       const fixture = await navigationFixture();
       renderNavigation(fixture, new QueryClient());
@@ -188,7 +188,7 @@ describe("Room navigation", () => {
         await screen.findByRole("navigation", { name: "Room navigation" }),
       ).toBeVisible();
     } finally {
-      delete desktop.lingerDesktop;
+      delete desktop.talosDesktop;
     }
   });
 

@@ -4,8 +4,8 @@ import type {
   AgentCliCredentialFailed,
   AgentCliCredentialReport,
   AgentCliCredentialStored,
-} from "@linger/wire-contracts/runner-gateway/types";
-import { parseDaemonToAgentEnvelope } from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/types";
+import { parseDaemonToAgentEnvelope } from "@talos/wire-contracts/runner-gateway/validator";
 import {
   RunnerGateway,
   RunnerGatewayError,

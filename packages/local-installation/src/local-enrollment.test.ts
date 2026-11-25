@@ -14,12 +14,12 @@ afterEach(async () => {
   );
 });
 async function fixture() {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-enroll-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-enroll-"));
   roots.push(root);
   await writeFile(
     path.join(root, "local-account.json"),
     JSON.stringify({
-      email: "owner@linger.local",
+      email: "owner@talos.local",
       password: "p".repeat(32),
       provisioned: true,
     }),
@@ -131,7 +131,7 @@ it("renews an expired token for the same Computer rather than creating a duplica
   };
   await writeFile(
     path.join(f.instance.root, "computer-enrollment.token"),
-    "linger-connect-v1." +
+    "talos-connect-v1." +
       Buffer.from(JSON.stringify(previous)).toString("base64url"),
     { mode: 0o600 },
   );
@@ -184,7 +184,7 @@ it.each([
       expires_at: "2020-01-01T00:00:00Z",
     };
     const text =
-      "linger-connect-v1." +
+      "talos-connect-v1." +
       Buffer.from(JSON.stringify(previous)).toString("base64url");
     await writeFile(file, text, { mode: 0o600 });
     let authorized = 0;

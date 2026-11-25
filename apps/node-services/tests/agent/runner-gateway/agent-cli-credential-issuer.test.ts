@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { requestBodyText, requestUrlText } from "@linger/service-kit";
+import { requestBodyText, requestUrlText } from "@talos/service-kit";
 
 import { createTeamHubAgentCliCredentialIssuer } from "../../../src/agent/runner-gateway/agent-cli-credential-issuer.js";
 

@@ -50,7 +50,7 @@ describe("exact Host file reads", () => {
     const playground = path.join(root, "playground");
     await mkdir(playground);
     await writeFile(path.join(playground, "large.md"), "1234");
-    const fixtureRoot = process.env.LINGER_TEST_WINDOWS_SYMLINK_FIXTURE;
+    const fixtureRoot = process.env.TALOS_TEST_WINDOWS_SYMLINK_FIXTURE;
     if (process.platform !== "win32") {
       await symlink(
         path.join(playground, "large.md"),
@@ -58,7 +58,7 @@ describe("exact Host file reads", () => {
       );
     } else if (!fixtureRoot) {
       throw new Error(
-        "LINGER_TEST_WINDOWS_SYMLINK_FIXTURE is required for Windows file link tests",
+        "TALOS_TEST_WINDOWS_SYMLINK_FIXTURE is required for Windows file link tests",
       );
     } else {
       expect(

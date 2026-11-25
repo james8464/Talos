@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"github.com/jackc/pgx/v5"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 )
 
 // agentDocumentAsset is one embedded image of an Agent's Markdown, stored

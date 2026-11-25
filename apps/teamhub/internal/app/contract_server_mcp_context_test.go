@@ -14,10 +14,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/mcpcontext"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/mcpcontext"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 type fakeMcpContextService struct {
@@ -131,8 +131,8 @@ func TestRetiredInternalBusinessAndPublisherEndpointsAreAbsent(t *testing.T) {
 		{method: http.MethodPost, path: "/internal/v1/platform-mcp-manifests/actions/preflight", body: `{}`},
 		{method: http.MethodPost, path: "/internal/v1/platform-mcp-manifests/actions/publish", body: `{}`},
 		{method: http.MethodPost, path: "/internal/v1/platform-mcp-manifests/actions/activate", body: `{}`},
-		{method: http.MethodGet, path: "/internal/v1/platform-mcp-manifests/linger_teamhub/active"},
-		{method: http.MethodGet, path: "/internal/v1/platform-mcp-manifests/linger_teamhub/versions/1.0.0"},
+		{method: http.MethodGet, path: "/internal/v1/platform-mcp-manifests/talos_teamhub/active"},
+		{method: http.MethodGet, path: "/internal/v1/platform-mcp-manifests/talos_teamhub/versions/1.0.0"},
 	}
 	for _, test := range tests {
 		request := httptest.NewRequest(test.method, test.path, strings.NewReader(test.body))

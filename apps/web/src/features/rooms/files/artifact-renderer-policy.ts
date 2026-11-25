@@ -1,4 +1,4 @@
-import { mediaTypeForExtension } from "@linger/document-files/media-type";
+import { mediaTypeForExtension } from "@talos/document-files/media-type";
 import { translate } from "@/i18n/language";
 import type { Message } from "@/i18n/messages";
 import { artifactPreviewMaxFileBytes } from "./artifact-preview-limits";

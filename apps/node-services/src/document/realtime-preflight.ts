@@ -2,7 +2,7 @@ import {
   inspectRoomDocument,
   ROOM_DOCUMENT_SESSION_LIMITS,
   type RoomDocumentStateInspection,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import * as Y from "yjs";
 
 import type { DocumentBodyStore } from "./bodies.js";

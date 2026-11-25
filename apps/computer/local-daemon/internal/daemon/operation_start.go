@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func (d *Daemon) handleOperationStart(ctx context.Context, stream transport.Stream, command protocol.Command) error {
@@ -98,11 +98,11 @@ func (d *Daemon) handleOperationStart(ctx context.Context, stream transport.Stre
 	if spec.OperationKind == "run.start" {
 		// Only run.start rewrites the per-run CLI files, after the Context
 		// occupancy check and before any provider process starts or is reused.
-		var credentials lingercontext.CLICredentialLookup
+		var credentials taloscontext.CLICredentialLookup
 		if d.cliCredentials != nil {
 			credentials = d.cliCredentials
 		}
-		if err := lingercontext.PrepareRunCLI(spec.WorkingDirectory, command.TenantID, command.AgentID,
+		if err := taloscontext.PrepareRunCLI(spec.WorkingDirectory, command.TenantID, command.AgentID,
 			credentials, command.Payload); err != nil {
 			cancel()
 			d.discardPreparedOperationAsync(prepared, "cli_run_context_failure")

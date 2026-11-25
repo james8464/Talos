@@ -8,7 +8,7 @@ import {
   runRebuildStep,
 } from "../../src/memory/rebuild.js";
 import { rebuildRequest } from "../../src/memory/rebuild-cli.js";
-import { requestBodyText, requestUrlText } from "@linger/service-kit";
+import { requestBodyText, requestUrlText } from "@talos/service-kit";
 
 const roots: string[] = [];
 afterEach(async () => {

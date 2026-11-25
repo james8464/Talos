@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // Errors of a permission command; the handlers map each to its own status.

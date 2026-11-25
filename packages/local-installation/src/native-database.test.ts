@@ -23,7 +23,7 @@ vi.mock("./fs-retry.js", () => ({
 vi.mock("./instance.js", () => ({
   privateDirectory: vi.fn(async () => {}),
   atomicPrivate: vi.fn(async () => {}),
-  readPrivate: vi.fn(async () => "LINGER_POSTGRES_PASSWORD=secret\n"),
+  readPrivate: vi.fn(async () => "TALOS_POSTGRES_PASSWORD=secret\n"),
 }));
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -148,7 +148,7 @@ describe("prepareNativeDatabase on Windows", () => {
     expect(vi.mocked(inspectNativeProcess)).toHaveBeenCalled();
   });
 
-  it("starts postgres with Administrators disabled when Linger runs as administrator", async () => {
+  it("starts postgres with Administrators disabled when Talos runs as administrator", async () => {
     asWindows();
     run.mockImplementation(async (command) =>
       command.endsWith("whoami.exe")
@@ -334,7 +334,7 @@ describe("prepareNativeDatabase with an existing TeamHub schema", () => {
           ),
     );
 
-  it("sets a database from before Linger aside and opens a fresh one", async () => {
+  it("sets a database from before Talos aside and opens a fresh one", async () => {
     let fresh = false;
     answer(() => (fresh ? "f|f\n" : "t|t\n"), "f\n");
     vi.mocked(setAsideLegacyData).mockImplementation(async () => {
@@ -356,7 +356,7 @@ describe("prepareNativeDatabase with an existing TeamHub schema", () => {
     expect(startNativeProcess).toHaveBeenCalledTimes(2);
   });
 
-  it("leaves a database that Linger migrated alone", async () => {
+  it("leaves a database that Talos migrated alone", async () => {
     answer(() => "t|t\n", "t\n");
     expect(await prepareNativeDatabase(options)).toEqual({});
     expect(stopNativeProcess).not.toHaveBeenCalled();

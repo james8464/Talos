@@ -181,7 +181,7 @@ func safeSkillComponent(value string) bool {
 // executors, hooks and credentials remain outside this projection. It returns
 // the digest of what it projected: each link and its source, each linked
 // Skill's content, and the disable rules. Entries outside the Daemon's
-// linger-local-* namespace, such as Skills Codex installs itself, are not
+// talos-local-* namespace, such as Skills Codex installs itself, are not
 // projected and do not count.
 func syncCodexSkills(target, sharedHome, userHome string) (string, error) {
 	skills, err := DiscoverCodexSkills(sharedHome, userHome)
@@ -196,7 +196,7 @@ func syncCodexSkills(target, sharedHome, userHome string) (string, error) {
 	for _, skill := range skills {
 		if skill.Enabled {
 			sum := sha256.Sum256([]byte(skill.Path))
-			expected["linger-local-"+hex.EncodeToString(sum[:12])] = filepath.Dir(skill.Path)
+			expected["talos-local-"+hex.EncodeToString(sum[:12])] = filepath.Dir(skill.Path)
 		}
 	}
 	entries, err := os.ReadDir(root)
@@ -204,13 +204,13 @@ func syncCodexSkills(target, sharedHome, userHome string) (string, error) {
 		return "", err
 	}
 	for _, entry := range entries {
-		if !strings.HasPrefix(entry.Name(), "linger-local-") {
+		if !strings.HasPrefix(entry.Name(), "talos-local-") {
 			continue
 		}
 		path := filepath.Join(root, entry.Name())
 		linked, err := os.Readlink(path)
 		if err != nil {
-			// The linger-local-* namespace is daemon-owned; anything that is no
+			// The talos-local-* namespace is daemon-owned; anything that is no
 			// longer a link there is stale state to replace, not a Run failure.
 			if err := os.RemoveAll(path); err != nil {
 				return "", fmt.Errorf("replace stale inherited Skill entry %s: %w", entry.Name(), err)

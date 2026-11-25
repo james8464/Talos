@@ -1,8 +1,8 @@
-import type { ComputerToolResult } from "@linger/wire-contracts/runner-gateway/types";
+import type { ComputerToolResult } from "@talos/wire-contracts/runner-gateway/types";
 import {
   RUNNER_GATEWAY_PROTOCOL_VERSION,
   parseAgentToDaemonEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 import type {
   ConnectedRunner,
   RunnerGatewayContext,

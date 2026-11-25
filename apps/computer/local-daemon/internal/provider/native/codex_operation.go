@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 const (
@@ -227,7 +227,7 @@ func (op *codexOperation) initialize(ctx context.Context) (codexFailure, bool) {
 	op.logger.Info("codex lifecycle", "phase", "initialize_sent", "pid", op.proc.pid, "attempt", op.attempt)
 	sent := time.Now()
 	params := map[string]any{
-		"clientInfo":   map[string]any{"name": "linger-computer", "title": "Linger Computer", "version": op.proc.computerVersion},
+		"clientInfo":   map[string]any{"name": "talos-computer", "title": "Talos Computer", "version": op.proc.computerVersion},
 		"capabilities": map[string]any{"experimentalApi": true},
 	}
 	_, _, err := op.proc.transport.call(ctx, "initialize", params, op.budget("initialize"), nil)

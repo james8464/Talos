@@ -19,7 +19,7 @@ import { restoreByokSource, withLocalModelsLock } from "./local-models.js";
 const tempDirs: string[] = [];
 
 async function makeHome(): Promise<string> {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "linger-byok-test-"));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "talos-byok-test-"));
   tempDirs.push(dir);
   return dir;
 }

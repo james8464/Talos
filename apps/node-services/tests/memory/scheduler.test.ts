@@ -1,4 +1,4 @@
-import { createJsonLogger } from "@linger/service-kit/node";
+import { createJsonLogger } from "@talos/service-kit/node";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { MemoryScheduleConfig } from "../../src/memory/config.js";

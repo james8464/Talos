@@ -10,7 +10,7 @@ const repository = path.resolve(import.meta.dirname, "..");
 // window; the setup page polls processes, so those windows keep appearing.
 const roots = [
   "apps/desktop/src/main",
-  "apps/linger-installer/src/server",
+  "apps/talos-installer/src/server",
   "packages/local-installation/src",
 ];
 const scripts = ["scripts/replace-process.mjs", "scripts/with-local-env.mjs"];
@@ -20,7 +20,7 @@ const posixOnly = new Set([
   "apps/desktop/src/main/open-url.ts",
   "apps/desktop/src/main/shell-env.ts",
   "apps/desktop/src/main/updater.ts",
-  "apps/linger-installer/src/server/platform.ts",
+  "apps/talos-installer/src/server/platform.ts",
 ]);
 
 function sources() {

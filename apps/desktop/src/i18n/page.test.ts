@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { defineMessages } from "@linger/service-kit/messages";
+import { defineMessages } from "@talos/service-kit/messages";
 import { describe, expect, it } from "vitest";
 
 import { offlineMessages } from "../shell/offline.messages.js";
@@ -36,7 +36,7 @@ const PAGE = `<!doctype html>
     <p id="reason"></p>
     <script>
       document.getElementById("reason").replaceChildren(
-        ...tSpans("unreachable", { host: "<b>linger.example.com</b>" }),
+        ...tSpans("unreachable", { host: "<b>talos.example.com</b>" }),
       );
       window.result = {
         retrying: t("retrying", { seconds: 1200 }),
@@ -94,7 +94,7 @@ describe("localizePage", () => {
     load("en");
     const reason = document.getElementById("reason")!;
     const host = reason.querySelector("span.host")!;
-    expect(host.textContent).toBe("<b>linger.example.com</b>");
+    expect(host.textContent).toBe("<b>talos.example.com</b>");
     expect(reason.querySelector("b")).toBeNull();
   });
 

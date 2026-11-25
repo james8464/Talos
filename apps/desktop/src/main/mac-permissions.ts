@@ -57,7 +57,7 @@ const denied = (error: unknown): boolean => {
 };
 
 // The macOS privacy (TCC) permissions tasks run into.
-// Commands that agents start count as Linger's own, so one grant here
+// Commands that agents start count as Talos's own, so one grant here
 // covers them. Asking for folders or automation shows a system prompt, so
 // those are only checked after the user asked once; Full Disk Access never
 // prompts and is always checked.

@@ -3,7 +3,7 @@ import type {
   DesktopPermissionStep,
 } from "../shared/api.js";
 
-// The macOS Screen Recording and Accessibility permissions of Linger.app
+// The macOS Screen Recording and Accessibility permissions of Talos.app
 // itself. Shell commands the daemon starts (screencapture, osascript) are
 // attributed to the app, so the Go daemon, which cannot call these APIs,
 // asks this module over its stdio channel.
@@ -51,7 +51,7 @@ export interface SystemPermissionApi {
   // systemPreferences.isTrustedAccessibilityClient(prompt)
   isTrustedAccessibilityClient(prompt: boolean): boolean;
   // desktopCapturer.getSources for screens; the first call shows the system
-  // prompt and lists Linger under Screen Recording.
+  // prompt and lists Talos under Screen Recording.
   captureScreens(): Promise<unknown>;
   openExternal(url: string): Promise<void>;
 }
@@ -147,7 +147,7 @@ export async function runDesktopPermissionStep(
       await host.permissions.prompt(step.permission);
       return;
     case "open_settings":
-      if (step.subject === "linger")
+      if (step.subject === "talos")
         await host.permissions.openSettings(step.permission);
       else await host.openExternal(SYSTEM_SETTINGS_URL[step.permission]);
       return;

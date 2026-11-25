@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // ErrReadCursorAhead reports a read cursor past the Room's committed sequence.

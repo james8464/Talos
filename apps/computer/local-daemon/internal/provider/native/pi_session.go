@@ -11,14 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const (
-	piSessionRootKey     = "LINGER_PI_SESSION_ROOT"
-	piLockFileName       = ".linger-lock"
-	piInstructionsName   = "linger-instructions.md"
-	piMCPConfigName      = "linger-mcp.json"
+	piSessionRootKey     = "TALOS_PI_SESSION_ROOT"
+	piLockFileName       = ".talos-lock"
+	piInstructionsName   = "talos-instructions.md"
+	piMCPConfigName      = "talos-mcp.json"
 	piSessionHeaderLimit = 64 << 10
 )
 

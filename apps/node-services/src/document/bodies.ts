@@ -1,4 +1,4 @@
-import { sha256Hex } from "@linger/service-kit/node";
+import { sha256Hex } from "@talos/service-kit/node";
 import postgres from "postgres";
 
 import { documentLogger } from "./log.js";

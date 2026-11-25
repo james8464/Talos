@@ -129,7 +129,7 @@ it("stops waiting when aborted", async () => {
 });
 
 it("does not move a file when already aborted", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-rename-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-rename-"));
   roots.push(root);
   const from = path.join(root, "kit.partial");
   const to = path.join(root, "kit");
@@ -143,7 +143,7 @@ it("does not move a file when already aborted", async () => {
 });
 
 it("does not publish a file after cancellation during a Windows retry wait", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-rename-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-rename-"));
   roots.push(root);
   const from = path.join(root, "kit.partial");
   const to = path.join(root, "kit");
@@ -168,7 +168,7 @@ it("does not publish a file after cancellation during a Windows retry wait", asy
 });
 
 it("renames a real folder under a non-ASCII path", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-rename-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-rename-"));
   roots.push(root);
   const parent = path.join(root, "\u65b0\u5efa\u6587\u4ef6\u5939");
   await mkdir(path.join(parent, "v1.partial"), { recursive: true });

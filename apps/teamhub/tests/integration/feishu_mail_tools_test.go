@@ -11,9 +11,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/feishu"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/feishu"
 )
 
 func TestAgentReadsAndSendsFeishuMailAfterConfirmation(t *testing.T) {

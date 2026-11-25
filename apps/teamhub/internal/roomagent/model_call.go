@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	agentapi "github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	agentapi "github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 const (

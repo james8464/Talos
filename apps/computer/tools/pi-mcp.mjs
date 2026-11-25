@@ -4,16 +4,16 @@ import { isAbsolute } from "node:path";
 // The Daemon puts the Computer tools on NODE_PATH so Pi can load this
 // extension. Node has read it by now; put back the value Pi inherited so the
 // commands Pi starts never resolve a package from the tools.
-if (process.env.LINGER_PI_INHERITED_NODE_PATH !== undefined) {
-  if (process.env.LINGER_PI_INHERITED_NODE_PATH)
-    process.env.NODE_PATH = process.env.LINGER_PI_INHERITED_NODE_PATH;
+if (process.env.TALOS_PI_INHERITED_NODE_PATH !== undefined) {
+  if (process.env.TALOS_PI_INHERITED_NODE_PATH)
+    process.env.NODE_PATH = process.env.TALOS_PI_INHERITED_NODE_PATH;
   else delete process.env.NODE_PATH;
-  delete process.env.LINGER_PI_INHERITED_NODE_PATH;
+  delete process.env.TALOS_PI_INHERITED_NODE_PATH;
 }
 // The Daemon executable that judges a bash command before Pi runs it; the
 // commands Pi starts do not inherit it.
-const shellTextHook = process.env.LINGER_PI_SHELL_TEXT_HOOK;
-delete process.env.LINGER_PI_SHELL_TEXT_HOOK;
+const shellTextHook = process.env.TALOS_PI_SHELL_TEXT_HOOK;
+delete process.env.TALOS_PI_SHELL_TEXT_HOOK;
 // An installed Pi may alias bare package imports to its own version. Resolve
 // the pinned public entry by URL so this adapter keeps its shipped API.
 const { createMcpExtension } = await import(
@@ -112,12 +112,12 @@ const managedMcpExtension = createMcpExtension({
 
 // PERMISSION_REVIEW names the Daemon's review dialog. Pi forwards the dialog
 // over RPC; the Daemon answers with a JSON verdict, {"allow", "message"}.
-export const PERMISSION_REVIEW = "linger.permission_review";
+export const PERMISSION_REVIEW = "talos.permission_review";
 
 // MCP_SYNC_COMMAND reloads the managed MCP config file into a resident Pi
 // process before a Run adopts it; MCP_SYNC_DIALOG reports its structured result.
-export const MCP_SYNC_COMMAND = "linger-sync-mcp";
-export const MCP_SYNC_DIALOG = "linger.mcp_sync";
+export const MCP_SYNC_COMMAND = "talos-sync-mcp";
+export const MCP_SYNC_DIALOG = "talos.mcp_sync";
 
 // reviewedTool reports whether a call goes to the Daemon's permission review:
 // commands and MCP tools.
@@ -283,7 +283,7 @@ export default async function managedExtension(pi) {
       (await refuseRewrittenShellText(event)) ??
       reviewToolCall(event, ctx.ui, ctx.signal),
   );
-  if (process.env.LINGER_PI_MANAGED_MCP_CONFIG) {
-    await mountManagedMcp(pi, process.env.LINGER_PI_MANAGED_MCP_CONFIG);
+  if (process.env.TALOS_PI_MANAGED_MCP_CONFIG) {
+    await mountManagedMcp(pi, process.env.TALOS_PI_MANAGED_MCP_CONFIG);
   }
 }

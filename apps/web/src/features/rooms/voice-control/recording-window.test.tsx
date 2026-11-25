@@ -226,7 +226,7 @@ afterEach(() => {
   // Unmount portals before removing their picture-in-picture documents.
   cleanup();
   Reflect.deleteProperty(window, "documentPictureInPicture");
-  Reflect.deleteProperty(window, "lingerDesktop");
+  Reflect.deleteProperty(window, "talosDesktop");
   document.querySelectorAll("iframe").forEach((frame) => frame.remove());
 });
 
@@ -552,7 +552,7 @@ describe("Recording window", () => {
     "asks inside the row of a minimized in-page window in %s",
     async (host) => {
       if (host === "desktop") {
-        defineGlobalProperty(window, "lingerDesktop", {
+        defineGlobalProperty(window, "talosDesktop", {
           configurable: true,
           value: {},
         });
@@ -855,7 +855,7 @@ describe("Recording window", () => {
     const floating = within(desktop.frame.contentDocument!.body);
     await act(async () => {
       fireEvent.click(
-        floating.getByRole("button", { name: "Return recording to Linger" }),
+        floating.getByRole("button", { name: "Return recording to Talos" }),
       );
     });
     expect(desktop.showMain).toHaveBeenCalledOnce();
@@ -865,7 +865,7 @@ describe("Recording window", () => {
       await screen.findByRole("region", { name: "Recording window" }),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: "Return recording to Linger" }),
+      screen.queryByRole("button", { name: "Return recording to Talos" }),
     ).toBeNull();
     expect(voice.leavePage).not.toHaveBeenCalled();
 
@@ -896,9 +896,9 @@ describe("Recording window", () => {
       await act(() => openVoicePip("recording"));
       const floating = within(frame.contentDocument!.body);
       const back = floating.getByRole("button", {
-        name: "Return recording to Linger",
+        name: "Return recording to Talos",
       });
-      expect(back.title).toBe("Back to Linger; recording continues");
+      expect(back.title).toBe("Back to Talos; recording continues");
       await act(async () => {
         fireEvent.click(back);
       });
@@ -1311,7 +1311,7 @@ function stubDesktopVoiceWindow() {
   const open = vi.fn(() => browser.pipWindow);
   const showMain = vi.fn(async () => {});
   defineGlobalProperty(window, "open", { value: open });
-  defineGlobalProperty(window, "lingerDesktop", {
+  defineGlobalProperty(window, "talosDesktop", {
     value: { voiceWindow: { showMainWindow: showMain } },
   });
   return { ...browser, open, showMain };

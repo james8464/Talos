@@ -46,10 +46,10 @@ export type AnnouncedUpdate = Extract<
 
 // How this installation takes a newer release.
 export type UpdateInstall =
-  // macOS: the installed Linger.app, swapped for the release's app archive.
+  // macOS: the installed Talos.app, swapped for the release's app archive.
   | { readonly kind: "app-bundle"; readonly appBundle: string }
   // Windows, installed by the setup program: the release's setup program
-  // runs silently over the installation and starts Linger again.
+  // runs silently over the installation and starts Talos again.
   | { readonly kind: "windows-setup" }
   // Linux and the portable Windows folder: the person downloads the release.
   | { readonly kind: "download" };
@@ -92,15 +92,15 @@ export type SpawnSetup = (
 ) => SetupProcess;
 
 // installer.nsi: /update shows only its progress page and the questions about
-// a locked file, then closes; /relaunch starts Linger after.
+// a locked file, then closes; /relaunch starts Talos after.
 export const SETUP_ARGS = ["/update", "/relaunch"] as const;
 
 const CHECK_DELAY_MS = 60_000;
 const CHECK_INTERVAL_MS = 60 * 60_000;
 // A dropped connection should not cost a whole check interval.
 const RETRY_DELAY_MS = 5 * 60_000;
-const STAGED_PREFIX = ".Linger-update-";
-const OLD_PREFIX = ".Linger-old-";
+const STAGED_PREFIX = ".Talos-update-";
+const OLD_PREFIX = ".Talos-old-";
 
 const run = promisify(execFile);
 
@@ -502,14 +502,14 @@ export class UpdaterModule implements Module {
 }
 
 // The bundle that contains this executable on macOS, e.g.
-// /Applications/Linger.app for /Applications/Linger.app/Contents/MacOS/Linger.
+// /Applications/Talos.app for /Applications/Talos.app/Contents/MacOS/Talos.
 export function appBundleOf(execPath: string): string | undefined {
   const bundle = path.resolve(execPath, "../../..");
   return bundle.endsWith(".app") ? bundle : undefined;
 }
 
 // How a packaged app at execPath takes updates. A Windows installation from
-// the setup program has its uninstaller beside Linger.exe (installer.nsi);
+// the setup program has its uninstaller beside Talos.exe (installer.nsi);
 // the portable folder has none.
 export function updateInstallFor(
   platform: string,
@@ -523,7 +523,7 @@ export function updateInstallFor(
   if (
     platform === "win32" &&
     exists(
-      path.win32.join(path.win32.dirname(execPath), "Uninstall Linger.exe"),
+      path.win32.join(path.win32.dirname(execPath), "Uninstall Talos.exe"),
     )
   )
     return { kind: "windows-setup" };

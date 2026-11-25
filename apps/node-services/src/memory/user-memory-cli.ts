@@ -1,6 +1,6 @@
 import { contextHostRoot } from "../paths.js";
 // Restores an earlier memory.md version as the newest one:
-//   pnpm --filter @linger/node-services memory:user-memory:rollback <memory-subject-key> <version>
+//   pnpm --filter @talos/node-services memory:user-memory:rollback <memory-subject-key> <version>
 import { loadAnotherMeSubjects } from "./collector.js";
 import { closeMemoryDatabase, memoryDatabase } from "./database.js";
 import { postgresUserMemoryStore } from "./user-memory.js";

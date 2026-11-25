@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
 )
 
 type fakeLiveBrowser struct {

@@ -44,7 +44,7 @@ def copy(resources, target, staged=STAGED):
     source = os.path.join(staged, target)
     if not os.path.isdir(os.path.join(source, TOOLS)):
         sys.exit(f"dist/ is missing the Computer tools for {target}; run "
-                 f"`LINGER_DESKTOP_DAEMON_TARGETS={target} node build.mjs` first")
+                 f"`TALOS_DESKTOP_DAEMON_TARGETS={target} node build.mjs` first")
     for name in ("cli", "runtime"):
         shutil.copytree(os.path.join(source, name), os.path.join(resources, name))
     check(resources, target)
@@ -88,7 +88,7 @@ def _archive_members(archive):
 
 def verify_archive(archive, resources, target):
     """Raises Invalid unless the finished archive holds the tools at resources,
-    its folder of the app's resources/ (for example Linger/resources/)."""
+    its folder of the app's resources/ (for example Talos/resources/)."""
     source, sizes, read = _archive_members(archive)
     with source:
         name = f"{resources}cli/computer-tools/manifest.json"

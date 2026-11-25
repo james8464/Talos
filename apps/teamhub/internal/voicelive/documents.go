@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 // Document tools: the live voice creates, renames and edits the Documents

@@ -18,7 +18,7 @@ describe("appWindow", () => {
 
 describe("quitRequested", () => {
   it("quits for the uninstaller, as the second instance or the only one", () => {
-    expect(quitRequested(["Linger.exe", "--quit"])).toBe(true);
-    expect(quitRequested(["Linger.exe", "--background"])).toBe(false);
+    expect(quitRequested(["Talos.exe", "--quit"])).toBe(true);
+    expect(quitRequested(["Talos.exe", "--background"])).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ package reminder
 import (
 	"context"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // HumanOwner resolves the Human whose Memory tracks items. It reports

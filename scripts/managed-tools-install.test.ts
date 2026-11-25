@@ -591,8 +591,8 @@ describe("managed tools transaction", () => {
     await mkdir(ownedByUser);
     for (const name of ["teamhub", "lev8", "legacy-cli"])
       await writeFile(path.join(ownedByUser, name), "user-owned");
-    vi.stubEnv("LINGER_TOOLS_ROOT", f.installRoot);
-    vi.stubEnv("LINGER_CLI_RELEASES_BASE_URL", f.source);
+    vi.stubEnv("TALOS_TOOLS_ROOT", f.installRoot);
+    vi.stubEnv("TALOS_CLI_RELEASES_BASE_URL", f.source);
     const installer = createManagedToolsInstaller({
       detectPlatform: f.options.detectPlatform,
     });

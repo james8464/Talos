@@ -67,7 +67,7 @@ export async function readLocalIdentity(
   instance: Pick<Instance, "root">,
 ): Promise<LocalIdentity> {
   const unavailable = () =>
-    new Error("Linger on this computer has no server identity yet.");
+    new Error("Talos on this computer has no server identity yet.");
   const [settings, encoded] = await Promise.all([
     readPrivate(path.join(instance.root, "instance.json")),
     readLocalIdentityKey(instance.root),
@@ -135,7 +135,7 @@ export const localIdentityProof = (
   origin: string,
 ): Buffer =>
   createHmac("sha256", key)
-    .update(`linger-local-identity\n${nonce}\n${origin}`)
+    .update(`talos-local-identity\n${nonce}\n${origin}`)
     .digest();
 
 // The server did not prove it holds the key; says what failed, never with what.
@@ -199,7 +199,7 @@ export async function proveLocalIdentity(options: {
 
 const serviceUnavailable = () =>
   new Error(
-    "The local account service is unavailable. Reopen Linger to retry; account credentials are preserved.",
+    "The local account service is unavailable. Reopen Talos to retry; account credentials are preserved.",
   );
 // The password goes only to a server that proves, through the origin, that
 // it is this instance's TeamHub: another program can answer on `localhost`,
@@ -219,7 +219,7 @@ async function proveOrigin(instance: Instance, signal: AbortSignal) {
     if (!(error instanceof LocalIdentityError) || error.reason === "no answer")
       throw serviceUnavailable();
     throw new Error(
-      `Another program is answering at ${instance.origin}, so Linger cannot use port ${new URL(instance.origin).port}. Quit that program, then reopen Linger to retry; account credentials are preserved.`,
+      `Another program is answering at ${instance.origin}, so Talos cannot use port ${new URL(instance.origin).port}. Quit that program, then reopen Talos to retry; account credentials are preserved.`,
       { cause: error },
     );
   }
@@ -273,7 +273,7 @@ export async function ensureLocalAccount(
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     validateLocalCredentials(options);
     account = {
-      email: options.email ?? "owner@linger.local",
+      email: options.email ?? "owner@talos.local",
       password: options.password ?? randomBytes(24).toString("base64url"),
       provisioned: false,
     };

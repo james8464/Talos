@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { ChildProcess } from "node:child_process";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { serviceCredential, type JsonLogger } from "@linger/service-kit/node";
+import { serviceCredential, type JsonLogger } from "@talos/service-kit/node";
 import {
   startVoiceService,
   VOICE_READY_WAIT_MS,
@@ -15,7 +15,7 @@ class Worker extends EventEmitter {
   kill = vi.fn(() => true);
 }
 const environment = {
-  LINGER_SECRET_SEED: "voice-service-test-seed-0123456789abcdef",
+  TALOS_SECRET_SEED: "voice-service-test-seed-0123456789abcdef",
   TEAMHUB_BASE_URL: "http://teamhub.test",
 };
 const SONIOX = "soniox-key-1";

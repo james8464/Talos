@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 func TestVoiceMediaFinalEndClampsArchiveToPersistedStopIntent(t *testing.T) {

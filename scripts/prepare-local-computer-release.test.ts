@@ -38,11 +38,11 @@ const repositoryRoot = path.resolve(
 );
 const sourceInstallerPath = path.join(
   repositoryRoot,
-  "scripts/install-linger-computer.sh",
+  "scripts/install-talos-computer.sh",
 );
 const sourceUninstallerPath = path.join(
   repositoryRoot,
-  "scripts/uninstall-linger-computer.sh",
+  "scripts/uninstall-talos-computer.sh",
 );
 const webPackagePath = path.join(repositoryRoot, "apps/web/package.json");
 const computerPackagePath = path.join(
@@ -64,7 +64,7 @@ const fixtures = {
     await mkdir(path.dirname(executable), { recursive: true });
     await writeFile(
       executable,
-      `#!/bin/sh\n# ${target}\nexec "${"$"}{LINGER_RELEASE_TEST_HOST_NODE:-node}" "$@"\n`,
+      `#!/bin/sh\n# ${target}\nexec "${"$"}{TALOS_RELEASE_TEST_HOST_NODE:-node}" "$@"\n`,
     );
     await chmod(executable, 0o755);
     await writeFile(
@@ -76,7 +76,7 @@ const fixtures = {
     const windows = target.startsWith("win32-");
     const executable = path.join(
       bundle,
-      `daemon/linger-computer-daemon${windows ? ".exe" : ""}`,
+      `daemon/talos-computer-daemon${windows ? ".exe" : ""}`,
     );
     await mkdir(path.dirname(executable), { recursive: true });
     await writeFile(executable, `#!/bin/sh\n# Go daemon ${target}\n`);
@@ -84,11 +84,11 @@ const fixtures = {
     // The installer smoke-tests version, help, and daemon status.
     const cli = path.join(
       bundle,
-      `cli/linger-computer${windows ? ".exe" : ""}`,
+      `cli/talos-computer${windows ? ".exe" : ""}`,
     );
     await writeFile(
       cli,
-      `#!/bin/sh\n# Go CLI ${target}\ncase "$1" in\n  version) echo "linger-computer ${version}" ;;\n  daemon) echo '{"version":1,"config":{"configured":false},"daemon":{"state":"stopped"}}' ;;\nesac\n`,
+      `#!/bin/sh\n# Go CLI ${target}\ncase "$1" in\n  version) echo "talos-computer ${version}" ;;\n  daemon) echo '{"version":1,"config":{"configured":false},"daemon":{"state":"stopped"}}' ;;\nesac\n`,
     );
     await chmod(cli, 0o755);
     if (windows) {
@@ -100,7 +100,7 @@ const fixtures = {
 };
 
 const temporaryDirectory = async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "linger-release-test-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "talos-release-test-"));
   temporaryRoots.push(root);
   return root;
 };
@@ -378,10 +378,10 @@ describe("Local Computer release", () => {
       JSON.parse(await readFile(path.join(output, "release.json"), "utf8")),
     ).toEqual(release);
     await expect(
-      readFile(path.join(output, "linger-computer.sh"), "utf8"),
+      readFile(path.join(output, "talos-computer.sh"), "utf8"),
     ).resolves.toBe(await readFile(sourceInstallerPath, "utf8"));
     await expect(
-      readFile(path.join(output, "uninstall-linger-computer.sh"), "utf8"),
+      readFile(path.join(output, "uninstall-talos-computer.sh"), "utf8"),
     ).resolves.toBe(await readFile(sourceUninstallerPath, "utf8"));
     expect(Object.keys(release.targets)).toEqual([
       "darwin-arm64",
@@ -392,12 +392,12 @@ describe("Local Computer release", () => {
     ]);
     // node-services fills the release metadata line of these at startup.
     for (const name of [
-      "linger-computer.ps1",
-      "uninstall-linger-computer.ps1",
+      "talos-computer.ps1",
+      "uninstall-talos-computer.ps1",
     ]) {
       await expect(
         readFile(path.join(output, name), "utf8"),
-      ).resolves.toContain("__LINGER_RELEASE_METADATA_BASE64__");
+      ).resolves.toContain("__TALOS_RELEASE_METADATA_BASE64__");
       // The image runs node-services as an unprivileged user.
       expect((await stat(path.join(output, name))).mode & 0o004).toBe(0o004);
     }
@@ -418,10 +418,10 @@ describe("Local Computer release", () => {
       if (target.startsWith("win32-")) {
         // Windows unpacks both archives into one bundle and has no bash
         // installer to update itself with.
-        expect(appEntries).toContain("daemon/linger-computer-daemon.exe");
-        expect(appEntries).toContain("cli/linger-computer.exe");
+        expect(appEntries).toContain("daemon/talos-computer-daemon.exe");
+        expect(appEntries).toContain("cli/talos-computer.exe");
         expect(appEntries).toContain("cli/teamhub.exe");
-        expect(appEntries).not.toContain("installer/linger-computer.sh");
+        expect(appEntries).not.toContain("installer/talos-computer.sh");
         const depsEntries = await tarList(
           path.join(output, "files", deps.file),
         );
@@ -430,10 +430,10 @@ describe("Local Computer release", () => {
         expect(depsEntries).toContain("cli/computer-tools/cua/cua-driver.exe");
         continue;
       }
-      expect(appEntries).toContain("daemon/linger-computer-daemon");
-      expect(appEntries).toContain("installer/linger-computer.sh");
-      expect(appEntries).toContain("cli/linger-computer");
-      expect(appEntries).not.toContain("cli/linger-computer.js");
+      expect(appEntries).toContain("daemon/talos-computer-daemon");
+      expect(appEntries).toContain("installer/talos-computer.sh");
+      expect(appEntries).toContain("cli/talos-computer");
+      expect(appEntries).not.toContain("cli/talos-computer.js");
       expect(appEntries).toContain("cli/teamhub");
       expect(appEntries).toContain("cli/teamhub.js");
       expect(appEntries).toContain("cli/teamhub-assets.json");
@@ -450,7 +450,7 @@ describe("Local Computer release", () => {
       const installer = await execFileAsync("tar", [
         "-xOzf",
         path.join(output, "files", app.file),
-        "installer/linger-computer.sh",
+        "installer/talos-computer.sh",
       ]);
       expect(installer.stdout).toBe(
         await readFile(sourceInstallerPath, "utf8"),
@@ -470,7 +470,7 @@ describe("Local Computer release", () => {
       const daemon = await execFileAsync("tar", [
         "-xOzf",
         path.join(output, "files", app.file),
-        "daemon/linger-computer-daemon",
+        "daemon/talos-computer-daemon",
       ]);
       expect(daemon.stdout).toContain(`# Go daemon ${target}`);
     }
@@ -478,39 +478,39 @@ describe("Local Computer release", () => {
     const host = `${process.platform}-${process.arch}`;
     const hostRelease = release.targets[host];
     if (!hostRelease) return;
-    await execFileAsync("bash", [path.join(output, "linger-computer.sh")], {
+    await execFileAsync("bash", [path.join(output, "talos-computer.sh")], {
       env: {
         ...process.env,
         HOME: home,
         PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
-        LINGER_RELEASE_TEST_HOST_NODE: process.execPath,
-        LINGER_COMPUTER_APP_ARCHIVE: path.join(
+        TALOS_RELEASE_TEST_HOST_NODE: process.execPath,
+        TALOS_COMPUTER_APP_ARCHIVE: path.join(
           output,
           "files",
           hostRelease.app.file,
         ),
-        LINGER_COMPUTER_APP_SHA256: hostRelease.app.sha256,
-        LINGER_COMPUTER_DEPS_ARCHIVE: path.join(
+        TALOS_COMPUTER_APP_SHA256: hostRelease.app.sha256,
+        TALOS_COMPUTER_DEPS_ARCHIVE: path.join(
           output,
           "files",
           hostRelease.deps.file,
         ),
-        LINGER_COMPUTER_DEPS_SHA256: hostRelease.deps.sha256,
-        LINGER_COMPUTER_DEPS_SIZE: String(hostRelease.deps.size),
+        TALOS_COMPUTER_DEPS_SHA256: hostRelease.deps.sha256,
+        TALOS_COMPUTER_DEPS_SIZE: String(hostRelease.deps.size),
       },
     });
     // The unrendered installer's origin, http://localhost:3000, is local-3000.
-    const launcher = path.join(home, ".local/bin/linger-computer-local-3000");
+    const launcher = path.join(home, ".local/bin/talos-computer-local-3000");
     await expect(
       execFileAsync(launcher, ["version"], {
         env: { ...process.env, HOME: home },
       }),
     ).resolves.toMatchObject({
-      stdout: `linger-computer ${computerPackage.version}\n`,
+      stdout: `talos-computer ${computerPackage.version}\n`,
     });
     const computerData = path.join(
       home,
-      ".local/share/linger/computers/local-3000",
+      ".local/share/talos/computers/local-3000",
     );
     expect(await readdir(computerData)).not.toContain("node_modules");
     const activeBundle = (
@@ -519,7 +519,7 @@ describe("Local Computer release", () => {
     const teamhub = path.join(computerData, activeBundle, "cli/teamhub");
     const isolatedEnvironment = {
       PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
-      LINGER_RELEASE_TEST_HOST_NODE: process.execPath,
+      TALOS_RELEASE_TEST_HOST_NODE: process.execPath,
       TEAMHUB_CONFIG: path.join(root, "missing-configuration.json"),
     };
     const help = await execFileAsync(teamhub, ["docs", "--help"], {
@@ -626,7 +626,7 @@ describe("Local Computer release", () => {
       );
       const businessEnvironment = {
         PATH: isolatedEnvironment.PATH,
-        LINGER_RELEASE_TEST_HOST_NODE: process.execPath,
+        TALOS_RELEASE_TEST_HOST_NODE: process.execPath,
         TEAMHUB_CONFIG: path.join(configuration, "config.json"),
       };
       const files = await execFileAsync(teamhub, ["docs", "list", "--json"], {
@@ -748,6 +748,6 @@ describe("Local Computer release", () => {
     expect(dockerfile).not.toMatch(
       /computer-archives|computer-release|prepare-local-computer-release|node-distributions|signing_key|apps\/computer|apps\/teamhub-cli/,
     );
-    expect(dockerfile).toContain("pnpm --filter @linger/web build:assets");
+    expect(dockerfile).toContain("pnpm --filter @talos/web build:assets");
   });
 });

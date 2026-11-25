@@ -15,7 +15,7 @@ interface DocumentPictureInPicture {
 }
 
 /**
- * The desktop app's floating window (`window.lingerDesktop.voiceWindow`): the
+ * The desktop app's floating window (`window.talosDesktop.voiceWindow`): the
  * page opens a blank window under `desktopWindowTarget` and the app keeps it
  * on top, also while its main window is minimized or closed to the tray.
  */
@@ -27,7 +27,7 @@ interface DesktopVoiceWindow {
  * The window name the desktop app recognizes; it floats the window opened
  * under it. The suffix keeps a window that is still closing from being reused.
  */
-const desktopWindowTarget = "linger-voice-window";
+const desktopWindowTarget = "talos-voice-window";
 let desktopWindowCount = 0;
 
 interface PipSize {
@@ -69,9 +69,9 @@ function noteShown() {
 function desktopVoiceWindow(): DesktopVoiceWindow | undefined {
   const voiceWindow = (
     window as Window & {
-      lingerDesktop?: { voiceWindow?: Partial<DesktopVoiceWindow> };
+      talosDesktop?: { voiceWindow?: Partial<DesktopVoiceWindow> };
     }
-  ).lingerDesktop?.voiceWindow;
+  ).talosDesktop?.voiceWindow;
   return typeof voiceWindow?.showMainWindow === "function"
     ? (voiceWindow as DesktopVoiceWindow)
     : undefined;

@@ -544,8 +544,8 @@ export function createTeamHubTestSeed(): TeamHubTestSeed {
       upgrade_required: false,
       workspace_grants: [
         {
-          grant_id: "grant-linger-workspace",
-          label: "Linger Workspace",
+          grant_id: "grant-talos-workspace",
+          label: "Talos Workspace",
           mode: "workspace-write",
         },
       ],
@@ -1211,7 +1211,7 @@ function tenantAgent(
         type: "local",
         computer_id: "computer-jenny-mac",
         runtime_type: "codex",
-        workspace_grant_id: "grant-linger-workspace",
+        workspace_grant_id: "grant-talos-workspace",
       },
     },
     skill_bindings: [],
@@ -1449,7 +1449,7 @@ function anotherMeSetupMessages(
       "message-another-me-welcome",
       roomId,
       anotherMe,
-      "Hi jenny, I'm your Another Me — think of me as another you in Linger.",
+      "Hi jenny, I'm your Another Me — think of me as another you in Talos.",
       "2026-07-23T09:25:00Z",
     ),
     {
@@ -1657,7 +1657,7 @@ export function createExternalSourceSeed() {
       auto_reminders: true,
       created_at: now,
       id: "external-connection-gmail",
-      identity_label: "jenny@linger.test",
+      identity_label: "jenny@talos.test",
       provider: "gmail",
       revision: 1,
       status: "active",
@@ -1728,11 +1728,11 @@ export function createExternalSourceSeed() {
     {
       default_branch: "main",
       description: "Product collaboration workspace",
-      full_name: "jenny/linger",
-      html_url: "https://github.com/jenny/linger",
+      full_name: "jenny/talos",
+      html_url: "https://github.com/jenny/talos",
       id: "1001",
       language: "TypeScript",
-      name: "linger",
+      name: "talos",
       updated_at: now,
     },
   ];

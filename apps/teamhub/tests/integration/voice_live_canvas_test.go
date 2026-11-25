@@ -14,9 +14,9 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	nodeservicesinternal "github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
-	teamhubinternal "github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	nodeservicesinternal "github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
+	teamhubinternal "github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // canvasAttachmentLink is an attachment line as the Markdown export writes

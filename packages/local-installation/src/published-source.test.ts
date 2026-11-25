@@ -19,7 +19,7 @@ afterEach(async () => {
     await rm(root, { recursive: true, force: true });
 });
 async function metadata(serviceRelease: unknown, target = process.platform) {
-  const root = await mkdtemp(path.join(os.tmpdir(), "linger-channel-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "talos-channel-"));
   roots.push(root);
   const file = path.join(root, "distribution.json");
   await writeFile(
@@ -70,7 +70,7 @@ it("rejects metadata for another operating system", async () => {
 });
 it("keeps the explicit developer/local release path usable without bundled online metadata", async () => {
   expect(
-    await readPublishedSource("/no-such-linger-distribution/distribution.json"),
+    await readPublishedSource("/no-such-talos-distribution/distribution.json"),
   ).toBeUndefined();
 });
 it("keeps the publisher's mirrors and checks them like the primary URL", async () => {

@@ -48,7 +48,7 @@ const fixture = async (
   };
   const diagnostics = {
     ...stubModule("Diagnostics"),
-    save: vi.fn(async () => "/Users/me/Downloads/linger-diagnostics.zip"),
+    save: vi.fn(async () => "/Users/me/Downloads/talos-diagnostics.zip"),
   };
   let alwaysOn = false;
   const power = {
@@ -234,7 +234,7 @@ describe("DesktopIpcModule updates", () => {
     f.setUpdate({
       kind: "available",
       version: "0.2.0",
-      url: "https://github.com/example/linger/releases/tag/v0.2.0",
+      url: "https://github.com/example/talos/releases/tag/v0.2.0",
     });
     expect(await f.invoke(IPC.updateState)).toEqual({
       kind: "available",

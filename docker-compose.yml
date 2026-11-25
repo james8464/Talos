@@ -14,7 +14,7 @@ services:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - simplexai-postgres-data:/var/lib/postgresql/data
-      - ./.linger-runtime/postgres-logs/stack:/var/log/postgresql
+      - ./.talos-runtime/postgres-logs/stack:/var/log/postgresql
     entrypoint:
       - bash
       - -c
@@ -117,7 +117,7 @@ services:
       TEAMHUB_CLI_BASE_URL: "${TEAMHUB_CLI_BASE_URL:-${WEB_PUBLIC_ORIGIN:-http://localhost:3000}}"
       AGENT_HOME: /data/agent/mirror
       COMPUTER_RELEASE_DIR: /app/computer-release
-      LINGER_SECRET_SEED: ${LINGER_SECRET_SEED:-local-development-secret-seed-not-for-production}
+      TALOS_SECRET_SEED: ${TALOS_SECRET_SEED:-local-development-secret-seed-not-for-production}
       TEAMHUB_BASE_URL: http://teamhub:8080
       TEAMHUB_DATABASE_URL: postgres://simplexai:simplexai@postgres:5432/simplexai_dev
       # 127.0.0.1 inside a container is the container itself, so the voice
@@ -152,7 +152,7 @@ services:
       TEAMHUB_HTTP_ADDRESS: ":8080"
       TEAMHUB_DATABASE_URL: postgres://simplexai:simplexai@postgres:5432/simplexai_dev
       TEAMHUB_NODE_SERVICES_URL: http://node-services:4319
-      LINGER_SECRET_SEED: ${LINGER_SECRET_SEED:-local-development-secret-seed-not-for-production}
+      TALOS_SECRET_SEED: ${TALOS_SECRET_SEED:-local-development-secret-seed-not-for-production}
       TEAMHUB_ARTIFACT_STORAGE_ROOT: /data/artifacts
       TEAMHUB_DOCUMENT_RUNTIME_URL: http://node-services:4321
       TEAMHUB_DOCUMENT_PREVIEW_PUBLIC_ORIGIN: "${TEAMHUB_DOCUMENT_PREVIEW_PUBLIC_ORIGIN:-${WEB_PUBLIC_ORIGIN:-http://localhost:3000}}"

@@ -1,7 +1,7 @@
 #requires -Version 5.1
 # The ordinary user creates an empty fixture directory and a regular "target"
 # file. An administrator runs this script, then the ordinary user sets
-# LINGER_TEST_WINDOWS_REPOSITORY_LINK_FIXTURE to that directory for Go tests.
+# TALOS_TEST_WINDOWS_REPOSITORY_LINK_FIXTURE to that directory for Go tests.
 param([Parameter(Mandatory = $true)][string] $FixtureDirectory)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'

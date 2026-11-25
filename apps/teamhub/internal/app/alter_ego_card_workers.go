@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/riverqueue/river"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskdelegation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskdelegation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
 )
 
 // wakeTaskWithSystemInput gives a delegated Task's AlterEgo a card result

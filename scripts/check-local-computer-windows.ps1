@@ -21,7 +21,7 @@ $expectedArchitecture = switch ($nativeArchitecture.ToUpperInvariant()) {
 if ($architecture -ne $expectedArchitecture) { throw 'Use the Node build matching the native Windows architecture.' }
 if ((& $node --version).Trim() -ne 'v26.5.0') { throw 'The native verification requires Node 26.5.0.' }
 $runId = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ') + '-' + $architecture
-$reportDirectory = Join-Path $repositoryRoot ('.linger-runtime/windows-verification/' + $runId)
+$reportDirectory = Join-Path $repositoryRoot ('.talos-runtime/windows-verification/' + $runId)
 New-Item -ItemType Directory -Path $reportDirectory -Force | Out-Null
 $steps = New-Object 'System.Collections.Generic.List[object]'
 # CIM can deny ordinary SSH sessions. System version reporting must not require
@@ -34,7 +34,7 @@ $report = [ordered]@{
     osBuild = $windowsVersion.CurrentBuildNumber + '.' + $windowsVersion.UBR
     osVersion = [Environment]::OSVersion.Version.ToString()
     powershellVersion = $PSVersionTable.PSVersion.ToString()
-    testTimeoutScale = $(if ($env:LINGER_TEST_WINDOWS_TIMEOUT_SCALE) { [int]$env:LINGER_TEST_WINDOWS_TIMEOUT_SCALE } else { 1 })
+    testTimeoutScale = $(if ($env:TALOS_TEST_WINDOWS_TIMEOUT_SCALE) { [int]$env:TALOS_TEST_WINDOWS_TIMEOUT_SCALE } else { 1 })
     source = (& git rev-parse HEAD).Trim()
     dirty = [bool](& git status --porcelain)
     startedAt = (Get-Date).ToUniversalTime().ToString('o')
@@ -56,17 +56,17 @@ try {
     Invoke-Verification 'installer' $pnpm @('exec', 'vitest', 'run', '--no-file-parallelism', 'scripts/local-computer-windows-native.test.ts')
     Push-Location (Join-Path $repositoryRoot 'apps/computer/local-daemon')
     try {
-        Invoke-Verification 'native-platform' $go @('test', './internal/platform/...', './internal/linger/control')
-        Invoke-Verification 'native-identity' $go @('test', './internal/linger/transport', '-run', '^(TestGenerateDerivesStableDaemonIDAndSigns|TestNewRejectsMismatchedKeyPair|TestFileStore.*)$')
+        Invoke-Verification 'native-platform' $go @('test', './internal/platform/...', './internal/talos/control')
+        Invoke-Verification 'native-identity' $go @('test', './internal/talos/transport', '-run', '^(TestGenerateDerivesStableDaemonIDAndSigns|TestNewRejectsMismatchedKeyPair|TestFileStore.*)$')
         Invoke-Verification 'native-services' $go @('test', './internal/process', '-run', '^(TestManagedServiceSurvivesStartingProcessExitAndStopsDescendants|TestManagedServiceRefusesPreexistingJob)$')
         Invoke-Verification 'native-runtimes' $go @('test', './internal/provider', '-run', '^TestWindowsDiscoverNativeProtocolsAndAuthenticationWithSanitizedEnvironment$')
         Invoke-Verification 'native-task-trees' $go @('test', './internal/process')
         Invoke-Verification 'native-runtime-contracts' $go @('test', './internal/provider/native', '-run', '^(TestRuntime.*|TestCommand.*|TestPi.*|TestCodexContract.*|TestCodexRPC.*|TestCodexEvents.*|TestWindowsRuntimeLaunchUsesConfiguredNodeSearchPath|TestWindowsClaudeInstructionSnapshotRejectsPublicACL)$')
-        Invoke-Verification 'native-projection' $go @('test', './internal/linger/context', '-run', '^(TestWindowsContextRejectsFilenameAliasesBeforePublication|TestViewStoreAppliesRefreshesAndReleasesAtomically|TestViewStoreExportsOnlyReadyReceiptRegularFiles|TestCLIConfigurationInstallIsPrivateIdempotentAndFenced)$')
+        Invoke-Verification 'native-projection' $go @('test', './internal/talos/context', '-run', '^(TestWindowsContextRejectsFilenameAliasesBeforePublication|TestViewStoreAppliesRefreshesAndReleasesAtomically|TestViewStoreExportsOnlyReadyReceiptRegularFiles|TestCLIConfigurationInstallIsPrivateIdempotentAndFenced)$')
         Invoke-Verification 'cli' $go @('test', './internal/computercli', './internal/computerconfig')
-        Invoke-Verification 'native-launcher' $go @('test', './cmd/linger-computer-launcher')
-        Invoke-Verification 'native-helper' $go @('test', './cmd/linger-computer-daemon', '-run', '^(TestPlatformEntry.*|TestWindowsPlatform.*|TestInstalledTeamHubCLIBinUsesPlatformLauncher)$')
-        Invoke-Verification 'native-skills' $go @('test', './internal/linger/localskills', '-run', '^(TestWindowsSkillScan.*|TestCatalogScansAndReplaysDurably|TestPackageDigestMatchesTypeScriptContract)$')
+        Invoke-Verification 'native-launcher' $go @('test', './cmd/talos-computer-launcher')
+        Invoke-Verification 'native-helper' $go @('test', './cmd/talos-computer-daemon', '-run', '^(TestPlatformEntry.*|TestWindowsPlatform.*|TestInstalledTeamHubCLIBinUsesPlatformLauncher)$')
+        Invoke-Verification 'native-skills' $go @('test', './internal/talos/localskills', '-run', '^(TestWindowsSkillScan.*|TestCatalogScansAndReplaysDurably|TestPackageDigestMatchesTypeScriptContract)$')
         Invoke-Verification 'native-runtime-home' $go @('test', './internal/workspace')
     } finally { Pop-Location }
     $report.status = 'passed'

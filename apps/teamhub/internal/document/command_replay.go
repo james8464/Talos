@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // lookupCommandRecord returns the account command record for key. A record

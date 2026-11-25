@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/feishu"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/feishu"
 )
 
 // FeishuMailToolVersion is the one version of the Feishu Mail tools TeamHub

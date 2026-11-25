@@ -27,7 +27,7 @@ framing:
         in: query
         required: false
         description: >-
-          The scheme of the Linger page that frames the site; frame-ancestors
+          The scheme of the Talos page that frames the site; frame-ancestors
           scheme sources are matched against it. Without it, http and https
           sources both allow the frame.
         schema:

@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomevent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomevent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func (s *Service) saveSourceAudio(ctx context.Context, job store.GetVoiceMediaMaterializationContextRow) (store.CaptureMediaOutput, error) {

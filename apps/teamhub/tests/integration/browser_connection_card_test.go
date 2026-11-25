@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 // browserLocalComputers answers browser connection reads with a settable state;

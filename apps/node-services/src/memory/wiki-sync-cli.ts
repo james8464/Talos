@@ -1,7 +1,7 @@
 import { teamHubFetch } from "./teamhub-transport.js";
 import path from "node:path";
-import { postTeamHubMemoryWikiRefresh } from "@linger/wire-contracts/teamhub-internal/client";
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
+import { postTeamHubMemoryWikiRefresh } from "@talos/wire-contracts/teamhub-internal/client";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
 import { isMainModule } from "../paths.js";
 import { loadAnotherMeSubjects } from "./collector.js";
 import { closeMemoryDatabase, memoryDatabaseConfigured } from "./database.js";

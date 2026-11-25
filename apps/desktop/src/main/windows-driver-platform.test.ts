@@ -125,7 +125,7 @@ describe("WINDOWS_DRIVER_INSTALLER_SCRIPT", () => {
   it("uses .NET ProcessStartInfo / Process::Start instead of Start-Process so UAC Win32Exception surfaces NativeErrorCode", () => {
     expect(WINDOWS_DRIVER_INSTALLER_SCRIPT).not.toContain("Start-Process");
     expect(WINDOWS_DRIVER_INSTALLER_SCRIPT).toContain(
-      "[System.Diagnostics.ProcessStartInfo]::new($env:LINGER_DRIVER_EXE, '-s -noreboot -noeula')",
+      "[System.Diagnostics.ProcessStartInfo]::new($env:TALOS_DRIVER_EXE, '-s -noreboot -noeula')",
     );
     expect(WINDOWS_DRIVER_INSTALLER_SCRIPT).toContain(
       "$psi.UseShellExecute = $true",

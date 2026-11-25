@@ -21,8 +21,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  LINGER_NATIVE_DEPS_URL: ${{ secrets.LINGER_NATIVE_DEPS_URL || vars.LINGER_NATIVE_DEPS_URL || 'https://github.com/simplexai-labs/linger/releases/download/native-deps' }}
-  LINGER_NATIVE_POSTGRES_DIR: ${{ github.workspace }}/.linger-runtime/native-archives
+  TALOS_NATIVE_DEPS_URL: ${{ secrets.TALOS_NATIVE_DEPS_URL || vars.TALOS_NATIVE_DEPS_URL || 'https://github.com/simplexai-labs/talos/releases/download/native-deps' }}
+  TALOS_NATIVE_POSTGRES_DIR: ${{ github.workspace }}/.talos-runtime/native-archives
   # The rcodesign the Desktop release workflow pins.
   APPLE_CODESIGN_VERSION: 0.29.0
   APPLE_CODESIGN_SHA256: dbe85cedd8ee4217b64e9a0e4c2aef92ab8bcaaa41f20bde99781ff02e600002
@@ -64,7 +64,7 @@ jobs:
           python3 apps/desktop/packaging/mac/sign_native_archives.py \
             --developer-id "$keys/developer-id.p12" \
             --password-file "$keys/developer-id.password" \
-            --dir "$LINGER_NATIVE_POSTGRES_DIR" --rcodesign "$RCODESIGN"
+            --dir "$TALOS_NATIVE_POSTGRES_DIR" --rcodesign "$RCODESIGN"
       - name: Remove signing files
         if: always()
         run: rm -rf "$RUNNER_TEMP/signing"
@@ -88,7 +88,7 @@ jobs:
             for (const file of files(process.argv[2])) if (!before.has(file)) console.log(require("path").basename(file));
           ' "$RUNNER_TEMP/before.json" apps/desktop/distribution/darwin-arm64.json >"$RUNNER_TEMP/new-archives"
           while read -r name; do
-            gh release upload native-deps "$LINGER_NATIVE_POSTGRES_DIR/$name" --repo "$GITHUB_REPOSITORY"
+            gh release upload native-deps "$TALOS_NATIVE_POSTGRES_DIR/$name" --repo "$GITHUB_REPOSITORY"
           done <"$RUNNER_TEMP/new-archives"
       - uses: actions/upload-artifact@v7
         if: steps.upload.outputs.changed == 'true'

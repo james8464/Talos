@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // BusyComputerAgent is an Agent on a Computer with running work that a

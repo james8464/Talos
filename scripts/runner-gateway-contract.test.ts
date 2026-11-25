@@ -1,14 +1,14 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
-import { runnerGatewayEnvelopeSchema } from "@linger/wire-contracts/runner-gateway/schema";
+import { runnerGatewayEnvelopeSchema } from "@talos/wire-contracts/runner-gateway/schema";
 
 import {
   RUNNER_GATEWAY_FRAME_LIMITS,
   parseAgentToDaemonEnvelope,
   parseDaemonToAgentEnvelope,
   parseRunnerGatewayEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 const contextExecution = {
   execution_context_key: "meta:agent-reviewer",
   runtime_instance_id: "meta:agent-reviewer",
@@ -286,7 +286,7 @@ const computerPermission = {
   kind: "computer_permission",
   ...computerPermissionIdentity,
   action: "prompt",
-  subject: "linger",
+  subject: "talos",
   permission: "screen_recording",
 } as const;
 const computerPermissionOutcomes = [
@@ -301,7 +301,7 @@ const computerPermissionOutcomes = [
       host: "desktop",
       subjects: [
         {
-          subject: "linger",
+          subject: "talos",
           permissions: [
             {
               id: "screen_recording",
@@ -322,7 +322,7 @@ const computerPermissionOutcomes = [
     action: "relaunch",
     error: {
       code: "COMPUTER_PERMISSION_RELAUNCH_UNAVAILABLE",
-      message: "Linger is not running this Computer",
+      message: "Talos is not running this Computer",
       retryable: false,
     },
   },
@@ -1063,7 +1063,7 @@ describe("Runner Gateway contract", () => {
   });
 
   it.each([
-    ["linger_instruction_snapshot", "system_prompt_append"],
+    ["talos_instruction_snapshot", "system_prompt_append"],
     ["attachment.prompt_snapshot", "systemPrompt"],
     ["future_provider_instruction", "future_field"],
     ["r".repeat(256), "f".repeat(256)],
@@ -1697,7 +1697,7 @@ describe("failure diagnostics rolling upgrade", () => {
       },
     };
     const wireRequire = createRequire(
-      import.meta.resolve("@linger/wire-contracts/runner-gateway/validator"),
+      import.meta.resolve("@talos/wire-contracts/runner-gateway/validator"),
     );
     const { Ajv2020 } = wireRequire("ajv/dist/2020.js");
     const addFormats = wireRequire("ajv-formats");

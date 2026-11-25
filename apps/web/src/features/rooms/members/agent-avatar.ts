@@ -123,7 +123,7 @@ export function randomAgentAvatarKey(): AgentAvatarKey {
   ]!;
 }
 
-const AVATAR_STORAGE_KEY = "linger.agent-avatar-keys";
+const AVATAR_STORAGE_KEY = "talos.agent-avatar-keys";
 
 export function readStoredAgentAvatarKey(
   actorId: string,

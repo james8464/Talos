@@ -3,7 +3,7 @@ package voicemedia
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func TestRecoveryTimelineKeepsSpliceSidesAndCommandOrder(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
 )
 
 // A run's outcome is only its result: a rate limit leaves it retry_wait for

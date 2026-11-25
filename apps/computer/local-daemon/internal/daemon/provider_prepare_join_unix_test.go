@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/mcpproxy"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // joinProviderFixture runs the real provider.Executor with a runtime home root and
@@ -71,7 +71,7 @@ func newJoinProviderFixture(t *testing.T, runtime string) joinProviderFixture {
 	environment := map[string]string{
 		"HOME": root, "CODEX_HOME": filepath.Join(root, ".codex"), "PATH": "/usr/bin:/bin",
 		"LAUNCH_LOG": fixture.launchLog, "RELEASE_GATE": fixture.release, "PID_FILE": fixture.pidFile,
-		"LINGER_TEST_SED": sed, "LINGER_TEST_SLEEP": sleep,
+		"TALOS_TEST_SED": sed, "TALOS_TEST_SLEEP": sleep,
 	}
 	spec := provider.OperationSpec{
 		OperationKind: "run.start", Provider: runtime, ExecutablePath: script, WorkingDirectory: root,
@@ -114,15 +114,15 @@ if [ "$1" = "--version" ]; then echo "codex-cli 0.0.0-test"; exit 0; fi
 echo x >> "$LAUNCH_LOG"
 echo $$ > "$PID_FILE"
 while read -r line; do
- id=$(printf '%s' "$line" | "$LINGER_TEST_SED" -n 's/.*"id":\([0-9][0-9]*\).*/\1/p')
- method=$(printf '%s' "$line" | "$LINGER_TEST_SED" -n 's/.*"method":"\([^"]*\)".*/\1/p')
+ id=$(printf '%s' "$line" | "$TALOS_TEST_SED" -n 's/.*"id":\([0-9][0-9]*\).*/\1/p')
+ method=$(printf '%s' "$line" | "$TALOS_TEST_SED" -n 's/.*"method":"\([^"]*\)".*/\1/p')
  [ -n "$id" ] || continue
  printf '%s\n' "$method" >> "$LAUNCH_LOG.methods"
  result='{}'
  case "$method" in
  config/read) result='{"config":{"features":{"memories":false,"memory_tool":false}}}' ;;
  thread/start|thread/resume)
-   while [ ! -f "$RELEASE_GATE" ]; do "$LINGER_TEST_SLEEP" 0.05; done
+   while [ ! -f "$RELEASE_GATE" ]; do "$TALOS_TEST_SLEEP" 0.05; done
    result='{"thread":{"id":"thread-1"}}' ;;
  turn/start)
    printf '{"jsonrpc":"2.0","id":%s,"result":{"turn":{"id":"turn-1"}}}\n' "$id"
@@ -139,7 +139,7 @@ echo x >> "$LAUNCH_LOG"
 while IFS= read -r line; do
  case "$line" in
  *'"subtype":"initialize"'*)
-   rid=$(printf '%s' "$line" | "$LINGER_TEST_SED" 's/.*"request_id":"\([^"]*\)".*/\1/')
+   rid=$(printf '%s' "$line" | "$TALOS_TEST_SED" 's/.*"request_id":"\([^"]*\)".*/\1/')
    printf '{"type":"control_response","response":{"subtype":"success","request_id":"%s","response":{}}}\n' "$rid" ;;
  esac
 done
@@ -157,10 +157,10 @@ while [ $# -gt 0 ]; do
  esac
 done
 while IFS= read -r line; do
- rid=$(printf '%s' "$line" | "$LINGER_TEST_SED" -n 's/.*"id":"\([^"]*\)".*/\1/p')
+ rid=$(printf '%s' "$line" | "$TALOS_TEST_SED" -n 's/.*"id":"\([^"]*\)".*/\1/p')
  case "$line" in
  *'"type":"get_state"'*)
-   while [ ! -f "$RELEASE_GATE" ]; do "$LINGER_TEST_SLEEP" 0.05; done
+   while [ ! -f "$RELEASE_GATE" ]; do "$TALOS_TEST_SLEEP" 0.05; done
    printf '{"type":"response","id":"%s","command":"get_state","success":true,"data":{"sessionId":"%s","isStreaming":false,"isCompacting":false,"pendingMessageCount":0}}\n' "$rid" "$session_id" ;;
  *'"type":"prompt"'*)
    printf '{"type":"session","id":"%s","cwd":"%s"}\n' "$session_id" "$PWD" > "$session_dir/fixture_${session_id}.jsonl"
@@ -551,7 +551,7 @@ func TestProviderPreparePiJoinedStartAdoptsPreparedProcess(t *testing.T) {
 	spec.Prompt, spec.MCPRelays = "hello", json.RawMessage(`[]`)
 	d.operationResolver = joinProviderResolver{spec: spec}
 
-	session := map[string]any{"provider": "pi", "sessionId": joinClaudeSession, "lingerMaterialized": false}
+	session := map[string]any{"provider": "pi", "sessionId": joinClaudeSession, "talosMaterialized": false}
 	prepare := providerPrepareCommand("prepare-pi-join")
 	prepare.RuntimeType = "pi"
 	prepare.Payload = mustJSON(map[string]any{"prepare_id": "prepare-pi-join", "runtime": map[string]any{"type": "pi"}, "session": session})

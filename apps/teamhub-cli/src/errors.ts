@@ -1,4 +1,4 @@
-import type { components } from "@linger/wire-contracts/teamhub-agent-api/types";
+import type { components } from "@talos/wire-contracts/teamhub-agent-api/types";
 
 /** TeamHub's declared Agent API codes; they pass through unchanged. */
 export type TeamHubErrorCode = components["schemas"]["AgentApiErrorCode"];

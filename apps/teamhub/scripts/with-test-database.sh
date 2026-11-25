@@ -100,8 +100,8 @@ validate_resource_labels() {
   fi
   project_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.docker.compose.project\" }}" "$resource_name") || return 1
   compose_kind=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.docker.compose.$expected_compose_kind\" }}" "$resource_name") || return 1
-  managed_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.linger.teamhub.test-managed\" }}" "$resource_name") || return 1
-  token_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.linger.teamhub.test-run-token\" }}" "$resource_name") || return 1
+  managed_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.talos.teamhub.test-managed\" }}" "$resource_name") || return 1
+  token_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.talos.teamhub.test-run-token\" }}" "$resource_name") || return 1
   if [[ $project_label != "$project_name" || $managed_label != true || $token_label != "$run_token" ]]; then
     printf 'FAIL: refusing to remove %s %s with project=%s managed=%s run_token=%s\n' \
       "$resource_kind" "$resource_name" "$project_label" "$managed_label" "$token_label" >&2

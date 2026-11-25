@@ -15,8 +15,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/winprocess"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/winprocess"
 	"golang.org/x/sys/windows"
 )
 
@@ -175,7 +175,7 @@ func SuperviseManagedService(input io.Reader, output io.Writer) (resultErr error
 func serviceJobName(identity managedProcessIdentity) string {
 	// Recovery can run in a different login session (for example SSH after a
 	// desktop start). The private ACL still restricts the global object.
-	return fmt.Sprintf(`Global\LingerComputerService-%d-%s`, identity.PID, strings.TrimPrefix(identity.StartToken, "windows:"))
+	return fmt.Sprintf(`Global\TalosComputerService-%d-%s`, identity.PID, strings.TrimPrefix(identity.StartToken, "windows:"))
 }
 
 func sameManagedProcess(expected managedProcessIdentity) (bool, error) {

@@ -116,9 +116,9 @@ describe("TeamHub CLI Host workspace files", () => {
     const f = await fixture();
     await writeFile(path.join(f.root, "secret"), "secret");
     if (process.platform === "win32") {
-      const fixtureRoot = process.env.LINGER_TEST_WINDOWS_FILE_LINKS;
+      const fixtureRoot = process.env.TALOS_TEST_WINDOWS_FILE_LINKS;
       if (!fixtureRoot)
-        throw new Error("LINGER_TEST_WINDOWS_FILE_LINKS is required");
+        throw new Error("TALOS_TEST_WINDOWS_FILE_LINKS is required");
       await rename(
         path.join(fixtureRoot, "workspace", "shortcut-original"),
         path.join(f.workspace, "shortcut"),

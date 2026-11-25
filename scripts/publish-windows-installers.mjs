@@ -12,7 +12,7 @@ const repositoryRoot = path.resolve(
 
 /** The line node-services replaces with this deployment's release metadata. */
 export const WINDOWS_RELEASE_METADATA_MARKER =
-  "__LINGER_RELEASE_METADATA_BASE64__";
+  "__TALOS_RELEASE_METADATA_BASE64__";
 
 /**
  * Writes the Windows install and uninstall entrypoints with the shared
@@ -29,8 +29,8 @@ export const publishWindowsInstallers = async (releaseRoot) => {
     "utf8",
   );
   for (const [sourceName, outputName] of [
-    ["install-linger-computer.ps1", "linger-computer.ps1"],
-    ["uninstall-linger-computer.ps1", "uninstall-linger-computer.ps1"],
+    ["install-talos-computer.ps1", "talos-computer.ps1"],
+    ["uninstall-talos-computer.ps1", "uninstall-talos-computer.ps1"],
   ]) {
     const template = await readFile(
       path.join(repositoryRoot, "scripts", sourceName),
@@ -38,9 +38,9 @@ export const publishWindowsInstallers = async (releaseRoot) => {
     );
     const source = template
       // PowerShell regexes contain $'; do not interpret them as JS replacements.
-      .replace("# LINGER_WINDOWS_BOOTSTRAP", () => common)
+      .replace("# TALOS_WINDOWS_BOOTSTRAP", () => common)
       .replace(
-        "__LINGER_INSTALLER_HELPER_BASE64__",
+        "__TALOS_INSTALLER_HELPER_BASE64__",
         Buffer.from(helper).toString("base64"),
       );
     await atomicWrite(path.join(releaseRoot, outputName), source);

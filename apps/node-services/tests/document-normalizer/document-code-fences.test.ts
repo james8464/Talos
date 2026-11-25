@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { extractDocumentImages } from "@linger/document-files";
+import { extractDocumentImages } from "@talos/document-files";
 import { describe, expect, it } from "vitest";
 
 import { normalizeDocumentContent } from "../../src/document-normalizer/document-normalizer-core.js";

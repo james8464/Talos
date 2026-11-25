@@ -6,7 +6,7 @@ import {
   parseOkfFrontmatter,
   setOkfRootIndexVersion,
   validateOkfDocument,
-} from "@linger/knowledge-format";
+} from "@talos/knowledge-format";
 import {
   canonicalRawSourceUrl,
   isRawSourceUrl,
@@ -16,8 +16,8 @@ import {
 import { personalWikiNodeTypeForPath } from "./personal-wiki-node-types.js";
 import { entityParts } from "./wiki-entity-registry.js";
 import { isPublishableWikiMarkdownPath } from "./actor-wiki/wiki-workspace.js";
-import { isNodeError, isRecord } from "@linger/service-kit";
-import { sha256Hex } from "@linger/service-kit/node";
+import { isNodeError, isRecord } from "@talos/service-kit";
+import { sha256Hex } from "@talos/service-kit/node";
 
 // Only explicit markup markers count: prose wording is never matched.
 const PLACEHOLDER_PATTERNS = [

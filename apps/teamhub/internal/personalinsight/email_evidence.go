@@ -3,7 +3,7 @@ package personalinsight
 import (
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
 )
 
 func EmailGroundingEvidence(sourceSubjectID string, evidence []emailevidence.WeightedEvidence) []GroundingEvidence {

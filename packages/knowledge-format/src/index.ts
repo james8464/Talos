@@ -1,5 +1,5 @@
 import { isMap, isScalar, parse, parseDocument, visit } from "yaml";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 export const OKF_VERSION = "0.2";
 

@@ -77,16 +77,16 @@ describe("desktop-release.sh version", () => {
 describe("desktop-release.sh checksums", () => {
   const version = "0.16.33";
   const required = [
-    `Linger-${version}-macos-arm64.dmg`,
-    `Linger-${version}-linux-x64.tar.gz`,
-    `Linger-${version}-windows-x64-setup.exe`,
+    `Talos-${version}-macos-arm64.dmg`,
+    `Talos-${version}-linux-x64.tar.gz`,
+    `Talos-${version}-windows-x64-setup.exe`,
   ];
 
   it("lists every file of the version", () => {
     const dir = folder();
-    const files = [...required, `Linger-${version}-windows-x64-portable.zip`];
+    const files = [...required, `Talos-${version}-windows-x64-portable.zip`];
     for (const name of files) writeFileSync(join(dir, name), name);
-    writeFileSync(join(dir, "Linger-0.16.32-macos-arm64.dmg"), "older");
+    writeFileSync(join(dir, "Talos-0.16.32-macos-arm64.dmg"), "older");
     writeFileSync(join(dir, "install.sh"), "#!/bin/sh\n");
     writeFileSync(join(dir, "install.ps1"), "# ps1\n");
 
@@ -111,34 +111,34 @@ describe("desktop-release.sh checksums", () => {
     const result = run(["checksums", dir, version]);
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain(`Linger-${version}-windows-x64-setup.exe`);
+    expect(result.stderr).toContain(`Talos-${version}-windows-x64-setup.exe`);
   });
 
   // The DMG names its platform like the other packages.
   it("refuses a DMG without macos in its name", () => {
     const dir = folder();
-    for (const name of [`Linger-${version}-arm64.dmg`, ...required.slice(1)])
+    for (const name of [`Talos-${version}-arm64.dmg`, ...required.slice(1)])
       writeFileSync(join(dir, name), name);
 
     const result = run(["checksums", dir, version]);
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain(`Linger-${version}-macos-arm64.dmg`);
+    expect(result.stderr).toContain(`Talos-${version}-macos-arm64.dmg`);
   });
 });
 
 describe("desktop-release.sh manifest", () => {
   const version = "0.16.33";
   const packages = {
-    "darwin-arm64": `Linger-${version}-macos-arm64.app.tar.gz`,
-    "linux-x64": `Linger-${version}-linux-x64.tar.gz`,
-    "win32-x64": `Linger-${version}-windows-x64-setup.exe`,
+    "darwin-arm64": `Talos-${version}-macos-arm64.app.tar.gz`,
+    "linux-x64": `Talos-${version}-linux-x64.tar.gz`,
+    "win32-x64": `Talos-${version}-windows-x64-setup.exe`,
   };
   const release = () => {
     const dir = folder();
     for (const name of Object.values(packages))
       writeFileSync(join(dir, name), name);
-    writeFileSync(join(dir, `Linger-${version}-macos-arm64.dmg`), "dmg");
+    writeFileSync(join(dir, `Talos-${version}-macos-arm64.dmg`), "dmg");
     return dir;
   };
   // A copy of the script beside an update-manifest.ts holding a throwaway
@@ -267,19 +267,19 @@ describe("desktop-release.sh build", () => {
     const result = run(["build", "linux-x64"], {
       DESKTOP_VERSION: "1.0.0",
       RELEASE_OUT: folder(),
-      LINGER_NATIVE_POSTGRES_DIR: folder(),
+      TALOS_NATIVE_POSTGRES_DIR: folder(),
     });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("LINGER_NATIVE_DEPS_URL");
+    expect(result.stderr).toContain("TALOS_NATIVE_DEPS_URL");
   });
 
   it("keeps the archive folder's address out of the log", () => {
     // A missing file:// folder fails at once; an unresolvable host would wait
     // out curl's retry backoff.
     const result = run(["fetch-native", "linux-x64"], {
-      LINGER_NATIVE_POSTGRES_DIR: folder(),
-      LINGER_NATIVE_DEPS_URL: `file://${folder()}/private-deps-folder`,
+      TALOS_NATIVE_POSTGRES_DIR: folder(),
+      TALOS_NATIVE_DEPS_URL: `file://${folder()}/private-deps-folder`,
     });
 
     expect(result.status).toBe(1);
@@ -294,7 +294,7 @@ describe("desktop-release.sh build", () => {
     copyFileSync(script, join(root, "scripts/ci/desktop-release.sh"));
     writeFileSync(
       join(root, "apps/desktop/package.json"),
-      `${JSON.stringify({ name: "@linger/desktop", version: "0.0.0" }, null, 2)}\n`,
+      `${JSON.stringify({ name: "@talos/desktop", version: "0.0.0" }, null, 2)}\n`,
     );
 
     const result = run(
@@ -356,16 +356,16 @@ describe("desktop-release.sh github-release", () => {
     return { ...result, calls };
   }
 
-  it("publishes to simplexai-labs/linger by default", () => {
+  it("publishes to simplexai-labs/talos by default", () => {
     const result = release({
-      GITHUB_REPOSITORY: "simplexai-labs/linger",
+      GITHUB_REPOSITORY: "simplexai-labs/talos",
       GITHUB_SHA: "abc123",
       GH_TOKEN: "token",
     });
 
     expect(result.status).toBe(0);
     expect(result.calls).toContain(`release create ${tag} `);
-    expect(result.calls).toContain("--repo simplexai-labs/linger");
+    expect(result.calls).toContain("--repo simplexai-labs/talos");
     expect(result.calls).toContain("--target abc123");
     expect(result.calls).toContain("--prerelease");
     expect(result.calls).not.toContain("--latest");
@@ -373,13 +373,13 @@ describe("desktop-release.sh github-release", () => {
 
   it("leaves another repository's commit out of a cross-repository release", () => {
     const result = release({
-      GITHUB_REPOSITORY: "example/linger-copy",
+      GITHUB_REPOSITORY: "example/talos-copy",
       GITHUB_SHA: "abc123",
       GH_TOKEN: "token",
     });
 
     expect(result.status).toBe(0);
-    expect(result.calls).toContain("--repo simplexai-labs/linger");
+    expect(result.calls).toContain("--repo simplexai-labs/talos");
     expect(result.calls).not.toContain("abc123");
   });
 
@@ -396,7 +396,7 @@ describe("desktop-release.sh github-release", () => {
 
     const result = run(["github-release", dir, "desktop-v1.0.0", "1.0.0"], {
       PATH: `${bin}:${process.env.PATH ?? ""}`,
-      GITHUB_REPOSITORY: "simplexai-labs/linger",
+      GITHUB_REPOSITORY: "simplexai-labs/talos",
       GH_TOKEN: "token",
     });
 
@@ -408,17 +408,17 @@ describe("desktop-release.sh github-release", () => {
     expect(result.stdout).toContain("publish desktop-v1.0.0 --notes-file");
   });
 
-  it("needs LINGER_RELEASE_TOKEN to publish from another repository", () => {
-    const result = release({ GITHUB_REPOSITORY: "example/linger-copy" });
+  it("needs TALOS_RELEASE_TOKEN to publish from another repository", () => {
+    const result = release({ GITHUB_REPOSITORY: "example/talos-copy" });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("LINGER_RELEASE_TOKEN");
+    expect(result.stderr).toContain("TALOS_RELEASE_TOKEN");
     expect(result.calls).toBe("");
   });
 
   it("refuses a RELEASE_REPO that is not owner/name", () => {
     const result = release({
-      RELEASE_REPO: "https://github.com/simplexai-labs/linger",
+      RELEASE_REPO: "https://github.com/simplexai-labs/talos",
       GH_TOKEN: "token",
     });
 
@@ -455,16 +455,16 @@ describe("desktop-release.sh publish", () => {
     );
     chmodSync(join(bin, "gh"), 0o755);
     const notes = join(dir, "notes.md");
-    writeFileSync(notes, "Linger Desktop 1.0.0\n\n## Highlights\n\n- Works.\n");
+    writeFileSync(notes, "Talos Desktop 1.0.0\n\n## Highlights\n\n- Works.\n");
     return { bin, log, notes };
   }
 
   it("publishes a stable draft with notes as latest and removes matching RC prereleases", () => {
     const { bin, log, notes } = setupPublish(
       [
-        "Linger-1.0.0-macos-arm64.dmg",
-        "Linger-1.0.0-linux-x64.tar.gz",
-        "Linger-1.0.0-windows-x64-setup.exe",
+        "Talos-1.0.0-macos-arm64.dmg",
+        "Talos-1.0.0-linux-x64.tar.gz",
+        "Talos-1.0.0-windows-x64-setup.exe",
         "SHA256SUMS.txt",
       ],
       ["desktop-v1.0.0-rc.0", "desktop-v1.0.0-rc.1"],
@@ -477,26 +477,26 @@ describe("desktop-release.sh publish", () => {
     expect(result.status).toBe(0);
     const calls = readFileSync(log, "utf8");
     expect(calls).toContain(
-      "release view desktop-v1.0.0 --repo simplexai-labs/linger --json assets --jq .assets[].name",
+      "release view desktop-v1.0.0 --repo simplexai-labs/talos --json assets --jq .assets[].name",
     );
     expect(calls).toContain(
-      `release edit desktop-v1.0.0 --repo simplexai-labs/linger --notes-file ${notes} --draft=false --latest`,
+      `release edit desktop-v1.0.0 --repo simplexai-labs/talos --notes-file ${notes} --draft=false --latest`,
     );
     expect(calls).toContain(
-      'release list --repo simplexai-labs/linger --limit 100 --json tagName,isPrerelease,isDraft --jq .[] | select(.isPrerelease and (.isDraft | not) and (.tagName | startswith("desktop-v1.0.0-rc."))) | .tagName',
+      'release list --repo simplexai-labs/talos --limit 100 --json tagName,isPrerelease,isDraft --jq .[] | select(.isPrerelease and (.isDraft | not) and (.tagName | startswith("desktop-v1.0.0-rc."))) | .tagName',
     );
     expect(calls).toContain(
-      "release delete desktop-v1.0.0-rc.0 --repo simplexai-labs/linger --cleanup-tag --yes",
+      "release delete desktop-v1.0.0-rc.0 --repo simplexai-labs/talos --cleanup-tag --yes",
     );
     expect(calls).toContain(
-      "release delete desktop-v1.0.0-rc.1 --repo simplexai-labs/linger --cleanup-tag --yes",
+      "release delete desktop-v1.0.0-rc.1 --repo simplexai-labs/talos --cleanup-tag --yes",
     );
   });
 
   it("refuses to publish when a required release asset is missing", () => {
     const { bin, log, notes } = setupPublish([
-      "Linger-1.0.0-macos-arm64.dmg",
-      "Linger-1.0.0-linux-x64.tar.gz",
+      "Talos-1.0.0-macos-arm64.dmg",
+      "Talos-1.0.0-linux-x64.tar.gz",
       "SHA256SUMS.txt",
     ]);
 
@@ -505,7 +505,7 @@ describe("desktop-release.sh publish", () => {
     });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("Linger-1.0.0-windows-x64-setup.exe");
+    expect(result.stderr).toContain("Talos-1.0.0-windows-x64-setup.exe");
     expect(readFileSync(log, "utf8")).not.toContain("release edit");
   });
 
@@ -547,7 +547,7 @@ describe("desktop-release.sh package Docker images", () => {
     copyFileSync(script, join(root, "scripts/ci/desktop-release.sh"));
     writeFileSync(
       join(root, "apps/desktop/package.json"),
-      `${JSON.stringify({ name: "@linger/desktop", version: "0.0.0" }, null, 2)}\n`,
+      `${JSON.stringify({ name: "@talos/desktop", version: "0.0.0" }, null, 2)}\n`,
     );
     writeFileSync(
       join(root, "apps/desktop/packaging/mac/Dockerfile"),
@@ -568,8 +568,8 @@ describe("desktop-release.sh package Docker images", () => {
         "  shift",
         "done",
         'mkdir -p "$out"',
-        `: >"$out/Linger-${version}-arm64.dmg"`,
-        `: >"$out/Linger-${version}-arm64.app.tar.gz"`,
+        `: >"$out/Talos-${version}-arm64.dmg"`,
+        `: >"$out/Talos-${version}-arm64.app.tar.gz"`,
         "",
       ].join("\n"),
     );
@@ -593,7 +593,7 @@ describe("desktop-release.sh package Docker images", () => {
         PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
         DESKTOP_VERSION: version,
         RELEASE_OUT: fixture.out,
-        DESKTOP_PACKAGING_IMAGE_PREFIX: "ghcr.io/simplexai-labs/linger/desktop",
+        DESKTOP_PACKAGING_IMAGE_PREFIX: "ghcr.io/simplexai-labs/talos/desktop",
       },
       fixture.script,
     );
@@ -613,7 +613,7 @@ describe("desktop-release.sh package Docker images", () => {
         "exit 1",
       ].join("\n"),
     );
-    const remote = `ghcr.io/simplexai-labs/linger/desktop-dmgtool:${dockerfileSha}`;
+    const remote = `ghcr.io/simplexai-labs/talos/desktop-dmgtool:${dockerfileSha}`;
 
     const result = run(
       ["package", "darwin-arm64"],
@@ -622,7 +622,7 @@ describe("desktop-release.sh package Docker images", () => {
         DESKTOP_VERSION: version,
         RELEASE_OUT: fixture.out,
         DESKTOP_PACKAGING_IMAGE_PREFIX:
-          "ghcr.io/simplexai-labs/linger/desktop/",
+          "ghcr.io/simplexai-labs/talos/desktop/",
       },
       fixture.script,
     );
@@ -650,7 +650,7 @@ describe("desktop-release.sh package Docker images", () => {
         PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
         DESKTOP_VERSION: version,
         RELEASE_OUT: fixture.out,
-        DESKTOP_PACKAGING_IMAGE_PREFIX: "ghcr.io/simplexai-labs/linger/desktop",
+        DESKTOP_PACKAGING_IMAGE_PREFIX: "ghcr.io/simplexai-labs/talos/desktop",
       },
       fixture.script,
     );
@@ -659,7 +659,7 @@ describe("desktop-release.sh package Docker images", () => {
     expect(result.stderr).toContain("building dmgtool locally");
     const calls = readFileSync(fixture.log, "utf8");
     expect(calls).toContain(
-      `build --label linger.dockerfile.sha256=${dockerfileSha} -t dmgtool`,
+      `build --label talos.dockerfile.sha256=${dockerfileSha} -t dmgtool`,
     );
     expect(calls).not.toContain("build -q");
   });

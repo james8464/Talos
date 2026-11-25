@@ -78,13 +78,13 @@ describe("Agent Management computer permission routes", () => {
     );
     const app = createApp(act);
     for (const body of [
-      { action: "prompt", subject: "linger", permission: "screen_recording" },
+      { action: "prompt", subject: "talos", permission: "screen_recording" },
       {
         action: "open_settings",
         subject: "computer_use",
         permission: "accessibility",
       },
-      { action: "relaunch", subject: "linger" },
+      { action: "relaunch", subject: "talos" },
     ]) {
       expect((await post(app, body)).status).toBe(200);
     }
@@ -95,27 +95,27 @@ describe("Agent Management computer permission routes", () => {
         permission,
       })),
     ).toEqual([
-      { action: "prompt", subject: "linger", permission: "screen_recording" },
+      { action: "prompt", subject: "talos", permission: "screen_recording" },
       {
         action: "open_settings",
         subject: "computer_use",
         permission: "accessibility",
       },
-      { action: "relaunch", subject: "linger", permission: undefined },
+      { action: "relaunch", subject: "talos", permission: undefined },
     ]);
   });
 
   it.each([
-    { action: "prompt", subject: "linger" },
+    { action: "prompt", subject: "talos" },
     { action: "open_settings", subject: "computer_use" },
-    { action: "relaunch", subject: "linger", permission: "accessibility" },
-    { action: "status", subject: "linger" },
+    { action: "relaunch", subject: "talos", permission: "accessibility" },
+    { action: "status", subject: "talos" },
     { action: "prompt", permission: "screen_recording" },
     { action: "prompt", subject: "cua", permission: "screen_recording" },
-    { action: "prompt", subject: "linger", permission: "camera" },
+    { action: "prompt", subject: "talos", permission: "camera" },
     {
       action: "prompt",
-      subject: "linger",
+      subject: "talos",
       permission: "screen_recording",
       extra: true,
     },

@@ -11,7 +11,7 @@ components:
           description: >-
             refused: the final response forbids framing by another site
             (X-Frame-Options DENY or SAMEORIGIN, or a CSP frame-ancestors
-            that allows no page of the Linger page's scheme), so the panel
+            that allows no page of the Talos page's scheme), so the panel
             offers a new tab instead of a frame. allowed: it does not.
             unknown: TeamHub did not read the page, because it was
             unreachable, slow or redirected too often, TeamHub was busy with

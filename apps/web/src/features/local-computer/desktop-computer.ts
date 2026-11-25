@@ -4,7 +4,7 @@ import { translate } from "@/i18n/language";
 
 import { computersMessages } from "./computers.messages";
 
-// The part of the desktop shell API (`window.lingerDesktop`, exposed by the
+// The part of the desktop shell API (`window.talosDesktop`, exposed by the
 // Electron preload) that the Agent creation flow uses. In a browser it is
 // absent and the CLI setup instructions are shown instead.
 export interface DesktopComputerStatus {
@@ -23,8 +23,8 @@ interface DesktopComputerApi {
 const desktopComputerApi = (): DesktopComputerApi | undefined =>
   typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { computer?: DesktopComputerApi } })
-        .lingerDesktop?.computer;
+    : (window as { talosDesktop?: { computer?: DesktopComputerApi } })
+        .talosDesktop?.computer;
 
 interface DesktopLocalServerProbe {
   owned?(): Promise<boolean>;
@@ -38,12 +38,12 @@ const desktopLocalServerCheck = (): (() => Promise<boolean>) | undefined => {
   if (typeof window === "undefined") return undefined;
   const desktop = (
     window as {
-      lingerDesktop?: {
+      talosDesktop?: {
         localServer?: DesktopLocalServerProbe;
         localAccount?: DesktopLocalAccountProbe;
       };
     }
-  ).lingerDesktop;
+  ).talosDesktop;
   if (typeof desktop?.localServer?.owned === "function")
     return () => desktop.localServer!.owned!();
   if (typeof desktop?.localAccount?.available === "function")
@@ -133,20 +133,20 @@ export function useDesktopComputer(): DesktopComputer | undefined {
 }
 
 // A permission step the desktop app takes on its own Mac without TeamHub.
-// It runs Linger's own steps and opens any System Settings pane; CuaDriver's
+// It runs Talos's own steps and opens any System Settings pane; CuaDriver's
 // prompt and restart need the daemon.
 export type DesktopPermissionStep =
   | {
       readonly action: "prompt";
-      readonly subject: "linger";
+      readonly subject: "talos";
       readonly permission: "screen_recording" | "accessibility";
     }
   | {
       readonly action: "open_settings";
-      readonly subject: "linger" | "computer_use";
+      readonly subject: "talos" | "computer_use";
       readonly permission: "screen_recording" | "accessibility";
     }
-  | { readonly action: "relaunch"; readonly subject: "linger" };
+  | { readonly action: "relaunch"; readonly subject: "talos" };
 
 export interface DesktopPermissions {
   act(step: DesktopPermissionStep): Promise<void>;
@@ -156,6 +156,6 @@ export interface DesktopPermissions {
 export function desktopPermissions(): DesktopPermissions | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { permissions?: DesktopPermissions } })
-        .lingerDesktop?.permissions;
+    : (window as { talosDesktop?: { permissions?: DesktopPermissions } })
+        .talosDesktop?.permissions;
 }

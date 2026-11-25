@@ -11,7 +11,7 @@ import {
   VoiceRequestScope,
   waitForVoiceDelay,
 } from "@/features/teamhub/voice-request-scope";
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 
 /** Stop attempts that leave the Capture recording before the release gives up. */
 const voiceStopAttempts = 3;

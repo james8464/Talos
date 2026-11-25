@@ -269,9 +269,9 @@ function releaseId(value) {
 }
 
 export function createManagedToolsInstaller({
-  root = process.env.LINGER_TOOLS_ROOT ??
+  root = process.env.TALOS_TOOLS_ROOT ??
     path.join(os.homedir(), ".local/share/simplexai/tools"),
-  baseUrl = process.env.LINGER_CLI_RELEASES_BASE_URL,
+  baseUrl = process.env.TALOS_CLI_RELEASES_BASE_URL,
   detectPlatform = detectManagedToolsPlatform,
   lockTimeoutMs = 30_000,
   smokeTimeoutMs = 15_000,
@@ -424,7 +424,7 @@ export function createManagedToolsInstaller({
   }
   async function readSource(relative) {
     if (!baseUrl)
-      throw new Error("Configure LINGER_CLI_RELEASES_BASE_URL or baseUrl");
+      throw new Error("Configure TALOS_CLI_RELEASES_BASE_URL or baseUrl");
     relative = relativeArchivePath(relative);
     if (baseUrl.startsWith("file://"))
       return readFile(path.join(fileURLToPath(baseUrl), relative));

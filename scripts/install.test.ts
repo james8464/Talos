@@ -77,7 +77,7 @@ afterEach(async () => {
 });
 
 async function createTempRoot(): Promise<string> {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "linger-install-test-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "talos-install-test-"));
   temporaryDirectories.push(dir);
   return dir;
 }
@@ -350,7 +350,7 @@ esac
   return { scriptPath, logPath, kitHomeLogPath };
 }
 
-async function startMockLingerServer(
+async function startMockTalosServer(
   root: string,
   authorized: boolean,
 ): Promise<{
@@ -364,20 +364,20 @@ async function startMockLingerServer(
   let requestCount = 0;
 
   const installerScript = `#!/usr/bin/env bash
-# linger-computer-launcher-v2
+# talos-computer-launcher-v2
 set -euo pipefail
-web_origin="\${LINGER_WEB_URL:?LINGER_WEB_URL is required}"
+web_origin="\${TALOS_WEB_URL:?TALOS_WEB_URL is required}"
 rest="\${web_origin#*://}"
 host="\${rest%%:*}"
 port="\${rest#"$host"}"
 port="\${port#:}"
 env_name="local-\${port}"
-bin_dir="\${LINGER_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
+bin_dir="\${TALOS_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
 mkdir -p "$bin_dir"
-launcher="$bin_dir/linger-computer-$env_name"
+launcher="$bin_dir/talos-computer-$env_name"
 cat <<'CLI_EOF' > "$launcher"
 #!/usr/bin/env bash
-# linger-computer-launcher-v2
+# talos-computer-launcher-v2
 set -euo pipefail
 printf '{"argv":[' >> ${JSON.stringify(computerLogPath)}
 first=1
@@ -404,7 +404,7 @@ chmod 0755 "$launcher"
 `;
 
   const server: Server = createServer((req, res) => {
-    if (req.url === "/install/linger-computer.sh") {
+    if (req.url === "/install/talos-computer.sh") {
       requestCount += 1;
       res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
       res.end(installerScript);
@@ -475,8 +475,8 @@ function buildTestEnv(root: string, stackScript: string): NodeJS.ProcessEnv {
   return {
     HOME: homeDir,
     PATH: `/usr/local/bin:/usr/bin:/bin`,
-    LINGER_STACK_SCRIPT: stackScript,
-    LINGER_COMPUTER_BIN_DIR: binDir,
+    TALOS_STACK_SCRIPT: stackScript,
+    TALOS_COMPUTER_BIN_DIR: binDir,
   };
 }
 
@@ -511,7 +511,7 @@ describe("root install.sh", () => {
     expect(combined).not.toContain("gateway-home");
   });
 
-  it("guides through shared GPU selection, plan approval, and linger-computer login", async () => {
+  it("guides through shared GPU selection, plan approval, and talos-computer login", async () => {
     const root = await createTempRoot();
     const homeDir = path.join(root, "home");
     await mkdir(homeDir, { recursive: true });
@@ -540,7 +540,7 @@ describe("root install.sh", () => {
       ],
       planPreflightWarn: "Shared card detected; check stack.sh settings",
     });
-    const server = await startMockLingerServer(root, false);
+    const server = await startMockTalosServer(root, false);
 
     const result = await runInstallScript(["--web-url", server.baseUrl], {
       env: buildTestEnv(root, scriptPath),
@@ -548,14 +548,14 @@ describe("root install.sh", () => {
     });
 
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain("[1/4] Checking Linger server");
+    expect(result.stdout).toContain("[1/4] Checking Talos server");
     expect(result.stdout).toContain(
       "[2/4] Checking hardware and model options",
     );
     expect(result.stdout).toContain(
       "[3/4] Installing and verifying the local model",
     );
-    expect(result.stdout).toContain("[4/4] Connecting this computer to Linger");
+    expect(result.stdout).toContain("[4/4] Connecting this computer to Talos");
 
     const stackCalls = (await readFile(logPath, "utf8")).trim().split("\n");
     const planCall = stackCalls.find((line) => line.startsWith("plan "));
@@ -618,7 +618,7 @@ describe("root install.sh", () => {
     const root = await createTempRoot();
     await mkdir(path.join(root, "home"), { recursive: true });
     const { scriptPath, logPath } = await createFakeStackScript(root, {});
-    const server = await startMockLingerServer(root, false);
+    const server = await startMockTalosServer(root, false);
 
     const result = await runInstallScript(["--web-url", server.baseUrl], {
       env: buildTestEnv(root, scriptPath),
@@ -650,7 +650,7 @@ describe("root install.sh", () => {
     const { scriptPath, logPath } = await createFakeStackScript(root, {
       acceptedStack: true,
     });
-    const server = await startMockLingerServer(root, true);
+    const server = await startMockTalosServer(root, true);
 
     const result = await runInstallScript(["--web-url", server.baseUrl], {
       env: buildTestEnv(root, scriptPath),
@@ -733,7 +733,7 @@ describe("root install.sh", () => {
     const firstLogged = (await readFile(kitHomeLogPath, "utf8"))
       .trim()
       .split("\n");
-    expect(firstLogged[0]).toBe(path.join(homeDir, ".linger/localmodels/kits"));
+    expect(firstLogged[0]).toBe(path.join(homeDir, ".talos/localmodels/kits"));
     const homeKitStat = await stat(firstLogged[0] ?? "");
     expect(homeKitStat.mode & 0o777).toBe(0o700);
 
@@ -750,7 +750,7 @@ describe("root install.sh", () => {
       .trim()
       .split("\n");
     expect(
-      secondLogged[1]?.startsWith(path.join(privateTmp, "linger-kit.")),
+      secondLogged[1]?.startsWith(path.join(privateTmp, "talos-kit.")),
     ).toBe(true);
     expect(await readdir(privateTmp)).toEqual([]);
   });
@@ -765,10 +765,10 @@ describe("root install.sh", () => {
     const serverStartedPath = path.join(root, "server-started");
     await mkdir(path.join(fakeRepo, "scripts/install"), { recursive: true });
     await mkdir(path.join(fakeRepo, "scripts/installs"), { recursive: true });
-    await mkdir(path.join(fakeRepo, ".linger-runtime"), { recursive: true });
-    await chmod(path.join(fakeRepo, ".linger-runtime"), 0o555);
+    await mkdir(path.join(fakeRepo, ".talos-runtime"), { recursive: true });
+    await chmod(path.join(fakeRepo, ".talos-runtime"), 0o555);
     cleanups.push(async () => {
-      await chmod(path.join(fakeRepo, ".linger-runtime"), 0o755);
+      await chmod(path.join(fakeRepo, ".talos-runtime"), 0o755);
     });
     await mkdir(fakeBin, { recursive: true });
     await mkdir(homeDir, { recursive: true });
@@ -838,9 +838,9 @@ for a in "$@"; do
   prev="$a"
 done
 case "$url" in
-  "http://localhost:3001/install/linger-computer.sh")
+  "http://localhost:3001/install/talos-computer.sh")
     if [ ! -f ${JSON.stringify(serverStartedPath)} ]; then exit 22; fi
-    body="# linger-computer-launcher-v2"
+    body="# talos-computer-launcher-v2"
     if [ -n "$out" ]; then printf '%s\n' "$body" > "$out"; else printf '%s\n' "$body"; fi
     exit 0
     ;;
@@ -859,7 +859,7 @@ esac
         HOME: homeDir,
         XDG_CACHE_HOME: xdgCache,
         PATH: `${fakeBin}:/usr/local/bin:/usr/bin:/bin`,
-        LINGER_INSTALL_BUSY_PORTS: "3000,17880,7881,7882",
+        TALOS_INSTALL_BUSY_PORTS: "3000,17880,7881,7882",
       },
       input: ["1", "y", "n", "n", "n"].join("\n") + "\n",
     });
@@ -907,12 +907,12 @@ esac
         HOME: homeDir,
         XDG_CACHE_HOME: xdgCache,
         PATH: `${fakeBin}:/usr/local/bin:/usr/bin:/bin`,
-        LINGER_INSTALL_BUSY_PORTS: "3000,17880,7881,7882",
+        TALOS_INSTALL_BUSY_PORTS: "3000,17880,7881,7882",
       },
       input: ["1", "n", "n", "n"].join("\n") + "\n",
     });
     expect(repeated.code).toBe(0);
-    expect(repeated.stdout).toContain("Starting Linger with Docker Compose...");
+    expect(repeated.stdout).toContain("Starting Talos with Docker Compose...");
     expect(repeated.stdout).not.toContain("Port(s) already in use:");
     expect(await readFile(path.join(fakeRepo, ".env"), "utf8")).toBe(
       updatedEnv,
@@ -932,7 +932,7 @@ esac
         HOME: homeDir,
         XDG_CACHE_HOME: xdgCache,
         PATH: `${fakeBin}:/usr/local/bin:/usr/bin:/bin`,
-        LINGER_INSTALL_BUSY_PORTS: "3001,17881,7883",
+        TALOS_INSTALL_BUSY_PORTS: "3001,17881,7883",
       },
       input: ["1", "y"].join("\n") + "\n",
     });
@@ -973,7 +973,7 @@ esac
       env,
     });
     expect(invalidUrl.code).toBe(1);
-    expect(invalidUrl.stderr).toContain("Invalid Linger server URL");
+    expect(invalidUrl.stderr).toContain("Invalid Talos server URL");
 
     const standaloneDir = path.join(root, "standalone");
     await mkdir(standaloneDir, { recursive: true });
@@ -1004,7 +1004,7 @@ esac
     const root = await createTempRoot();
     await mkdir(path.join(root, "home"), { recursive: true });
     const { scriptPath } = await createFakeStackScript(root, {});
-    const server = await startMockLingerServer(root, false);
+    const server = await startMockTalosServer(root, false);
     const standaloneDir = path.join(root, "standalone");
     await mkdir(standaloneDir, { recursive: true });
     const standalonePath = path.join(standaloneDir, "install.sh");
@@ -1032,7 +1032,7 @@ esac
     expect(customRetry.code).toBe(0);
     expect(customRetry.stdout).toContain("Invalid URL");
     expect(customRetry.stdout).toContain(
-      `Found Linger server at ${server.baseUrl}`,
+      `Found Talos server at ${server.baseUrl}`,
     );
 
     const skipResult = await runInstallScript(
@@ -1081,7 +1081,7 @@ esac
       "WEB_PUBLIC_ORIGIN=http://localhost:3000\n# WEB_HTTP_PORT=3000\n",
     );
 
-    const server = await startMockLingerServer(root, false);
+    const server = await startMockTalosServer(root, false);
     const serverPort = new URL(server.baseUrl).port;
 
     await writeFile(
@@ -1114,8 +1114,8 @@ for a in "$@"; do
   prev="$a"
 done
 case "$url" in
-  "${server.baseUrl}/install/linger-computer.sh")
-    body="# linger-computer-launcher-v2"
+  "${server.baseUrl}/install/talos-computer.sh")
+    body="# talos-computer-launcher-v2"
     if [ -n "$out" ]; then printf '%s\n' "$body" > "$out"; else printf '%s\n' "$body"; fi
     exit 0
     ;;
@@ -1131,7 +1131,7 @@ esac
       HOME: homeDir,
       XDG_CACHE_HOME: xdgCache,
       PATH: `${fakeBin}:/usr/local/bin:/usr/bin:/bin`,
-      LINGER_INSTALL_BUSY_PORTS: "3000",
+      TALOS_INSTALL_BUSY_PORTS: "3000",
     };
 
     const declinedPorts = await runInstallScript([], {
@@ -1153,7 +1153,7 @@ esac
       {
         scriptPath: copiedInstallPath,
         cwd: fakeRepo,
-        env: { ...env, LINGER_INSTALL_BUSY_PORTS: "" },
+        env: { ...env, TALOS_INSTALL_BUSY_PORTS: "" },
         input: ["1", "y", "", "short", "", "n", "n"].join("\n") + "\n",
       },
     );
@@ -1162,7 +1162,7 @@ esac
       "Password must be at least 8 characters",
     );
     expect(resetExplicit.stdout).toContain(
-      `Linger server is ready at ${server.baseUrl}`,
+      `Talos server is ready at ${server.baseUrl}`,
     );
     expect((await readFile(teamhubLog, "utf8")).trim()).toBe("test1234");
   });
@@ -1170,7 +1170,7 @@ esac
   it("handles GPU cancel, memory cap retry, preflight failures, and stack sanitization", async () => {
     const root = await createTempRoot();
     await mkdir(path.join(root, "home"), { recursive: true });
-    const server = await startMockLingerServer(root, false);
+    const server = await startMockTalosServer(root, false);
 
     const bootErr = await createFakeStackScript(root, {
       bootstrapError: "stack: GPU service owners unknown",
@@ -1252,7 +1252,7 @@ esac
       acceptedStack: true,
       upFailsWithoutShareGpu: true,
     });
-    const server = await startMockLingerServer(root, true);
+    const server = await startMockTalosServer(root, true);
     const env = buildTestEnv(root, scriptPath);
 
     const shareRetry = await runInstallScript(["--web-url", server.baseUrl], {
@@ -1358,7 +1358,7 @@ describe("scripts/install/install.ps1 and release pin parity", () => {
       "Invoke-Stack @('apply', $planFile, '--approve', $planId)",
     );
     expect(ps1).not.toContain("@('apply', '--plan'");
-    expect(ps1).not.toContain("LINGER_STACK_SCRIPT_URL");
+    expect(ps1).not.toContain("TALOS_STACK_SCRIPT_URL");
     expect(ps1).not.toContain("Test-IsAclBootstrapFailure");
     expect(ps1).toContain("@('auth', 'status', '--json')");
     expect(ps1).toContain("Get-StackInvokePath");
@@ -1535,8 +1535,8 @@ describe("scripts/install/install.ps1 and release pin parity", () => {
       ),
     );
     const envBase = buildTestEnv(root, "");
-    delete envBase.LINGER_STACK_SCRIPT;
-    delete envBase.LINGER_STACK_URL;
+    delete envBase.TALOS_STACK_SCRIPT;
+    delete envBase.TALOS_STACK_URL;
     const tamperedRes = await runInstallScript(["--status"], {
       scriptPath: standaloneSh,
       cwd: standaloneDir,

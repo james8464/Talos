@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func (a *App) getAgentMemory(c *gin.Context) {

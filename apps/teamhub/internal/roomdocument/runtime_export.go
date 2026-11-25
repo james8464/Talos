@@ -13,8 +13,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 const revisionExportTimeout = 30 * time.Second

@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskexecution"
-	teamhubinternal "github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskexecution"
+	teamhubinternal "github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func readTaskProgress(t *testing.T, env *testEnv, roomID string) (int, teamhubinternal.TaskProgressSnapshot, []byte) {

@@ -121,7 +121,7 @@ describe("windowsOrphans", () => {
   const oldSource = `${home}\\desktop\\source\\f1e089bacd8b0bd7`;
   const newSource = `${home}\\desktop\\source\\e91b1008ba80087b`;
   const worker = (name: string, key: string) =>
-    `${node} C:\\Users\\Ada\\AppData\\Local\\Programs\\Linger\\resources\\app\\dist\\installer\\native-process-worker.mjs ${root}\\native\\processes\\${name}.${key}.job`;
+    `${node} C:\\Users\\Ada\\AppData\\Local\\Programs\\Talos\\resources\\app\\dist\\installer\\native-process-worker.mjs ${root}\\native\\processes\\${name}.${key}.job`;
   const ports = { teamhub: 55640, nodeServices: 55641, web: 3000, pg: 55643 };
   const postgresLease = "c".repeat(64);
   const liveKitLease = "d".repeat(64);
@@ -135,7 +135,7 @@ describe("windowsOrphans", () => {
       500,
       1,
       50,
-      `"C:\\Users\\Ada\\AppData\\Local\\Programs\\Linger\\Linger.exe"`,
+      `"C:\\Users\\Ada\\AppData\\Local\\Programs\\Talos\\Talos.exe"`,
     ),
     row(600, 500, 60, `${node} installer.js --home ${home} --resume`),
     row(27876, 1, 100, worker("postgres", postgresLease)),
@@ -175,13 +175,13 @@ describe("windowsOrphans", () => {
       41828,
       38688,
       140,
-      `${node} --conditions=linger-production ${oldSource}\\.simplexai-runtime\\offline\\node-services\\dist\\supervisor.js --compiled`,
+      `${node} --conditions=talos-production ${oldSource}\\.simplexai-runtime\\offline\\node-services\\dist\\supervisor.js --compiled`,
     ),
     row(
       7644,
       41828,
       141,
-      `${node} --conditions=linger-production ${oldSource}\\.simplexai-runtime\\offline\\node-services\\dist\\main.js`,
+      `${node} --conditions=talos-production ${oldSource}\\.simplexai-runtime\\offline\\node-services\\dist\\main.js`,
     ),
     row(7700, 1, 150, worker("web", strayLease)),
     row(42372, 13172, 160, "C:\\bench\\llama-server.exe --port 18910"),

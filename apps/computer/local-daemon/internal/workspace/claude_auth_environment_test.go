@@ -24,7 +24,7 @@ func TestClaudeAuthEnvironmentOnlyInheritsAllowedSettings(t *testing.T) {
 	for name, value := range allowed {
 		values[name] = value
 	}
-	for _, name := range []string{"HOME", "CLAUDE_CONFIG_DIR", "LINGER_COMPUTER_TOKEN", "TEAMHUB_SERVICE_TOKEN", "CLAUDE_CODE_EFFORT_LEVEL", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "NODE_OPTIONS", "ANTHROPIC_CUSTOM_UNKNOWN"} {
+	for _, name := range []string{"HOME", "CLAUDE_CONFIG_DIR", "TALOS_COMPUTER_TOKEN", "TEAMHUB_SERVICE_TOKEN", "CLAUDE_CODE_EFFORT_LEVEL", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "NODE_OPTIONS", "ANTHROPIC_CUSTOM_UNKNOWN"} {
 		values[name] = "must-not-inherit"
 	}
 	content, err := json.Marshal(map[string]any{"env": values, "hooks": map[string]any{"PreToolUse": "ignored"}, "permissions": map[string]any{"allow": []string{"Bash"}}, "enabledPlugins": map[string]bool{"fixture": true}})

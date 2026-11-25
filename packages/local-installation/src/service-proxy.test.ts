@@ -5,7 +5,7 @@ import { systemProxyEnvironment } from "./service-proxy.js";
 it("adds the system proxy with loopback in NO_PROXY", () => {
   expect(
     systemProxyEnvironment({
-      LINGER_SYSTEM_HTTPS_PROXY: " http://127.0.0.1:7890 ",
+      TALOS_SYSTEM_HTTPS_PROXY: " http://127.0.0.1:7890 ",
     }),
   ).toEqual({
     HTTPS_PROXY: "http://127.0.0.1:7890",
@@ -16,7 +16,7 @@ it("adds the system proxy with loopback in NO_PROXY", () => {
 it("keeps the person's NO_PROXY entries under the name they used", () => {
   expect(
     systemProxyEnvironment({
-      LINGER_SYSTEM_HTTPS_PROXY: "http://p:1",
+      TALOS_SYSTEM_HTTPS_PROXY: "http://p:1",
       no_proxy: "corp.example, localhost",
     }),
   ).toEqual({
@@ -25,7 +25,7 @@ it("keeps the person's NO_PROXY entries under the name they used", () => {
   });
   expect(
     systemProxyEnvironment({
-      LINGER_SYSTEM_HTTPS_PROXY: "http://p:1",
+      TALOS_SYSTEM_HTTPS_PROXY: "http://p:1",
       NO_PROXY: "a.example",
       no_proxy: "b.example",
     }),
@@ -37,18 +37,18 @@ it("keeps the person's NO_PROXY entries under the name they used", () => {
 
 it("adds nothing without a system proxy or when the person set HTTPS_PROXY", () => {
   expect(systemProxyEnvironment({})).toEqual({});
-  expect(systemProxyEnvironment({ LINGER_SYSTEM_HTTPS_PROXY: " " })).toEqual(
+  expect(systemProxyEnvironment({ TALOS_SYSTEM_HTTPS_PROXY: " " })).toEqual(
     {},
   );
   expect(
     systemProxyEnvironment({
-      LINGER_SYSTEM_HTTPS_PROXY: "http://system:1",
+      TALOS_SYSTEM_HTTPS_PROXY: "http://system:1",
       HTTPS_PROXY: "http://mine:2",
     }),
   ).toEqual({});
   expect(
     systemProxyEnvironment({
-      LINGER_SYSTEM_HTTPS_PROXY: "http://system:1",
+      TALOS_SYSTEM_HTTPS_PROXY: "http://system:1",
       https_proxy: "http://mine:2",
     }),
   ).toEqual({});

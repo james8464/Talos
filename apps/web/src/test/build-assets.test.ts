@@ -135,20 +135,20 @@ async function createBuildFixture({
   dynamic,
   entry,
 }: { dynamic?: string; entry?: string } = {}) {
-  const root = await mkdtemp(join(tmpdir(), "linger-web-build-"));
+  const root = await mkdtemp(join(tmpdir(), "talos-web-build-"));
   fixtureRoots.push(root);
   await mkdir(join(root, ".vite"), { recursive: true });
   await mkdir(join(root, "assets"), { recursive: true });
   await mkdir(join(root, "brand"), { recursive: true });
 
-  const entryBytes = Buffer.from(entry ?? "const room = 'Linger';".repeat(80));
+  const entryBytes = Buffer.from(entry ?? "const room = 'Talos';".repeat(80));
   const runtimeBytes = Buffer.from("const runtime = true;".repeat(40));
   const dynamicBytes = Buffer.from(
     dynamic ?? "const preview = 'lazy';".repeat(40),
   );
   const cssBytes = Buffer.from(".room{display:flex}".repeat(80));
   await Promise.all([
-    writeFile(join(root, "index.html"), "<main>Linger</main>".repeat(40)),
+    writeFile(join(root, "index.html"), "<main>Talos</main>".repeat(40)),
     writeFile(join(root, "assets", "entry.js"), entryBytes),
     writeFile(join(root, "assets", "runtime.js"), runtimeBytes),
     writeFile(join(root, "assets", "dynamic.js"), dynamicBytes),

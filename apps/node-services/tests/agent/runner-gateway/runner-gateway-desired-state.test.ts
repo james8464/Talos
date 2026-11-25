@@ -7,7 +7,7 @@ import type {
   AgentToDaemonEnvelope,
   DaemonToAgentEnvelope,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import {
   RunnerGatewayProtocolError,

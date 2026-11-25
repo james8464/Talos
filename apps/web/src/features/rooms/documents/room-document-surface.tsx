@@ -382,7 +382,7 @@ function UnifiedDocumentCommentsSurface({
   const versionDocument =
     document?.format !== "blocknote" ? document : undefined;
   const commentsWidth = useSidebarWidth(
-    `linger:document-comments-width:${tenantId}`,
+    `talos:document-comments-width:${tenantId}`,
     336,
     { edge: "left", max: 540, min: 272 },
   );

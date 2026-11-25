@@ -1120,7 +1120,7 @@ describe("MessageComposer", () => {
         value: {
           getData: (type: string) =>
             type === "text/html"
-              ? `<a href="${value}" data-linger-document-id="document-personal" data-linger-tenant-id="tenant-1">Personal brief.md</a>`
+              ? `<a href="${value}" data-talos-document-id="document-personal" data-talos-tenant-id="tenant-1">Personal brief.md</a>`
               : value,
         },
       });
@@ -1188,7 +1188,7 @@ describe("MessageComposer", () => {
       value: {
         getData: (type: string) =>
           type === "text/html"
-            ? `<a href="${value}" data-linger-document-id="document-denied" data-linger-tenant-id="tenant-1">Denied document</a>`
+            ? `<a href="${value}" data-talos-document-id="document-denied" data-talos-tenant-id="tenant-1">Denied document</a>`
             : value,
       },
     });

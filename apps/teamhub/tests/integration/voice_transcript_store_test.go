@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // A final retried after its Capture froze is told apart by its event row: the

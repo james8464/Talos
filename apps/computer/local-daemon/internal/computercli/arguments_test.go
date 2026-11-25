@@ -61,13 +61,13 @@ func TestSubcommandHelpTopics(t *testing.T) {
 
 func TestLoginHelpKeepsOnlyTheRemainingPairingPaths(t *testing.T) {
 	want := `Usage:
-  linger-computer login [options]
+  talos-computer login [options]
 
 Authorize this computer in your browser, save its credential, and start the
 daemon. When it finishes, the computer is connected.
 
 Options:
-  --web-url <origin>           Linger site to sign in to
+  --web-url <origin>           Talos site to sign in to
   --name <name>                Computer name (default: host name)
   --enabled-runtime <type>     Enable only this Runtime; repeat for a subset (default: all)
   --token-stdin                Read the server connection token from standard input (hidden prompt in a terminal)
@@ -103,7 +103,7 @@ func TestRemovedAndUnknownCommandsAreUsageErrors(t *testing.T) {
 		if code := f.run(args...); code != 2 {
 			t.Fatalf("%v exit=%d", args, code)
 		}
-		want := "Unknown command: " + strings.Join(args, " ") + "\nRun \"linger-computer --help\" for usage.\n"
+		want := "Unknown command: " + strings.Join(args, " ") + "\nRun \"talos-computer --help\" for usage.\n"
 		if got := f.stderr.String(); got != want {
 			t.Fatalf("%v stderr=%q", args, got)
 		}
@@ -123,7 +123,7 @@ func TestRemovedAndUnknownCommandsAreUsageErrors(t *testing.T) {
 func TestParsedCommandShapes(t *testing.T) {
 	root := t.TempDir()
 	work := filepath.Join(root, "work")
-	options := parseOptions{goos: "darwin", environment: map[string]string{}, homeDirectory: filepath.Join(root, "home"), hostName: "Host", workingDirectory: work, commandName: "linger-computer"}
+	options := parseOptions{goos: "darwin", environment: map[string]string{}, homeDirectory: filepath.Join(root, "home"), hostName: "Host", workingDirectory: work, commandName: "talos-computer"}
 	parsed, err := parseArguments([]string{"login", "--enabled-runtime", "pi", "--enabled-runtime", "codex", "--codex-auth", "auth.json", "--name", "Desk"}, options)
 	if err != nil {
 		t.Fatal(err)
@@ -131,7 +131,7 @@ func TestParsedCommandShapes(t *testing.T) {
 	if !reflect.DeepEqual(parsed.enabledRuntimes, []string{"pi", "codex"}) || parsed.codexAuthFile != filepath.Join(work, "auth.json") || parsed.displayName != "Desk" || parsed.webURL != "http://localhost:3000" {
 		t.Fatalf("login=%+v", parsed)
 	}
-	parsed, _ = parseArguments([]string{"login"}, parseOptions{environment: map[string]string{"LINGER_WEB_URL": "https://app.example.test"}, hostName: "Host", workingDirectory: "/work", homeDirectory: "/home/user"})
+	parsed, _ = parseArguments([]string{"login"}, parseOptions{environment: map[string]string{"TALOS_WEB_URL": "https://app.example.test"}, hostName: "Host", workingDirectory: "/work", homeDirectory: "/home/user"})
 	if parsed.webURL != "https://app.example.test" || parsed.displayName != "Host" || parsed.enabledRuntimes != nil {
 		t.Fatalf("login defaults=%+v", parsed)
 	}

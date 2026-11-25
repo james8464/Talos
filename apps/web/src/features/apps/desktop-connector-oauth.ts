@@ -6,6 +6,6 @@ interface DesktopConnectorOAuth {
 export function desktopConnectorOAuth() {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { connectorOAuth?: DesktopConnectorOAuth } })
-        .lingerDesktop?.connectorOAuth;
+    : (window as { talosDesktop?: { connectorOAuth?: DesktopConnectorOAuth } })
+        .talosDesktop?.connectorOAuth;
 }

@@ -41,7 +41,7 @@ describe("CI outputs", () => {
       "contracts/openapi/teamhub-agent-api/openapi.yaml",
     ],
     installer: [
-      "apps/linger-installer/src/main.ts",
+      "apps/talos-installer/src/main.ts",
       "packages/local-installation/src/index.ts",
       "contracts/generated/typescript/src/index.ts",
     ],

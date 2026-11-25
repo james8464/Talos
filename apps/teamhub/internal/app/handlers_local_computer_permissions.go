@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // The owner reads and acts on their own Computer's macOS permissions from the
@@ -33,7 +33,7 @@ func (a *App) actOnLocalComputerPermission(c *gin.Context) {
 
 func localComputerPermissionAction(request httpapi.ComputerPermissionAction) (roomagent.LocalComputerPermissionCommand, bool) {
 	command := roomagent.LocalComputerPermissionCommand{Action: roomagent.LocalComputerPermissionAction(request.Action), Subject: string(request.Subject)}
-	if command.Subject != typedcard.ComputerPermissionSubjectLinger && command.Subject != typedcard.ComputerPermissionSubjectComputerUse {
+	if command.Subject != typedcard.ComputerPermissionSubjectTalos && command.Subject != typedcard.ComputerPermissionSubjectComputerUse {
 		return command, false
 	}
 	switch command.Action {
@@ -77,7 +77,7 @@ func (a *App) writeLocalComputerPermissionError(c *gin.Context, action roomagent
 	case errors.Is(err, roomagent.ErrLocalComputerOffline):
 		a.writeError(c, http.StatusServiceUnavailable, "LOCAL_COMPUTER_OFFLINE", "Local Computer is offline")
 	case errors.Is(err, roomagent.ErrLocalComputerPermissionsUnsupported):
-		a.writeError(c, http.StatusConflict, "COMPUTER_PERMISSION_UNSUPPORTED", "Upgrade Linger on this Computer before granting permissions from here")
+		a.writeError(c, http.StatusConflict, "COMPUTER_PERMISSION_UNSUPPORTED", "Upgrade Talos on this Computer before granting permissions from here")
 	case errors.Is(err, roomagent.ErrLocalComputerPermissionTimeout):
 		a.writeError(c, http.StatusServiceUnavailable, "COMPUTER_PERMISSION_TIMEOUT", "Local Computer did not answer in time")
 	case errors.Is(err, roomagent.ErrLocalComputerPermissionFailed):
@@ -101,7 +101,7 @@ var computerPermissionFailures = map[string]string{
 	"COMPUTER_PERMISSION_INVALID":              "Permission request is invalid",
 	"COMPUTER_PERMISSION_UNSUPPORTED":          "This Computer is not a Mac",
 	"COMPUTER_PERMISSION_UNAVAILABLE":          "The app that needs this permission is not available on the Mac",
-	"COMPUTER_PERMISSION_RELAUNCH_UNAVAILABLE": "Quit and reopen Linger on the Mac yourself",
+	"COMPUTER_PERMISSION_RELAUNCH_UNAVAILABLE": "Quit and reopen Talos on the Mac yourself",
 	"COMPUTER_PERMISSION_TIMEOUT":              "The Mac did not answer in time; try again",
 }
 

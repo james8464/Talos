@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, expect, it, vi } from "vitest";

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 import { packageRoot } from "./paths.js";
 import {

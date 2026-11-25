@@ -9,7 +9,7 @@ import {
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, it, expect } from "vitest";
-import { parseOkfFrontmatter } from "@linger/knowledge-format";
+import { parseOkfFrontmatter } from "@talos/knowledge-format";
 import { recoverOptionalWikiPages } from "../../src/llm-wiki/wiki-candidate-recovery.js";
 
 describe("safe candidate degradation", () => {

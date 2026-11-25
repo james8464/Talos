@@ -2,7 +2,7 @@ import type { AcceptedInboxFact } from "../contracts.js";
 import type { InboxResourceReference } from "../../prompt/inbox-notification.js";
 import type { Message } from "../../executor/types.js";
 import type { CanonicalInboxMessage } from "./types.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 /**
  * One Message as TeamHub froze it into an Inbox input

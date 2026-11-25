@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicemedia"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicemedia"
 )
 
 func TestVoiceRecorderClockSkewDoesNotStrandStop(t *testing.T) {

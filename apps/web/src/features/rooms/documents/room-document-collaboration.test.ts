@@ -6,7 +6,7 @@ import type {
 import {
   fingerprintRoomDocumentState,
   fingerprintRoomDocumentDeletes,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 

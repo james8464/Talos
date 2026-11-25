@@ -1,8 +1,8 @@
 import {
   materializeRoomDocument,
   readRoomDocumentBlocks,
-} from "@linger/document-model";
-import { sha256Hex } from "@linger/service-kit/node";
+} from "@talos/document-model";
+import { sha256Hex } from "@talos/service-kit/node";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { createDocumentRuntimeApp } from "../../src/document/app.js";

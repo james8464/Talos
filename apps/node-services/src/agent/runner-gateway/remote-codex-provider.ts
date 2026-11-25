@@ -3,7 +3,7 @@ import {
   RunPriority,
   type CapacityPriority,
 } from "../../model-tasks.js";
-import { displayText } from "@linger/service-kit";
+import { displayText } from "@talos/service-kit";
 import {
   OPERATION_OUTCOME_UNKNOWN,
   RunnerOperationInputError,
@@ -54,7 +54,7 @@ import type {
   RuntimeConfig,
   RunEvent as WireRunEvent,
   SessionOptions,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import type {
   RunnerOperation,
@@ -389,7 +389,7 @@ export class RemoteRuntimeProvider implements AgentProvider {
         : {
             provider: this.#runtime.type,
             sessionId: randomUUID(),
-            lingerMaterialized: false,
+            talosMaterialized: false,
           };
     const durationMs = Date.now() - startedAt;
     this.#logger?.log("info", "runtime.remote_session.create.completed", {

@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 
-import { runnerGatewayEnvelopeSchema } from "@linger/wire-contracts/runner-gateway/schema";
+import { runnerGatewayEnvelopeSchema } from "@talos/wire-contracts/runner-gateway/schema";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { RuntimeViewPlan } from "../../../src/agent/executor/workspace.js";
@@ -73,7 +73,7 @@ function token(url: string): string {
 
 function validateManifest(manifest: unknown): boolean {
   const wireRequire = createRequire(
-    import.meta.resolve("@linger/wire-contracts/runner-gateway/validator"),
+    import.meta.resolve("@talos/wire-contracts/runner-gateway/validator"),
   );
   const { Ajv2020 } = wireRequire("ajv/dist/2020.js");
   const addFormats = wireRequire("ajv-formats");

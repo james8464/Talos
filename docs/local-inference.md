@@ -115,7 +115,7 @@ The table lists one configuration per tier, with physical-device decode speeds w
 measured and physical-reference estimates where marked `(est.)`. For the plan setup
 makes on every Mac and NVIDIA tier, on Windows as well as Linux, and the smaller
 model it picks when memory is busy, see
-[Hardware compatibility](https://docs.heylinger.com/hardware/compatibility).
+[Hardware compatibility](https://docs.talos.local/hardware/compatibility).
 
 Once the plan is approved, each model counts as installed only after it answers a real question.
 

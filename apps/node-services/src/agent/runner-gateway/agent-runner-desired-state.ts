@@ -1,4 +1,4 @@
-import { RUNNER_GATEWAY_PROTOCOL_VERSION } from "@linger/wire-contracts/runner-gateway/validator";
+import { RUNNER_GATEWAY_PROTOCOL_VERSION } from "@talos/wire-contracts/runner-gateway/validator";
 import { isDeepStrictEqual } from "node:util";
 
 import type {
@@ -9,7 +9,7 @@ import type {
   AgentRunnerRemoved,
   AgentRunnerSnapshot,
   RuntimeConfig,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 export interface AgentRunnerIdentity {
   readonly computerId: string;

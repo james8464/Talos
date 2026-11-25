@@ -1,7 +1,7 @@
 import type {
   components,
   operations as TeamHubPublicOperations,
-} from "@linger/wire-contracts/teamhub-public/types";
+} from "@talos/wire-contracts/teamhub-public/types";
 import { createTeamHubAgentClient } from "./teamhub-agent-client";
 import { createTeamHubApi, type TeamHubApi } from "./teamhub-api";
 import {

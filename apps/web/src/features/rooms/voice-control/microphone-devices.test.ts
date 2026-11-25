@@ -338,9 +338,9 @@ describe("a refused microphone", () => {
   });
 
   it("points the Mac desktop app to System Settings", async () => {
-    vi.stubGlobal("window", { lingerDesktop: { platform: "darwin" } });
+    vi.stubGlobal("window", { talosDesktop: { platform: "darwin" } });
     expect(describeVoiceMediaError(refused)).toBe(
-      "Linger can't use the microphone. Allow Linger in System Settings › Privacy & Security › Microphone, then try again.",
+      "Talos can't use the microphone. Allow Talos in System Settings › Privacy & Security › Microphone, then try again.",
     );
 
     await setLanguage("zh-CN");
@@ -351,7 +351,7 @@ describe("a refused microphone", () => {
   });
 
   it("keeps the browser wording in the desktop app off macOS", () => {
-    vi.stubGlobal("window", { lingerDesktop: { platform: "win32" } });
+    vi.stubGlobal("window", { talosDesktop: { platform: "win32" } });
     expect(describeVoiceMediaError(refused)).toBe(
       "Microphone permission was denied",
     );

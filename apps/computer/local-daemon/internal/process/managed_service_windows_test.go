@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/winprocess"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/winprocess"
 	"golang.org/x/sys/windows"
 )
 
 func TestMain(m *testing.M) {
-	if os.Getenv("LINGER_ARGV_FIXTURE") == "1" {
+	if os.Getenv("TALOS_ARGV_FIXTURE") == "1" {
 		runArgvFixture()
 	}
 	if len(os.Args) == 2 && os.Args[1] == "supervise-service" {

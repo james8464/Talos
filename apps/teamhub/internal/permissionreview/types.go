@@ -7,7 +7,7 @@
 package permissionreview
 
 import (
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 // Risk is the intrinsic risk of the action, independent of authorization.

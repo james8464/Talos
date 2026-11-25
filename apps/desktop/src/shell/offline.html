@@ -6,7 +6,7 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src app:; form-action app:"
     />
-    <title>Linger</title>
+    <title>Talos</title>
     <style>
       :root {
         --canvas: #f6f6f6;
@@ -272,7 +272,7 @@
         <input
           id="server"
           name="server"
-          placeholder="https://linger.example.com"
+          placeholder="https://talos.example.com"
           autocomplete="url"
           spellcheck="false"
           required
@@ -318,7 +318,7 @@
         document.body.dataset.mode = "setup";
         $("title").textContent = t("setupTitle");
         $("reason").textContent = t("setup");
-        // Setup, where Linger can also be installed on this computer.
+        // Setup, where Talos can also be installed on this computer.
         $("cancel").textContent = t("backToSetup");
         $("server").focus();
       } else {

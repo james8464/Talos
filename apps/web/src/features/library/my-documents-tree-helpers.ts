@@ -21,7 +21,7 @@ export interface ExternalDocumentDrop {
 interface MyDocumentTreeCache {
   items: TeamHubDocumentPlacementNode[];
 }
-export const personalPlacementDragType = "application/x-linger-placement";
+export const personalPlacementDragType = "application/x-talos-placement";
 
 export function myDocumentTreeQueryKey(tenantId: string) {
   return ["teamhub", tenantId, "document-tree"] as const;

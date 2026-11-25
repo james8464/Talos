@@ -1,4 +1,4 @@
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 

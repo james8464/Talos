@@ -4,8 +4,8 @@ export type DesktopLocalAccountSignIn =
   | { readonly ok: true }
   | { readonly ok: false; readonly message: string };
 
-// The desktop app's sign-in with the owner account of the Linger it installed
-// on this computer (`window.lingerDesktop.localAccount`). The desktop reads
+// The desktop app's sign-in with the owner account of the Talos it installed
+// on this computer (`window.talosDesktop.localAccount`). The desktop reads
 // the account file and signs this window in itself; the page never sees the
 // password.
 export interface DesktopLocalAccount {
@@ -16,8 +16,8 @@ export interface DesktopLocalAccount {
 function desktopLocalAccount(): DesktopLocalAccount | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { localAccount?: DesktopLocalAccount } })
-        .lingerDesktop?.localAccount;
+    : (window as { talosDesktop?: { localAccount?: DesktopLocalAccount } })
+        .talosDesktop?.localAccount;
 }
 
 // How often the page asks again whether the desktop can still sign it in:
@@ -27,7 +27,7 @@ export const DESKTOP_LOCAL_ACCOUNT_CHECK_MS = 15_000;
 
 /**
  * The account sign-in when this page runs in the desktop app and shows the
- * Linger installed on this computer, while its server answers as itself;
+ * Talos installed on this computer, while its server answers as itself;
  * undefined in a browser, in older desktop builds and for any other server.
  * Asked again every DESKTOP_LOCAL_ACCOUNT_CHECK_MS and whenever the window
  * comes back into view.

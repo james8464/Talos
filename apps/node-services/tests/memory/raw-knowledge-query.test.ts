@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createMemoryInternalClient,
   type PersonalKnowledgeQueryRequest,
-} from "@linger/wire-contracts/node-services-internal/client";
+} from "@talos/wire-contracts/node-services-internal/client";
 import { startMemoryServer } from "../../src/memory/server.js";
 import { MemoryScheduler } from "../../src/memory/scheduler.js";
 import {

@@ -1,4 +1,4 @@
-import type { RuntimeConfig } from "@linger/wire-contracts/runner-gateway/types";
+import type { RuntimeConfig } from "@talos/wire-contracts/runner-gateway/types";
 import {
   AgentRunnerDesiredState,
   AgentRunnerDesiredStateError,

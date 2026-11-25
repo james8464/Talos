@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 type archiveEntry struct {
@@ -61,7 +61,7 @@ func appArchive(t *testing.T, entries ...archiveEntry) []byte {
 func installerArchive(t *testing.T, installer string) []byte {
 	return appArchive(t,
 		archiveEntry{name: "./daemon/", typeflag: tar.TypeDir},
-		archiveEntry{name: "./daemon/linger-computer-daemon", typeflag: tar.TypeReg, content: "#!/bin/sh\n"},
+		archiveEntry{name: "./daemon/talos-computer-daemon", typeflag: tar.TypeReg, content: "#!/bin/sh\n"},
 		archiveEntry{name: "./" + installerEntry, typeflag: tar.TypeReg, content: installer},
 	)
 }
@@ -130,7 +130,7 @@ func TestScriptStagerVerifiesArchiveBeforeRunningInstaller(t *testing.T) {
 			return archive, archive
 		}, adjust: func(request *StageRequest) { request.App.Size-- }},
 		{name: "no installer template", archive: func(t *testing.T, _ string) ([]byte, []byte) {
-			archive := appArchive(t, archiveEntry{name: "daemon/linger-computer-daemon", typeflag: tar.TypeReg, content: "x"})
+			archive := appArchive(t, archiveEntry{name: "daemon/talos-computer-daemon", typeflag: tar.TypeReg, content: "x"})
 			return archive, archive
 		}},
 		{name: "installer template is a symlink", archive: func(t *testing.T, _ string) ([]byte, []byte) {
@@ -167,13 +167,13 @@ func TestScriptStagerRunsArchiveInstallerWithReleaseEnvironment(t *testing.T) {
 	directory := t.TempDir()
 	record := filepath.Join(directory, "record")
 	installer := `{
-  printf 'mode=%s\n' "$LINGER_COMPUTER_INSTALL_STAGE_ONLY"
-  printf 'root=%s\n' "$LINGER_COMPUTER_DATA_DIR"
-  printf 'origin=%s\n' "$LINGER_WEB_URL"
-  printf 'app=%s\n' "$LINGER_COMPUTER_APP_SHA256"
-  printf 'deps=%s %s\n' "${LINGER_COMPUTER_DEPS_SHA256:-}" "${LINGER_COMPUTER_DEPS_SIZE:-}"
-  if [ -n "${LINGER_COMPUTER_APP_ARCHIVE:-}" ]; then
-    printf 'archive=%s\n' "$(shasum -a 256 "$LINGER_COMPUTER_APP_ARCHIVE" 2>/dev/null || sha256sum "$LINGER_COMPUTER_APP_ARCHIVE")"
+  printf 'mode=%s\n' "$TALOS_COMPUTER_INSTALL_STAGE_ONLY"
+  printf 'root=%s\n' "$TALOS_COMPUTER_DATA_DIR"
+  printf 'origin=%s\n' "$TALOS_WEB_URL"
+  printf 'app=%s\n' "$TALOS_COMPUTER_APP_SHA256"
+  printf 'deps=%s %s\n' "${TALOS_COMPUTER_DEPS_SHA256:-}" "${TALOS_COMPUTER_DEPS_SIZE:-}"
+  if [ -n "${TALOS_COMPUTER_APP_ARCHIVE:-}" ]; then
+    printf 'archive=%s\n' "$(shasum -a 256 "$TALOS_COMPUTER_APP_ARCHIVE" 2>/dev/null || sha256sum "$TALOS_COMPUTER_APP_ARCHIVE")"
   fi
 } >> '` + record + "'\n"
 	request, requests := releaseServer(t, directory, installerArchive(t, installer))

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { useSecondaryNavigationWidth } from "./use-sidebar-width";
 
-const KEY = "linger:chat-navigation-width:tenant-a";
+const KEY = "talos:chat-navigation-width:tenant-a";
 
 afterEach(() => window.localStorage.removeItem(KEY));
 

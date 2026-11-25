@@ -2,7 +2,7 @@ import { revokeFoundationGpuSharing } from "./foundation-services.js";
 import { randomUUID } from "node:crypto";
 import { rm } from "node:fs/promises";
 import path from "node:path";
-import { sleep } from "@linger/service-kit";
+import { sleep } from "@talos/service-kit";
 import {
   atomicPrivate,
   INSTANCE_BUSY,
@@ -340,8 +340,8 @@ export async function localModelsEnvironment(
   if (!b.ready || !b.pi) return {};
   return {
     ...b.pi.environment,
-    LINGER_PI_PATH: b.pi.executable,
-    LINGER_LOCAL_MODELS_REVISION: b.pi.configFingerprint,
+    TALOS_PI_PATH: b.pi.executable,
+    TALOS_LOCAL_MODELS_REVISION: b.pi.configFingerprint,
   };
 }
 // The saved plan's ID, or undefined when no plan was saved.
@@ -1178,7 +1178,7 @@ async function restoreLibraryModelUnderLock(
 
 /**
  * Brings back the local model stack and unloaded library model of a local
- * model source whose services still run, such as when Linger opens again after
+ * model source whose services still run, such as when Talos opens again after
  * a quit stopped the models. Only while the Computer's model source is local
  * (or not saved yet on a local-models setup): a person who switched to a
  * subscription or BYOK keeps that choice. When the stack binding already

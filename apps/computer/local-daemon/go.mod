@@ -1,4 +1,4 @@
-module github.com/simplexai-labs/linger/apps/computer/local-daemon
+module github.com/simplexai-labs/talos/apps/computer/local-daemon
 
 go 1.26.0
 
@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/klauspost/compress v1.18.0
 	github.com/pelletier/go-toml/v2 v2.3.0
-	github.com/simplexai-labs/linger/contracts-go/runnergateway v0.0.0-00010101000000-000000000000
+	github.com/simplexai-labs/talos/contracts-go/runnergateway v0.0.0-00010101000000-000000000000
 	golang.org/x/net v0.56.0
 	golang.org/x/sys v0.48.0
 	golang.org/x/term v0.45.0
@@ -28,4 +28,4 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 )
 
-replace github.com/simplexai-labs/linger/contracts-go/runnergateway => ../../../contracts/generated/go/runnergateway
+replace github.com/simplexai-labs/talos/contracts-go/runnergateway => ../../../contracts/generated/go/runnergateway

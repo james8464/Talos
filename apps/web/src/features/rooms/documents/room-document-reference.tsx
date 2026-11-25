@@ -15,8 +15,8 @@ export function RoomDocumentReference({
   return (
     <a
       className="room-document-reference"
-      data-linger-document-id={documentId}
-      data-linger-tenant-id={tenantId}
+      data-talos-document-id={documentId}
+      data-talos-tenant-id={tenantId}
       href={href}
     >
       <Icon icon={File01Icon} />

@@ -20,7 +20,7 @@ afterEach(async () => {
   if (root) await rm(root, { recursive: true, force: true });
 });
 async function fixture() {
-  root = await mkdtemp(path.join(tmpdir(), "linger-windows-security-"));
+  root = await mkdtemp(path.join(tmpdir(), "talos-windows-security-"));
   vi.stubGlobal(
     "process",
     Object.create(process, { platform: { value: "win32" } }),
@@ -49,7 +49,7 @@ it("uses Windows SID/DACL validation for existing local account reads and reuse"
   await writeFile(
     file,
     JSON.stringify({
-      email: "owner@linger.local",
+      email: "owner@talos.local",
       password: "existing-private-password",
       provisioned: true,
     }),
@@ -75,14 +75,14 @@ it("uses Windows SID/DACL validation for existing local account reads and reuse"
     }),
   );
   const provisionOwner = vi.fn<() => Promise<void>>();
-  expect((await readLocalLogin(instance)).email).toBe("owner@linger.local");
+  expect((await readLocalLogin(instance)).email).toBe("owner@talos.local");
   expect(
     (
       await ensureLocalAccount(instance, new AbortController().signal, {
         provisionOwner,
       })
     ).email,
-  ).toBe("owner@linger.local");
+  ).toBe("owner@talos.local");
   expect(windowsPrivatePath).toHaveBeenCalledWith(file, "file");
   expect(fetch).toHaveBeenCalledTimes(2);
   expect(provisionOwner).not.toHaveBeenCalled();
@@ -99,7 +99,7 @@ it("checks the ACL before reusing a saved enrollment token", async () => {
   };
   await writeFile(
     file,
-    "linger-connect-v1." +
+    "talos-connect-v1." +
       Buffer.from(JSON.stringify(token)).toString("base64url"),
     { mode: 0o644 },
   );

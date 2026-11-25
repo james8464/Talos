@@ -29,10 +29,10 @@ import {
 const execute = promisify(execFile);
 // Scale only harness watchdogs when running Windows through instruction
 // emulation; installer behavior and assertions are identical.
-const timeoutScale = Number(process.env.LINGER_TEST_WINDOWS_TIMEOUT_SCALE ?? 1);
+const timeoutScale = Number(process.env.TALOS_TEST_WINDOWS_TIMEOUT_SCALE ?? 1);
 if (!Number.isInteger(timeoutScale) || timeoutScale < 1 || timeoutScale > 20)
   throw new Error(
-    "LINGER_TEST_WINDOWS_TIMEOUT_SCALE must be an integer from 1 to 20",
+    "TALOS_TEST_WINDOWS_TIMEOUT_SCALE must be an integer from 1 to 20",
   );
 const watchdog = (milliseconds: number) => milliseconds * timeoutScale;
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
@@ -64,7 +64,7 @@ type daemonState struct {
 
 func main() {
 	args := os.Args[1:]
-	file := filepath.Join(os.Getenv("LINGER_COMPUTER_DATA_DIR"), "fixture-state.json")
+	file := filepath.Join(os.Getenv("TALOS_COMPUTER_DATA_DIR"), "fixture-state.json")
 	state := daemonState{State: "stopped"}
 	if content, err := os.ReadFile(file); err == nil {
 		_ = json.Unmarshal(content, &state)
@@ -75,14 +75,14 @@ func main() {
 	}
 	switch {
 	case len(args) == 1 && args[0] == "version":
-		fmt.Println("linger-computer " + version)
+		fmt.Println("talos-computer " + version)
 	case len(args) == 1 && args[0] == "--help":
 		fmt.Println("usage")
 	case len(args) > 0 && args[0] == "echo-argv":
 		content, _ := json.Marshal(args[1:])
 		fmt.Println(string(content))
 	case len(args) > 1 && args[0] == "daemon" && args[1] == "status":
-		_, err := os.Stat(os.Getenv("LINGER_COMPUTER_CONFIG"))
+		_, err := os.Stat(os.Getenv("TALOS_COMPUTER_CONFIG"))
 		content, _ := json.Marshal(map[string]any{"version": 1, "config": map[string]any{"configured": err == nil}, "daemon": state})
 		fmt.Println(string(content))
 	case len(args) > 1 && args[0] == "daemon" && args[1] == "stop":
@@ -112,9 +112,9 @@ describe.skipIf(!nativeWindows)(
     const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;
     beforeAll(async () => {
       expect(process.versions.node).toBe("26.5.0");
-      root = await mkdtemp(path.join(os.tmpdir(), "linger-windows-native-"));
-      daemon = path.join(root, "linger-computer-daemon.exe");
-      launcher = path.join(root, "linger-computer-launcher.exe");
+      root = await mkdtemp(path.join(os.tmpdir(), "talos-windows-native-"));
+      daemon = path.join(root, "talos-computer-daemon.exe");
+      launcher = path.join(root, "talos-computer-launcher.exe");
       powershell = path.join(
         process.env.SystemRoot!,
         "System32",
@@ -136,7 +136,7 @@ describe.skipIf(!nativeWindows)(
       ).stdout.trimEnd();
       fixtureCli = path.join(root, "fixture-cli.go");
       await writeFile(fixtureCli, fixtureCliSource);
-      const fixtureDaemon = process.env.LINGER_TEST_WINDOWS_DAEMON;
+      const fixtureDaemon = process.env.TALOS_TEST_WINDOWS_DAEMON;
       if (fixtureDaemon) {
         await copyFile(fixtureDaemon, daemon);
       } else
@@ -147,7 +147,7 @@ describe.skipIf(!nativeWindows)(
             "-mod=readonly",
             "-o",
             daemon,
-            "./cmd/linger-computer-daemon",
+            "./cmd/talos-computer-daemon",
           ],
           {
             cwd: path.join(repositoryRoot, "apps/computer/local-daemon"),
@@ -155,7 +155,7 @@ describe.skipIf(!nativeWindows)(
             timeout: watchdog(180_000),
           },
         );
-      const fixtureLauncher = process.env.LINGER_TEST_WINDOWS_LAUNCHER;
+      const fixtureLauncher = process.env.TALOS_TEST_WINDOWS_LAUNCHER;
       if (fixtureLauncher) await copyFile(fixtureLauncher, launcher);
       else
         await execute(
@@ -165,7 +165,7 @@ describe.skipIf(!nativeWindows)(
             "-mod=readonly",
             "-o",
             launcher,
-            "./cmd/linger-computer-launcher",
+            "./cmd/talos-computer-launcher",
           ],
           {
             cwd: path.join(repositoryRoot, "apps/computer/local-daemon"),
@@ -194,7 +194,7 @@ describe.skipIf(!nativeWindows)(
       await mkdir(path.join(output, "files"), { recursive: true });
       // The installer runs the bundle's native Go CLI, so the fixture CLI is a
       // tiny Go program that keeps a fake Daemon state beside the data root.
-      const cli = path.join(output, `linger-computer-${version}.exe`);
+      const cli = path.join(output, `talos-computer-${version}.exe`);
       await execute(
         "go",
         [
@@ -307,8 +307,8 @@ describe.skipIf(!nativeWindows)(
         targets: { [target]: archives },
       };
       for (const name of [
-        "linger-computer.ps1",
-        "uninstall-linger-computer.ps1",
+        "talos-computer.ps1",
+        "uninstall-talos-computer.ps1",
       ]) {
         const file = path.join(output, name);
         await writeFile(
@@ -325,7 +325,7 @@ describe.skipIf(!nativeWindows)(
         let shell = powershell;
         if (shellName === "PowerShell 7") {
           shell =
-            process.env.LINGER_TEST_PWSH ||
+            process.env.TALOS_TEST_PWSH ||
             path.join(process.env.ProgramFiles!, "PowerShell", "7", "pwsh.exe");
           // CI must supply both shells; missing PowerShell 7 is a failed requirement.
           await execute(shell, [
@@ -340,10 +340,10 @@ describe.skipIf(!nativeWindows)(
         const bin = path.join(dataRoot, "bin");
         const environment = {
           ...process.env,
-          LINGER_COMPUTER_DATA_DIR: dataRoot,
-          LINGER_COMPUTER_BIN_DIR: bin,
-          LINGER_COMPUTER_CONFIG: "",
-          LINGER_WEB_URL: "http://localhost:3000",
+          TALOS_COMPUTER_DATA_DIR: dataRoot,
+          TALOS_COMPUTER_BIN_DIR: bin,
+          TALOS_COMPUTER_CONFIG: "",
+          TALOS_WEB_URL: "http://localhost:3000",
           PATH: `${path.join(process.env.SystemRoot!, "System32")};${path.dirname(shell)}`,
         };
         const run = (script: string, args: string[] = []) =>
@@ -361,25 +361,25 @@ describe.skipIf(!nativeWindows)(
             { env: environment, encoding: "utf8", timeout: watchdog(120_000) },
           );
         await release(distribution, "1.0.0");
-        await run("linger-computer.ps1");
+        await run("talos-computer.ps1");
         const initial = (
           await readFile(path.join(dataRoot, "active-bundle"), "utf8")
         ).trim();
-        await run("linger-computer.ps1");
+        await run("talos-computer.ps1");
         expect(
           (await readFile(path.join(dataRoot, "active-bundle"), "utf8")).trim(),
         ).toBe(initial);
-        const cmd = path.join(bin, "linger-computer-local-3000.exe");
+        const cmd = path.join(bin, "talos-computer-local-3000.exe");
         const launched = await execute(cmd, ["version"], {
           env: environment,
           encoding: "utf8",
         });
-        expect(launched.stdout).toContain("linger-computer 1.0.0");
+        expect(launched.stdout).toContain("talos-computer 1.0.0");
         await expect(
           execute(cmd, ["stop"], {
             env: {
               ...environment,
-              LINGER_COMPUTER_DATA_DIR: path.join(scenario, "another computer"),
+              TALOS_COMPUTER_DATA_DIR: path.join(scenario, "another computer"),
             },
             encoding: "utf8",
           }),
@@ -394,8 +394,8 @@ describe.skipIf(!nativeWindows)(
         // untrusted text. PowerShell 5.1 needs its documented native quote escape.
         const values = [
           "x&y",
-          'a b" & echo LINGER_ARG_INJECTED & "c d',
-          "%LINGER_ARG_EXPAND%",
+          'a b" & echo TALOS_ARG_INJECTED & "c d',
+          "%TALOS_ARG_EXPAND%",
           "Usuário !literal!",
           "https://example.test/?a=1&b=2",
         ];
@@ -413,14 +413,14 @@ describe.skipIf(!nativeWindows)(
               Buffer.from(script, "utf16le").toString("base64"),
             ],
             {
-              env: { ...environment, LINGER_ARG_EXPAND: "should-not-expand" },
+              env: { ...environment, TALOS_ARG_EXPAND: "should-not-expand" },
               encoding: "utf8",
             },
           );
           expect(JSON.parse(forwarded.stdout.trim())).toEqual(values);
         }
         await expect(
-          readFile(path.join(bin, "linger-computer.cmd")),
+          readFile(path.join(bin, "talos-computer.cmd")),
         ).rejects.toMatchObject({ code: "ENOENT" });
         // Real platform helper creates config with Windows ACL semantics.
         const writeConfig = JSON.stringify({
@@ -446,14 +446,14 @@ describe.skipIf(!nativeWindows)(
           child.stdin.end(writeConfig);
         });
         await release(distribution, "1.1.0");
-        await run("linger-computer.ps1");
+        await run("talos-computer.ps1");
         expect(
           (await readFile(path.join(dataRoot, "active-bundle"), "utf8")).trim(),
         ).not.toBe(initial);
-        await run("uninstall-linger-computer.ps1");
+        await run("uninstall-talos-computer.ps1");
         expect(await readdir(dataRoot)).toContain("config.json");
-        await run("linger-computer.ps1");
-        await run("uninstall-linger-computer.ps1", ["--purge"]);
+        await run("talos-computer.ps1");
+        await run("uninstall-talos-computer.ps1", ["--purge"]);
         expect(await readdir(dataRoot)).not.toContain("config.json");
       },
       watchdog(240_000),
@@ -468,10 +468,10 @@ describe.skipIf(!nativeWindows)(
         const bin = path.join(dataRoot, "bin");
         const environment = {
           ...process.env,
-          LINGER_COMPUTER_DATA_DIR: dataRoot,
-          LINGER_COMPUTER_BIN_DIR: bin,
-          LINGER_COMPUTER_CONFIG: "",
-          LINGER_WEB_URL: "http://localhost:3000",
+          TALOS_COMPUTER_DATA_DIR: dataRoot,
+          TALOS_COMPUTER_BIN_DIR: bin,
+          TALOS_COMPUTER_CONFIG: "",
+          TALOS_WEB_URL: "http://localhost:3000",
         };
         const run = () =>
           execute(
@@ -482,7 +482,7 @@ describe.skipIf(!nativeWindows)(
               "-ExecutionPolicy",
               "Bypass",
               "-File",
-              path.join(distribution, "linger-computer.ps1"),
+              path.join(distribution, "talos-computer.ps1"),
             ],
             { env: environment, encoding: "utf8", timeout: watchdog(120_000) },
           );
@@ -492,7 +492,7 @@ describe.skipIf(!nativeWindows)(
           await readFile(path.join(dataRoot, "active-bundle"), "utf8")
         ).trim();
         const originalLauncher = await readFile(
-          path.join(bin, "linger-computer-local-3000.exe"),
+          path.join(bin, "talos-computer-local-3000.exe"),
         );
         expect(originalLauncher.length).toBeGreaterThan(3 * 1024 * 1024);
         const platform = nativePlatform(daemon);
@@ -508,7 +508,7 @@ describe.skipIf(!nativeWindows)(
 import { runWindowsInstaller, nativePlatform } from ${JSON.stringify(pathToFileURL(path.join(repositoryRoot, "scripts/local-computer-windows-installer.mjs")).href)};
 const settings=JSON.parse(process.argv[2]);
 const platform=nativePlatform(${JSON.stringify(daemon)}), write=platform.write;
-platform.write=async(file,data)=>{await write(file,data);if(file===path.join(settings.binDirectory,'linger-computer-local-3000.launcher.json')){process.stdout.write('NATIVE_UPGRADE_COMMIT_PAUSED\\n');await new Promise(()=>setInterval(()=>{},1000));}};
+platform.write=async(file,data)=>{await write(file,data);if(file===path.join(settings.binDirectory,'talos-computer-local-3000.launcher.json')){process.stdout.write('NATIVE_UPGRADE_COMMIT_PAUSED\\n');await new Promise(()=>setInterval(()=>{},1000));}};
 await runWindowsInstaller(settings,{platform});
 `,
         );
@@ -520,7 +520,7 @@ await runWindowsInstaller(settings,{platform});
               operation: "install",
               dataRoot,
               binDirectory: bin,
-              commandName: "linger-computer-local-3000",
+              commandName: "talos-computer-local-3000",
               target: `win32-${process.arch}`,
               release: second,
               downloadBaseUrl: distribution,
@@ -573,7 +573,7 @@ await runWindowsInstaller(settings,{platform});
           await exited;
         }
         expect(
-          await readFile(path.join(bin, "linger-computer-local-3000.exe")),
+          await readFile(path.join(bin, "talos-computer-local-3000.exe")),
         ).not.toEqual(originalLauncher);
         const journalFile = path.join(dataRoot, ".install-transaction.json");
         const raw = await readFile(journalFile, "utf8");
@@ -601,25 +601,25 @@ await runWindowsInstaller(settings,{platform});
           (await readFile(path.join(dataRoot, "active-bundle"), "utf8")).trim(),
         ).toBe(originalBundle);
         expect(
-          await readFile(path.join(bin, "linger-computer-local-3000.exe")),
+          await readFile(path.join(bin, "talos-computer-local-3000.exe")),
         ).toEqual(originalLauncher);
         expect(await readdir(dataRoot)).not.toContain(
           ".install-transaction.json",
         );
         const recovered = await execute(
-          path.join(bin, "linger-computer-local-3000.exe"),
+          path.join(bin, "talos-computer-local-3000.exe"),
           ["version"],
           { env: environment, encoding: "utf8" },
         );
-        expect(recovered.stdout).toContain("linger-computer 1.0.0");
+        expect(recovered.stdout).toContain("talos-computer 1.0.0");
         await release(distribution, "1.1.0");
         await run();
         const upgraded = await execute(
-          path.join(bin, "linger-computer-local-3000.exe"),
+          path.join(bin, "talos-computer-local-3000.exe"),
           ["version"],
           { env: environment, encoding: "utf8" },
         );
-        expect(upgraded.stdout).toContain("linger-computer 1.1.0");
+        expect(upgraded.stdout).toContain("talos-computer 1.1.0");
       },
       watchdog(240_000),
     );
@@ -643,13 +643,13 @@ await runWindowsInstaller(settings,{platform});
               "-ExecutionPolicy",
               "Bypass",
               "-File",
-              path.join(output, "linger-computer.ps1"),
+              path.join(output, "talos-computer.ps1"),
             ],
             {
               env: {
                 ...process.env,
-                LINGER_COMPUTER_DATA_DIR: dataRoot,
-                LINGER_COMPUTER_BIN_DIR: path.join(dataRoot, "bin"),
+                TALOS_COMPUTER_DATA_DIR: dataRoot,
+                TALOS_COMPUTER_BIN_DIR: path.join(dataRoot, "bin"),
               },
               timeout: watchdog(30_000),
             },

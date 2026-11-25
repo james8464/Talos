@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 func TestTenantAgentUpdateMovesAgentToAnotherOnlineComputer(t *testing.T) {

@@ -145,7 +145,7 @@ function teamhubEntries(
       name: legacyCommand ? "cli/teamhub.cmd" : "cli/teamhub.exe",
       content: legacyCommand
         ? "@echo off\r\nrem old launcher\r\n"
-        : `MZ linger-native-cli-launcher-v1 native fixture ${version}`.padEnd(
+        : `MZ talos-native-cli-launcher-v1 native fixture ${version}`.padEnd(
             launcherBytes,
             "x",
           ),
@@ -177,7 +177,7 @@ async function fixture(launcherBytes = 0) {
     operation: "install",
     dataRoot,
     binDirectory: path.join(root, "bin with spaces"),
-    commandName: "linger-computer-web",
+    commandName: "talos-computer-web",
     target: "win32-x64",
     downloadBaseUrl: "https://downloads.example.test/install",
     webOrigin: "https://web.example.test",
@@ -211,21 +211,21 @@ async function fixture(launcherBytes = 0) {
     } = {},
   ) => {
     const script = `import fs from 'node:fs'; import path from 'node:path';
-const root=process.env.LINGER_COMPUTER_DATA_DIR;
+const root=process.env.TALOS_COMPUTER_DATA_DIR;
 const stateFile=path.join(root,'fixture-status.json');
 const grouped=process.argv[2]==='daemon';
 if(!grouped&&['status','stop','start'].includes(process.argv[2])){console.error('Unknown command: '+process.argv.slice(2).join(' '));process.exit(2);}
 const command=process.argv[grouped?3:2];
 const state=fs.existsSync(stateFile)?JSON.parse(fs.readFileSync(stateFile,'utf8')):{state:'stopped',active_operations:0};
 fs.appendFileSync(path.join(root,'invocations'), ${JSON.stringify(version)}+' '+process.argv.slice(2).join(' ')+'\\n');
-if(command==='version')console.log('linger-computer ${version}');
+if(command==='version')console.log('talos-computer ${version}');
 else if(command==='--help')console.log('usage');
-else if(command==='status')console.log(JSON.stringify({version:1,config:{configured:fs.existsSync(process.env.LINGER_COMPUTER_CONFIG)},daemon:state,runtimes:[{type:'codex',status:'ready'}],runners:[{agent_id:'agent',state:'ready'}]}));
+else if(command==='status')console.log(JSON.stringify({version:1,config:{configured:fs.existsSync(process.env.TALOS_COMPUTER_CONFIG)},daemon:state,runtimes:[{type:'codex',status:'ready'}],runners:[{agent_id:'agent',state:'ready'}]}));
 else if(command==='stop'){if(process.argv.includes('--if-idle')&&state.active_operations>0){console.error('Agent Operations are active');process.exit(1);}fs.writeFileSync(stateFile,JSON.stringify({...state,state:'stopped',active_operations:0}));}
 else if(command==='start'){fs.writeFileSync(stateFile,JSON.stringify({...state,state:'running',gateway_state:'connected',reconciled:${!options.brokenStart},active_operations:${options.busyAfterStart ? 1 : 0}}));}
 else process.exit(1);`;
     // The installer runs the CLI executable directly, as it runs the Go CLI.
-    const cli = `#!/bin/sh\nexec '${process.execPath.replaceAll("'", "'\\''")}' --input-type=module -e '${script.replaceAll("'", "'\\''")}' linger-computer "$@"\n`;
+    const cli = `#!/bin/sh\nexec '${process.execPath.replaceAll("'", "'\\''")}' --input-type=module -e '${script.replaceAll("'", "'\\''")}' talos-computer "$@"\n`;
     const contents = [
       cli,
       "fixture daemon\n",
@@ -316,7 +316,7 @@ describe("Windows bootstrap extraction allowlist", () => {
       "u",
     );
     const required = [
-      ...source.matchAll(/^\s*Expand-LingerBootstrap .* @\(([^)]*)\)$/gmu),
+      ...source.matchAll(/^\s*Expand-TalosBootstrap .* @\(([^)]*)\)$/gmu),
     ].flatMap((match) =>
       [...match[1].matchAll(/'([^']+)'/gu)].map((entry) => entry[1]),
     );
@@ -763,41 +763,41 @@ describe.skipIf(process.platform === "win32")(
         await readFile(
           path.join(
             f.settings.binDirectory,
-            "linger-computer-web.launcher.json",
+            "talos-computer-web.launcher.json",
           ),
           "utf8",
         ),
       ).toBe(windowsLauncherConfig(f.dataRoot));
     });
-    it("keeps linger-computer.exe as the dispatcher while any environment remains", async () => {
+    it("keeps talos-computer.exe as the dispatcher while any environment remains", async () => {
       const f = await fixture();
       const bin = f.settings.binDirectory;
-      const dispatcher = path.join(bin, "linger-computer.exe");
+      const dispatcher = path.join(bin, "talos-computer.exe");
       await f.publish("1.0.0");
       await f.run();
       expect(await readFile(dispatcher)).toEqual(
-        await readFile(path.join(bin, "linger-computer-web.exe")),
+        await readFile(path.join(bin, "talos-computer-web.exe")),
       );
       const other = {
-        commandName: "linger-computer-other",
+        commandName: "talos-computer-other",
         dataRoot: path.join(f.root, "other computer"),
         webOrigin: "https://other.example.test",
       };
       await f.run(other);
       expect(await readdir(bin)).toEqual(
         expect.arrayContaining([
-          "linger-computer-other.exe",
-          "linger-computer-other.launcher.json",
-          "linger-computer-web.exe",
-          "linger-computer-web.launcher.json",
-          "linger-computer.exe",
+          "talos-computer-other.exe",
+          "talos-computer-other.launcher.json",
+          "talos-computer-web.exe",
+          "talos-computer-web.launcher.json",
+          "talos-computer.exe",
         ]),
       );
 
       await f.run({ operation: "uninstall" });
-      expect(await readdir(bin)).toContain("linger-computer.exe");
+      expect(await readdir(bin)).toContain("talos-computer.exe");
       await f.run({ ...other, operation: "uninstall" });
-      expect(await readdir(bin)).not.toContain("linger-computer.exe");
+      expect(await readdir(bin)).not.toContain("talos-computer.exe");
 
       await writeFile(dispatcher, "unrelated");
       await f.run();
@@ -871,8 +871,8 @@ describe.skipIf(process.platform === "win32")(
       await extractWindowsBundle(legacy.paths, bundle, privatePlatform);
       await privatePlatform.ensure(f.settings.binDirectory);
       await privatePlatform.write(
-        path.join(f.settings.binDirectory, "linger-computer.cmd"),
-        "@echo off\r\nrem linger-computer-launcher-v1\r\n",
+        path.join(f.settings.binDirectory, "talos-computer.cmd"),
+        "@echo off\r\nrem talos-computer-launcher-v1\r\n",
       );
       for (const [file, value] of Object.entries({
         "active-bundle": name,
@@ -924,12 +924,12 @@ describe.skipIf(process.platform === "win32")(
       const old = await f.current();
       const launcher = path.join(
         f.settings.binDirectory,
-        "linger-computer-web.exe",
+        "talos-computer-web.exe",
       );
       const originalLauncher = await readFile(launcher);
       await f.publish("1.1.0");
       vi.stubEnv(
-        "LINGER_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE",
+        "TALOS_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE",
         "installed-checksum",
       );
       await expect(f.run()).rejects.toThrow("metadata failure");
@@ -1010,7 +1010,7 @@ describe.skipIf(process.platform === "win32")(
         await f.run();
         await f.configure();
         const original = await readFile(
-          path.join(f.settings.binDirectory, "linger-computer-web.exe"),
+          path.join(f.settings.binDirectory, "talos-computer-web.exe"),
         );
         await f.publish("1.1.0", {
           brokenStart: true,
@@ -1022,7 +1022,7 @@ describe.skipIf(process.platform === "win32")(
         journal.schemaVersion = schemaVersion;
         journal.launcher =
           schemaVersion === 1
-            ? "@echo off\r\nrem linger-computer-launcher-v1\r\n"
+            ? "@echo off\r\nrem talos-computer-launcher-v1\r\n"
             : original.toString("base64");
         delete journal.launcherChecksum;
         if (schemaVersion === 1) {
@@ -1055,15 +1055,15 @@ describe.skipIf(process.platform === "win32")(
         const old = await f.current();
         const launcher = path.join(
           f.settings.binDirectory,
-          "linger-computer-web.exe",
+          "talos-computer-web.exe",
         );
         const original = await readFile(launcher);
         await writeFile(
-          path.join(f.dataRoot, old, "cli/linger-computer.exe"),
+          path.join(f.dataRoot, old, "cli/talos-computer.exe"),
           "corrupt old entry",
         );
         await f.publish("1.1.0");
-        vi.stubEnv("LINGER_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE", metadata);
+        vi.stubEnv("TALOS_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE", metadata);
         await expect(f.run()).rejects.toThrow("metadata failure");
         vi.unstubAllEnvs();
         expect(await readdir(f.dataRoot)).not.toContain(
@@ -1088,10 +1088,10 @@ describe.skipIf(process.platform === "win32")(
       const old = path.join(f.dataRoot, await f.current());
       const marker = path.join(f.root, "untrusted-executed");
       await writeFile(
-        path.join(old, "cli/linger-computer.exe"),
+        path.join(old, "cli/talos-computer.exe"),
         `#!/bin/sh\ntouch '${marker}'\nexit 1\n`,
       );
-      await chmod(path.join(old, "cli/linger-computer.exe"), 0o700);
+      await chmod(path.join(old, "cli/talos-computer.exe"), 0o700);
       await f.publish("1.1.0");
       await f.run();
       await expect(lstat(marker)).rejects.toMatchObject({ code: "ENOENT" });
@@ -1189,13 +1189,13 @@ describe.skipIf(process.platform === "win32")(
         "[3/4] Verifying the package... OK (T)",
         "[4/4] Installing...",
         "[4/4] Installing... OK (T)",
-        "Linger Computer 1.0.0 installed in T.",
+        "Talos Computer 1.0.0 installed in T.",
       ]);
       await run({ release: first });
       expect(transcript()).toEqual([
         "[1/4] Checking the installed version...",
         "[1/4] Checking the installed version... up to date (T)",
-        "Linger Computer is already up to date.",
+        "Talos Computer is already up to date.",
       ]);
       await f.configure();
       const { release: second } = await f.publish("1.1.0");
@@ -1209,7 +1209,7 @@ describe.skipIf(process.platform === "win32")(
         "[3/4] Verifying the package... OK (T)",
         "[4/4] Installing...",
         "[4/4] Installing... OK (T)",
-        "Linger Computer upgraded to 1.1.0 in T.",
+        "Talos Computer upgraded to 1.1.0 in T.",
       ]);
 
       // An uninstall interrupted after it moved the bundle aside is undone
@@ -1239,7 +1239,7 @@ describe.skipIf(process.platform === "win32")(
         "[1/4] Checking the installed version...",
         "Recovered the interrupted uninstallation.",
         "[1/4] Checking the installed version... up to date (T)",
-        "Linger Computer is already up to date.",
+        "Talos Computer is already up to date.",
       ]);
       expect(await readdir(f.dataRoot)).not.toContain(snapshot);
 
@@ -1251,7 +1251,7 @@ describe.skipIf(process.platform === "win32")(
         "[2/3] Stopping the Computer daemon... OK (T)",
         "[3/3] Removing installed files...",
         "[3/3] Removing installed files... OK (T)",
-        `Uninstalled linger-computer-web (https://web.example.test) in T. Config, credentials, state, and logs were preserved in ${f.dataRoot}.`,
+        `Uninstalled talos-computer-web (https://web.example.test) in T. Config, credentials, state, and logs were preserved in ${f.dataRoot}.`,
       ]);
       await run({ operation: "uninstall" });
       expect(transcript()).toEqual([

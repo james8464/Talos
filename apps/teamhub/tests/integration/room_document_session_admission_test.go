@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	canonicaldocument "github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	canonicaldocument "github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 func TestRoomDocumentCredentialAdmissionDoesNotConflictAcrossDocuments(t *testing.T) {

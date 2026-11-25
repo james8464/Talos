@@ -1,4 +1,4 @@
-module github.com/simplexai-labs/linger/contracts-go
+module github.com/simplexai-labs/talos/contracts-go
 
 go 1.24.0
 

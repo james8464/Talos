@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // getTaskConversation returns what a Task's Agent was told and the cards its

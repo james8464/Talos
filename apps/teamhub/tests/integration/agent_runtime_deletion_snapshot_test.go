@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func TestAgentRuntimeDeletionSnapshotIsReadOnlyAndDeletionOnly(t *testing.T) {

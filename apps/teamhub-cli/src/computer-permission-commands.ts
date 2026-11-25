@@ -1,5 +1,5 @@
-import { sleep } from "@linger/service-kit";
-import type { components } from "@linger/wire-contracts/teamhub-agent-api/types";
+import { sleep } from "@talos/service-kit";
+import type { components } from "@talos/wire-contracts/teamhub-agent-api/types";
 import type { CommandDefinition } from "./command-definition.js";
 import { assertPositionals, option } from "./command-input.js";
 import { displayText } from "./display-text.js";
@@ -16,11 +16,11 @@ const permissionIds: readonly PermissionId[] = [
   "accessibility",
 ];
 const subjectByFor: Readonly<Record<string, Subject>> = {
-  shell: "linger",
+  shell: "talos",
   "computer-use": "computer_use",
 };
 const subjectLabels: Readonly<Record<Subject, string>> = {
-  linger: "Linger",
+  talos: "Talos",
   computer_use: "Computer use (CuaDriver)",
 };
 // The card settles itself on the owner's Mac; polling only lets a short
@@ -52,7 +52,7 @@ const permissionStatusSchema = {
       items: {
         type: "object",
         properties: {
-          subject: { enum: ["linger", "computer_use"] },
+          subject: { enum: ["talos", "computer_use"] },
           permissions: {
             type: "array",
             items: {
@@ -128,12 +128,12 @@ const computerPermissionsStatus: CommandDefinition = {
   toolName: "read_computer_permissions",
   operationId: false,
   description:
-    "Read the macOS privacy permissions (Screen Recording, Accessibility) of this Agent's Computer for Linger and for computer use.",
+    "Read the macOS privacy permissions (Screen Recording, Accessibility) of this Agent's Computer for Talos and for computer use.",
   readOnly: true,
   usage: ["teamhub computer permissions status"],
   options: {},
   notes: [
-    "Linger owns shell commands such as screencapture and osascript; Computer use (CuaDriver) owns the computer-use tools.",
+    "Talos owns shell commands such as screencapture and osascript; Computer use (CuaDriver) owns the computer-use tools.",
     "When a permission is missing, run teamhub computer permissions request. Never operate System Settings or privacy prompts yourself.",
   ],
   inputSchema: { type: "object", properties: {}, additionalProperties: false },
@@ -196,7 +196,7 @@ const computerPermissionsRequest: CommandDefinition = {
     },
     "--for": {
       description:
-        "shell (default) for Linger, which owns shell commands such as screencapture; computer-use for CuaDriver.",
+        "shell (default) for Talos, which owns shell commands such as screencapture; computer-use for CuaDriver.",
     },
     "--reason": {
       description: `Optional plain text shown on the card; at most ${maxReasonLength} characters.`,
@@ -212,7 +212,7 @@ const computerPermissionsRequest: CommandDefinition = {
   inputSchema: {
     type: "object",
     properties: {
-      subject: { enum: ["linger", "computer_use"] },
+      subject: { enum: ["talos", "computer_use"] },
       permissions: {
         type: "array",
         items: { enum: permissionIds },

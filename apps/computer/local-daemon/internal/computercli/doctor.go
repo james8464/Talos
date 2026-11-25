@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 // productNodeVersion is the bundled Node that runs the teamhub CLI and the
@@ -185,7 +185,7 @@ func inspectDaemonHealth(ctx context.Context, client controlClient, commandName 
 	case "upgrade-required":
 		return doctorCheck{
 			Name: "daemon", Category: categoryConfiguration, Status: "fail",
-			Detail: "Agent Service requires a newer Local Computer. Wait for active runs to finish, then rerun the Linger Computer installer",
+			Detail: "Agent Service requires a newer Local Computer. Wait for active runs to finish, then rerun the Talos Computer installer",
 		}
 	}
 	return doctorCheck{Name: "daemon", Category: categoryDaemonLifecycle, Status: "pass", Detail: "running pid=" + status.textOr("pid", "unknown")}

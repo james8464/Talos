@@ -113,7 +113,7 @@ const computerPermissions = {
   host: "desktop",
   subjects: [
     {
-      subject: "linger",
+      subject: "talos",
       permissions: [
         {
           id: "screen_recording",

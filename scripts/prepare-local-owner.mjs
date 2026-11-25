@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Creates this checkout's owner account once and keeps its password in
-// .linger-runtime/local-owner.json. The file is written only after the
+// .talos-runtime/local-owner.json. The file is written only after the
 // account exists, so a failed run leaves no password behind that cannot sign in.
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const localOwnerFile = ".linger-runtime/local-owner.json";
+const localOwnerFile = ".talos-runtime/local-owner.json";
 
 let owner;
 let generated = false;
@@ -19,7 +19,7 @@ try {
   if (error.code !== "ENOENT") throw error;
   generated = true;
   owner = {
-    owner_email: process.env.OWNER_EMAIL?.trim() || "owner@linger.local",
+    owner_email: process.env.OWNER_EMAIL?.trim() || "owner@talos.local",
     owner_password: randomBytes(10).toString("hex"),
   };
 }

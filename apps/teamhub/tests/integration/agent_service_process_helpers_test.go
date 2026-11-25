@@ -54,7 +54,7 @@ func buildTeamHubCLIForProcess(t *testing.T) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
 	defer cancel()
-	command := exec.CommandContext(ctx, "pnpm", "--filter", "@linger/teamhub-cli", "build")
+	command := exec.CommandContext(ctx, "pnpm", "--filter", "@talos/teamhub-cli", "build")
 	command.Dir = repositoryPath()
 	output, err := command.CombinedOutput()
 	if err != nil {

@@ -2,9 +2,9 @@
 export const NVIDIA_DRIVER_DOWNLOAD_URL =
   "https://www.nvidia.com/Download/index.aspx";
 
-/** Linger documentation guide for updating the NVIDIA display driver. */
+/** Talos documentation guide for updating the NVIDIA display driver. */
 export const NVIDIA_DRIVER_GUIDE_URL =
-  "https://docs.heylinger.com/install/nvidia-driver";
+  "https://docs.talos.local/install/nvidia-driver";
 
 /** Command that prints the active NVIDIA driver and maximum supported CUDA version. */
 export const NVIDIA_SMI_VERIFY_COMMAND = "nvidia-smi";

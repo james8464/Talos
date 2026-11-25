@@ -28,8 +28,8 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 func TestUnifiedDocumentServiceOwnerReadsLibraryAndVersions(t *testing.T) {

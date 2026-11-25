@@ -110,7 +110,7 @@ describe("Computer release lockfile", () => {
     );
 
     expect(releasePackage).toEqual({
-      name: "linger-release-build",
+      name: "talos-release-build",
       private: true,
       packageManager: rootPackage.packageManager,
       engines: rootPackage.engines,

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
 )
 
 // LiveKitCaptureCompletionMaxAttemptsForTest exposes the completion attempt

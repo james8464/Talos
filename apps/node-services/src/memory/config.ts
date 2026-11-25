@@ -1,6 +1,6 @@
 import { contextHostRoot } from "../paths.js";
 import { localTimeZone } from "./date.js";
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 
 export interface MemoryScheduleConfig {
   readonly concurrency: number;
@@ -31,6 +31,6 @@ export function readMemoryConfig(
 
 function requiredServiceCredential(environment: NodeJS.ProcessEnv): string {
   const credential = serviceCredential("node-services-internal", environment);
-  if (!credential) throw new TypeError("LINGER_SECRET_SEED is required");
+  if (!credential) throw new TypeError("TALOS_SECRET_SEED is required");
   return credential;
 }

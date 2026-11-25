@@ -80,12 +80,12 @@ case " $* " in *" --no-extensions "*) ;; *) exit 43 ;; esac
 case " $* " in *" --no-mcp "*) ;; *) exit 44 ;; esac
 while IFS= read -r line; do
  case "$line" in
- *linger-probe*) echo '{"type":"response","id":"linger-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
- *linger-state*) echo '{"type":"response","id":"linger-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"model"},"thinkingLevel":"off"}}' ;;
- *linger-models*)
-   if [ -f "$HOME/broken" ]; then echo '{"type":"response","id":"linger-models","command":"get_available_models","success":false}';
-   elif [ -f "$HOME/logged-in" ]; then echo '{"type":"response","id":"linger-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"fixture","id":"model","reasoning":true,"thinkingLevelMap":{"xhigh":null,"max":null}}]}}';
-   else echo '{"type":"response","id":"linger-models","command":"get_available_models","success":true,"data":{"models":[]}}'; fi ;;
+ *talos-probe*) echo '{"type":"response","id":"talos-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
+ *talos-state*) echo '{"type":"response","id":"talos-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"model"},"thinkingLevel":"off"}}' ;;
+ *talos-models*)
+   if [ -f "$HOME/broken" ]; then echo '{"type":"response","id":"talos-models","command":"get_available_models","success":false}';
+   elif [ -f "$HOME/logged-in" ]; then echo '{"type":"response","id":"talos-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"fixture","id":"model","reasoning":true,"thinkingLevelMap":{"xhigh":null,"max":null}}]}}';
+   else echo '{"type":"response","id":"talos-models","command":"get_available_models","success":true,"data":{"models":[]}}'; fi ;;
  esac
 done
 `

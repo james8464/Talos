@@ -17,7 +17,7 @@ const TERMINAL_VARIABLES = [
   "TMPDIR",
   "TERM",
 ] as const;
-const ENV_MARKER = "__LINGER_ENV__";
+const ENV_MARKER = "__TALOS_ENV__";
 // Shell bookkeeping, not settings; PATH is merged by runtimeSearchPath.
 const SHELL_ONLY_VARIABLES = new Set(["PATH", "PWD", "OLDPWD", "SHLVL", "_"]);
 

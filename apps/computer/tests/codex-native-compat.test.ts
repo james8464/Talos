@@ -8,7 +8,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 // The native CLI talks only to a deterministic loopback model, without user credentials.
-const executable = process.env.LINGER_CODEX_COMPAT_EXECUTABLE;
+const executable = process.env.TALOS_CODEX_COMPAT_EXECUTABLE;
 it.skipIf(!executable)(
   "runs a first native Codex turn with a tool and resumes it in a fresh process",
   async () => {
@@ -16,7 +16,7 @@ it.skipIf(!executable)(
     // Keep Go's disposable runtime homes under an owned private directory,
     // without reading the user's actual Codex home or disabling the sandbox.
     const home = await mkdtemp(
-      path.join(os.homedir(), ".linger-codex-compat-"),
+      path.join(os.homedir(), ".talos-codex-compat-"),
     );
     const requests: Record<string, unknown>[] = [];
     const server = createServer((request, response) => {
@@ -45,14 +45,14 @@ it.skipIf(!executable)(
                   arguments: JSON.stringify(
                     commandTool.name === "exec_command"
                       ? {
-                          cmd: "printf linger-compat-tool",
+                          cmd: "printf talos-compat-tool",
                           max_output_tokens: 100,
                         }
                       : {
                           command: [
                             "/bin/sh",
                             "-c",
-                            "printf linger-compat-tool",
+                            "printf talos-compat-tool",
                           ],
                           timeout_ms: 1000,
                         },
@@ -129,8 +129,8 @@ it.skipIf(!executable)(
           env: {
             ...process.env,
             TMPDIR: home,
-            LINGER_CODEX_COMPAT_EXECUTABLE: executable,
-            LINGER_CODEX_COMPAT_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+            TALOS_CODEX_COMPAT_EXECUTABLE: executable,
+            TALOS_CODEX_COMPAT_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
           },
           timeout: 120_000,
           maxBuffer: 1024 * 1024,
@@ -145,7 +145,7 @@ it.skipIf(!executable)(
                 item.type === "function_call_output" &&
                 item.call_id === "call_compat" &&
                 typeof item.output === "string" &&
-                item.output.includes("linger-compat-tool") &&
+                item.output.includes("talos-compat-tool") &&
                 !item.output.includes("failed"),
             ),
         ),

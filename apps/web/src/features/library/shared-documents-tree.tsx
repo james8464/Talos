@@ -58,7 +58,7 @@ type SharedFolder = Extract<
   { node_kind: "folder" }
 >;
 type SharedTreeRenaming = { id: string; name: string } | null;
-const sharedPlacementDragType = "application/x-linger-shared-placement";
+const sharedPlacementDragType = "application/x-talos-shared-placement";
 
 export function SharedDocumentsTree({
   activeDocumentId,
@@ -114,7 +114,7 @@ function useSharedDocumentsTreeModel({
   const folders = items.filter(
     (item): item is SharedFolder => item.node_kind === "folder",
   );
-  const collectionCollapsedKey = `linger:library-shared-collapsed:v2:${tenantId}`;
+  const collectionCollapsedKey = `talos:library-shared-collapsed:v2:${tenantId}`;
   const [collectionCollapsed, setCollectionCollapsed] = useState(
     () => window.sessionStorage.getItem(collectionCollapsedKey) !== "false",
   );

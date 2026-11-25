@@ -56,7 +56,7 @@ function managedCodexPath(home: string) {
 vi.mock("./localmodels-tool.js", () => ({
   // The distribution ships a tool when the test stubs its metadata.
   pinnedToolSource: () =>
-    process.env.LINGER_LOCALMODELS_TOOL_JSON ? { sha256: "0" } : undefined,
+    process.env.TALOS_LOCALMODELS_TOOL_JSON ? { sha256: "0" } : undefined,
   ensureLocalmodelsTool: async (home: string) => ({
     python: path.join(home, "tools", "localmodels", "kit", "python3"),
     moduleDir: path.join(home, "tools", "localmodels", "kit"),
@@ -84,7 +84,7 @@ vi.mock("./localmodels-tool.js", () => ({
     const runtimes = await Promise.all(
       ["codex", "claude", "pi"].map(async (runtime) => {
         const executable =
-          process.env[`LINGER_${runtime.toUpperCase()}_PATH`] ??
+          process.env[`TALOS_${runtime.toUpperCase()}_PATH`] ??
           managedNativeRuntimePath(home, runtime);
         let installed = false;
         try {
@@ -171,13 +171,13 @@ async function fixture(
     stopped?: boolean;
   } = {},
 ) {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-computer-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-computer-"));
   roots.push(root);
   const executable = path.join(root, "computer");
   const calls = path.join(root, "calls.jsonl");
   await writeFile(
     executable,
-    `#!${process.execPath}\nconst fs=require('node:fs');const args=process.argv.slice(2);fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify(args)+'\\n'); const config=args[args.indexOf('--config')+1]; const command=args[0]==='daemon'?args[1]:args[0]; if(command==='login'){console.log('Open authorization browser at http://localhost:3000/settings/computers');if(process.env.LINGER_COMPUTER_INSECURE_DEVELOPMENT_ORIGIN!==args[args.indexOf('--web-url')+1])process.exit(8);fs.writeFileSync(config,'{}');} if(command==='status')console.log(JSON.stringify({version:1,config:{configured:true},daemon:{state:${JSON.stringify(options.stopped ? "stopped" : "running")},reconciled: true, gateway_state:${JSON.stringify(options.expired ? "authentication-failed" : options.connected === false ? "connecting" : "connected")},...( ${options.stopped ? "{}" : JSON.stringify({ active_operations: options.active ?? 0 })} )},runtimes:[{type:'codex',status:${JSON.stringify(options.ready === false ? "authentication_required" : "ready")},protocol:'app-server'}]}));if(command==='doctor')console.log(JSON.stringify({version:1,checks:[{name:'runtime:codex',status:${JSON.stringify(options.ready === false ? "fail" : "pass")},detail:'Runtime diagnostic'}]}));`,
+    `#!${process.execPath}\nconst fs=require('node:fs');const args=process.argv.slice(2);fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify(args)+'\\n'); const config=args[args.indexOf('--config')+1]; const command=args[0]==='daemon'?args[1]:args[0]; if(command==='login'){console.log('Open authorization browser at http://localhost:3000/settings/computers');if(process.env.TALOS_COMPUTER_INSECURE_DEVELOPMENT_ORIGIN!==args[args.indexOf('--web-url')+1])process.exit(8);fs.writeFileSync(config,'{}');} if(command==='status')console.log(JSON.stringify({version:1,config:{configured:true},daemon:{state:${JSON.stringify(options.stopped ? "stopped" : "running")},reconciled: true, gateway_state:${JSON.stringify(options.expired ? "authentication-failed" : options.connected === false ? "connecting" : "connected")},...( ${options.stopped ? "{}" : JSON.stringify({ active_operations: options.active ?? 0 })} )},runtimes:[{type:'codex',status:${JSON.stringify(options.ready === false ? "authentication_required" : "ready")},protocol:'app-server'}]}));if(command==='doctor')console.log(JSON.stringify({version:1,checks:[{name:'runtime:codex',status:${JSON.stringify(options.ready === false ? "fail" : "pass")},detail:'Runtime diagnostic'}]}));`,
     { mode: 0o700 },
   );
   const instance = await initializeInstance({
@@ -219,7 +219,7 @@ it.each([0, 9])(
         timeoutMs: 100_000,
         env: expect.objectContaining({
           PI_CODING_AGENT_DIR: profile,
-          LINGER_PI_PATH: executable,
+          TALOS_PI_PATH: executable,
         }),
       }),
     );
@@ -546,7 +546,7 @@ it("refreshes an idle instance after a private runtime is installed and preserve
           { mode: 0o600 },
         );
       if (args.slice(0, 2).join(" ") === "daemon start") {
-        expect(options?.env?.LINGER_CODEX_PATH).toBeTruthy();
+        expect(options?.env?.TALOS_CODEX_PATH).toBeTruthy();
         expect(options?.env?.CODEX_HOME).toBe(
           path.join(
             path.resolve(f.instance.root, "../.."),
@@ -889,7 +889,7 @@ it("binds approved Pi and follows upstream revisions while preserving Codex cred
   const run = vi
     .spyOn(processes, "runProcess")
     .mockImplementation(async (_exe, args, options) => {
-      expect(options?.env?.LINGER_PI_PATH).toBe(piExecutable);
+      expect(options?.env?.TALOS_PI_PATH).toBe(piExecutable);
       expect(options?.env?.PI_CODING_AGENT_DIR).toBe(piDir);
       return {
         code: 0,
@@ -993,7 +993,7 @@ it("uses the selected instance Pi profile instead of a previous home-wide model 
           "pi",
         ),
       );
-      expect(options?.env?.LINGER_PI_PATH).not.toBe("/previous/pi");
+      expect(options?.env?.TALOS_PI_PATH).not.toBe("/previous/pi");
       return {
         code: 0,
         stderr: "",
@@ -1027,8 +1027,8 @@ it("binds only selected Pi while another managed Claude is available", async () 
   );
   vi.spyOn(processes, "runProcess").mockImplementation(
     async (_file, args, options) => {
-      expect(options?.env?.LINGER_CLAUDE_PATH).toBeUndefined();
-      expect(options?.env?.LINGER_PI_PATH).toBe(
+      expect(options?.env?.TALOS_CLAUDE_PATH).toBeUndefined();
+      expect(options?.env?.TALOS_PI_PATH).toBe(
         managedNativeRuntimePath(home, "pi"),
       );
       expect(options?.env?.PI_CODING_AGENT_DIR).toBe(
@@ -1108,15 +1108,15 @@ it("tracks only selected Claude explicit path and fingerprint", async () => {
   await mkdir(path.dirname(selectedClaude), { recursive: true });
   await writeFile(selectedClaude, "selected fixture", { mode: 0o700 });
   await writeFile(selectedPi, "selected fixture", { mode: 0o700 });
-  vi.stubEnv("LINGER_CLAUDE_PATH", selectedClaude);
-  vi.stubEnv("LINGER_PI_PATH", selectedPi);
+  vi.stubEnv("TALOS_CLAUDE_PATH", selectedClaude);
+  vi.stubEnv("TALOS_PI_PATH", selectedPi);
   const run = vi
     .spyOn(processes, "runProcess")
     .mockImplementation(async (_file, args, options) => {
-      expect(options?.env?.LINGER_CLAUDE_PATH).toBe(
-        process.env.LINGER_CLAUDE_PATH,
+      expect(options?.env?.TALOS_CLAUDE_PATH).toBe(
+        process.env.TALOS_CLAUDE_PATH,
       );
-      expect(options?.env?.LINGER_PI_PATH).toBeUndefined();
+      expect(options?.env?.TALOS_PI_PATH).toBeUndefined();
       return {
         code: 0,
         stderr: "",
@@ -1152,7 +1152,7 @@ it("tracks only selected Claude explicit path and fingerprint", async () => {
     ).toHaveLength(stopped);
     const changedClaude = path.join(home, "selected", "claude-next");
     await writeFile(changedClaude, "changed fixture", { mode: 0o700 });
-    vi.stubEnv("LINGER_CLAUDE_PATH", changedClaude);
+    vi.stubEnv("TALOS_CLAUDE_PATH", changedClaude);
     await connectComputer(f.instance, { interactive: false });
     expect(
       run.mock.calls.filter(
@@ -1382,7 +1382,7 @@ function connectedStatus(args: string[]) {
     : "";
 }
 it("names the localmodels tool when login creates the Computer config", async () => {
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", "{}");
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", "{}");
   try {
     const f = await fixture();
     const home = path.resolve(f.instance.root, "../..");
@@ -1433,7 +1433,7 @@ it("adds the localmodels tool to an existing Computer config once", async () => 
   await connectComputer(f.instance, { interactive: false });
   await connectComputer(f.instance, { interactive: false });
   expect(stops()).toBe(1);
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", "{}");
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", "{}");
   try {
     await connectComputer(f.instance, { interactive: false });
     await connectComputer(f.instance, { interactive: false });

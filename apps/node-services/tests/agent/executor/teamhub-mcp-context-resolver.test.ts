@@ -6,7 +6,7 @@ import {
   createTeamHubMcpContextResolver,
   createTeamHubMcpContextResolverClient,
 } from "../../../src/agent/executor/teamhub-context-resolvers.js";
-import { requestBodyText, requestUrlText } from "@linger/service-kit";
+import { requestBodyText, requestUrlText } from "@talos/service-kit";
 
 describe("TeamHub MCP Context resolver", () => {
   it("accepts a comment-native live-latest Document Context", async () => {

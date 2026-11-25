@@ -11,7 +11,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 )
 
 // countingObjectStore records calls that reach the ObjectStore boundary so tests

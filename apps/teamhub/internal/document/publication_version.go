@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 // commitAgentFileVersion creates one published Document with its first

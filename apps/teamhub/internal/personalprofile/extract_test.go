@@ -33,8 +33,8 @@ func TestSniffFileExtractsTextMarkdownAndDocx(t *testing.T) {
 	if err != nil || !strings.Contains(markdown, "Writes software") {
 		t.Fatalf("md: %q %v", markdown, err)
 	}
-	docx, err := SniffAndExtract("bio.docx", docxMediaType, minimalDOCX(t, "Worked at Linger"))
-	if err != nil || !strings.Contains(docx, "Worked at Linger") {
+	docx, err := SniffAndExtract("bio.docx", docxMediaType, minimalDOCX(t, "Worked at Talos"))
+	if err != nil || !strings.Contains(docx, "Worked at Talos") {
 		t.Fatalf("docx: %q %v", docx, err)
 	}
 }

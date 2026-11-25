@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func TestChooseAnotherMeLocalPlacementUsesAnyReadyRuntime(t *testing.T) {

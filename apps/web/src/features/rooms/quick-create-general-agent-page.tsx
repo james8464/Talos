@@ -28,7 +28,7 @@ import {
 import { AgentCreationProgress } from "./agent-creation-progress";
 import { createTenantAgent } from "./members/create-tenant-agent";
 
-const QUICK_CREATE_ACTOR_PREFIX = "linger.agent.quick-create:";
+const QUICK_CREATE_ACTOR_PREFIX = "talos.agent.quick-create:";
 
 export interface LocalAgentTarget {
   model: string;

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
 )
 
 // sendVoiceCaptureQuestionTask hands a recording's task request to the

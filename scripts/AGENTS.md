@@ -18,7 +18,7 @@ Scripts support existing build, generation, and verification entrypoints.
 
 - Keep automation in small Bash or TypeScript modules with colocated tests.
 - Script telemetry must be structured, bounded, and free of credentials or business payloads.
-- Write transient logs and PIDs under `.linger-runtime/`.
+- Write transient logs and PIDs under `.talos-runtime/`.
 
 ## Important Conventions
 

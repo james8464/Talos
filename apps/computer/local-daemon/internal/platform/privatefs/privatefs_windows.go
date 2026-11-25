@@ -383,7 +383,7 @@ func localAdminMemberSIDs() map[string]bool {
 
 // codexSandboxSIDs returns the principals the Codex Windows sandbox grants on
 // its writable roots: the sandbox users group and the capability SIDs Codex
-// records in its default home or active CODEX_HOME. Linger accepts that a
+// records in its default home or active CODEX_HOME. Talos accepts that a
 // sandboxed Codex command may replace an ancestor such as AppData; private
 // paths themselves stay owner-only.
 func codexSandboxSIDs() map[string]bool {

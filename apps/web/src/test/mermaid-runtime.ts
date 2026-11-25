@@ -45,16 +45,16 @@ export function serveMermaidRuntime(
         result instanceof Error
           ? {
               error: result.message,
-              kind: "linger.mermaid.error",
+              kind: "talos.mermaid.error",
               requestId: request.requestId,
             }
           : {
-              kind: "linger.mermaid.result",
+              kind: "talos.mermaid.result",
               requestId: request.requestId,
               svg: result,
             },
       );
     }) as Window["postMessage"]);
-    reply({ kind: "linger.mermaid.ready" });
+    reply({ kind: "talos.mermaid.ready" });
   }
 }

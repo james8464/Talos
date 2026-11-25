@@ -1,8 +1,8 @@
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { isNodeError } from "@linger/service-kit";
-import type { ComputerTargetRelease } from "@linger/wire-contracts/runner-gateway/types";
+import { isNodeError } from "@talos/service-kit";
+import type { ComputerTargetRelease } from "@talos/wire-contracts/runner-gateway/types";
 
 /** The Computer release targets this image can ship. */
 export const COMPUTER_RELEASE_TARGETS = [
@@ -40,7 +40,7 @@ export interface ComputerRelease {
       >
     >
   >;
-  /** Raw `installer/linger-computer.sh` template; every app archive has the same one. */
+  /** Raw `installer/talos-computer.sh` template; every app archive has the same one. */
   readonly installerTemplate: string;
   readonly uninstallerTemplate: string;
   /** PowerShell templates whose release metadata marker is still unrendered. */
@@ -91,16 +91,16 @@ export async function loadComputerRelease(
     version,
     targets,
     installerTemplate: await readTemplate(
-      path.join(root, "linger-computer.sh"),
+      path.join(root, "talos-computer.sh"),
     ),
     uninstallerTemplate: await readTemplate(
-      path.join(root, "uninstall-linger-computer.sh"),
+      path.join(root, "uninstall-talos-computer.sh"),
     ),
     windowsInstallerTemplate: await readTemplate(
-      path.join(root, "linger-computer.ps1"),
+      path.join(root, "talos-computer.ps1"),
     ),
     windowsUninstallerTemplate: await readTemplate(
-      path.join(root, "uninstall-linger-computer.ps1"),
+      path.join(root, "uninstall-talos-computer.ps1"),
     ),
   };
 }

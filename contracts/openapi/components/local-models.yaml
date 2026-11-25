@@ -413,7 +413,7 @@ components:
           description: >-
             Why a GATEWAY_REGISTRATION_FAILED happened, when the Computer
             supervised the failed job. GATEWAY_HOME_NOT_PRIVATE: the local
-            gateway's private folder at path has another owner; closing Linger
+            gateway's private folder at path has another owner; closing Talos
             and renaming that folder lets the model load.
           type: string
           enum: [GATEWAY_HOME_NOT_PRIVATE]

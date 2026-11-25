@@ -5,9 +5,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	openapi_types "github.com/oapi-codegen/runtime/types"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func accountModel(id, email string, createdAt pgtype.Timestamptz) httpapi.Account {

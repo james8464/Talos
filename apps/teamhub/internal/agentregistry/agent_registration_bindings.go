@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	skillpackage "github.com/simplexai-labs/linger/apps/teamhub/internal/skill"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	skillpackage "github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 var (

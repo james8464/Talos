@@ -81,12 +81,12 @@ func TestCanvasMailBodyDropsHeaderAndReferencesImagesByCID(t *testing.T) {
 			t.Fatalf("one-line header body=%q", body)
 		}
 	}
-	body = canvasAssetImage.ReplaceAllString(body, "(cid:card.1@linger)")
+	body = canvasAssetImage.ReplaceAllString(body, "(cid:card.1@talos)")
 	html, err := MailMarkdownHTML(body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(html, `<img src="cid:card.1@linger" alt="Card">`) {
+	if !strings.Contains(html, `<img src="cid:card.1@talos" alt="Card">`) {
 		t.Fatalf("html=%s", html)
 	}
 	// A code block later in the body is content, not the header.
@@ -100,8 +100,8 @@ func TestCanvasMailBodyDropsHeaderAndReferencesImagesByCID(t *testing.T) {
 }
 
 func TestMailImagesKeepTheirCanvasWidth(t *testing.T) {
-	html := `<p><img src="cid:asset_card.0a1b2c3d@linger" alt="Card"></p>` +
-		`<p><img src="cid:asset_photo.0a1b2c3e@linger" alt="Photo"></p>`
+	html := `<p><img src="cid:asset_card.0a1b2c3d@talos" alt="Card"></p>` +
+		`<p><img src="cid:asset_photo.0a1b2c3e@talos" alt="Photo"></p>`
 	sized := sizeMailImages(html, map[string]int{"asset_card": 320})
 	if !strings.Contains(sized, `<img width="320" style="max-width:100%;height:auto" src="cid:asset_card.`) {
 		t.Fatalf("canvas width lost: %s", sized)

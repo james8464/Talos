@@ -3,7 +3,7 @@ import { blocksToYXmlFragment } from "@blocknote/core/yjs";
 import {
   fingerprintRoomDocumentDeletes,
   fingerprintRoomDocumentState,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import * as Y from "yjs";
 
 import type { RoomDocumentCollaborationSession } from "@/features/rooms/documents/room-document-collaboration";

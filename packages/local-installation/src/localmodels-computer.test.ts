@@ -11,16 +11,16 @@ import {
 import type { LocalmodelsToolSource } from "./localmodels-tool.js";
 
 const tool = {
-  python: "/home/u/.linger/tools/localmodels/abc/python/bin/python3",
-  moduleDirectory: "/home/u/.linger/tools/localmodels/abc",
-  stateDirectory: "/home/u/.linger/runtime/localmodels/state",
-  baseDirectory: "/home/u/.linger/runtime/localmodels/models",
+  python: "/home/u/.talos/tools/localmodels/abc/python/bin/python3",
+  moduleDirectory: "/home/u/.talos/tools/localmodels/abc",
+  stateDirectory: "/home/u/.talos/runtime/localmodels/state",
+  baseDirectory: "/home/u/.talos/runtime/localmodels/models",
 };
 
 it("carries the tool through an external Computer's runtime environment", () => {
   const environment = localmodelsToolEnvironment(tool);
   expect(
-    Object.keys(environment).every((key) => key.startsWith("LINGER_")),
+    Object.keys(environment).every((key) => key.startsWith("TALOS_")),
   ).toBe(true);
   expect(localmodelsToolFromEnvironment(environment, path.posix)).toEqual(tool);
   expect(localModelsConfig(tool)).toEqual({
@@ -37,11 +37,11 @@ it("names no tool unless all four paths are absolute", () => {
   expect(localmodelsToolFromEnvironment(undefined)).toBeUndefined();
   expect(
     localmodelsToolFromEnvironment(
-      { ...environment, LINGER_LOCALMODELS_STATE: "state" },
+      { ...environment, TALOS_LOCALMODELS_STATE: "state" },
       path.posix,
     ),
   ).toBeUndefined();
-  const { LINGER_LOCALMODELS_BASE_DIR: _base, ...partial } = environment;
+  const { TALOS_LOCALMODELS_BASE_DIR: _base, ...partial } = environment;
   expect(localmodelsToolFromEnvironment(partial, path.posix)).toBeUndefined();
 });
 
@@ -70,13 +70,13 @@ async function home() {
 }
 
 it("follows the tool source its caller passes, not the process environment", async () => {
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", '{"sha256":"ambient"}');
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", '{"sha256":"ambient"}');
   expect(await localmodelsComputerTool(await home(), undefined)).toBe(
     undefined,
   );
   expect(ensure).not.toHaveBeenCalled();
 
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", "");
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", "");
   const source = { sha256: "shipped" } as LocalmodelsToolSource;
   const where = await home();
   ensure.mockResolvedValue({

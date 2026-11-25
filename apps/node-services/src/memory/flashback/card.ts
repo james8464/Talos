@@ -4,7 +4,7 @@ import {
   SESSION_ITEM_LABELS,
   SESSION_SECTIONS,
   SUGGESTED_FOCUS_LABEL,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 import type { FlashbackSuggestion } from "../../flashback.js";
 
 /**

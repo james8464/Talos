@@ -35,13 +35,13 @@
 !scripts/managed-tools-archive.mjs
 !scripts/managed-tools-lock.mjs
 !scripts/prepare-local-computer-release.mjs
-!scripts/install-linger-computer.sh
-!scripts/uninstall-linger-computer.sh
+!scripts/install-talos-computer.sh
+!scripts/uninstall-talos-computer.sh
 !scripts/publish-windows-installers.mjs
 !scripts/local-computer-windows-installer.mjs
 !scripts/local-computer-windows-bootstrap.ps1
-!scripts/install-linger-computer.ps1
-!scripts/uninstall-linger-computer.ps1
+!scripts/install-talos-computer.ps1
+!scripts/uninstall-talos-computer.ps1
 
 **/coverage
 **/dist

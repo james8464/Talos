@@ -4,7 +4,7 @@
 // objects, JSON values) stay json.RawMessage; their owners decode them.
 
 export const RUNNER_GO_MODULE =
-  "github.com/simplexai-labs/linger/contracts-go/runnergateway";
+  "github.com/simplexai-labs/talos/contracts-go/runnergateway";
 
 const INITIALISMS = new Map(
   [

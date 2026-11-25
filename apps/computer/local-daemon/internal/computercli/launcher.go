@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/computerconfig"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/control"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/computerconfig"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 // Windows discovery can use 30 seconds for readiness and another 30 for the
@@ -32,11 +32,11 @@ func daemonStartTimeout() time.Duration {
 const controlPollInterval = 50 * time.Millisecond
 
 // daemonExecutable is the Go Daemon of this installation. Source development
-// names its build with LINGER_GO_LOCAL_DAEMON_PATH.
+// names its build with TALOS_GO_LOCAL_DAEMON_PATH.
 func daemonExecutable(environment map[string]string) (string, error) {
-	if explicit := strings.TrimSpace(environment["LINGER_GO_LOCAL_DAEMON_PATH"]); explicit != "" {
+	if explicit := strings.TrimSpace(environment["TALOS_GO_LOCAL_DAEMON_PATH"]); explicit != "" {
 		if !filepath.IsAbs(explicit) {
-			return "", errors.New("LINGER_GO_LOCAL_DAEMON_PATH must be absolute")
+			return "", errors.New("TALOS_GO_LOCAL_DAEMON_PATH must be absolute")
 		}
 		return explicit, nil
 	}
@@ -44,13 +44,13 @@ func daemonExecutable(environment map[string]string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	name := "linger-computer-daemon"
+	name := "talos-computer-daemon"
 	if runtime.GOOS == "windows" {
 		name += ".exe"
 	}
 	daemon := filepath.Join(filepath.Dir(filepath.Dir(executable)), "daemon", name)
 	if _, err := os.Stat(daemon); err != nil {
-		return "", errors.New("LINGER_GO_LOCAL_DAEMON_PATH is required for source development")
+		return "", errors.New("TALOS_GO_LOCAL_DAEMON_PATH is required for source development")
 	}
 	return daemon, nil
 }
@@ -94,7 +94,7 @@ func startDetachedDaemon(ctx context.Context, configPath string, environment map
 	if err != nil {
 		return err
 	}
-	serviceCommand, err := installedWindowsServiceCommand(executable, absoluteConfig, environment["LINGER_COMPUTER_DATA_DIR"], environment["LINGER_COMPUTER_LAUNCHER"])
+	serviceCommand, err := installedWindowsServiceCommand(executable, absoluteConfig, environment["TALOS_COMPUTER_DATA_DIR"], environment["TALOS_COMPUTER_LAUNCHER"])
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func startDetachedDaemon(ctx context.Context, configPath string, environment map
 	launchNonce := uuid.NewString()
 	child, err := startDetached(func() *exec.Cmd {
 		command := exec.Command(daemon, "--config", configPath)
-		command.Env = append(os.Environ(), "LINGER_DAEMON_LAUNCH_NONCE="+launchNonce, "LINGER_COMPUTER_SERVICE_COMMAND="+string(encodedServiceCommand))
+		command.Env = append(os.Environ(), "TALOS_DAEMON_LAUNCH_NONCE="+launchNonce, "TALOS_COMPUTER_SERVICE_COMMAND="+string(encodedServiceCommand))
 		command.Stdout, command.Stderr = log, log
 		return command
 	})
@@ -201,7 +201,7 @@ func boundLauncher(executable, configPath, dataRoot, launcher string) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	if !bytes.Contains(content, []byte("linger-native-cli-launcher-v1")) {
+	if !bytes.Contains(content, []byte("talos-native-cli-launcher-v1")) {
 		return nil, nil
 	}
 	encoded, err := os.ReadFile(filepath.Join(filepath.Dir(launcher), strings.TrimSuffix(filepath.Base(launcher), filepath.Ext(launcher))+".launcher.json"))

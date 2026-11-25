@@ -49,7 +49,7 @@ async function fixture(): Promise<Instance> {
     port: 31234,
     releaseDir: repo,
     computerConfig: path.join(root, "computer/config.json"),
-    computerExecutable: "linger-computer",
+    computerExecutable: "talos-computer",
     source: { repo },
   } as Instance;
 }
@@ -57,7 +57,7 @@ test("reuses a suitable installed release without changing global Computer", asy
   const instance = await fixture();
   vi.mocked(runProcess).mockResolvedValue({
     code: 0,
-    stdout: "linger-computer 0.39.0\n",
+    stdout: "talos-computer 0.39.0\n",
     stderr: "",
   });
   const fetcher = vi.fn();
@@ -66,27 +66,27 @@ test("reuses a suitable installed release without changing global Computer", asy
   expect(fetcher).not.toHaveBeenCalled();
   expect(
     vi.mocked(runProcess).mock.calls.map((call) => call.slice(0, 2)),
-  ).toEqual([["linger-computer", ["version"]]]);
+  ).toEqual([["talos-computer", ["version"]]]);
 });
 test("downloads the checkout-served release when installed Computer is below the work admission minimum", async () => {
   const instance = await fixture();
   const windows = process.platform === "win32";
   const shell = windows ? "powershell.exe" : "bash";
-  const url = `http://localhost:31234/install/linger-computer.${windows ? "ps1" : "sh"}`;
+  const url = `http://localhost:31234/install/talos-computer.${windows ? "ps1" : "sh"}`;
   const executable = path.join(
     instance.root,
     "computer",
     "bin",
-    windows ? "linger-computer.exe" : "linger-computer",
+    windows ? "talos-computer.exe" : "talos-computer",
   );
   vi.mocked(runProcess).mockImplementation(async (command) => ({
     code: 0,
     stdout:
-      command === "linger-computer"
-        ? "linger-computer 0.38.0"
+      command === "talos-computer"
+        ? "talos-computer 0.38.0"
         : command === shell
           ? "installed"
-          : "linger-computer 0.39.0",
+          : "talos-computer 0.39.0",
     stderr: "",
   }));
   const fetcher = vi.fn(
@@ -100,9 +100,9 @@ test("downloads the checkout-served release when installed Computer is below the
     .mocked(runProcess)
     .mock.calls.find((call) => call[0] === shell);
   expect(installer?.[2]?.env).toMatchObject({
-    LINGER_COMPUTER_DATA_DIR: path.join(instance.root, "computer/release"),
-    LINGER_COMPUTER_BIN_DIR: path.join(instance.root, "computer/bin"),
-    LINGER_COMPUTER_CONFIG: instance.computerConfig,
+    TALOS_COMPUTER_DATA_DIR: path.join(instance.root, "computer/release"),
+    TALOS_COMPUTER_BIN_DIR: path.join(instance.root, "computer/bin"),
+    TALOS_COMPUTER_CONFIG: instance.computerConfig,
   });
   expect(instance.computerExecutable).toBe(executable);
   expect(
@@ -128,7 +128,7 @@ test("unavailable official release fails explicitly without fabricating a source
   await expect(
     prepareSourceComputer(instance, new AbortController().signal),
   ).rejects.toThrow(/0.39.0.*checkout/i);
-  expect(instance.computerExecutable).toBe("linger-computer");
+  expect(instance.computerExecutable).toBe("talos-computer");
 });
 test("cancellation prevents any probing or download", async () => {
   const instance = await fixture();
@@ -156,7 +156,7 @@ test("rejects oversized installer responses before launching downloaded code", a
   expect(
     vi.mocked(runProcess).mock.calls.every((call) => call[1][0] === "version"),
   ).toBe(true);
-  expect(instance.computerExecutable).toBe("linger-computer");
+  expect(instance.computerExecutable).toBe("talos-computer");
 });
 test.each(["0.39.0", "dev"])(
   "reuses a current installed Computer %s and leaves capability admission to Gateway",
@@ -164,7 +164,7 @@ test.each(["0.39.0", "dev"])(
     const instance = await fixture();
     vi.mocked(runProcess).mockResolvedValue({
       code: 0,
-      stdout: `linger-computer ${version}`,
+      stdout: `talos-computer ${version}`,
       stderr: "",
     });
     const fetcher = vi.fn();

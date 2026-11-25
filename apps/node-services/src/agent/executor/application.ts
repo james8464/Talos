@@ -3,7 +3,7 @@ import {
   type McpContextResolver,
   TeamHubMcpContextResolverError,
 } from "./teamhub-context-resolvers.js";
-import type { OpaqueObject } from "@linger/wire-contracts/runner-gateway/types";
+import type { OpaqueObject } from "@talos/wire-contracts/runner-gateway/types";
 import {
   unavailableRuntimeHistory,
   type RuntimeHistoryPage,

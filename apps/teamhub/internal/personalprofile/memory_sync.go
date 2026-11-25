@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
 )
 
 // memory.md follows the Profile: publishing a Revision schedules one sync a

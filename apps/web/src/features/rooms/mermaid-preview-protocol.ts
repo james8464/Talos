@@ -9,20 +9,20 @@ export function mermaidPreviewRenderId(requestId: string) {
 }
 
 export interface MermaidPreviewRequest {
-  kind: "linger.mermaid.render";
+  kind: "talos.mermaid.render";
   requestId: string;
   source: string;
 }
 
 export type MermaidPreviewResponse =
-  | { kind: "linger.mermaid.ready" }
+  | { kind: "talos.mermaid.ready" }
   | {
-      kind: "linger.mermaid.result";
+      kind: "talos.mermaid.result";
       requestId: string;
       svg: string;
     }
   | {
       error: string;
-      kind: "linger.mermaid.error";
+      kind: "talos.mermaid.error";
       requestId: string;
     };

@@ -209,9 +209,9 @@ describe("Message Markdown", () => {
     render(
       <MessageMarkdown
         authorKind="agent"
-        body="LINGERMENTION0END lu"
+        body="TALOSMENTION0END lu"
         segments={[
-          { type: "text", content: "LINGERMENTION0END " },
+          { type: "text", content: "TALOSMENTION0END " },
           {
             type: "reference",
             content: "lu",
@@ -222,8 +222,8 @@ describe("Message Markdown", () => {
         onOpenActor={vi.fn()}
       />,
     );
-    expect(screen.getByText(/LINGERMENTION0END/)).toHaveTextContent(
-      "LINGERMENTION0END @lu",
+    expect(screen.getByText(/TALOSMENTION0END/)).toHaveTextContent(
+      "TALOSMENTION0END @lu",
     );
     expect(screen.getAllByRole("button")).toHaveLength(1);
   });
@@ -499,7 +499,7 @@ describe("Message Markdown", () => {
       container.querySelector(".tiptap-table-scroll-viewport"),
     ).not.toBeNull();
     expect(screen.getByRole("cell", { name: "Ready" })).toBeVisible();
-    expect(container.querySelector('a[href^="linger-actor:"]')).toBeNull();
+    expect(container.querySelector('a[href^="talos-actor:"]')).toBeNull();
   });
 
   it("normalizes a streamed Agent heading that omitted the marker space", () => {

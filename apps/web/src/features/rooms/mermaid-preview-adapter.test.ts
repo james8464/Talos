@@ -71,10 +71,10 @@ describe("Mermaid preview adapter", () => {
     const rendered = renderMermaidSvg("graph TD\n  A[Human] --> B[Agent]");
     const frame = requireRuntimeFrame();
 
-    dispatchRuntimeMessage(frame, { kind: "linger.mermaid.ready" });
+    dispatchRuntimeMessage(frame, { kind: "talos.mermaid.ready" });
     expect(frame.contentWindow?.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        kind: "linger.mermaid.render",
+        kind: "talos.mermaid.render",
         source: "graph TD\n  A[Human] --> B[Agent]",
       }),
       "*",
@@ -84,7 +84,7 @@ describe("Mermaid preview adapter", () => {
       requestId: string;
     };
     dispatchRuntimeMessage(frame, {
-      kind: "linger.mermaid.result",
+      kind: "talos.mermaid.result",
       requestId: request.requestId,
       svg: `<svg xmlns="http://www.w3.org/2000/svg"><foreignObject x="0" y="0" width="100" height="20"><p>Human</p></foreignObject><script>alert(1)</script></svg>`,
     });
@@ -104,7 +104,7 @@ describe("Mermaid preview adapter", () => {
       "Mermaid preview exceeded the execution time limit.",
     );
     const frame = requireRuntimeFrame();
-    dispatchRuntimeMessage(frame, { kind: "linger.mermaid.ready" });
+    dispatchRuntimeMessage(frame, { kind: "talos.mermaid.ready" });
 
     await vi.advanceTimersByTimeAsync(25);
 

@@ -3,8 +3,8 @@ package agentregistry
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func TestAgentAvailabilityProjection(t *testing.T) {

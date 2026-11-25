@@ -116,7 +116,7 @@ beforeEach(() => {
     removeItem: (key: string) => values.delete(key),
   });
   localStorage.setItem(
-    "linger.voice.device.tenant-northstar",
+    "talos.voice.device.tenant-northstar",
     JSON.stringify({
       deviceId: "microphone",
       groupId: "desk",

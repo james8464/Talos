@@ -33,7 +33,7 @@ it.each([
 );
 
 it.each([
-  ["0.59.0", "linger-computer-local-3000 runtime login pi"],
+  ["0.59.0", "talos-computer-local-3000 runtime login pi"],
   ["0.58.0", "pi"],
 ] as const)(
   "shows the sign-in command for a Windows Computer at %s",

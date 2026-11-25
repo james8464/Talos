@@ -41,7 +41,7 @@ func TestServiceCredentialMatchesSharedVectors(t *testing.T) {
 func TestLoadRejectsDevelopmentSeedOnPublicOrigin(t *testing.T) {
 	clearTeamHubEnvironment(t)
 	t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
-	t.Setenv("LINGER_SECRET_SEED", developmentSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", developmentSecretSeed)
 	for _, origin := range []string{"http://localhost:3000", "http://127.0.0.1:3000", "http://[::1]:3000"} {
 		t.Setenv("WEB_PUBLIC_ORIGIN", origin)
 		if _, err := Load(); err != nil {
@@ -55,7 +55,7 @@ func TestLoadRejectsDevelopmentSeedOnPublicOrigin(t *testing.T) {
 		}
 	}
 
-	t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 	if _, err := Load(); err != nil {
 		t.Fatalf("private seed rejected for public origin: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestLoadRejectsDevelopmentSeedOnPublicOrigin(t *testing.T) {
 func TestLoadDerivesServiceCredentialsFromSecretSeed(t *testing.T) {
 	clearTeamHubEnvironment(t)
 	t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
-	t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
@@ -82,7 +82,7 @@ func TestLoadDerivesServiceCredentialsFromSecretSeed(t *testing.T) {
 			cfg.NodeServicesURL, cfg.RoomDocument.RuntimeURL)
 	}
 
-	t.Setenv("LINGER_SECRET_SEED", "too-short")
+	t.Setenv("TALOS_SECRET_SEED", "too-short")
 	if _, err := Load(); err == nil {
 		t.Fatal("a short secret seed was accepted")
 	}

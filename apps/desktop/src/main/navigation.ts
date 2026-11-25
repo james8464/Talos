@@ -107,7 +107,7 @@ export function windowLoadDecision(
 }
 // The page names the floating voice window it opens with this `window.open`
 // target prefix (a suffix keeps a closing window from being reused).
-export const VOICE_WINDOW_TARGET = "linger-voice-window";
+export const VOICE_WINDOW_TARGET = "talos-voice-window";
 
 // Whether a `window.open` is the voice window: an empty page the server's own
 // page fills in itself. Anything else the page opens is denied.
@@ -204,7 +204,7 @@ export const parseServerUrl = (value: string): string | undefined => {
 // frame, tells the page so it can offer the system browser instead; a site
 // that refuses frames usually needs a sign-in the frame does not have.
 // Frames without the name, from Web builds before it, keep framableHeaders.
-export const PREVIEW_FRAME_PREFIX = "linger-url-preview:";
+export const PREVIEW_FRAME_PREFIX = "talos-url-preview:";
 
 const frameAncestorSources = (policy: string): string[] | undefined => {
   for (const directive of policy.split(";")) {
@@ -218,7 +218,7 @@ const frameAncestorSources = (policy: string): string[] | undefined => {
 // ancestorProtocol. CSP frame-ancestors, when present, overrides
 // X-Frame-Options, as in Chromium. Only * or a scheme source matching the
 // app's scheme (http: also matches https:) allows the frame; a host source
-// never names the Linger server.
+// never names the Talos server.
 export const refusesFraming = (
   headers: Record<string, string[]>,
   ancestorProtocol: string,

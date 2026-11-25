@@ -18,14 +18,14 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/assignment"
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 type fakeStore struct{ value transport.Identity }
@@ -954,7 +954,7 @@ func TestDaemonProxiesLocalMCPAfterOperationAcceptance(t *testing.T) {
 		t.Fatal(err)
 	}
 	headers := <-upstreamHeaders
-	if headers.Get("Authorization") != "Bearer "+token || headers.Get("X-Linger-Operation-Id") != "operation-mcp" || headers.Get("X-Linger-Execution-Lease-Id") != "lease-mcp" {
+	if headers.Get("Authorization") != "Bearer "+token || headers.Get("X-Talos-Operation-Id") != "operation-mcp" || headers.Get("X-Talos-Execution-Lease-Id") != "lease-mcp" {
 		t.Fatalf("Relay headers=%v", headers)
 	}
 	url := <-localURL
@@ -1069,7 +1069,7 @@ func TestTerminalPayloadUsesProviderCompatibleSessionShapes(t *testing.T) {
 	}
 	for _, runtimeType := range []string{"claude", "pi"} {
 		claudeReady := decode(provider.OperationSpec{OperationKind: "run.start", Provider: runtimeType, CreateProviderSessionID: "claude-session"}, provider.Result{Status: "completed", SessionID: "claude-session"})
-		if claudeReady["provider"] != runtimeType || claudeReady["sessionId"] != "claude-session" || claudeReady["lingerMaterialized"] != true {
+		if claudeReady["provider"] != runtimeType || claudeReady["sessionId"] != "claude-session" || claudeReady["talosMaterialized"] != true {
 			t.Fatalf("Claude materialized session=%+v", claudeReady)
 		}
 	}
@@ -1275,7 +1275,7 @@ func TestDaemonRejectsOperationInputWithUnknownContextViewBeforeProvider(t *test
 	input.CommandID = "input-context-1"
 	input.ExpectedTurnID = "turn-1"
 	input.Input = json.RawMessage(`{"type":"text","text":"focus"}`)
-	input.InputContextViewRef = mustJSON(lingercontext.ViewRef{ViewDigest: strings.Repeat("b", 64)})
+	input.InputContextViewRef = mustJSON(taloscontext.ViewRef{ViewDigest: strings.Repeat("b", 64)})
 	stream := &fakeStream{commands: []protocol.Command{{Type: "runner.welcome", ConnectionEpoch: 7}, start, input}}
 	daemon, err := newTestDaemon(t, Options{
 		ComputerID: "computer-1", ControlPlane: fakeControlPlane{stream: stream}, ContextViews: views,
@@ -2039,7 +2039,7 @@ func TestDaemonInspectsCodexHistoryThroughTheCurrentContextView(t *testing.T) {
 		TenantID: "tenant-1", RunnerID: "computer-1", AgentID: "agent-1", WorkspaceGrantID: "grant-1",
 		ExecutionContextKey: "context-1", RuntimeInstanceID: "runtime-1",
 	})
-	var view lingercontext.ViewRef
+	var view taloscontext.ViewRef
 	if err := json.Unmarshal(ref, &view); err != nil {
 		t.Fatal(err)
 	}

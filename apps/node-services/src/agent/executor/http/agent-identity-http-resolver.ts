@@ -13,8 +13,8 @@ import {
   createTeamHubAgentIdentityUrl,
   getTeamHubAgentIdentity,
   type TeamHubAgentCallbackFetch,
-} from "@linger/wire-contracts/teamhub-internal/client";
-import { isRecord } from "@linger/service-kit";
+} from "@talos/wire-contracts/teamhub-internal/client";
+import { isRecord } from "@talos/service-kit";
 
 export interface AgentIdentityHttpResolverOptions {
   baseUrl: string;

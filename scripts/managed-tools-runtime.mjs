@@ -11,26 +11,26 @@ export async function prepareManagedToolsRuntime(
   environment = process.env,
   { ensureInstalled = false } = {},
 ) {
-  const releaseId = environment.LINGER_CLI_RELEASE_ID?.trim();
+  const releaseId = environment.TALOS_CLI_RELEASE_ID?.trim();
   if (!releaseId) return undefined;
   if (
     !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(releaseId) ||
     releaseId === "stable"
   )
     throw new Error("A fixed release-id is required");
-  const baseUrl = environment.LINGER_CLI_RELEASES_BASE_URL?.trim();
-  if (!baseUrl) throw new Error("Configure LINGER_CLI_RELEASES_BASE_URL");
+  const baseUrl = environment.TALOS_CLI_RELEASES_BASE_URL?.trim();
+  if (!baseUrl) throw new Error("Configure TALOS_CLI_RELEASES_BASE_URL");
   const root = path.resolve(
-    environment.LINGER_TOOLS_ROOT ??
+    environment.TALOS_TOOLS_ROOT ??
       path.join(
         environment.HOME || os.homedir(),
         ".local/share/simplexai/tools",
       ),
   );
   const requiredLev8Version =
-    environment.LINGER_LEV8_VERSION?.trim() || "0.6.0";
+    environment.TALOS_LEV8_VERSION?.trim() || "0.6.0";
   if (!/^\d+\.\d+\.\d+$/u.test(requiredLev8Version))
-    throw new Error("Invalid LINGER_LEV8_VERSION");
+    throw new Error("Invalid TALOS_LEV8_VERSION");
   const configuration = { root, baseUrl, releaseId, requiredLev8Version };
   // Read-only Providers cannot bootstrap or repair their own tool mount. The
   // trusted Context activation completes that work before applying the policy.
@@ -109,15 +109,15 @@ if (
     else if (action === "invoke") await invoke(JSON.parse(encoded), tool, args);
     else if (["ensure", "update", "rollback", "status"].includes(action)) {
       const runtime = await prepareManagedToolsRuntime();
-      if (!runtime) throw new Error("Configure LINGER_CLI_RELEASE_ID");
+      if (!runtime) throw new Error("Configure TALOS_CLI_RELEASE_ID");
       const installer = createManagedToolsInstaller({
         root: runtime.root,
-        requiredLev8Version: process.env.LINGER_LEV8_VERSION || "0.6.0",
+        requiredLev8Version: process.env.TALOS_LEV8_VERSION || "0.6.0",
       });
       writeSync(
         1,
         JSON.stringify(
-          await installer[action](encoded ?? process.env.LINGER_CLI_RELEASE_ID),
+          await installer[action](encoded ?? process.env.TALOS_CLI_RELEASE_ID),
         ) + "\n",
       );
     } else

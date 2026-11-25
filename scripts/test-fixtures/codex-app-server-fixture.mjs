@@ -142,7 +142,7 @@ for await (const line of lines) {
           process.env.CODEX_HOME ?? path.join(process.env.HOME, ".codex"),
         platformFamily: "unix",
         platformOs: process.platform,
-        userAgent: "linger-fixture",
+        userAgent: "talos-fixture",
       },
     });
   } else if (request.method === "model/list") {
@@ -345,7 +345,7 @@ function writeObservation(request) {
       path: process.env.PATH ?? null,
       sshAuthSock: process.env.SSH_AUTH_SOCK ?? null,
       ambient: process.env.USER_AMBIENT_SENTINEL ?? null,
-      lingerInternalVisible: process.env.LINGER_INTERNAL_SENTINEL !== undefined,
+      talosInternalVisible: process.env.TALOS_INTERNAL_SENTINEL !== undefined,
       codexHome: process.env.CODEX_HOME ?? null,
       sandbox: request.params.sandbox ?? null,
       approvalPolicy: request.params.approvalPolicy ?? null,

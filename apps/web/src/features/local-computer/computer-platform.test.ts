@@ -4,10 +4,10 @@ import { computerEnvironmentName } from "./computer-platform";
 
 // scripts/local-computer-installer.test.ts holds the installer's side of these.
 it.each([
-  ["https://ci-linger.example.org", "ci"],
-  ["https://staging-linger.example.net", "staging"],
+  ["https://ci-talos.example.org", "ci"],
+  ["https://staging-talos.example.net", "staging"],
   ["https://dev-local.example.net", "dev-local"],
-  ["https://linger.example.com", "linger"],
+  ["https://talos.example.com", "talos"],
   ["http://localhost:3000", "local-3000"],
   ["http://127.0.0.1:23300", "local-23300"],
   ["http://[::1]:8080", "local-8080"],

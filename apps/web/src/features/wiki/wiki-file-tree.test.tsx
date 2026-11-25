@@ -90,7 +90,7 @@ async function loggedInRuntime() {
 
 function renderPage(runtime: ReturnType<typeof createTestTeamHubRuntime>) {
   window.sessionStorage.setItem(
-    "linger:library-owned-collapsed:v2:tenant-northstar",
+    "talos:library-owned-collapsed:v2:tenant-northstar",
     "false",
   );
   const router = createMemoryRouter(

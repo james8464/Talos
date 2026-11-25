@@ -1,4 +1,4 @@
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 import { queryOptions } from "@tanstack/react-query";
 
 import { teamHubData } from "@/features/teamhub/teamhub-api";

@@ -7,7 +7,7 @@ import {
   exportRoomDocumentRevision,
   materializeRoomDocument,
   restoreRoomDocumentRevision,
-} from "@linger/document-model";
+} from "@talos/document-model";
 
 import type { DocumentModelErrorCode } from "./computation-pool.js";
 import { installDocumentRuntimeDOM } from "./server-dom.js";

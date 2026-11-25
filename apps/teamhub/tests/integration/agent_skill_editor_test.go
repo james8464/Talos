@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func readEditorBindings(t *testing.T, env *testEnv, client *http.Client, agentID string) httpapi.AgentSkillBindingList {

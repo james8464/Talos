@@ -4,7 +4,7 @@ import { calculateWorkerLoad, loadConfig, refuseWhenMuted } from "./config.js";
 
 const base = {
   TEAMHUB_BASE_URL: "http://127.0.0.1:8080",
-  LINGER_SECRET_SEED: "test-seed-0123456789abcdef0123456789",
+  TALOS_SECRET_SEED: "test-seed-0123456789abcdef0123456789",
 };
 
 describe("refuseWhenMuted", () => {

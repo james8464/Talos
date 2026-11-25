@@ -5,11 +5,11 @@ import {
   getTeamHubPersonalWikiDocumentRevision,
   getTeamHubPersonalWikiDocumentVersion,
   type TeamHubAgentCallbackFetch,
-} from "@linger/wire-contracts/teamhub-internal/client";
+} from "@talos/wire-contracts/teamhub-internal/client";
 
 import { memoryTeamHubToken } from "./teamhub-content.js";
 import { teamHubFetch } from "./teamhub-transport.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 export interface WikiPage {
   documentId: string;
@@ -49,7 +49,7 @@ export function teamHubWikiAccess(
   environment: NodeJS.ProcessEnv = process.env,
 ): TeamHubWikiAccess {
   const token = memoryTeamHubToken(environment);
-  if (!token) throw new Error("LINGER_SECRET_SEED is required");
+  if (!token) throw new Error("TALOS_SECRET_SEED is required");
   return { baseUrl: teamHubBaseUrl(environment), token };
 }
 

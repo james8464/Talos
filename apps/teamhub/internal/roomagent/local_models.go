@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // localModelsActionRequestTimeout covers the Gateway's 30-second budget for a

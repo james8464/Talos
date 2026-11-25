@@ -105,8 +105,8 @@ inspect_resource() {
     *com.docker.compose.service*) resource_value "$resource_kind" "$resource_name" compose_kind ;;
     *com.docker.compose.volume*) resource_value "$resource_kind" "$resource_name" compose_kind ;;
     *com.docker.compose.network*) resource_value "$resource_kind" "$resource_name" compose_kind ;;
-    *com.linger.teamhub.test-managed*) resource_value "$resource_kind" "$resource_name" managed ;;
-    *com.linger.teamhub.test-run-token*) resource_value "$resource_kind" "$resource_name" token ;;
+    *com.talos.teamhub.test-managed*) resource_value "$resource_kind" "$resource_name" managed ;;
+    *com.talos.teamhub.test-run-token*) resource_value "$resource_kind" "$resource_name" token ;;
     *) exit 90 ;;
   esac
 }
@@ -323,6 +323,6 @@ grep -F -- 'create table teamhub_test_sentinel' "$docker_log" >/dev/null || fail
 grep -F -- 'down --volumes' "$docker_log" >/dev/null || fail 'cleanup did not remove anonymous Volumes with down --volumes'
 grep -F -- 'volume ls --quiet --filter label=com.docker.compose.project=' "$docker_log" >/dev/null || \
   fail 'cleanup did not verify that no project Volume remains'
-grep -F -- 'com.linger.teamhub.test-run-token' "$docker_log" >/dev/null || fail 'cleanup did not validate run-token labels'
+grep -F -- 'com.talos.teamhub.test-run-token' "$docker_log" >/dev/null || fail 'cleanup did not validate run-token labels'
 
 printf 'PASS: concurrent managed test databases isolate and clean success, failure, and signal lifecycles\n'

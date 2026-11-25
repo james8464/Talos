@@ -152,8 +152,8 @@ describe("Library layout", () => {
   });
 
   it("shows the desktop app the same Library as the browser", () => {
-    const desktop = window as { lingerDesktop?: unknown };
-    desktop.lingerDesktop = {};
+    const desktop = window as { talosDesktop?: unknown };
+    desktop.talosDesktop = {};
     try {
       const home = renderWorkspace("/t/tenant-northstar/library");
       expect(screen.getByText("Workspace home")).toBeVisible();
@@ -176,7 +176,7 @@ describe("Library layout", () => {
         screen.queryByRole("button", { name: /Library list$/ }),
       ).toBeNull();
     } finally {
-      delete desktop.lingerDesktop;
+      delete desktop.talosDesktop;
     }
   });
 });

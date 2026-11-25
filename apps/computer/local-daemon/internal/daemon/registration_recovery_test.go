@@ -14,11 +14,11 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/assignment"
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func TestReconnectHelloCarriesTheProcessRegistrationsAndRunners(t *testing.T) {
@@ -170,18 +170,18 @@ func TestUnavailableRunnerDoesNotDisconnectAndRecoversOnSameConnection(t *testin
 	}
 	registrations := newTestRegistrations(t)
 	assignments := newTestAssignments(t)
-	resolver := lingercontext.ExecutionResolver{
-		RegistrationLookup: func(ctx context.Context, id string) (lingercontext.RegistrationBinding, bool, error) {
+	resolver := taloscontext.ExecutionResolver{
+		RegistrationLookup: func(ctx context.Context, id string) (taloscontext.RegistrationBinding, bool, error) {
 			items, err := registrations.List(ctx)
 			for _, item := range items {
 				if item.RegistrationID == id {
-					return lingercontext.RegistrationBinding{RegistrationID: id, TenantID: item.Key.TenantID, OwnerActorID: item.Key.OwnerActorID, ProviderType: item.Key.ProviderType, Status: item.Status}, true, err
+					return taloscontext.RegistrationBinding{RegistrationID: id, TenantID: item.Key.TenantID, OwnerActorID: item.Key.OwnerActorID, ProviderType: item.Key.ProviderType, Status: item.Status}, true, err
 				}
 			}
-			return lingercontext.RegistrationBinding{}, false, err
+			return taloscontext.RegistrationBinding{}, false, err
 		},
-		Providers:       map[string]lingercontext.ProviderInstallation{"codex": {Type: "codex", ExecutablePath: "/bin/codex"}},
-		WorkspaceGrants: map[string]lingercontext.WorkspaceGrant{"grant-1": {TenantID: "tenant-1", Path: t.TempDir()}},
+		Providers:       map[string]taloscontext.ProviderInstallation{"codex": {Type: "codex", ExecutablePath: "/bin/codex"}},
+		WorkspaceGrants: map[string]taloscontext.WorkspaceGrant{"grant-1": {TenantID: "tenant-1", Path: t.TempDir()}},
 	}
 	snapshot := func(status string, revision uint64) protocol.Command {
 		return protocol.Command{Type: protocol.CommandRegistrationSnapshot, CommandID: status, ConnectionEpoch: 1, Payload: mustJSON([]transport.RuntimeRegistration{{RegistrationID: "registration-1", Observation: transport.RegistrationObservation{TenantID: "tenant-1", OwnerActorID: "owner-1", ProviderType: "codex", Status: status, Revision: revision, Capabilities: []string{"turn"}}}})}

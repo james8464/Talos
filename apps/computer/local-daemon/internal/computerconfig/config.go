@@ -1,5 +1,5 @@
 // Package computerconfig reads the Local Computer config file and the process
-// environment shared by the Daemon and the linger-computer CLI.
+// environment shared by the Daemon and the talos-computer CLI.
 package computerconfig
 
 import (
@@ -12,8 +12,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 // Config is a validated Local Computer config with its Gateway credential.
@@ -32,7 +32,7 @@ type Config struct {
 	PreferredRuntime string
 	WorkspaceGrants  []WorkspaceGrant
 	Owners           []Owner
-	// Desktop is set when the Linger Desktop app runs this Daemon as its child.
+	// Desktop is set when the Talos Desktop app runs this Daemon as its child.
 	Desktop *Desktop
 	// LocalModels locates the localmodels tool the installer prepared; nil
 	// when this Computer has none.
@@ -50,7 +50,7 @@ type LocalModels struct {
 	BaseDirectory   string
 }
 
-// Desktop configures a Daemon owned by the Linger Desktop app. The app ships
+// Desktop configures a Daemon owned by the Talos Desktop app. The app ships
 // and updates the Daemon, so it does not update itself; it exits when the app
 // closes its stdin and reports its state as JSON lines on stdout.
 type Desktop struct {

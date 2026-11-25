@@ -24,7 +24,7 @@ const (
 	windowsInstallerTimeout = 30 * time.Minute
 	maxDepsArchiveLen       = 512 << 20
 	windowsUpgradePrefix    = ".upgrade-"
-	windowsInstallerName    = "linger-computer.ps1"
+	windowsInstallerName    = "talos-computer.ps1"
 	windowsMetadataStart    = "FromBase64String('"
 )
 
@@ -149,9 +149,9 @@ func (s WindowsStager) Activate(ctx context.Context, prepared *Prepared) error {
 	command, err := startInstaller(func() *exec.Cmd {
 		command := s.command(filepath.Join(directory, windowsInstallerName))
 		command.Env = append(os.Environ(),
-			"LINGER_COMPUTER_DATA_DIR="+prepared.request.Root,
-			"LINGER_COMPUTER_DOWNLOAD_BASE_URL="+directory,
-			"LINGER_WEB_URL="+prepared.request.WebOrigin,
+			"TALOS_COMPUTER_DATA_DIR="+prepared.request.Root,
+			"TALOS_COMPUTER_DOWNLOAD_BASE_URL="+directory,
+			"TALOS_WEB_URL="+prepared.request.WebOrigin,
 		)
 		command.Stdout = log
 		command.Stderr = log

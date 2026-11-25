@@ -5,8 +5,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // CreateTaskForApprovedCreation creates the Work Item side of an approved

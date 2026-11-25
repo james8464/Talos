@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
 )
 
 // checkVoiceLiveRecipients holds a canvas write whose to or cc has an address

@@ -27,7 +27,7 @@ func TestDumpLiveContext(t *testing.T) {
 - Zhèng works in Beijing and speaks Chinese [2026-10-12]
 
 ## Career
-- Heads product at Linger and leads Live voice mode and Lev8 [2026-10-12]
+- Heads product at Talos and leads Live voice mode and Lev8 [2026-10-12]
 
 ## Interests
 - Follows voice agents and their latency [2026-11-01]

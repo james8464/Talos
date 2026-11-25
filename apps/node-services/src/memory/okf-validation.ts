@@ -2,7 +2,7 @@ import {
   normalizeOkfMarkdown,
   validateOkfDocument,
   type OkfIssue,
-} from "@linger/knowledge-format";
+} from "@talos/knowledge-format";
 
 const NON_KNOWLEDGE_MARKDOWN = new Set(["INSTRUCTIONS.md", "README.md"]);
 const SESSION_MEMORY_DOCUMENT_PATH =

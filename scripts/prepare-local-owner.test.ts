@@ -71,7 +71,7 @@ async function prepare(
 }
 
 const ownerFile = (root: string) =>
-  path.join(root, ".linger-runtime/local-owner.json");
+  path.join(root, ".talos-runtime/local-owner.json");
 
 describe("local owner preparation", () => {
   it("writes the owner file only after the account commands succeed", async () => {
@@ -89,7 +89,7 @@ describe("local owner preparation", () => {
     expect((await stat(ownerFile(checkout.root))).mode & 0o777).toBe(0o600);
     expect(first.stdout).toContain(owner.owner_password);
     expect(first.stdout).toContain(
-      "Owner account: me@example.com (password saved in .linger-runtime/local-owner.json)",
+      "Owner account: me@example.com (password saved in .talos-runtime/local-owner.json)",
     );
     const commands = (await readFile(checkout.log, "utf8")).trim().split("\n");
     expect(commands.slice(1)).toEqual([

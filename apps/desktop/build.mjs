@@ -20,15 +20,15 @@ import {
 
 const { version } = JSON.parse(await readFile("package.json", "utf8"));
 // The platforms this build is for: this machine unless
-// LINGER_DESKTOP_DAEMON_TARGETS lists targets, comma-separated (packaging
+// TALOS_DESKTOP_DAEMON_TARGETS lists targets, comma-separated (packaging
 // builds the one it ships).
-const daemonTargets = process.env.LINGER_DESKTOP_DAEMON_TARGETS?.split(
+const daemonTargets = process.env.TALOS_DESKTOP_DAEMON_TARGETS?.split(
   ",",
 ).filter(Boolean) ?? [`${process.platform}-${process.arch}`];
-// The linger source package that "Run on this computer" installs. Release
-// builds pin it, either bundled in the app (LINGER_SOURCE_ARCHIVE_FILE) or
+// The talos source package that "Run on this computer" installs. Release
+// builds pin it, either bundled in the app (TALOS_SOURCE_ARCHIVE_FILE) or
 // downloaded; without it the desktop offers only an existing checkout.
-const bundledSource = process.env.LINGER_SOURCE_ARCHIVE_FILE;
+const bundledSource = process.env.TALOS_SOURCE_ARCHIVE_FILE;
 // Other hosts serving the same file, separated by spaces; the desktop tries
 // them in order when the first one fails or stalls.
 function mirrors(name, value) {
@@ -45,18 +45,18 @@ const sourceArchive = await (async () => {
       .digest("hex");
     return { file: path.join("source", path.basename(bundledSource)), sha256 };
   }
-  const url = process.env.LINGER_SOURCE_ARCHIVE_URL;
-  const sha256 = process.env.LINGER_SOURCE_ARCHIVE_SHA256;
+  const url = process.env.TALOS_SOURCE_ARCHIVE_URL;
+  const sha256 = process.env.TALOS_SOURCE_ARCHIVE_SHA256;
   if (!url && !sha256) return null;
   if (!url?.startsWith("https://") || !/^[0-9a-f]{64}$/.test(sha256 ?? ""))
     throw new Error(
-      "LINGER_SOURCE_ARCHIVE_URL must be https and LINGER_SOURCE_ARCHIVE_SHA256 a sha256 hex digest",
+      "TALOS_SOURCE_ARCHIVE_URL must be https and TALOS_SOURCE_ARCHIVE_SHA256 a sha256 hex digest",
     );
   return {
     url,
     ...mirrors(
-      "LINGER_SOURCE_ARCHIVE_MIRRORS",
-      process.env.LINGER_SOURCE_ARCHIVE_MIRRORS,
+      "TALOS_SOURCE_ARCHIVE_MIRRORS",
+      process.env.TALOS_SOURCE_ARCHIVE_MIRRORS,
     ),
     sha256,
   };
@@ -65,18 +65,18 @@ const sourceArchive = await (async () => {
 // this build's platform (scripts/prepare-source-dependencies.mjs). Without it
 // the installer fetches the packages from a registry.
 const sourceDependencies = (() => {
-  const url = process.env.LINGER_SOURCE_DEPENDENCIES_URL;
-  const sha256 = process.env.LINGER_SOURCE_DEPENDENCIES_SHA256;
+  const url = process.env.TALOS_SOURCE_DEPENDENCIES_URL;
+  const sha256 = process.env.TALOS_SOURCE_DEPENDENCIES_SHA256;
   if (!url && !sha256) return null;
   if (!url?.startsWith("https://") || !/^[0-9a-f]{64}$/.test(sha256 ?? ""))
     throw new Error(
-      "LINGER_SOURCE_DEPENDENCIES_URL must be https and LINGER_SOURCE_DEPENDENCIES_SHA256 a sha256 hex digest",
+      "TALOS_SOURCE_DEPENDENCIES_URL must be https and TALOS_SOURCE_DEPENDENCIES_SHA256 a sha256 hex digest",
     );
   return {
     url,
     ...mirrors(
-      "LINGER_SOURCE_DEPENDENCIES_MIRRORS",
-      process.env.LINGER_SOURCE_DEPENDENCIES_MIRRORS,
+      "TALOS_SOURCE_DEPENDENCIES_MIRRORS",
+      process.env.TALOS_SOURCE_DEPENDENCIES_MIRRORS,
     ),
     sha256,
   };
@@ -92,7 +92,7 @@ const common = {
     __SOURCE_ARCHIVE__: JSON.stringify(sourceArchive),
     __SOURCE_DEPENDENCIES__: JSON.stringify(sourceDependencies),
     __HOSTED_DIAGNOSTICS_UPLOAD_URL__: JSON.stringify(
-      hostedDiagnosticsUploadUrl(process.env.LINGER_DIAGNOSTICS_UPLOAD_URL),
+      hostedDiagnosticsUploadUrl(process.env.TALOS_DIAGNOSTICS_UPLOAD_URL),
     ),
   },
   logLevel: "warning",
@@ -145,12 +145,12 @@ const run = (script, args, failure) =>
 // The local installer that "Run on this computer" opens. It runs under a
 // pinned Node 26 that the desktop downloads, not the app's own Node.
 await run(
-  "../linger-installer/scripts/build.mjs",
+  "../talos-installer/scripts/build.mjs",
   [],
   "installer build failed",
 );
 await rm("dist/installer", { recursive: true, force: true });
-await cp("../linger-installer/dist", "dist/installer", { recursive: true });
+await cp("../talos-installer/dist", "dist/installer", { recursive: true });
 if (bundledSource) {
   await mkdir("dist/installer/source");
   await cp(bundledSource, path.join("dist/installer", sourceArchive.file));
@@ -159,13 +159,13 @@ if (bundledSource) {
 // voice tools (LiveKit and ffmpeg) for this target, as distribution.json; the
 // installer reads it beside itself. Native installs need it. The build takes the
 // tracked distribution/<target>.json of the one target that has it (macOS
-// builds darwin-x64 too, which has none) unless LINGER_DESKTOP_DISTRIBUTION
+// builds darwin-x64 too, which has none) unless TALOS_DESKTOP_DISTRIBUTION
 // names another file.
 const tracked = daemonTargets
   .map((target) => path.join("distribution", `${target}.json`))
   .filter((file) => existsSync(file));
 const distribution =
-  process.env.LINGER_DESKTOP_DISTRIBUTION ||
+  process.env.TALOS_DESKTOP_DISTRIBUTION ||
   (tracked.length === 1 ? tracked[0] : undefined);
 if (distribution) {
   const value = JSON.parse(await readFile(distribution, "utf8"));
@@ -187,7 +187,7 @@ if (distribution) {
   if (!Array.isArray(voiceTools))
     throw new Error(`${distribution}: voiceTools must be a list`);
   // A source with a `file` ships in the app (PostgreSQL and the voice tools)
-  // from LINGER_NATIVE_POSTGRES_DIR, by default the packaging cache; the
+  // from TALOS_NATIVE_POSTGRES_DIR, by default the packaging cache; the
   // build checks it against the pin.
   for (const source of [...value.nativeSources, ...voiceTools]) {
     if (source.file === undefined) continue;
@@ -199,13 +199,13 @@ if (distribution) {
         `${distribution}: bundled file must be native/<name>.tar.gz`,
       );
     const from = path.join(
-      process.env.LINGER_NATIVE_POSTGRES_DIR ||
-        path.join(homedir(), ".cache", "linger-desktop"),
+      process.env.TALOS_NATIVE_POSTGRES_DIR ||
+        path.join(homedir(), ".cache", "talos-desktop"),
       path.basename(source.file),
     );
     const bytes = await readFile(from).catch(() => {
       throw new Error(
-        `${distribution} bundles ${path.basename(source.file)}; put it in LINGER_NATIVE_POSTGRES_DIR (see AGENTS.md)`,
+        `${distribution} bundles ${path.basename(source.file)}; put it in TALOS_NATIVE_POSTGRES_DIR (see AGENTS.md)`,
       );
     });
     if (
@@ -250,7 +250,7 @@ const buildNativeOutputs = async () => {
   let archive = bundledSource;
   const work = archive
     ? undefined
-    : await mkdtemp(path.join(tmpdir(), "linger-source-"));
+    : await mkdtemp(path.join(tmpdir(), "talos-source-"));
   try {
     if (!archive) {
       archive = path.join(work, "source.tar.gz");
@@ -263,7 +263,7 @@ const buildNativeOutputs = async () => {
         sourceArchive.sha256
       )
         throw new Error(
-          `${sourceArchive.url} does not match LINGER_SOURCE_ARCHIVE_SHA256`,
+          `${sourceArchive.url} does not match TALOS_SOURCE_ARCHIVE_SHA256`,
         );
       await writeFile(archive, bytes);
     }
@@ -312,7 +312,7 @@ const buildTeamhubCli = async () => {
     "dist/teamhub-cli/teamhub.cmd",
     `@echo off\r
 setlocal\r
-set "app=%~dp0..\\..\\..\\..\\Linger.exe"\r
+set "app=%~dp0..\\..\\..\\..\\Talos.exe"\r
 if not exist "%app%" set "app=node"\r
 set ELECTRON_RUN_AS_NODE=1\r
 "%app%" --use-env-proxy "%~dp0teamhub.js" %*\r

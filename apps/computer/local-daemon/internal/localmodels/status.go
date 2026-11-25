@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 const (

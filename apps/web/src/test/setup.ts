@@ -9,7 +9,7 @@ import { assertNoUnhandledTestRoutes } from "@/test/teamhub-test-server";
 
 // Marks a global this setup wrapped, so a file loading it again in a shared
 // environment does not wrap the wrapper.
-const SETUP_WRAPPED = Symbol.for("linger.test.setupWrapped");
+const SETUP_WRAPPED = Symbol.for("talos.test.setupWrapped");
 
 // Tests assert the Room timing diagnostics, which are off by default in browsers.
 setRoomDiagnosticsEnabledForTest(true);
@@ -144,8 +144,8 @@ const TIMER_GLOBALS: TimerGlobal[] = [
   "Date",
 ];
 const realTimers = ((
-  globalThis as { __lingerRealTimers?: Record<TimerGlobal, unknown> }
-).__lingerRealTimers ??= Object.fromEntries(
+  globalThis as { __talosRealTimers?: Record<TimerGlobal, unknown> }
+).__talosRealTimers ??= Object.fromEntries(
   TIMER_GLOBALS.map((name) => [name, globalThis[name]]),
 ) as Record<TimerGlobal, unknown>);
 

@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import {
   isComputerOffline,
   ModelCallError,

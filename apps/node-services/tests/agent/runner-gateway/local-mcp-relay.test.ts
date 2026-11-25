@@ -231,7 +231,7 @@ describe("LocalMcpRelay", () => {
           protocolVersion: request.headers["mcp-protocol-version"] as string,
           clientHint: request.headers["x-client-hint"] as string,
           cookie: request.headers.cookie,
-          operationId: request.headers["x-linger-operation-id"] as string,
+          operationId: request.headers["x-talos-operation-id"] as string,
           body: JSON.parse(Buffer.concat(chunks).toString("utf8")),
         });
         response.setHeader("content-type", "application/json");
@@ -894,8 +894,8 @@ const relayRequest = (
       "mcp-protocol-version": "2025-06-18",
       "x-client-hint": "preserved",
       cookie: "must-not-cross-relay=1",
-      "x-linger-operation-id": operationId,
-      "x-linger-execution-lease-id": lease,
+      "x-talos-operation-id": operationId,
+      "x-talos-execution-lease-id": lease,
     },
     body: JSON.stringify({
       jsonrpc: "2.0",
@@ -914,8 +914,8 @@ const relayTransportRequest = (
     headers: {
       authorization: `Bearer ${token}`,
       ...(options.contentType ? { "content-type": options.contentType } : {}),
-      "x-linger-operation-id": "operation-1",
-      "x-linger-execution-lease-id": "lease-1",
+      "x-talos-operation-id": "operation-1",
+      "x-talos-execution-lease-id": "lease-1",
     },
     ...(options.method === "POST" || options.method === "PATCH"
       ? { body: "{}" }
@@ -928,8 +928,8 @@ const relayRequestBody = (token: string, body: unknown): Request =>
     headers: {
       authorization: `Bearer ${token}`,
       "content-type": "application/json",
-      "x-linger-operation-id": "operation-1",
-      "x-linger-execution-lease-id": "lease-1",
+      "x-talos-operation-id": "operation-1",
+      "x-talos-execution-lease-id": "lease-1",
     },
     body: JSON.stringify(body),
   });
@@ -955,8 +955,8 @@ const chunkedRelayRequest = (
     headers: {
       authorization: `Bearer ${token}`,
       "content-type": "application/json",
-      "x-linger-operation-id": "operation-1",
-      "x-linger-execution-lease-id": "lease-1",
+      "x-talos-operation-id": "operation-1",
+      "x-talos-execution-lease-id": "lease-1",
     },
     body: new ReadableStream<Uint8Array>({
       start(controller) {

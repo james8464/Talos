@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 const maxProbeOutputBytes = 1024 * 1024
@@ -72,13 +72,13 @@ func probeRuntimeProtocol(ctx context.Context, runtimeType, executable string, e
 	switch runtimeType {
 	case "pi":
 		args = append([]string{"--mode", "rpc", "--no-session"}, native.PiRPCResourceArgs("")...)
-		payload = `{"id":"linger-probe","type":"get_state"}` + "\n"
+		payload = `{"id":"talos-probe","type":"get_state"}` + "\n"
 	case "codex":
 		args = codexProbeArgs()
 		// Codex emits the initialize response before accepting the initialized
 		// notification. Sending both frames back-to-back can race startup and
 		// make the probe report a false protocol incompatibility.
-		payload = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"linger-computer-doctor","title":"Linger Computer Doctor","version":"1.0.0"},"capabilities":null}}` + "\n"
+		payload = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"talos-computer-doctor","title":"Talos Computer Doctor","version":"1.0.0"},"capabilities":null}}` + "\n"
 
 	case "antigravity":
 		probeArgs, release, err := native.PrepareAntigravityProtocolProbe()
@@ -94,7 +94,7 @@ func probeRuntimeProtocol(ctx context.Context, runtimeType, executable string, e
 			"--bare", "--safe-mode", "--no-session-persistence", "--disable-slash-commands",
 			"--strict-mcp-config", "--mcp-config", `{"mcpServers":{}}`, "--tools", "",
 		}
-		payload = `{"type":"control_request","request_id":"linger-computer-doctor","request":{"subtype":"initialize"}}` + "\n"
+		payload = `{"type":"control_request","request_id":"talos-computer-doctor","request":{"subtype":"initialize"}}` + "\n"
 		environment = native.ClaudeEnvironment(environment)
 	default:
 		return errors.New("unsupported Runtime protocol probe")
@@ -153,10 +153,10 @@ func protocolProbeResponseMatches(runtimeType string, response map[string]any) b
 	case "pi":
 		data, ok := response["data"].(map[string]any)
 		_, streaming := data["isStreaming"].(bool)
-		return ok && streaming && response["id"] == "linger-probe" && response["type"] == "response" && response["command"] == "get_state" && response["success"] == true
+		return ok && streaming && response["id"] == "talos-probe" && response["type"] == "response" && response["command"] == "get_state" && response["success"] == true
 	case "claude":
 		control, ok := response["response"].(map[string]any)
-		return ok && response["type"] == "control_response" && control["subtype"] == "success" && control["request_id"] == "linger-computer-doctor"
+		return ok && response["type"] == "control_response" && control["subtype"] == "success" && control["request_id"] == "talos-computer-doctor"
 	case "codex":
 		_, result := response["result"].(map[string]any)
 		return response["id"] == float64(1) && result
@@ -170,7 +170,7 @@ func protocolProbeResponseMatches(runtimeType string, response map[string]any) b
 }
 
 func probeCodexAuthentication(ctx context.Context, executable string, environment map[string]string, timeout time.Duration) runtimeProbeOutcome {
-	initialize := `{"id":1,"method":"initialize","params":{"clientInfo":{"name":"linger-computer-doctor","version":"1.0.0"},"capabilities":null}}` + "\n"
+	initialize := `{"id":1,"method":"initialize","params":{"clientInfo":{"name":"talos-computer-doctor","version":"1.0.0"},"capabilities":null}}` + "\n"
 	var accountResponse map[string]any
 	initialized := false
 	rpcFailed := false

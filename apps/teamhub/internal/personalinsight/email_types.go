@@ -1,6 +1,6 @@
 package personalinsight
 
-import "github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
+import "github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
 
 type InsightBasis string
 

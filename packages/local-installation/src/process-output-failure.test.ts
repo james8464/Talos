@@ -7,7 +7,7 @@ import { expect, it } from "vitest";
 it.each(["stdout", "stderr"])(
   "rejects an output sink failure on %s without crashing or leaving the command running",
   async (stream) => {
-    const root = await mkdtemp(path.join(tmpdir(), "linger-output-sink-"));
+    const root = await mkdtemp(path.join(tmpdir(), "talos-output-sink-"));
     const pidFile = path.join(root, "child.pid");
     try {
       const childSource = `

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BlockNoteEditor } from "@blocknote/core";
 import { blocksToYXmlFragment, yDocToBlocks } from "@blocknote/core/yjs";
-import { inspectRoomDocumentState } from "@linger/document-model";
+import { inspectRoomDocumentState } from "@talos/document-model";
 import { TextSelection } from "@tiptap/pm/state";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";

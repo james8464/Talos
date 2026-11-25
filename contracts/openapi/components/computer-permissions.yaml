@@ -8,13 +8,13 @@ components:
         [ComputerPermissionIdScreenRecording, ComputerPermissionIdAccessibility]
     ComputerPermissionSubject:
       description: >-
-        The app macOS grants the permission to. linger is the Linger desktop
+        The app macOS grants the permission to. talos is the Talos desktop
         app, which owns shell commands such as screencapture; computer_use is
         CuaDriver, which owns the computer-use tools.
       type: string
-      enum: [linger, computer_use]
+      enum: [talos, computer_use]
       x-enum-varnames:
-        [ComputerPermissionSubjectLinger, ComputerPermissionSubjectComputerUse]
+        [ComputerPermissionSubjectTalos, ComputerPermissionSubjectComputerUse]
     ComputerPermissionState:
       type: string
       enum: [granted, denied, not_determined, unknown]
@@ -82,7 +82,7 @@ components:
               ComputerPermissionPlatformLinux,
             ]
         host:
-          description: desktop when the Linger desktop app runs the Computer; standalone otherwise.
+          description: desktop when the Talos desktop app runs the Computer; standalone otherwise.
           type: string
           enum: [desktop, standalone]
           x-enum-varnames:
@@ -96,7 +96,7 @@ components:
       description: >-
         One step the owner takes on their own Mac. prompt raises the macOS
         prompt, open_settings opens the System Settings pane, and relaunch
-        restarts the Linger desktop app so a new grant takes effect.
+        restarts the Talos desktop app so a new grant takes effect.
       type: object
       additionalProperties: false
       required: [action, subject]

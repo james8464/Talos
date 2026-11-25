@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // AgentEventJudge adapts the Agent Service's event rules call to an EventJudge.

@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 var agentReadResourceID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,255}$`)

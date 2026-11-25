@@ -3,7 +3,7 @@ package typedcard
 import (
 	"regexp"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
 )
 
 var creationActorIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`)

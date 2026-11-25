@@ -60,11 +60,11 @@ export async function prepareLocalEnrollment(
   let previousTenant: string | undefined;
   try {
     const text = (await privateText(file)).trim();
-    if (!/^linger-connect-v1\.[A-Za-z0-9_-]+$/.test(text))
+    if (!/^talos-connect-v1\.[A-Za-z0-9_-]+$/.test(text))
       throw new Error("Invalid local connection credential format.");
     const previous = parseJson(
       Buffer.from(
-        text.slice("linger-connect-v1.".length),
+        text.slice("talos-connect-v1.".length),
         "base64url",
       ).toString("utf8"),
     );
@@ -104,7 +104,7 @@ export async function prepareLocalEnrollment(
     } catch {
       signal.throwIfAborted();
       throw new Error(
-        "The local Computer authorization service is unavailable. Reopen Linger to retry.",
+        "The local Computer authorization service is unavailable. Reopen Talos to retry.",
       );
     }
     return response;
@@ -212,7 +212,7 @@ export async function prepareLocalEnrollment(
     };
     await atomicPrivate(
       file,
-      `linger-connect-v1.${Buffer.from(JSON.stringify(token)).toString("base64url")}\n`,
+      `talos-connect-v1.${Buffer.from(JSON.stringify(token)).toString("base64url")}\n`,
     );
     return file;
   } finally {

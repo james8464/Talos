@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/assignment"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/mcpproxy"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 type prepareOperationResolver struct {
@@ -147,7 +147,7 @@ func prepareDaemonFixture(t *testing.T, backend *prepareBackend, withoutSockets 
 		upstreamURL = upstream.URL
 	}
 	relays := mustJSON([]mcpproxy.Descriptor{{
-		Name: "linger_teamhub_collaboration", RelayURL: upstreamURL, RelayToken: "relay-secret-relay-secret-relay-secret",
+		Name: "talos_teamhub_collaboration", RelayURL: upstreamURL, RelayToken: "relay-secret-relay-secret-relay-secret",
 		ToolNames: []string{"send_message"}, ExpiresAt: time.Now().Add(time.Minute),
 	}})
 	stream := &fakeStream{}

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func (a *App) authenticateMcpAgentService(c *gin.Context) bool {

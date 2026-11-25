@@ -51,7 +51,7 @@ func TestUnstartedWindowsCommandIsNotOwned(t *testing.T) {
 func TestEmptyJobWaitsForDescendantTeardown(t *testing.T) {
 	cmd := fixture(t, "tree")
 	marker := filepath.Join(t.TempDir(), "ready")
-	cmd.Env = append(cmd.Env, "LINGER_OWNERSHIP_READY="+marker)
+	cmd.Env = append(cmd.Env, "TALOS_OWNERSHIP_READY="+marker)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatal(err)

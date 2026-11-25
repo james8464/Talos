@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
 )
 
 // NativeToolkit serves the tools of a toolkit TeamHub runs itself rather than

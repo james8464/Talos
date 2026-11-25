@@ -45,7 +45,7 @@ const writeLegacy = (
   writeFileSync(
     path.join(layout.bridgeStateDirectory, "credential.json"),
     JSON.stringify({
-      serverUrl: "https://linger.example",
+      serverUrl: "https://talos.example",
       computerId,
       token: TOKEN,
     }),
@@ -63,7 +63,7 @@ describe("migrateLegacyComputer", () => {
     migrateLegacyComputer(layout, config, credentials, log);
     expect(credentials.read()).toEqual({
       computerId: "computer-1",
-      gatewayUrl: "wss://linger.example/v1/runner-gateway",
+      gatewayUrl: "wss://talos.example/v1/runner-gateway",
       token: TOKEN,
     });
     expect(

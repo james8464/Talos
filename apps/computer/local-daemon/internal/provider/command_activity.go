@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // scriptSteps names the steps of a shell script for the Room status line,

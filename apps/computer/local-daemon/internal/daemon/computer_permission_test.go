@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/localtools"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/localtools"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 type fakeComputerPermissions struct {
@@ -25,7 +25,7 @@ func (f *fakeComputerPermissions) ComputerPermission(ctx context.Context, action
 		return localtools.ComputerPermissionStatus{}, f.err
 	}
 	return localtools.ComputerPermissionStatus{Platform: "darwin", Host: "desktop", Subjects: []localtools.ComputerPermissionGroup{{
-		Subject: "linger", Permissions: []localtools.ComputerPermissionState{{ID: "screen_recording", State: "granted", Prompt: "available"}},
+		Subject: "talos", Permissions: []localtools.ComputerPermissionState{{ID: "screen_recording", State: "granted", Prompt: "available"}},
 	}}}, nil
 }
 
@@ -67,16 +67,16 @@ func TestComputerPermissionCommandEchoesIdentityAndOutcome(t *testing.T) {
 	}
 	for _, action := range []map[string]any{
 		{"action": "status"},
-		{"action": "prompt", "subject": "linger", "permission": "screen_recording"},
+		{"action": "prompt", "subject": "talos", "permission": "screen_recording"},
 		{"action": "open_settings", "subject": "computer_use", "permission": "accessibility"},
-		{"action": "relaunch", "subject": "linger"},
+		{"action": "relaunch", "subject": "talos"},
 	} {
 		result := send(action)
 		if result["outcome"] != "succeeded" || result["status"].(map[string]any)["platform"] != "darwin" {
 			t.Fatalf("%v: %v", action, result)
 		}
 	}
-	if want := []string{"status//", "prompt/linger/screen_recording", "open_settings/computer_use/accessibility", "relaunch/linger/"}; !slices.Equal(permissions.calls, want) {
+	if want := []string{"status//", "prompt/talos/screen_recording", "open_settings/computer_use/accessibility", "relaunch/talos/"}; !slices.Equal(permissions.calls, want) {
 		t.Fatalf("calls = %v", permissions.calls)
 	}
 	if !permissions.deadline.Equal(expires) {
@@ -98,7 +98,7 @@ func TestComputerPermissionCommandEchoesIdentityAndOutcome(t *testing.T) {
 	}
 	calls := len(permissions.calls)
 	permissions.err = &localtools.ComputerPermissionError{Code: "COMPUTER_PERMISSION_RELAUNCH_UNAVAILABLE", Message: "no", Retryable: false}
-	if code := failure(send(map[string]any{"action": "relaunch", "subject": "linger"})); code != "COMPUTER_PERMISSION_RELAUNCH_UNAVAILABLE" {
+	if code := failure(send(map[string]any{"action": "relaunch", "subject": "talos"})); code != "COMPUTER_PERMISSION_RELAUNCH_UNAVAILABLE" {
 		t.Fatalf("typed failure: %s", code)
 	}
 	permissions.err = errors.New("/Users/someone/private path")

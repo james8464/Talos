@@ -210,7 +210,7 @@ export function developmentHealthPlugin(): Plugin {
 
         const body = JSON.stringify({
           ok: true,
-          service: "linger-web-dev",
+          service: "talos-web-dev",
         });
 
         response.statusCode = 200;
@@ -219,6 +219,6 @@ export function developmentHealthPlugin(): Plugin {
         response.end(request.method === "HEAD" ? undefined : body);
       });
     },
-    name: "linger-development-health",
+    name: "talos-development-health",
   };
 }

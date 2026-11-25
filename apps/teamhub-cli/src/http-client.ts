@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import createClient, { type Client } from "openapi-fetch";
-import type { paths } from "@linger/wire-contracts/teamhub-agent-api/types";
+import type { paths } from "@talos/wire-contracts/teamhub-agent-api/types";
 import type { TeamHubConfig } from "./config.js";
 import { CliError, type ErrorCode } from "./errors.js";
 import { mebibytes } from "./input-issues.js";

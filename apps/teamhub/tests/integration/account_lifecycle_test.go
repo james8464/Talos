@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
 )
 
 func newAccountLifecycleEnv(t *testing.T) *testEnv {

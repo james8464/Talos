@@ -177,7 +177,7 @@ describe("ComputersPage", () => {
               computer_id: "computer-jenny-mac",
               runtime_type: "codex",
               type: "local",
-              workspace_grant_id: "grant-linger-workspace",
+              workspace_grant_id: "grant-talos-workspace",
             },
           },
         },
@@ -199,7 +199,7 @@ describe("ComputersPage", () => {
     fireEvent.click(within(detail).getByRole("button", { name: "Access" }));
     expect(
       within(detail).getByRole("region", { name: "Access" }),
-    ).toHaveTextContent("Linger Workspace");
+    ).toHaveTextContent("Talos Workspace");
     expect(detail).toHaveTextContent("Agents can edit here");
 
     fireEvent.click(
@@ -254,7 +254,7 @@ describe("ComputersPage", () => {
       }),
     ).toBeVisible();
     expect(
-      screen.queryByText("linger-computer-local-3000 login"),
+      screen.queryByText("talos-computer-local-3000 login"),
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Connect a computer" }));
@@ -262,10 +262,10 @@ describe("ComputersPage", () => {
     expect(
       await screen.findByRole("dialog", { name: "Connect Local Computer" }),
     ).toBeVisible();
-    expect(screen.getByText("linger-computer-local-3000 login")).toBeVisible();
+    expect(screen.getByText("talos-computer-local-3000 login")).toBeVisible();
     expect(
       screen.getByText(
-        'curl -fsSL "http://localhost:3000/install/linger-computer.sh" | bash',
+        'curl -fsSL "http://localhost:3000/install/talos-computer.sh" | bash',
       ),
     ).toBeVisible();
   });
@@ -373,7 +373,7 @@ describe("ComputersPage", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("linger-computer-local-3000 daemon start"),
+      screen.getByText("talos-computer-local-3000 daemon start"),
     ).toBeInTheDocument();
   });
 
@@ -406,14 +406,14 @@ describe("ComputersPage", () => {
     });
     expect(dialog).toHaveTextContent("Your Agents stay connected");
     expect(dialog).toHaveTextContent(
-      'curl -fsSL "http://localhost:3000/install/linger-computer.sh" | bash',
+      'curl -fsSL "http://localhost:3000/install/talos-computer.sh" | bash',
     );
     fireEvent.click(
       within(dialog).getAllByRole("button", { name: "Close" })[0]!,
     );
 
     expect(
-      screen.queryByText("linger-computer-local-3000 daemon status"),
+      screen.queryByText("talos-computer-local-3000 daemon status"),
     ).not.toBeInTheDocument();
     fireEvent.click(within(detail).getByRole("button", { name: "Advanced" }));
     for (const command of [
@@ -424,7 +424,7 @@ describe("ComputersPage", () => {
       "daemon stop",
     ])
       expect(
-        screen.getByText(`linger-computer-local-3000 ${command}`),
+        screen.getByText(`talos-computer-local-3000 ${command}`),
       ).toBeInTheDocument();
   });
 
@@ -595,13 +595,13 @@ describe("ComputersPage", () => {
 
   describe("CLI download visibility in the desktop app", () => {
     afterEach(() => {
-      delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+      delete (window as { talosDesktop?: unknown }).talosDesktop;
     });
 
     it("hides CLI connect entries when showing the desktop app's own local server even while localAccount is not ready", async () => {
       const owned = vi.fn(async () => true);
       const available = vi.fn(async () => false);
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         localServer: { owned },
         localAccount: { available },
       };
@@ -662,7 +662,7 @@ describe("ComputersPage", () => {
     });
 
     it("hides CLI upgrade button and modal when upgrade_required is set on the desktop local server", async () => {
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         localServer: { owned: vi.fn(async () => true) },
       };
       const fixture = await authenticatedFixture();
@@ -694,7 +694,7 @@ describe("ComputersPage", () => {
 
     it("falls back to localAccount.available in older desktop builds without localServer.owned", async () => {
       const available = vi.fn(async () => true);
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         localAccount: { available },
       };
       const fixture = await authenticatedFixture();
@@ -708,7 +708,7 @@ describe("ComputersPage", () => {
     });
 
     it("hides CLI setup button on the empty Computers view for the desktop local server", async () => {
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         localAccount: { available: vi.fn(async () => true) },
       };
       const emptyFixture = await authenticatedFixture();
@@ -725,7 +725,7 @@ describe("ComputersPage", () => {
     });
 
     it("hides CLI setup commands on an unavailable Computer view for the desktop local server", async () => {
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         localAccount: { available: vi.fn(async () => true) },
       };
       const unavailableFixture = await authenticatedFixture();
@@ -741,7 +741,7 @@ describe("ComputersPage", () => {
     });
 
     it("keeps CLI connect entries when the desktop app points at a remote server", async () => {
-      (window as { lingerDesktop?: unknown }).lingerDesktop = {
+      (window as { talosDesktop?: unknown }).talosDesktop = {
         localAccount: { available: vi.fn(async () => false) },
       };
       const fixture = await authenticatedFixture();

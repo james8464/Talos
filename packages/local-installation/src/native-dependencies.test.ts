@@ -512,7 +512,7 @@ it("prepares real executable launchers and reuses verified warm dependencies ent
   // Native modules install prebuilt, so no C toolchain may be required.
   vi.stubEnv("PATH", path.dirname(process.execPath));
   vi.stubEnv(
-    "LINGER_NATIVE_DEPENDENCIES_JSON",
+    "TALOS_NATIVE_DEPENDENCIES_JSON",
     JSON.stringify([
       {
         ...source,
@@ -845,20 +845,20 @@ describe("native voice tools", () => {
       const home = path.join(root, "home");
       const signal = new AbortController().signal;
       // No distribution entry for this computer: voice stays off.
-      vi.stubEnv("LINGER_NATIVE_VOICE_TOOLS_JSON", "");
+      vi.stubEnv("TALOS_NATIVE_VOICE_TOOLS_JSON", "");
       expect(await prepareNativeVoiceTools({ home, signal })).toBeUndefined();
       vi.stubEnv(
-        "LINGER_NATIVE_VOICE_TOOLS_JSON",
+        "TALOS_NATIVE_VOICE_TOOLS_JSON",
         JSON.stringify([{ ...pinned, target: "win32-x64" }]),
       );
       expect(await prepareNativeVoiceTools({ home, signal })).toBeUndefined();
-      vi.stubEnv("LINGER_NATIVE_VOICE_TOOLS_JSON", JSON.stringify([pinned]));
+      vi.stubEnv("TALOS_NATIVE_VOICE_TOOLS_JSON", JSON.stringify([pinned]));
       const tools = await prepareNativeVoiceTools({ home, signal });
       expect(tools?.livekit).toBe(path.join(tools!.bin, "livekit-server"));
       expect(existsSync(path.join(tools!.bin, "ffmpeg"))).toBe(true);
       // A tool that runs another version is refused.
       vi.stubEnv(
-        "LINGER_NATIVE_VOICE_TOOLS_JSON",
+        "TALOS_NATIVE_VOICE_TOOLS_JSON",
         JSON.stringify([{ ...pinned, livekitVersion: "1.13.7" }]),
       );
       await expect(prepareNativeVoiceTools({ home, signal })).rejects.toThrow(

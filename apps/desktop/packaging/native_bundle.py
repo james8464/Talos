@@ -34,7 +34,7 @@ def _manifest(directory, target, what):
     if not os.path.exists(path):
         if os.path.isdir(SOURCE):
             sys.exit(f"dist/ bundles a source package but no {what} for {target}; "
-                     "run build.mjs with LINGER_SOURCE_ARCHIVE_FILE again")
+                     "run build.mjs with TALOS_SOURCE_ARCHIVE_FILE again")
         return None
     with open(path) as file:
         manifest = json.load(file)

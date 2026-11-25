@@ -22,7 +22,7 @@ export default async function setup(project: TestProject) {
   // The system TEMP can inherit shared access from AppData. Every fixture
   // starts below one fresh private directory, with user/SYSTEM inheritance.
   const home = await realpath(homedir());
-  const temporary = await mkdtemp(path.join(home, "linger-test-"));
+  const temporary = await mkdtemp(path.join(home, "talos-test-"));
   const cleanup = async () => {
     if (
       path.dirname(temporary) !== home ||

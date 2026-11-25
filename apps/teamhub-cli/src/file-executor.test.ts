@@ -145,9 +145,9 @@ describe("independent CLI local files", () => {
         access === "direct" ? source : path.join(f.cwd, "public.txt");
       if (access !== "direct") {
         if (process.platform === "win32") {
-          const fixtureRoot = process.env.LINGER_TEST_WINDOWS_FILE_LINKS;
+          const fixtureRoot = process.env.TALOS_TEST_WINDOWS_FILE_LINKS;
           if (!fixtureRoot)
-            throw new Error("LINGER_TEST_WINDOWS_FILE_LINKS is required");
+            throw new Error("TALOS_TEST_WINDOWS_FILE_LINKS is required");
           const directory = (
             {
               ".env": "env",
@@ -409,9 +409,9 @@ describe("independent CLI local files", () => {
     await writeFile(actual, "original");
     const alias = f.source;
     if (process.platform === "win32") {
-      const fixtureRoot = process.env.LINGER_TEST_WINDOWS_FILE_LINKS;
+      const fixtureRoot = process.env.TALOS_TEST_WINDOWS_FILE_LINKS;
       if (!fixtureRoot)
-        throw new Error("LINGER_TEST_WINDOWS_FILE_LINKS is required");
+        throw new Error("TALOS_TEST_WINDOWS_FILE_LINKS is required");
       await rename(
         path.join(fixtureRoot, "tracked-original", "prepared-link"),
         alias,

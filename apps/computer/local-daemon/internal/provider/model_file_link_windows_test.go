@@ -9,7 +9,7 @@ import (
 )
 
 func createTestModelFileLink(t *testing.T, link string) error {
-	root := os.Getenv("LINGER_TEST_PROVIDER_LINK_ROOT")
+	root := os.Getenv("TALOS_TEST_PROVIDER_LINK_ROOT")
 	if root == "" {
 		return os.Symlink(`C:\missing`, link)
 	}

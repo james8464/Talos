@@ -1,8 +1,8 @@
 import {
   BYOK_PROTOCOL_ENDPOINTS,
   DEFAULT_BYOK_PATH,
-} from "@linger/service-kit/byok-endpoint";
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+} from "@talos/service-kit/byok-endpoint";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 
 import type { Translate } from "@/i18n/language";
 

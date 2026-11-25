@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 	maxAppArchiveLen = 64 << 20
 	maxInstallerLen  = 8 << 20
 	// installerEntry is the installer template inside the app archive.
-	installerEntry = "installer/linger-computer.sh"
+	installerEntry = "installer/talos-computer.sh"
 )
 
 // StageRequest names the install root, the Web origin, the release target,
@@ -102,7 +102,7 @@ func (s ScriptStager) Prepare(ctx context.Context, request StageRequest) (*Prepa
 	defer cancel()
 	// Only this user can write the 0700 directory, so bash runs and the
 	// installer reads the bytes that were verified.
-	directory, err := os.MkdirTemp("", "linger-computer-upgrade-")
+	directory, err := os.MkdirTemp("", "talos-computer-upgrade-")
 	if err != nil {
 		return nil, &StageError{Stage: "install", Err: err}
 	}
@@ -116,9 +116,9 @@ func (s ScriptStager) Prepare(ctx context.Context, request StageRequest) (*Prepa
 		return nil, &StageError{Stage: "verify", Err: err}
 	}
 	if err := runInstaller(ctx, directory, installer, request, "prepare", "install",
-		"LINGER_COMPUTER_APP_ARCHIVE="+archive,
-		"LINGER_COMPUTER_DEPS_SHA256="+request.Deps.SHA256,
-		"LINGER_COMPUTER_DEPS_SIZE="+strconv.FormatInt(request.Deps.Size, 10),
+		"TALOS_COMPUTER_APP_ARCHIVE="+archive,
+		"TALOS_COMPUTER_DEPS_SHA256="+request.Deps.SHA256,
+		"TALOS_COMPUTER_DEPS_SIZE="+strconv.FormatInt(request.Deps.Size, 10),
 	); err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (s ScriptStager) Prepare(ctx context.Context, request StageRequest) (*Prepa
 func (s ScriptStager) Activate(ctx context.Context, prepared *Prepared) error {
 	ctx, cancel := context.WithTimeout(ctx, activateTimeout)
 	defer cancel()
-	directory, err := os.MkdirTemp("", "linger-computer-upgrade-")
+	directory, err := os.MkdirTemp("", "talos-computer-upgrade-")
 	if err != nil {
 		return &StageError{Stage: "activate", Err: err}
 	}
@@ -181,7 +181,7 @@ func extractInstaller(archive string) ([]byte, error) {
 // given stage-only mode. failStage names the error stage for local and
 // installer failures.
 func runInstaller(ctx context.Context, directory string, installer []byte, request StageRequest, mode, failStage string, environment ...string) error {
-	script := filepath.Join(directory, "linger-computer.sh")
+	script := filepath.Join(directory, "talos-computer.sh")
 	if err := os.WriteFile(script, installer, 0o600); err != nil {
 		return &StageError{Stage: failStage, Err: err}
 	}
@@ -194,10 +194,10 @@ func runInstaller(ctx context.Context, directory string, installer []byte, reque
 	stopResend := watchInstallerInterrupt(command)
 	defer stopResend()
 	command.Env = append(append(os.Environ(),
-		"LINGER_COMPUTER_INSTALL_STAGE_ONLY="+mode,
-		"LINGER_COMPUTER_DATA_DIR="+request.Root,
-		"LINGER_WEB_URL="+request.WebOrigin,
-		"LINGER_COMPUTER_APP_SHA256="+request.App.SHA256,
+		"TALOS_COMPUTER_INSTALL_STAGE_ONLY="+mode,
+		"TALOS_COMPUTER_DATA_DIR="+request.Root,
+		"TALOS_WEB_URL="+request.WebOrigin,
+		"TALOS_COMPUTER_APP_SHA256="+request.App.SHA256,
 	), environment...)
 	output := &tailWriter{limit: outputTailBytes}
 	command.Stdout = output

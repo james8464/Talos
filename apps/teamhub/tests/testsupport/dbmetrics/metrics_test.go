@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/tests/testsupport/dbmetrics"
+	"github.com/simplexai-labs/talos/apps/teamhub/tests/testsupport/dbmetrics"
 )
 
 func TestReportIsStableAndAggregated(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // RuntimeInteractionAuthority is who answers a native Runtime question of a

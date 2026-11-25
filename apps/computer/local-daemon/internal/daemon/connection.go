@@ -14,11 +14,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/assignment"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 func (d *Daemon) runConnection(ctx context.Context, deviceIdentity transport.Identity) (err error) {
@@ -28,7 +28,7 @@ func (d *Daemon) runConnection(ctx context.Context, deviceIdentity transport.Ide
 	}
 	stream, err := d.controlPlane.Connect(ctx, hello)
 	if err != nil {
-		return fmt.Errorf("connect Linger control plane: %w", err)
+		return fmt.Errorf("connect Talos control plane: %w", err)
 	}
 	// The dispatch shutdown below closes the stream before this runs, which
 	// releases a background delivery holding connectionMu on a socket write.

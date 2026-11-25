@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 // claudeFakeGroup stands in for an owned process tree. It reports empty
@@ -117,7 +117,7 @@ func claudeFeed(t *claudeTurn, frames ...string) {
 }
 
 func claudePolicyFixture() *ClaudeToolPolicy {
-	return &ClaudeToolPolicy{SkillNames: []string{"bound-skill", "inherited-skill"}, MCPToolNames: []string{"mcp__linger__send_message", "mcp__browser__browser_snapshot", "mcp__browser__browser_click"}}
+	return &ClaudeToolPolicy{SkillNames: []string{"bound-skill", "inherited-skill"}, MCPToolNames: []string{"mcp__talos__send_message", "mcp__browser__browser_snapshot", "mcp__browser__browser_click"}}
 }
 
 func TestClaudeToolPolicyOnBothControlPaths(t *testing.T) {
@@ -129,7 +129,7 @@ func TestClaudeToolPolicyOnBothControlPaths(t *testing.T) {
 		allowed bool
 	}{
 		{"Read", `{"file_path":"x"}`, "", true},
-		{"mcp__linger__send_message", `{}`, "", true},
+		{"mcp__talos__send_message", `{}`, "", true},
 		{"Skill", `{"skill":"bound-skill"}`, "", true},
 		{"Skill", `{"skill":"inherited-skill"}`, "", true},
 		{"Agent", `{"prompt":"x"}`, "", true},

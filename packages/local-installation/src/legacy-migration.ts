@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { inspectComputer, stopIdleComputer } from "./computer.js";
-import { INSTANCE_NAME, convertibleLegacyRecord, lingerHome } from "./home.js";
+import { INSTANCE_NAME, convertibleLegacyRecord, talosHome } from "./home.js";
 import {
   composeProject,
   INSTANCE_BUSY,
@@ -24,7 +24,7 @@ const LEGACY_ENVIRONMENT_PREFIX = /^SIMPLEX_/gm;
 const ENVIRONMENT_FILES = ["services.env", "livekit.env", "native.env"];
 
 export interface LegacyMigrationOptions {
-  /** The home to migrate; LINGER_HOME or ~/.simplexai by default. */
+  /** The home to migrate; TALOS_HOME or ~/.simplexai by default. */
   readonly home?: string;
   /** Stops an instance's processes before its names change. */
   readonly stopInstance?: (instance: Instance) => Promise<void>;
@@ -38,15 +38,15 @@ export interface LegacyInstanceSkipped {
 
 /**
  * Converts an installation made while the product was named Simplex, once:
- * each instance gets its Linger project name and LINGER_* environment keys.
+ * each instance gets its Talos project name and TALOS_* environment keys.
  * An instance that fails keeps its legacy names, does not hold back the
- * others or Linger's start, and is tried again on the next run; the result
+ * others or Talos's start, and is tried again on the next run; the result
  * names each one and why.
  */
 export async function migrateLegacyInstallation(
   options: LegacyMigrationOptions = {},
 ): Promise<LegacyInstanceSkipped[]> {
-  const home = path.resolve(options.home ?? lingerHome());
+  const home = path.resolve(options.home ?? talosHome());
   const stop = options.stopInstance ?? stopLegacyInstance;
   const directory = path.join(home, "instances");
   const skipped: LegacyInstanceSkipped[] = [];
@@ -65,7 +65,7 @@ export async function migrateLegacyInstallation(
         instance: name,
         reason:
           (error as { code?: unknown }).code === INSTANCE_BUSY
-            ? "Another Linger installer is using it. Close other Linger windows and installer pages, then start Linger again."
+            ? "Another Talos installer is using it. Close other Talos windows and installer pages, then start Talos again."
             : error instanceof Error
               ? error.message
               : String(error),
@@ -113,7 +113,7 @@ async function stopLegacyInstance(instance: Instance): Promise<void> {
   );
   if (activeOperations > 0)
     throw new Error(
-      `Its Computer is running ${activeOperations} task(s). Let them finish or stop them, then start Linger again.`,
+      `Its Computer is running ${activeOperations} task(s). Let them finish or stop them, then start Talos again.`,
     );
   if (activeOperations === 0)
     await stopIdleComputer(instance).catch(() => undefined);
@@ -122,7 +122,7 @@ async function stopLegacyInstance(instance: Instance): Promise<void> {
       if ((error as { code?: unknown }).code === NATIVE_PROCESS_REPLACED)
         return;
       throw new Error(
-        `Its ${name} service is still running and could not be stopped (${error instanceof Error ? error.message : String(error)}). Restart this computer, then start Linger again.`,
+        `Its ${name} service is still running and could not be stopped (${error instanceof Error ? error.message : String(error)}). Restart this computer, then start Talos again.`,
       );
     });
   // Only earlier releases started this gateway, with tools that may be gone.
@@ -140,7 +140,7 @@ async function migrateInstance(
   for (const file of ENVIRONMENT_FILES) {
     const location = path.join(root, file);
     const text = await readPrivate(location);
-    const renamed = text?.replace(LEGACY_ENVIRONMENT_PREFIX, "LINGER_");
+    const renamed = text?.replace(LEGACY_ENVIRONMENT_PREFIX, "TALOS_");
     if (renamed !== text) await atomicPrivate(location, renamed!);
   }
   // Written last: the legacy project name is what marks the instance as

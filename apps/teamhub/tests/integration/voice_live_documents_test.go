@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	teamhubinternal "github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	teamhubinternal "github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // The live voice renames and edits a Document as the call's Agent, and

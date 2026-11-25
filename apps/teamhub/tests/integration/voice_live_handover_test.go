@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func insertRuntimeLiveSession(t *testing.T, env runtimeStateTestEnv) {

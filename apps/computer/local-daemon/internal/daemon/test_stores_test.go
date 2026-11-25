@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/assignment"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 )
 
 // shortenForTest lowers a package duration for one test and restores it in

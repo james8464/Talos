@@ -5,12 +5,12 @@ set -euo pipefail
 # The packaging scripts make the macOS DMG and the Windows installer on Linux
 # (Docker images for the disk image and NSIS, rcodesign for signatures), so
 # every target builds on a Linux x64 host. .github/workflows/desktop-release.yml
-# calls this to publish releases in simplexai-labs/linger;
+# calls this to publish releases in simplexai-labs/talos;
 # docs/desktop-release.md describes it.
 #
 #   desktop-release.sh version <tag>              print tag=, version= and prerelease= lines
 #   desktop-release.sh fetch-native <target>      put the pinned PostgreSQL and voice tools
-#                                                 archives in LINGER_NATIVE_POSTGRES_DIR
+#                                                 archives in TALOS_NATIVE_POSTGRES_DIR
 #   desktop-release.sh compile <target>           node build.mjs for the target (Node, pnpm, Go)
 #   desktop-release.sh package <target>           package.py for the target (Python, Docker)
 #   desktop-release.sh build <target>             fetch-native, compile and package
@@ -36,18 +36,18 @@ set -euo pipefail
 #                                if Developer ID or notary credentials are missing
 #   DESKTOP_REQUIRE_UPDATE_KEY   when `true`, fail `manifest` instead of warning if
 #                                DESKTOP_UPDATE_KEY is unset
-#   LINGER_NATIVE_POSTGRES_DIR   where build.mjs reads the bundled archives
-#                                (~/.cache/linger-desktop)
-#   LINGER_NATIVE_DEPS_URL       folder serving those archives by file name; in a GitLab
-#                                CI job it defaults to the project's linger-native-deps package
-#   LINGER_DIAGNOSTICS_UPLOAD_URL
+#   TALOS_NATIVE_POSTGRES_DIR   where build.mjs reads the bundled archives
+#                                (~/.cache/talos-desktop)
+#   TALOS_NATIVE_DEPS_URL       folder serving those archives by file name; in a GitLab
+#                                CI job it defaults to the project's talos-native-deps package
+#   TALOS_DIAGNOSTICS_UPLOAD_URL
 #                                hosted diagnostics receiver that build.mjs builds in (https);
 #                                without it Send Diagnostics is hidden
-#   RELEASE_OUT                  output root (.linger-runtime/desktop-release); release
+#   RELEASE_OUT                  output root (.talos-runtime/desktop-release); release
 #                                files go to $RELEASE_OUT/assets/
 #   DESKTOP_PACKAGING_IMAGE_PREFIX
 #                                optional container image prefix (such as
-#                                ghcr.io/simplexai-labs/linger/desktop); when
+#                                ghcr.io/simplexai-labs/talos/desktop); when
 #                                set, ensure_docker_image tries pulling
 #                                <prefix>-<tag>:<dockerfile-sha256> before
 #                                building locally
@@ -63,8 +63,8 @@ set -euo pipefail
 #                                the setup program (osslsigncode); unsigned without
 #   CI_API_V4_URL, CI_PROJECT_ID, CI_JOB_TOKEN
 #                                GitLab CI's own variables for gitlab-upload
-#   DESKTOP_PACKAGE_NAME         generic package of the dry-run files (linger-desktop-dry-run)
-#   RELEASE_REPO                 GitHub repository of the release (simplexai-labs/linger)
+#   DESKTOP_PACKAGE_NAME         generic package of the dry-run files (talos-desktop-dry-run)
+#   RELEASE_REPO                 GitHub repository of the release (simplexai-labs/talos)
 #   GITHUB_REPOSITORY, GITHUB_SHA, GH_TOKEN
 #                                the workflow's repository and commit, and the token gh
 #                                publishes with
@@ -73,8 +73,8 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 desktop="$repo_root/apps/desktop"
 version_pattern='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$'
 targets='darwin-arm64 linux-x64 win32-x64'
-package_name="${DESKTOP_PACKAGE_NAME:-linger-desktop-dry-run}"
-default_release_repo=simplexai-labs/linger
+package_name="${DESKTOP_PACKAGE_NAME:-talos-desktop-dry-run}"
+default_release_repo=simplexai-labs/talos
 
 die() {
   echo "desktop-release: $*" >&2
@@ -126,7 +126,7 @@ cmd_version() {
 }
 
 native_dir() {
-  echo "${LINGER_NATIVE_POSTGRES_DIR:-$HOME/.cache/linger-desktop}"
+  echo "${TALOS_NATIVE_POSTGRES_DIR:-$HOME/.cache/talos-desktop}"
 }
 
 # build.mjs bundles every PostgreSQL and voice tools archive that
@@ -136,9 +136,9 @@ cmd_fetch_native() {
   local target="${1:-}" dir base name sha bytes path part pins header=()
   check_target "$target"
   dir="$(native_dir)"
-  base="${LINGER_NATIVE_DEPS_URL:-}"
+  base="${TALOS_NATIVE_DEPS_URL:-}"
   if [[ -z "$base" && -n "${CI_API_V4_URL:-}" && -n "${CI_PROJECT_ID:-}" ]]; then
-    base="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/linger-native-deps/1"
+    base="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/talos-native-deps/1"
   fi
   if [[ -n "${CI_JOB_TOKEN:-}" && -n "${CI_API_V4_URL:-}" && "$base" == "$CI_API_V4_URL"/* ]]; then
     header=(--header "JOB-TOKEN: $CI_JOB_TOKEN")
@@ -157,15 +157,15 @@ cmd_fetch_native() {
       continue
     fi
     [[ -n "$base" ]] ||
-      die "$name is not in $dir; set LINGER_NATIVE_DEPS_URL to the folder that serves it (docs/desktop-release.md)"
+      die "$name is not in $dir; set TALOS_NATIVE_DEPS_URL to the folder that serves it (docs/desktop-release.md)"
     part="$path.part.$$"
     echo "desktop-release: downloading $name"
     # The folder's address stays out of the log, which a public repository shows to anyone.
     curl -fsSL --retry 3 "${header[@]}" -o "$part" "${base%/}/$name" 2>/dev/null ||
-      { rm -f "$part"; die "cannot download $name from LINGER_NATIVE_DEPS_URL (upload it there; see docs/desktop-release.md)"; }
+      { rm -f "$part"; die "cannot download $name from TALOS_NATIVE_DEPS_URL (upload it there; see docs/desktop-release.md)"; }
     if [[ "$(wc -c <"$part" | tr -d ' ')" != "$bytes" || "$(sha256_of "$part")" != "$sha" ]]; then
       rm -f "$part"
-      die "$name from LINGER_NATIVE_DEPS_URL does not match distribution/$target.json"
+      die "$name from TALOS_NATIVE_DEPS_URL does not match distribution/$target.json"
     fi
     mv "$part" "$path"
   done <<<"$pins"
@@ -195,7 +195,7 @@ set_package_version() {
 }
 
 out_dir() {
-  echo "${RELEASE_OUT:-$repo_root/.linger-runtime/desktop-release}"
+  echo "${RELEASE_OUT:-$repo_root/.talos-runtime/desktop-release}"
 }
 
 cmd_compile() {
@@ -212,9 +212,9 @@ cmd_compile() {
   (
     cd "$desktop"
     rm -rf dist
-    LINGER_NATIVE_POSTGRES_DIR="$(native_dir)" \
-      LINGER_SOURCE_ARCHIVE_FILE="$source" \
-      LINGER_DESKTOP_DAEMON_TARGETS="$target" \
+    TALOS_NATIVE_POSTGRES_DIR="$(native_dir)" \
+      TALOS_SOURCE_ARCHIVE_FILE="$source" \
+      TALOS_DESKTOP_DAEMON_TARGETS="$target" \
       node build.mjs
   )
 }
@@ -222,7 +222,7 @@ cmd_compile() {
 ensure_docker_image() {
   local tag="$1" dir="$2" sha current remote
   sha="$(sha256_of "$dir/Dockerfile")"
-  current="$(docker image inspect --format '{{index .Config.Labels "linger.dockerfile.sha256"}}' "$tag" 2>/dev/null || true)"
+  current="$(docker image inspect --format '{{index .Config.Labels "talos.dockerfile.sha256"}}' "$tag" 2>/dev/null || true)"
   if [[ "$current" == "$sha" ]]; then
     echo "desktop-release: reusing cached Docker image $tag"
     return 0
@@ -237,7 +237,7 @@ ensure_docker_image() {
     echo "desktop-release: prebuilt image $remote unavailable; building $tag locally" >&2
   fi
   echo "desktop-release: building Docker image $tag from $dir/Dockerfile"
-  docker build --label "linger.dockerfile.sha256=$sha" -t "$tag" "$dir"
+  docker build --label "talos.dockerfile.sha256=$sha" -t "$tag" "$dir"
 }
 
 package_darwin() {
@@ -256,34 +256,34 @@ package_darwin() {
   fi
   args+=(--update-archive)
   (cd "$desktop" && python3 packaging/mac/package.py "${args[@]}")
-  mv "$pkg/Linger-$version-arm64.dmg" "$assets/Linger-$version-macos-arm64.dmg"
+  mv "$pkg/Talos-$version-arm64.dmg" "$assets/Talos-$version-macos-arm64.dmg"
   # The installed app replaces itself with this archive (updater.ts).
-  mv "$pkg/Linger-$version-arm64.app.tar.gz" "$assets/Linger-$version-macos-arm64.app.tar.gz"
+  mv "$pkg/Talos-$version-arm64.app.tar.gz" "$assets/Talos-$version-macos-arm64.app.tar.gz"
 }
 
 package_linux() {
   local version="$1" pkg="$2" assets="$3"
   (cd "$desktop" && python3 packaging/linux/package.py --out "$pkg")
-  mv "$pkg/Linger-$version-linux-x64.tar.gz" "$assets/"
+  mv "$pkg/Talos-$version-linux-x64.tar.gz" "$assets/"
 }
 
 package_windows() {
   local version="$1" pkg="$2" assets="$3" setup
   ensure_docker_image wintool "$desktop/packaging/win"
   (cd "$desktop" && python3 packaging/win/package.py --out "$pkg")
-  setup="$pkg/Linger-$version-x64-setup.exe"
+  setup="$pkg/Talos-$version-x64-setup.exe"
   if [[ -n "${WINDOWS_SIGNING_P12:-}" ]]; then
     command -v osslsigncode >/dev/null || die "WINDOWS_SIGNING_P12 is set but osslsigncode is not installed"
     osslsigncode sign -pkcs12 "$WINDOWS_SIGNING_P12" \
       -readpass "${WINDOWS_SIGNING_PASSWORD_FILE:?WINDOWS_SIGNING_PASSWORD_FILE is required with WINDOWS_SIGNING_P12}" \
-      -n Linger -h sha256 -ts http://timestamp.digicert.com \
+      -n Talos -h sha256 -ts http://timestamp.digicert.com \
       -in "$setup" -out "$setup.signed"
     mv "$setup.signed" "$setup"
   else
     echo "desktop-release: no Authenticode certificate; the setup program is unsigned" >&2
   fi
-  mv "$setup" "$assets/Linger-$version-windows-x64-setup.exe"
-  mv "$pkg/Linger-$version-x64.zip" "$assets/Linger-$version-windows-x64-portable.zip"
+  mv "$setup" "$assets/Talos-$version-windows-x64-setup.exe"
+  mv "$pkg/Talos-$version-x64.zip" "$assets/Talos-$version-windows-x64-portable.zip"
 }
 
 cmd_package() {
@@ -339,8 +339,8 @@ cmd_manifest() {
   for entry in $update_packages; do
     target="${entry%%:*}"
     suffix="${entry#*:}"
-    [[ -f "$dir/Linger-$version-$suffix" ]] || die "$dir has no Linger-$version-$suffix"
-    packages+=("$target" "Linger-$version-$suffix")
+    [[ -f "$dir/Talos-$version-$suffix" ]] || die "$dir has no Talos-$version-$suffix"
+    packages+=("$target" "Talos-$version-$suffix")
   done
   # The key file is read only here; the built-in public key decides whether
   # installed apps would accept the signature.
@@ -395,11 +395,11 @@ cmd_checksums() {
   [[ -d "$dir" ]] || die "checksums needs the folder holding the release files"
   [[ "$version" =~ $version_pattern ]] || die "checksums needs the release version"
   for required in $required_installers; do
-    [[ -f "$dir/Linger-$version-$required" ]] || die "$dir has no Linger-$version-$required"
+    [[ -f "$dir/Talos-$version-$required" ]] || die "$dir has no Talos-$version-$required"
   done
   while IFS= read -r file; do
     files+=("$(basename "$file")")
-  done < <(find "$dir" -maxdepth 1 -type f \( -name "Linger-$version-*" -o -name manifest.json -o -name manifest.json.sig \) | LC_ALL=C sort)
+  done < <(find "$dir" -maxdepth 1 -type f \( -name "Talos-$version-*" -o -name manifest.json -o -name manifest.json.sig \) | LC_ALL=C sort)
   : >"$dir/SHA256SUMS.txt.part"
   for file in "${files[@]}"; do
     printf '%s  %s\n' "$(sha256_of "$dir/$file")" "$file" >>"$dir/SHA256SUMS.txt.part"
@@ -434,9 +434,9 @@ cmd_gitlab_upload() {
   done
 }
 
-# RELEASE_REPO defaults to the public simplexai-labs/linger. In that
+# RELEASE_REPO defaults to the public simplexai-labs/talos. In that
 # repository the workflow's own GITHUB_TOKEN publishes; from any other one,
-# GH_TOKEN must be LINGER_RELEASE_TOKEN with contents write
+# GH_TOKEN must be TALOS_RELEASE_TOKEN with contents write
 # access there. A tag must point at a commit of the repository holding it, so
 # only a release in the workflow's own repository is tied to GITHUB_SHA; in
 # another one gh creates the tag at that repository's default branch.
@@ -451,12 +451,12 @@ cmd_github_release() {
     if [[ "$repo" == "${GITHUB_REPOSITORY:-}" ]]; then
       die "GH_TOKEN is not set; the workflow passes GITHUB_TOKEN"
     fi
-    die "publishing to $repo from ${GITHUB_REPOSITORY:-this repository} needs the LINGER_RELEASE_TOKEN secret: a token with contents write access to $repo (docs/desktop-release.md)"
+    die "publishing to $repo from ${GITHUB_REPOSITORY:-this repository} needs the TALOS_RELEASE_TOKEN secret: a token with contents write access to $repo (docs/desktop-release.md)"
   fi
   command -v gh >/dev/null || die "github-release needs the GitHub CLI (gh)"
-  notes="Linger desktop $version. Check downloads against SHA256SUMS.txt."
+  notes="Talos desktop $version. Check downloads against SHA256SUMS.txt."
   if [[ "$repo" == "${GITHUB_REPOSITORY:-}" && -n "${GITHUB_SHA:-}" ]]; then
-    notes="Linger desktop $version, built from $GITHUB_SHA. Check downloads against SHA256SUMS.txt."
+    notes="Talos desktop $version, built from $GITHUB_SHA. Check downloads against SHA256SUMS.txt."
     flags+=(--target "$GITHUB_SHA")
   fi
   if [[ "$version" == *-* ]]; then
@@ -471,7 +471,7 @@ cmd_github_release() {
     gh release upload "$tag" "$dir"/* --repo "$repo" --clobber
     echo "desktop-release: updated the $tag release of $repo"
   else
-    gh release create "$tag" "$dir"/* --repo "$repo" --title "Linger Desktop $version" --notes "$notes" "${flags[@]}"
+    gh release create "$tag" "$dir"/* --repo "$repo" --title "Talos Desktop $version" --notes "$notes" "${flags[@]}"
     if [[ "$version" == *-* ]]; then
       echo "desktop-release: created the $tag prerelease of $repo"
     else
@@ -512,7 +512,7 @@ cmd_publish() {
   assets="$(gh release view "$tag" --repo "$repo" --json assets --jq '.assets[].name')" ||
     die "could not read release $tag in $repo"
   for required in $required_installers; do
-    grep -qxF "Linger-$version-$required" <<<"$assets" || missing+=("Linger-$version-$required")
+    grep -qxF "Talos-$version-$required" <<<"$assets" || missing+=("Talos-$version-$required")
   done
   grep -qxF "SHA256SUMS.txt" <<<"$assets" || missing+=("SHA256SUMS.txt")
   if [[ ${#missing[@]} -gt 0 ]]; then

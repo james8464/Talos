@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 const (
@@ -409,7 +409,7 @@ func (t *antigravityTurn) handle(frame acpFrame) {
 		go t.permission(frame)
 	default:
 		if len(frame.ID) > 0 {
-			_ = t.proc.conn.respondError(frame.ID, -32601, "method not supported by Linger")
+			_ = t.proc.conn.respondError(frame.ID, -32601, "method not supported by Talos")
 		}
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func TestClaudeExecutorStreamMatchesFinalResultAfterProgress(t *testing.T) {
@@ -20,7 +20,7 @@ func TestClaudeExecutorStreamMatchesFinalResultAfterProgress(t *testing.T) {
 	executable := filepath.Join(dir, "claude")
 	script := `#!/bin/sh
 IFS= read -r initialization
-echo '{"type":"control_response","response":{"subtype":"success","request_id":"linger-session-restore"}}'
+echo '{"type":"control_response","response":{"subtype":"success","request_id":"talos-session-restore"}}'
 IFS= read -r input
 cat <<'JSON'
 {"type":"assistant","message":{"id":"progress","role":"assistant","content":[{"type":"text","text":"Let me check."}]}}

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { TeamHubFileBackend } from "./files/teamhub-working-copies.js";
-import type { components as TeamHubPublic } from "@linger/wire-contracts/teamhub-public/types";
+import type { components as TeamHubPublic } from "@talos/wire-contracts/teamhub-public/types";
 import { CliError } from "./errors.js";
 import {
   readBounded,

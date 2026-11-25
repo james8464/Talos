@@ -3,12 +3,12 @@ import type {
   TeamHubMessageSkillReference,
 } from "@/features/teamhub/teamhub-message-content";
 import type { TeamHubActorRef } from "@/features/teamhub/teamhub-types";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
-const roomComposerDraftPrefix = "linger.room-composer-draft:";
-const composerDraftFormat = "linger-composer-draft-v3";
-const roomComposerHistoryPrefix = "linger.room-composer-history:";
-const composerHistoryFormat = "linger-composer-history-v1";
+const roomComposerDraftPrefix = "talos.room-composer-draft:";
+const composerDraftFormat = "talos-composer-draft-v3";
+const roomComposerHistoryPrefix = "talos.room-composer-history:";
+const composerHistoryFormat = "talos-composer-history-v1";
 const composerHistoryLimit = 50;
 // Pasted logs and documents stay out of history, so a scope holds at most
 // about 100K characters and history cannot crowd drafts out of storage.

@@ -15,10 +15,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
-	nodeapi "github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
+	nodeapi "github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // fakeFeishu is the owner's Computer as Feishu Mail reaches it: the

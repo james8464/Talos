@@ -419,7 +419,7 @@ describe("Chat connection authorization", () => {
     ).toHaveLength(1);
     expect(open).toHaveBeenCalledWith(
       "https://connect.example.test/feishu",
-      "linger_composio_oauth",
+      "talos_composio_oauth",
       expect.any(String),
     );
   });
@@ -459,7 +459,7 @@ describe("Chat connection authorization", () => {
     await waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
         "https://connect.example.test/notion",
-        "linger_composio_oauth",
+        "talos_composio_oauth",
         expect.any(String),
       ),
     );
@@ -485,7 +485,7 @@ describe("Chat connection authorization", () => {
     await waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
         "https://connect.example.test/resume",
-        "linger_composio_oauth",
+        "talos_composio_oauth",
         expect.any(String),
       ),
     );
@@ -602,7 +602,7 @@ describe("Chat connection authorization", () => {
     await waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
         "https://connect.example.test/open",
-        "linger_composio_oauth",
+        "talos_composio_oauth",
         expect.any(String),
       ),
     );
@@ -738,7 +738,7 @@ describe("Chat connection authorization", () => {
     await waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
         "https://connect.example.test/notion",
-        "linger_composio_oauth",
+        "talos_composio_oauth",
         expect.stringContaining("width=560,height=720"),
       ),
     );
@@ -764,7 +764,7 @@ describe("Chat connection authorization", () => {
     );
     expect(window.open).toHaveBeenCalledWith(
       "https://connect.example.test/resume",
-      "linger_composio_oauth",
+      "talos_composio_oauth",
       expect.stringContaining("width=560,height=720"),
     );
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));

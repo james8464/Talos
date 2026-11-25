@@ -116,12 +116,12 @@ export function windowsDevelopmentPlan(
     },
     nodeServices: {
       command: node,
-      args: wrap("pnpm", "--filter", "@linger/node-services", "start"),
+      args: wrap("pnpm", "--filter", "@talos/node-services", "start"),
       cwd: root,
     },
     web: {
       command: node,
-      args: wrap("pnpm", "--filter", "@linger/web", "dev"),
+      args: wrap("pnpm", "--filter", "@talos/web", "dev"),
       cwd: root,
     },
     livekit: {
@@ -147,7 +147,7 @@ export function computerReleaseNote(
     : [
         `No Computer release in ${directory}. Connect computer will return 503.`,
         "Run `pnpm computer:release:windows` to build a release in",
-        ".linger-runtime/computer-release. Make it available in the configured",
+        ".talos-runtime/computer-release. Make it available in the configured",
         "directory, then restart `pnpm dev:windows`.",
       ].join("\n");
 }
@@ -160,7 +160,7 @@ export function signInGuidance(
   root: string,
   baseUrl: string = "http://localhost:3000",
 ): string {
-  const credentials = path.join(".linger-runtime", "local-owner.json");
+  const credentials = path.join(".talos-runtime", "local-owner.json");
   let email: string | undefined;
   try {
     const parsed = JSON.parse(

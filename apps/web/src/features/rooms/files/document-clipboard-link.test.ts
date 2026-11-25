@@ -11,7 +11,7 @@ describe("Document clipboard links", () => {
         {
           getData: (type) =>
             type === "text/html"
-              ? `<a href="${url}" data-linger-document-id="document-1" data-linger-tenant-id="tenant-1">Launch plan</a>`
+              ? `<a href="${url}" data-talos-document-id="document-1" data-talos-tenant-id="tenant-1">Launch plan</a>`
               : url,
         },
         window.location.origin,
@@ -31,7 +31,7 @@ describe("Document clipboard links", () => {
         {
           getData: (type) =>
             type === "text/html"
-              ? `<a href="${url}" data-linger-document-id="document-other" data-linger-tenant-id="tenant-1">Wrong</a>`
+              ? `<a href="${url}" data-talos-document-id="document-other" data-talos-tenant-id="tenant-1">Wrong</a>`
               : url,
         },
         window.location.origin,

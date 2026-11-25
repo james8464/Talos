@@ -160,31 +160,31 @@ class ComputerToolsTest(unittest.TestCase):
     def test_finished_archives_must_hold_the_tools(self):
         resources, _ = self.resources("linux-x64")
         app = os.path.dirname(resources)
-        archive = os.path.join(self.root, "Linger.tar.gz")
+        archive = os.path.join(self.root, "Talos.tar.gz")
         with tarfile.open(archive, "w:gz") as out:
-            out.add(app, arcname="Linger")
-        self.assertEqual(computer_tools.verify_archive(archive, "Linger/resources/", "linux-x64"),
+            out.add(app, arcname="Talos")
+        self.assertEqual(computer_tools.verify_archive(archive, "Talos/resources/", "linux-x64"),
                          3 + len(FROZEN["quickjs"]))
 
         resources, _ = self.resources("win32-x64")
-        archive = os.path.join(self.root, "Linger.zip")
+        archive = os.path.join(self.root, "Talos.zip")
         with zipfile.ZipFile(archive, "w") as out:
             for root, _, files in os.walk(resources):
                 for name in files:
                     path = os.path.join(root, name)
-                    out.write(path, "Linger/resources/" + os.path.relpath(path, resources))
-        self.assertEqual(computer_tools.verify_archive(archive, "Linger/resources/", "win32-x64"),
+                    out.write(path, "Talos/resources/" + os.path.relpath(path, resources))
+        self.assertEqual(computer_tools.verify_archive(archive, "Talos/resources/", "win32-x64"),
                          4 + len(FROZEN["quickjs"]))
 
         bare = os.path.join(self.root, "bare.tar.gz")
         with tarfile.open(bare, "w:gz") as out:
-            info = tarfile.TarInfo("Linger/resources/computer/linger-computer-daemon")
+            info = tarfile.TarInfo("Talos/resources/computer/talos-computer-daemon")
             info.size = 4
             out.addfile(info, io.BytesIO(b"bin\n"))
-        with self.assertRaisesRegex(computer_tools.Invalid, "has no Linger/resources/cli"):
-            computer_tools.verify_archive(bare, "Linger/resources/", "linux-x64")
+        with self.assertRaisesRegex(computer_tools.Invalid, "has no Talos/resources/cli"):
+            computer_tools.verify_archive(bare, "Talos/resources/", "linux-x64")
         with self.assertRaises(SystemExit):
-            computer_tools.check_archive(bare, "Linger/resources/", "linux-x64")
+            computer_tools.check_archive(bare, "Talos/resources/", "linux-x64")
 
 
 class MacSigningTest(unittest.TestCase):
@@ -195,7 +195,7 @@ class MacSigningTest(unittest.TestCase):
 
     def test_tools_node_gets_the_node_entitlements(self):
         self.assertTrue(self.mac.bundled_node("Contents/Resources/runtime/bin/node"))
-        self.assertFalse(self.mac.bundled_node("Contents/Resources/computer/linger-computer-daemon"))
+        self.assertFalse(self.mac.bundled_node("Contents/Resources/computer/talos-computer-daemon"))
 
     def test_cua_app_keeps_its_vendor_signature(self):
         app = tempfile.mkdtemp()
@@ -229,9 +229,9 @@ class MacSigningTest(unittest.TestCase):
         # silent microphone and never asks; the prompt shows our text.
         app = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, app)
-        main = os.path.join(app, "Contents", "MacOS", "Linger")
-        helper = os.path.join(app, "Contents", "Frameworks", "Linger Helper (Renderer).app",
-                              "Contents", "MacOS", "Linger Helper (Renderer)")
+        main = os.path.join(app, "Contents", "MacOS", "Talos")
+        helper = os.path.join(app, "Contents", "Frameworks", "Talos Helper (Renderer).app",
+                              "Contents", "MacOS", "Talos Helper (Renderer)")
         for path in (main, helper):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as out:
@@ -240,13 +240,13 @@ class MacSigningTest(unittest.TestCase):
         given = {args[i + 1] for i, arg in enumerate(args) if arg == "--entitlements-xml-file"}
         entitlements = os.path.join(HERE, "mac", "entitlements.plist")
         self.assertEqual(given, {
-            f"Contents/MacOS/Linger:{entitlements}",
-            f"Contents/Frameworks/Linger Helper (Renderer).app/Contents/MacOS/Linger Helper (Renderer):{entitlements}",
+            f"Contents/MacOS/Talos:{entitlements}",
+            f"Contents/Frameworks/Talos Helper (Renderer).app/Contents/MacOS/Talos Helper (Renderer):{entitlements}",
         })
         with open(entitlements, "rb") as source:
             self.assertIs(plistlib.load(source).get("com.apple.security.device.audio-input"), True)
         usage = self.mac.PRIVACY_USAGE["NSMicrophoneUsageDescription"]
-        self.assertIn("Linger", usage)
+        self.assertIn("Talos", usage)
         self.assertNotEqual(usage, "This app needs access to the microphone")
 
     @staticmethod
@@ -327,7 +327,7 @@ class MacSigningTest(unittest.TestCase):
         root = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, root)
         stage = os.path.join(root, "stage")
-        app = os.path.join(stage, "Linger.app")
+        app = os.path.join(stage, "Talos.app")
         out_dir = os.path.join(root, "out")
         os.makedirs(os.path.join(app, "Contents"))
         os.makedirs(out_dir)
@@ -379,12 +379,12 @@ class MacSigningTest(unittest.TestCase):
             self.mac.computer_tools.check_archive = orig_check_archive
 
         self.assertEqual(events, [
-            ("build_dmg", "Linger-1.2.3-arm64.dmg"),
-            ("sign_dmg", "Linger-1.2.3-arm64.dmg"),
-            ("notarize", "Linger-1.2.3-arm64.dmg"),
-            ("staple", "Linger.app"),
-            ("update_archive", "Linger-1.2.3-arm64.app.tar.gz"),
-            ("check_archive", "Linger-1.2.3-arm64.app.tar.gz", "darwin-arm64"),
+            ("build_dmg", "Talos-1.2.3-arm64.dmg"),
+            ("sign_dmg", "Talos-1.2.3-arm64.dmg"),
+            ("notarize", "Talos-1.2.3-arm64.dmg"),
+            ("staple", "Talos.app"),
+            ("update_archive", "Talos-1.2.3-arm64.app.tar.gz"),
+            ("check_archive", "Talos-1.2.3-arm64.app.tar.gz", "darwin-arm64"),
         ])
 
     def test_signing_staple_retries_transient_lookup_errors(self):
@@ -399,18 +399,18 @@ class MacSigningTest(unittest.TestCase):
         try:
             self.mac.run = fake_run
             # Without a notary key, staple is a no-op.
-            self.mac.Signing("rcodesign").staple("/tmp/Linger.app", attempts=3, delay_seconds=0)
+            self.mac.Signing("rcodesign").staple("/tmp/Talos.app", attempts=3, delay_seconds=0)
             self.assertEqual(calls, [])
             # With a notary key, transient CloudKit ticket lookup errors retry.
             signing = self.mac.Signing("rcodesign", "id.p12", "id.password", "notary.json")
-            signing.staple("/tmp/Linger.app", attempts=3, delay_seconds=0)
+            signing.staple("/tmp/Talos.app", attempts=3, delay_seconds=0)
         finally:
             self.mac.run = orig_run
 
         self.assertEqual(calls, [
-            ("rcodesign", "staple", "/tmp/Linger.app"),
-            ("rcodesign", "staple", "/tmp/Linger.app"),
-            ("rcodesign", "staple", "/tmp/Linger.app"),
+            ("rcodesign", "staple", "/tmp/Talos.app"),
+            ("rcodesign", "staple", "/tmp/Talos.app"),
+            ("rcodesign", "staple", "/tmp/Talos.app"),
         ])
 
     def test_native_bundle_refresh_rehashes_signed_macho_and_keeps_untouched_files(self):
@@ -471,24 +471,24 @@ class ArchiveHelperTest(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.root)
 
     def test_tar_gz_preserves_symlinks_and_applies_root_owner_option(self):
-        bundle = os.path.join(self.root, "Linger")
+        bundle = os.path.join(self.root, "Talos")
         os.makedirs(bundle)
         file_path = os.path.join(bundle, "hello.txt")
         with open(file_path, "wb") as out:
-            out.write(b"linger\n")
+            out.write(b"talos\n")
         os.symlink("hello.txt", os.path.join(bundle, "link.txt"))
 
         owned = os.path.join(self.root, "owned.tar.gz")
-        archive.tar_gz(self.root, "Linger", owned, root_owner=True)
+        archive.tar_gz(self.root, "Talos", owned, root_owner=True)
         with tarfile.open(owned, "r:gz") as tf:
             members = {m.name: m for m in tf.getmembers()}
-            self.assertEqual(members["Linger/hello.txt"].uid, 0)
-            self.assertEqual(members["Linger/hello.txt"].gid, 0)
-            self.assertTrue(members["Linger/link.txt"].issym())
-            self.assertEqual(members["Linger/link.txt"].linkname, "hello.txt")
+            self.assertEqual(members["Talos/hello.txt"].uid, 0)
+            self.assertEqual(members["Talos/hello.txt"].gid, 0)
+            self.assertTrue(members["Talos/link.txt"].issym())
+            self.assertEqual(members["Talos/link.txt"].linkname, "hello.txt")
 
         plain = os.path.join(self.root, "plain.tar.gz")
-        archive.tar_gz(self.root, "Linger", plain)
+        archive.tar_gz(self.root, "Talos", plain)
         self.assertEqual(archive.sha256(plain), sha256(plain))
 
 

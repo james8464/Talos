@@ -29,7 +29,7 @@ afterEach(async () => {
 });
 const identityKey = Buffer.alloc(32, 9);
 async function fixture({ identity = true } = {}) {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-account-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-account-"));
   roots.push(root);
   const instance = { root, origin: "http://localhost:3000" } as Instance;
   if (identity)
@@ -84,7 +84,7 @@ it("creates the owner through stdin, confirms login and logs out before reusing 
     created = true;
   });
   const result = await ensureLocalAccount(f.instance, f.signal, owner);
-  expect(result.email).toBe("owner@linger.local");
+  expect(result.email).toBe("owner@talos.local");
   expect(result.file).toBe(f.file);
   const saved = JSON.parse(await readFile(f.file, "utf8"));
   expect(saved.password.length).toBeGreaterThanOrEqual(24);
@@ -116,7 +116,7 @@ it("recovers owner creation interrupted after commit using the saved password wi
   await writeFile(
     f.file,
     JSON.stringify({
-      email: "owner@linger.local",
+      email: "owner@talos.local",
       password,
       provisioned: false,
     }),
@@ -296,7 +296,7 @@ it("reads the server identity from the private instance files", async () => {
   const f = await fixture({ identity: false });
   const key = Buffer.alloc(32, 7);
   await expect(readLocalIdentity(f.instance)).rejects.toThrow(
-    "Linger on this computer has no server identity yet.",
+    "Talos on this computer has no server identity yet.",
   );
   await writeFile(
     path.join(f.instance.root, "instance.json"),
@@ -322,7 +322,7 @@ it("recreates a missing owner when the private file is already marked provisione
   const saved =
     JSON.stringify(
       {
-        email: "owner@linger.local",
+        email: "owner@talos.local",
         password: "saved-private-password",
         provisioned: true,
       },
@@ -341,14 +341,14 @@ it("recreates a missing owner when the private file is already marked provisione
     ),
   );
   provisionOwner.mockImplementation(async (email, password) => {
-    expect(email).toBe("owner@linger.local");
+    expect(email).toBe("owner@talos.local");
     expect(password).toBe("saved-private-password");
     created = true;
   });
   const result = await ensureLocalAccount(f.instance, f.signal, owner);
   expect(created).toBe(true);
   expect(provisionOwner).toHaveBeenCalledOnce();
-  expect(result.email).toBe("owner@linger.local");
+  expect(result.email).toBe("owner@talos.local");
   expect(await readFile(f.file, "utf8")).toBe(saved);
   expect(
     vi
@@ -366,7 +366,7 @@ it("recreates a missing owner when the private file is already marked provisione
 it("keeps an existing provisioned owner ready after the user changes their password", async () => {
   const f = await fixture();
   const saved = JSON.stringify({
-    email: "owner@linger.local",
+    email: "owner@talos.local",
     password: "saved-private-password",
     provisioned: true,
   });
@@ -378,7 +378,7 @@ it("keeps an existing provisioned owner ready after the user changes their passw
   await expect(
     ensureLocalAccount(f.instance, f.signal, owner),
   ).resolves.toEqual({
-    email: "owner@linger.local",
+    email: "owner@talos.local",
     password: "saved-private-password",
     file: f.file,
   });
@@ -389,7 +389,7 @@ it("keeps an existing provisioned owner ready after the user changes their passw
 it("does not provision an already marked account when its login service fails", async () => {
   const f = await fixture();
   const saved = JSON.stringify({
-    email: "owner@linger.local",
+    email: "owner@talos.local",
     password: "saved-private-password",
     provisioned: true,
   });
@@ -406,7 +406,7 @@ it("does not provision an already marked account when its login service fails", 
 it("preserves a provisioned account and hides details on a network failure", async () => {
   const f = await fixture();
   const saved = JSON.stringify({
-    email: "owner@linger.local",
+    email: "owner@talos.local",
     password: "saved-private-password",
     provisioned: true,
   });
@@ -417,7 +417,7 @@ it("preserves a provisioned account and hides details on a network failure", asy
     }),
   );
   await expect(ensureLocalAccount(f.instance, f.signal, owner)).rejects.toThrow(
-    "The local account service is unavailable. Reopen Linger to retry; account credentials are preserved.",
+    "The local account service is unavailable. Reopen Talos to retry; account credentials are preserved.",
   );
   expect(provisionOwner).not.toHaveBeenCalled();
   expect(await readFile(f.file, "utf8")).toBe(saved);
@@ -426,7 +426,7 @@ it("preserves a provisioned account and hides details on a network failure", asy
 it("does not trust a provisioned marker when owner confirmation and login both fail", async () => {
   const f = await fixture();
   const saved = JSON.stringify({
-    email: "owner@linger.local",
+    email: "owner@talos.local",
     password: "saved-private-password",
     provisioned: true,
   });
@@ -445,7 +445,7 @@ it.each([429, 503])(
   async (status) => {
     const f = await fixture();
     const saved = JSON.stringify({
-      email: "owner@linger.local",
+      email: "owner@talos.local",
       password: "saved-private-password",
       provisioned: true,
     });
@@ -470,7 +470,7 @@ it("does not report an existing provisioned owner ready after cancellation", asy
   const f = await fixture();
   const controller = new AbortController();
   const saved = JSON.stringify({
-    email: "owner@linger.local",
+    email: "owner@talos.local",
     password: "saved-private-password",
     provisioned: true,
   });
@@ -500,7 +500,7 @@ it("sends no password to another program answering at the origin", async () => {
     await expect(
       ensureLocalAccount(f.instance, f.signal, owner),
     ).rejects.toThrow(
-      "Another program is answering at http://localhost:3000, so Linger cannot use port 3000.",
+      "Another program is answering at http://localhost:3000, so Talos cannot use port 3000.",
     );
   }
   expect(requests).toEqual(["/v0/local/identity", "/v0/local/identity"]);

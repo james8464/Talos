@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	documentservice "github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	documentservice "github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 func TestRoomDocumentAssetCommandsRejectArchivingDocument(t *testing.T) {
@@ -200,7 +200,7 @@ func waitForAssetUploadLease(t *testing.T, env *testEnv, assetID string) {
 }
 
 func roomDocumentAssetObjectPath(env *testEnv, assetID string) string {
-	digest := sha256.Sum256([]byte("linger/room-document/asset-object/" + assetID))
+	digest := sha256.Sum256([]byte("talos/room-document/asset-object/" + assetID))
 	return filepath.Join(env.artifactRoot, "object_"+hex.EncodeToString(digest[:16]))
 }
 

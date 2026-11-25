@@ -60,8 +60,8 @@ check_identity() {
     compose_kind=default
   fi
   project_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.docker.compose.project\" }}" "$resource_name") || return 1
-  managed_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.linger.teamhub.test-managed\" }}" "$resource_name") || return 1
-  token_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.linger.teamhub.test-run-token\" }}" "$resource_name") || return 1
+  managed_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.talos.teamhub.test-managed\" }}" "$resource_name") || return 1
+  token_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"com.talos.teamhub.test-run-token\" }}" "$resource_name") || return 1
   kind_label=$(docker "$resource_kind" inspect --format "{{ index $label_root \"$service_label\" }}" "$resource_name") || return 1
   if [[ $project_label != "$project_name" || $managed_label != true || $token_label != "$run_token" || $kind_label != "$compose_kind" ]]; then
     printf 'FAIL: %s %s is not the shared test database (project=%s managed=%s run_token=%s)\n' \

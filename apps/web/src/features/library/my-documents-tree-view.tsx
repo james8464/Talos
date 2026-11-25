@@ -122,8 +122,8 @@ function useOwnedCollectionCollapsed(
   holdsActiveDocument: boolean,
 ) {
   const collectionCollapsedKey = collapseCollectionInitially
-    ? `linger:library-owned-collapsed:v2:${tenantId}`
-    : `linger:library-owned-collapsed:${tenantId}`;
+    ? `talos:library-owned-collapsed:v2:${tenantId}`
+    : `talos:library-owned-collapsed:${tenantId}`;
   const [collectionCollapsed, setCollectionCollapsed] = useState(() =>
     collapseCollectionInitially
       ? window.sessionStorage.getItem(collectionCollapsedKey) !== "false"

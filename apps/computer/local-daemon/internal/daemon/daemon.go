@@ -9,17 +9,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/assignment"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/clicredential"
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/localtools"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/mcpproxy"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/localtools"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
 )
 
 // SelfUpdater receives the Gateway signals that drive a Computer self-upgrade.
@@ -38,7 +38,7 @@ type Options struct {
 	Ledger              OperationLedgerStore
 	Registrations       registration.Store
 	Assignments         assignment.Store
-	ContextViews        *lingercontext.ViewStore
+	ContextViews        *taloscontext.ViewStore
 	LocalSkills         LocalSkillCatalog
 	LocalTools          LocalToolBinder
 	BrowserConnections  BrowserConnections
@@ -106,7 +106,7 @@ type Daemon struct {
 	ledger            OperationLedgerStore
 	registrations     registration.Store
 	assignments       assignment.Store
-	contextViews      *lingercontext.ViewStore
+	contextViews      *taloscontext.ViewStore
 	localSkills       LocalSkillCatalog
 	localTools        LocalToolBinder
 	// feishuMail runs TeamHub's Feishu Mail calls through the owner's lark-cli.

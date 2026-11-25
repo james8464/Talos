@@ -2,7 +2,7 @@ import { AiSparklesIcon, LinkSquare02Icon } from "@hugeicons/core-free-icons";
 import {
   INKLING_2_MINI_ANNOUNCEMENT_URL,
   INKLING_2_MINI_HF_URL,
-} from "@linger/service-kit/featured-models";
+} from "@talos/service-kit/featured-models";
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/ui/icon";

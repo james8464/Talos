@@ -8,7 +8,7 @@ import { expect, it } from "vitest";
 const run = promisify(execFile);
 
 it("keeps Pi's public MCP extension bound to private Operation proxies", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-pi-extension-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-pi-extension-"));
   try {
     const result = await run(
       process.execPath,
@@ -35,7 +35,7 @@ it("keeps Pi's public MCP extension bound to private Operation proxies", async (
       write({type:"http",url:"http://127.0.0.1:1234"});
       if(process.platform!=="win32"){chmodSync(file,0o644);assert.throws(()=>loadManagedMcpConfig(file),/private/);}
       assert.equal(process.env.NODE_PATH,"inherited");
-      assert.equal(process.env.LINGER_PI_INHERITED_NODE_PATH,undefined);
+      assert.equal(process.env.TALOS_PI_INHERITED_NODE_PATH,undefined);
       console.log("private immutable MCP configuration passed");
     `,
       ],
@@ -44,7 +44,7 @@ it("keeps Pi's public MCP extension bound to private Operation proxies", async (
         env: {
           ...process.env,
           NODE_PATH: path.join(root, "tools", "node_modules"),
-          LINGER_PI_INHERITED_NODE_PATH: "inherited",
+          TALOS_PI_INHERITED_NODE_PATH: "inherited",
         },
       },
     );
@@ -59,7 +59,7 @@ it("keeps Pi's public MCP extension bound to private Operation proxies", async (
 it.skipIf(process.platform === "win32")(
   "refuses a bash call the Daemon's shell-text-hook refuses",
   async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "linger-pi-shell-text-"));
+    const root = await mkdtemp(path.join(tmpdir(), "talos-pi-shell-text-"));
     try {
       const hook = path.join(root, "daemon");
       await writeFile(
@@ -147,9 +147,9 @@ it("asks the Daemon about Pi commands and MCP calls and blocks unless allowed", 
 });
 
 it("synchronizes managed MCP servers dynamically and reports structured verdicts", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-pi-sync-mcp-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-pi-sync-mcp-"));
   try {
-    const configPath = path.join(root, "linger-mcp.json");
+    const configPath = path.join(root, "talos-mcp.json");
     const entry = new URL("../tools/pi-mcp.mjs", import.meta.url).href;
     const mod = (await import(entry)) as {
       MCP_SYNC_COMMAND: string;

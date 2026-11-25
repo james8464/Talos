@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // localModelSourceRequestTimeout covers the Gateway's three-minute budget

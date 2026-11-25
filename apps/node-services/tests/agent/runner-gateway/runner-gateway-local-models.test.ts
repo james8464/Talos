@@ -4,8 +4,8 @@ import type {
   LocalModelsSnapshot,
   RuntimeDiagnostic,
   RuntimeDiagnostics,
-} from "@linger/wire-contracts/runner-gateway/types";
-import { parseDaemonToAgentEnvelope } from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/types";
+import { parseDaemonToAgentEnvelope } from "@talos/wire-contracts/runner-gateway/validator";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { modelCallPolicies, runPriorities } from "../../../src/model-tasks.js";
 

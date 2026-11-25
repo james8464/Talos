@@ -1,7 +1,7 @@
 import type {
   AgentToDaemonEnvelope,
   ComputerToolCall,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {

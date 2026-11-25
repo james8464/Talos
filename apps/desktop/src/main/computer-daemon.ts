@@ -13,7 +13,7 @@ import { finished } from "node:stream";
 import {
   localModelsConfig,
   localmodelsToolFromEnvironment,
-} from "@linger/local-installation/localmodels-computer";
+} from "@talos/local-installation/localmodels-computer";
 
 import type { RuntimeState } from "../shared/api.js";
 import type {
@@ -85,7 +85,7 @@ interface PermissionRequest {
 }
 
 // The daemon reads the Gateway credential from this variable (gateway.token_env).
-export const TOKEN_ENV = "LINGER_COMPUTER_TOKEN";
+export const TOKEN_ENV = "TALOS_COMPUTER_TOKEN";
 
 const BACKOFF_START_MS = 1_000;
 const BACKOFF_MAX_MS = 60_000;
@@ -118,9 +118,9 @@ export const connectionState = (gatewayState: string): string => {
 };
 
 const RUNTIME_PATHS = {
-  codex: "LINGER_CODEX_PATH",
-  claude: "LINGER_CLAUDE_PATH",
-  pi: "LINGER_PI_PATH",
+  codex: "TALOS_CODEX_PATH",
+  claude: "TALOS_CLAUDE_PATH",
+  pi: "TALOS_PI_PATH",
 } as const;
 
 // The daemon's environment: the app's, with the runtime the local server's
@@ -167,7 +167,7 @@ export const daemonConfig = (
   return {
     runner_id: credential.computerId,
     display_name:
-      config.displayName || options.defaultDisplayName || "Linger Desktop",
+      config.displayName || options.defaultDisplayName || "Talos Desktop",
     gateway: { url: credential.gatewayUrl, token_env: TOKEN_ENV },
     state_directory: platformPath.join(options.directory, "state"),
     ...(Object.keys(runtimePaths).length > 0

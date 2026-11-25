@@ -11,7 +11,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 var ErrInvalidTenant = errors.New("Tenant ID is required")

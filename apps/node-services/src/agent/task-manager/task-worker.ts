@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { asError, isRecord } from "@linger/service-kit";
+import { asError, isRecord } from "@talos/service-kit";
 
 import type { AgentManager } from "../executor/agent-manager-api.js";
 import {

@@ -147,7 +147,7 @@ The first visit reaches `/login?reason=session-expired` because no session
 cookie exists yet, and the login page labels that empty session "Your session
 has expired". Sign in with the owner account the launcher just created. A
 first run prints `Owner password: ... (shown once)`; afterwards the password
-lives in `.linger-runtime/local-owner.json`. A browser that still holds a
+lives in `.talos-runtime/local-owner.json`. A browser that still holds a
 session cookie from another checkout of this code on the same host signs out
 with `POST /v0/auth/logout`, or clears the site's cookies, before signing in
 again.
@@ -155,7 +155,7 @@ again.
 ### Connecting this computer
 
 After sign-in the app asks to connect the computer it runs on. That page gives
-`irm '<origin>/install/linger-computer.ps1' | iex`, and Node Services answers
+`irm '<origin>/install/talos-computer.ps1' | iex`, and Node Services answers
 it from a Computer release: `release.json`, the installer templates, and the
 archives under `files/`. A checkout ships none, so every `/install/` path
 answers 503 with `This Agent Service image ships no Computer release
@@ -165,7 +165,7 @@ answers 503 with `This Agent Service image ships no Computer release
 pnpm computer:release:windows
 ```
 
-That writes `.linger-runtime/computer-release` (ignored by Git, about 90 MB),
+That writes `.talos-runtime/computer-release` (ignored by Git, about 90 MB),
 builds the daemon and CLI for `win32-x64`, and renders both installers. Restart
 `pnpm dev:windows`; the launcher prints `Computer installers are served from
 ...` when it finds a release. The `irm` line then returns the script.
@@ -191,5 +191,5 @@ lines whole on every checkout and the bash installer it produces LF.
 | `initdb` fails with `invalid byte sequence ... 0xbc` on Windows | The PostgreSQL installation or data directory is not pure ASCII; move it; see Option E.                                                                               |
 | `pnpm dev` fails with `sh: not found` or `make: not found`      | Windows has neither; run `pnpm dev:windows`; see Option E.                                                                                                            |
 | `pnpm.ps1` cannot be loaded because running scripts is disabled | PowerShell resolves `pnpm.ps1` before the `.cmd` shim; call `pnpm.cmd dev:windows`, or allow scripts in this window with `Set-ExecutionPolicy -Scope Process Bypass`. |
-| First page says `Your session has expired`                      | No session cookie yet, or a stale one from another checkout on this host: sign in with `.linger-runtime/local-owner.json`, or `POST /v0/auth/logout` first.           |
-| `/install/linger-computer.ps1` says the image ships no release  | The checkout has no Computer release; run `pnpm computer:release:windows`, then restart `pnpm dev:windows`.                                                           |
+| First page says `Your session has expired`                      | No session cookie yet, or a stale one from another checkout on this host: sign in with `.talos-runtime/local-owner.json`, or `POST /v0/auth/logout` first.           |
+| `/install/talos-computer.ps1` says the image ships no release  | The checkout has no Computer release; run `pnpm computer:release:windows`, then restart `pnpm dev:windows`.                                                           |

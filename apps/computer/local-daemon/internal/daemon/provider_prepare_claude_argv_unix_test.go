@@ -12,12 +12,12 @@ import (
 	"strings"
 	"testing"
 
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // claudeArgvScript records each spawn's argv, one argument per line, then
@@ -27,7 +27,7 @@ const claudeArgvScript = `#!/bin/sh
 while IFS= read -r line; do
  case "$line" in
  *'"subtype":"initialize"'*)
-   rid=$(printf '%s' "$line" | "$LINGER_TEST_SED" 's/.*"request_id":"\([^"]*\)".*/\1/')
+   rid=$(printf '%s' "$line" | "$TALOS_TEST_SED" 's/.*"request_id":"\([^"]*\)".*/\1/')
    printf '{"type":"control_response","response":{"subtype":"success","request_id":"%s","response":{}}}\n' "$rid" ;;
  esac
 done
@@ -41,11 +41,11 @@ const claudePermissionScript = `#!/bin/sh
 while IFS= read -r line; do
  case "$line" in
  *'"subtype":"initialize"'*)
-   rid=$(printf '%s' "$line" | "$LINGER_TEST_SED" 's/.*"request_id":"\([^"]*\)".*/\1/')
+   rid=$(printf '%s' "$line" | "$TALOS_TEST_SED" 's/.*"request_id":"\([^"]*\)".*/\1/')
    printf '{"type":"control_response","response":{"subtype":"success","request_id":"%s","response":{}}}\n' "$rid" ;;
  *'"type":"user"'*)
    printf '{"type":"control_request","request_id":"req-unlisted","request":{"subtype":"can_use_tool","tool_name":"mcp__x__unlisted","input":{},"tool_use_id":"tool-unlisted"}}\n'
-   printf '{"type":"control_request","request_id":"req-listed","request":{"subtype":"can_use_tool","tool_name":"mcp__linger_teamhub_collaboration__send_message","input":{},"tool_use_id":"tool-listed"}}\n' ;;
+   printf '{"type":"control_request","request_id":"req-listed","request":{"subtype":"can_use_tool","tool_name":"mcp__talos_teamhub_collaboration__send_message","input":{},"tool_use_id":"tool-listed"}}\n' ;;
  *'"request_id":"req-'*)
    printf '%s\n' "$line" >> "$DECISION_LOG" ;;
  esac
@@ -56,7 +56,7 @@ done
 // with a fake Claude CLI that records its argv.
 type claudeRig struct {
 	daemon   *Daemon
-	resolver lingercontext.ExecutionResolver
+	resolver taloscontext.ExecutionResolver
 	stream   *fakeStream
 	argvLog  string
 	root     string
@@ -75,7 +75,7 @@ func newClaudeRig(t *testing.T, script string) claudeRig {
 		t.Fatal(err)
 	}
 	environment := map[string]string{
-		"HOME": root, "PATH": "/usr/bin:/bin", "ARGV_LOG": argvLog, "LINGER_TEST_SED": sed,
+		"HOME": root, "PATH": "/usr/bin:/bin", "ARGV_LOG": argvLog, "TALOS_TEST_SED": sed,
 		"DECISION_LOG": filepath.Join(root, "decisions"),
 	}
 	// A bundled TeamHub CLI manifest makes the review allow rules non-empty, so
@@ -88,16 +88,16 @@ func newClaudeRig(t *testing.T, script string) claudeRig {
 	if err := os.WriteFile(filepath.Join(cliDirectory, permission.TeamHubCommandManifestFile), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	resolver := lingercontext.ExecutionResolver{
+	resolver := taloscontext.ExecutionResolver{
 		TeamHubCLIBin: cliDirectory,
-		Providers: map[string]lingercontext.ProviderInstallation{
+		Providers: map[string]taloscontext.ProviderInstallation{
 			"claude": {Type: "claude", ExecutablePath: executable, Environment: environment},
 		},
-		WorkspaceGrants: map[string]lingercontext.WorkspaceGrant{
+		WorkspaceGrants: map[string]taloscontext.WorkspaceGrant{
 			"grant-1": {GrantID: "grant-1", TenantID: "tenant-1", Path: root},
 		},
 		Views: claudeArgvViews{root: root},
-		Registrations: map[string]lingercontext.RegistrationBinding{
+		Registrations: map[string]taloscontext.RegistrationBinding{
 			"registration-1": {RegistrationID: "registration-1", TenantID: "tenant-1", OwnerActorID: "owner-1", ProviderType: "claude", Status: registration.StatusOnline},
 		},
 	}
@@ -129,7 +129,7 @@ const claudeTestSession = "12345678-1234-4234-8234-123456789012"
 // tools the start path binds. The returned cancel stops the Claude process.
 func (rig claudeRig) startReviewedRun(t *testing.T, permissionReview bool) (*provider.Execution, context.CancelFunc) {
 	t.Helper()
-	relays := json.RawMessage(`[{"name":"linger_teamhub_collaboration","relay_url":"http://127.0.0.1:1","relay_token":"relay-secret","tool_names":["send_message"],"expires_at":"2100-01-01T00:00:00Z"}]`)
+	relays := json.RawMessage(`[{"name":"talos_teamhub_collaboration","relay_url":"http://127.0.0.1:1","relay_token":"relay-secret","tool_names":["send_message"],"expires_at":"2100-01-01T00:00:00Z"}]`)
 	command := prepareCommand("claude-run")
 	command.RuntimeType, command.ExecutionContextKey = "claude", "context-run"
 	command.Payload = mustJSON(map[string]any{
@@ -234,8 +234,8 @@ func TestClaudeRunDeniesUnlistedMCPToolThroughCanUseTool(t *testing.T) {
 // and carries no Skill mappings.
 type claudeArgvViews struct{ root string }
 
-func (v claudeArgvViews) ValidatedView(context.Context, string, json.RawMessage) (lingercontext.ViewRecord, error) {
-	return lingercontext.ViewRecord{WorkspacePath: v.root}, nil
+func (v claudeArgvViews) ValidatedView(context.Context, string, json.RawMessage) (taloscontext.ViewRecord, error) {
+	return taloscontext.ViewRecord{WorkspacePath: v.root}, nil
 }
 
 func claudeLaunches(path string) int {

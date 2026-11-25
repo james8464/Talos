@@ -17,7 +17,7 @@ it("opens Windows targets without putting OAuth tokens into argv or a command sh
 });
 it("opens Unicode and spaced Windows paths as literal input", async () => {
   const run = vi.fn().mockResolvedValue({ code: 0, stdout: "", stderr: "" });
-  const target = "C:\\Users\\User Name\\Linger\\launch.html";
+  const target = "C:\\Users\\User Name\\Talos\\launch.html";
   await openWindowsTarget(target, { run });
   expect(JSON.parse(run.mock.calls[0]![2].input)).toBe(target);
 });

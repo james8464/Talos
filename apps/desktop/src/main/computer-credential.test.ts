@@ -8,7 +8,7 @@ import { CredentialStore } from "./computer-credential.js";
 
 const credential = {
   computerId: "computer-1",
-  gatewayUrl: "wss://linger.example/v1/runner-gateway",
+  gatewayUrl: "wss://talos.example/v1/runner-gateway",
   token: "sr1.test-credential-0123456789abcdefghij",
 };
 
@@ -46,7 +46,7 @@ describe("CredentialStore", () => {
     expect(() =>
       credentials.write({
         ...credential,
-        gatewayUrl: "https://linger.example",
+        gatewayUrl: "https://talos.example",
       }),
     ).toThrow();
   });

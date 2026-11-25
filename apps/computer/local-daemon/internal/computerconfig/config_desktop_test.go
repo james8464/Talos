@@ -11,11 +11,11 @@ func desktopConfig(t *testing.T, desktop string) (Config, error) {
 	t.Helper()
 	root := t.TempDir()
 	file := filepath.Join(root, "computer.json")
-	encoded := fmt.Sprintf(`{"runner_id":"computer-1","display_name":"Fixture","gateway":{"url":"ws://127.0.0.1:4000/v1/runner-gateway","token_env":"LINGER_COMPUTER_TOKEN"},"state_directory":%q,"workspace_grants":[]%s}`, root, desktop)
+	encoded := fmt.Sprintf(`{"runner_id":"computer-1","display_name":"Fixture","gateway":{"url":"ws://127.0.0.1:4000/v1/runner-gateway","token_env":"TALOS_COMPUTER_TOKEN"},"state_directory":%q,"workspace_grants":[]%s}`, root, desktop)
 	if err := os.WriteFile(file, []byte(encoded), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return Load(file, map[string]string{"LINGER_COMPUTER_TOKEN": testToken("computer-1", "tenant-1", "owner-1")})
+	return Load(file, map[string]string{"TALOS_COMPUTER_TOKEN": testToken("computer-1", "tenant-1", "owner-1")})
 }
 
 func TestDesktopConfigIsOptional(t *testing.T) {

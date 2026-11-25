@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { CLIPBOARD_CLEAR_MS, SetupAccount } from "./setup-account.js";
 
 const ACCOUNT = {
-  email: "owner@linger.local",
+  email: "owner@talos.local",
   password: "a-private-password",
   file: "/home/me/.simplexai/instances/desktop/local-account.json",
 };

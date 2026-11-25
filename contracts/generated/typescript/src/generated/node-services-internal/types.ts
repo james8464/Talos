@@ -231,7 +231,7 @@ export interface paths {
     /** Read the macOS privacy permissions of an owned Local Computer */
     get: operations["getLocalComputerPermissions"];
     put?: never;
-    /** Raise a macOS permission prompt, open its Settings pane, or relaunch Linger on an owned Local Computer */
+    /** Raise a macOS permission prompt, open its Settings pane, or relaunch Talos on an owned Local Computer */
     post: operations["actOnLocalComputerPermission"];
     delete?: never;
     options?: never;
@@ -1702,10 +1702,10 @@ export interface components {
       profile?: components["schemas"]["BrowserProfile"];
     };
     /**
-     * @description The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+     * @description The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
      * @enum {string}
      */
-    ComputerPermissionSubject: "linger" | "computer_use";
+    ComputerPermissionSubject: "talos" | "computer_use";
     /**
      * @description A macOS privacy permission an Agent can ask its Computer owner to grant.
      * @enum {string}
@@ -1738,13 +1738,13 @@ export interface components {
       /** @enum {string} */
       platform: "darwin" | "windows" | "linux";
       /**
-       * @description desktop when the Linger desktop app runs the Computer; standalone otherwise.
+       * @description desktop when the Talos desktop app runs the Computer; standalone otherwise.
        * @enum {string}
        */
       host: "desktop" | "standalone";
       subjects: components["schemas"]["ComputerPermissionSubjectStatus"][];
     };
-    /** @description One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Linger desktop app so a new grant takes effect. */
+    /** @description One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Talos desktop app so a new grant takes effect. */
     ComputerPermissionAction: {
       /** @enum {string} */
       action: "prompt" | "open_settings" | "relaunch";

@@ -1028,7 +1028,7 @@ describe("ContextExecutor Runtime", () => {
       threadId: "thread-refreshed",
       mcpServerTransports: [
         {
-          name: "linger_teamhub_collaboration",
+          name: "talos_teamhub_collaboration",
           url: "http://127.0.0.1:8090/mcp/teamhub-collaboration",
         },
       ],
@@ -1045,7 +1045,7 @@ describe("ContextExecutor Runtime", () => {
         threadId: "thread-refreshed",
         mcpServerTransports: [
           {
-            name: "linger_teamhub_collaboration",
+            name: "talos_teamhub_collaboration",
             url: "http://127.0.0.1:8090/mcp/teamhub-collaboration",
           },
         ],

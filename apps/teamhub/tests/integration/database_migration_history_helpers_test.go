@@ -12,7 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/platform/migrations"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/platform/migrations"
 )
 
 func TestEmptyDatabaseAmbiguousCreateIsReclaimed(t *testing.T) {

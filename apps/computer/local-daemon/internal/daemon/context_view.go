@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/clicredential"
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 // skillPackageClient fetches Skill packages from TeamHub. A package is at most
@@ -41,20 +41,20 @@ func (d *Daemon) ensureContextView(ctx context.Context, command protocol.Command
 		defer cancel()
 		defer context.AfterFunc(dispatch.ctx, cancel)()
 	}
-	var ref lingercontext.ViewRef
+	var ref taloscontext.ViewRef
 	if err := json.Unmarshal(encoded, &ref); err != nil {
-		return lingercontext.ErrContextConflict
+		return taloscontext.ErrContextConflict
 	}
 	contentURL := ""
 	if current := d.contentURL.Load(); current != nil {
 		contentURL = *current
 	}
 	startedAt := time.Now()
-	_, err := d.contextViews.Ensure(ctx, lingercontext.ViewRequest{
+	_, err := d.contextViews.Ensure(ctx, taloscontext.ViewRequest{
 		TenantID: command.TenantID, RunnerID: command.RunnerID, AgentID: command.AgentID,
 		WorkspaceGrantID: command.WorkspaceGrantID, ExecutionContextKey: command.ExecutionContextKey,
 		RuntimeInstanceID: command.RuntimeInstanceID, ViewDigest: ref.ViewDigest,
-	}, lingercontext.ContentSource{
+	}, taloscontext.ContentSource{
 		ContentURL:        contentURL,
 		FetchSkillPackage: d.skillPackageFetcher(command.TenantID, command.AgentID),
 	})
@@ -71,14 +71,14 @@ func (d *Daemon) ensureContextView(ctx context.Context, command protocol.Command
 // fetch that a later attempt may pass is retryable.
 func contextViewFailure(err error) map[string]any {
 	code := "CONTEXT_VIEW_FAILED"
-	if errors.Is(err, lingercontext.ErrProjectionRecoveryRequired) {
+	if errors.Is(err, taloscontext.ErrProjectionRecoveryRequired) {
 		code = "CONTEXT_RECOVERY_REQUIRED"
-	} else if errors.Is(err, lingercontext.ErrSkillPackageUnavailable) {
+	} else if errors.Is(err, taloscontext.ErrSkillPackageUnavailable) {
 		code = "SKILL_PACKAGE_UNAVAILABLE"
 	}
 	return map[string]any{
 		"code": code, "message": err.Error(),
-		"retryable": errors.Is(err, lingercontext.ErrInputDownloadUnavailable),
+		"retryable": errors.Is(err, taloscontext.ErrInputDownloadUnavailable),
 	}
 }
 
@@ -108,11 +108,11 @@ func (d *Daemon) contextHasActiveOperation(command protocol.Command) bool {
 func (d *Daemon) skillPackageFetcher(tenantID, agentID string) func(context.Context, string) (io.ReadCloser, error) {
 	return func(ctx context.Context, manifestID string) (io.ReadCloser, error) {
 		if d.cliCredentials == nil {
-			return nil, fmt.Errorf("%w: TeamHub CLI credentials are unavailable", lingercontext.ErrSkillPackageUnavailable)
+			return nil, fmt.Errorf("%w: TeamHub CLI credentials are unavailable", taloscontext.ErrSkillPackageUnavailable)
 		}
 		installation, err := d.cliCredentials.Lookup(tenantID, agentID)
 		if errors.Is(err, clicredential.ErrNotInstalled) {
-			return nil, fmt.Errorf("%w: %w", lingercontext.ErrInputDownloadUnavailable, err)
+			return nil, fmt.Errorf("%w: %w", taloscontext.ErrInputDownloadUnavailable, err)
 		}
 		if err != nil {
 			return nil, err
@@ -132,16 +132,16 @@ func (d *Daemon) skillPackageFetcher(tenantID, agentID string) func(context.Cont
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
 			}
-			return nil, lingercontext.ErrInputDownloadUnavailable
+			return nil, taloscontext.ErrInputDownloadUnavailable
 		}
 		if response.StatusCode == http.StatusOK {
 			return skillPackageArchive(route, response)
 		}
 		_ = response.Body.Close()
 		if response.StatusCode == http.StatusForbidden || response.StatusCode == http.StatusNotFound {
-			return nil, fmt.Errorf("%w (HTTP %d)", lingercontext.ErrSkillPackageUnavailable, response.StatusCode)
+			return nil, fmt.Errorf("%w (HTTP %d)", taloscontext.ErrSkillPackageUnavailable, response.StatusCode)
 		}
-		return nil, fmt.Errorf("%w (HTTP %d)", lingercontext.ErrInputDownloadUnavailable, response.StatusCode)
+		return nil, fmt.Errorf("%w (HTTP %d)", taloscontext.ErrInputDownloadUnavailable, response.StatusCode)
 	}
 }
 

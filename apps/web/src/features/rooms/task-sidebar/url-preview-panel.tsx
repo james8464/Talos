@@ -29,9 +29,9 @@ import { urlPreviewMessages as m } from "./url-preview.messages";
 const previewSandbox = "allow-forms allow-scripts";
 
 // The desktop app keeps the framing rules of a frame named with this prefix
-// and reports a refusal through `window.lingerDesktop.preview`. It must match
+// and reports a refusal through `window.talosDesktop.preview`. It must match
 // the desktop's PREVIEW_FRAME_PREFIX.
-const PREVIEW_FRAME_PREFIX = "linger-url-preview:";
+const PREVIEW_FRAME_PREFIX = "talos-url-preview:";
 
 interface PreviewBounds {
   x: number;
@@ -67,8 +67,8 @@ interface DesktopPreview {
 }
 
 function desktopPreview() {
-  return (window as { lingerDesktop?: { preview?: DesktopPreview } })
-    .lingerDesktop?.preview;
+  return (window as { talosDesktop?: { preview?: DesktopPreview } })
+    .talosDesktop?.preview;
 }
 
 interface RefusedFrame {
@@ -567,7 +567,7 @@ function FramedUrlPreview({
     function onMessage(event: MessageEvent) {
       if (event.source !== frameRef.current?.contentWindow) return;
       const data = event.data as { type?: string; url?: string } | null;
-      if (data?.type !== "linger-preview-navigate" || !data.url) return;
+      if (data?.type !== "talos-preview-navigate" || !data.url) return;
       navigate(data.url, false);
     }
     window.addEventListener("message", onMessage);

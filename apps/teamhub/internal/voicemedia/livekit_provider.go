@@ -16,8 +16,8 @@ import (
 	"github.com/livekit/protocol/auth"
 	"github.com/livekit/protocol/livekit"
 	lksdk "github.com/livekit/server-sdk-go/v2"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 	"github.com/twitchtv/twirp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,11 +47,11 @@ type LiveKitProvider struct {
 	poll     time.Duration
 }
 
-const voiceRuntimeAgentName = "linger-voice-runtime"
+const voiceRuntimeAgentName = "talos-voice-runtime"
 
 // voiceRecorderAgentName is the separate Voice Runtime worker that records
 // Capture media, so recording never shares an ASR job process.
-const voiceRecorderAgentName = "linger-voice-recorder"
+const voiceRecorderAgentName = "talos-voice-recorder"
 
 // recordingEpochs reads the recorder reports Voice Runtime stores for an epoch.
 type recordingEpochs interface {
@@ -133,7 +133,7 @@ func (p *LiveKitProvider) EnsureSession(ctx context.Context, session providerSes
 	metadata := voiceRuntimeDispatchMetadata(session.CreatedAt, session.Purpose)
 	agentName := voiceRuntimeAgentName
 	if session.Purpose == PurposeChatLive {
-		agentName = "linger-live-runtime"
+		agentName = "talos-live-runtime"
 	}
 	if err = p.ensureAgentDispatch(ctx, session.RoomName, agentName, dispatches.AgentDispatches, metadata, participantIdentities, session.LastInputStartedAt); err != nil {
 		return err
@@ -191,7 +191,7 @@ func (p *LiveKitProvider) CommitDictationTurn(ctx context.Context, session provi
 	if err != nil {
 		return err
 	}
-	topic := "linger.voice.dictation.commit"
+	topic := "talos.voice.dictation.commit"
 	_, err = p.rooms.SendData(ctx, &livekit.SendDataRequest{
 		Room: session.RoomName, Data: data, Kind: livekit.DataPacket_RELIABLE, Topic: &topic,
 	})
@@ -212,7 +212,7 @@ func (p *LiveKitProvider) IssuePublisherGrant(
 	token, err := auth.NewAccessToken(p.cfg.APIKey, p.cfg.APISecret).
 		SetIdentity(session.ParticipantIdentity).
 		SetValidFor(p.cfg.CredentialTTL).
-		SetAttributes(map[string]string{"linger.voice_generation": strconv.FormatInt(generation, 10)}).
+		SetAttributes(map[string]string{"talos.voice_generation": strconv.FormatInt(generation, 10)}).
 		SetVideoGrant(grant).
 		ToJWT()
 	if err != nil {
@@ -240,7 +240,7 @@ func (p *LiveKitProvider) InputReadyGeneration(ctx context.Context, session prov
 	publisherTracks := make(map[string]bool)
 	for _, participant := range participants.Participants {
 		if participant == nil || participant.State != livekit.ParticipantInfo_ACTIVE || participant.Identity != session.ParticipantIdentity ||
-			participant.Attributes["linger.voice_generation"] != strconv.FormatInt(generation, 10) {
+			participant.Attributes["talos.voice_generation"] != strconv.FormatInt(generation, 10) {
 			continue
 		}
 		for _, track := range participant.Tracks {
@@ -256,13 +256,13 @@ func (p *LiveKitProvider) InputReadyGeneration(ctx context.Context, session prov
 		if participant == nil || participant.State != livekit.ParticipantInfo_ACTIVE || participant.Kind != livekit.ParticipantInfo_AGENT {
 			continue
 		}
-		readyAt, timestampErr := strconv.ParseInt(participant.Attributes["linger.voice_ready_at"], 10, 64)
+		readyAt, timestampErr := strconv.ParseInt(participant.Attributes["talos.voice_ready_at"], 10, 64)
 		age := p.now().Sub(time.UnixMilli(readyAt))
 		if timestampErr != nil || readyAt <= 0 || age < -time.Second || age >= 5*time.Second {
 			continue
 		}
-		ready, err := strconv.ParseInt(participant.Attributes["linger.voice_ready_generation"], 10, 64)
-		if err == nil && ready == generation && publisherTracks[participant.Attributes["linger.voice_ready_track"]] {
+		ready, err := strconv.ParseInt(participant.Attributes["talos.voice_ready_generation"], 10, 64)
+		if err == nil && ready == generation && publisherTracks[participant.Attributes["talos.voice_ready_track"]] {
 			return ready, nil
 		}
 	}

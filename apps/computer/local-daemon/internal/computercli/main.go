@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/computerconfig"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/computerconfig"
 	"golang.org/x/term"
 )
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestSignInStepIsNativeExceptOnWindows(t *testing.T) {
-	const name = "linger-computer-local"
+	const name = "talos-computer-local"
 	native := map[string]string{
 		"codex":       "Run codex login",
 		"claude":      "Run claude auth login",
@@ -15,10 +15,10 @@ func TestSignInStepIsNativeExceptOnWindows(t *testing.T) {
 		"antigravity": "Run agy and sign in with Google, or set GEMINI_API_KEY",
 	}
 	windows := map[string]string{
-		"codex":       "Run linger-computer-local runtime login codex",
-		"claude":      "Run linger-computer-local runtime login claude",
-		"pi":          "Run linger-computer-local runtime login pi, then /login",
-		"antigravity": "Run linger-computer-local runtime login antigravity, then sign in with Google, or set GEMINI_API_KEY",
+		"codex":       "Run talos-computer-local runtime login codex",
+		"claude":      "Run talos-computer-local runtime login claude",
+		"pi":          "Run talos-computer-local runtime login pi, then /login",
+		"antigravity": "Run talos-computer-local runtime login antigravity, then sign in with Google, or set GEMINI_API_KEY",
 	}
 	for _, goos := range []string{"linux", "darwin", "windows"} {
 		want := native

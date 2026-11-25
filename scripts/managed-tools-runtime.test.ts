@@ -48,10 +48,10 @@ it("executes managed absolute paths, installs on first call and repairs deletion
   await writeFile(userCLI, "user-owned");
   const runtime = await prepareManagedToolsRuntime({
     HOME: root,
-    LINGER_TOOLS_ROOT: toolsRoot,
-    LINGER_CLI_RELEASES_BASE_URL: source,
-    LINGER_CLI_RELEASE_ID: "first",
-    LINGER_LEV8_VERSION: "0.6.0",
+    TALOS_TOOLS_ROOT: toolsRoot,
+    TALOS_CLI_RELEASES_BASE_URL: source,
+    TALOS_CLI_RELEASE_ID: "first",
+    TALOS_LEV8_VERSION: "0.6.0",
     PATH: userBin + path.delimiter + process.env.PATH,
   });
   expect(runtime!.binDirectory).toBe(path.join(toolsRoot, "current/bin"));
@@ -101,10 +101,10 @@ it("runs the shipped adapter without node_modules and rejects a version mismatch
   const env = {
     ...process.env,
     HOME: root,
-    LINGER_TOOLS_ROOT: toolsRoot,
-    LINGER_CLI_RELEASES_BASE_URL: source,
-    LINGER_CLI_RELEASE_ID: "first",
-    LINGER_LEV8_VERSION: "0.6.0",
+    TALOS_TOOLS_ROOT: toolsRoot,
+    TALOS_CLI_RELEASES_BASE_URL: source,
+    TALOS_CLI_RELEASE_ID: "first",
+    TALOS_LEV8_VERSION: "0.6.0",
   };
   const prepared = await execute(
     process.execPath,
@@ -141,9 +141,9 @@ it("executes the installed current release with a read-only tool root after a li
   await managedToolsFixture(source, "first");
   await managedToolsFixture(source, "second", "0.6.0", "0.6.1");
   const runtime = (await prepareManagedToolsRuntime({
-    LINGER_TOOLS_ROOT: toolsRoot,
-    LINGER_CLI_RELEASES_BASE_URL: source,
-    LINGER_CLI_RELEASE_ID: "first",
+    TALOS_TOOLS_ROOT: toolsRoot,
+    TALOS_CLI_RELEASES_BASE_URL: source,
+    TALOS_CLI_RELEASE_ID: "first",
     PATH: process.env.PATH,
   }))!;
   const installer = createManagedToolsInstaller({
@@ -182,10 +182,10 @@ it("executes the installed current release with a read-only tool root after a li
 it("leaves legacy installations opt-in and rejects stable or incomplete configuration", async () => {
   expect(await prepareManagedToolsRuntime({ PATH: "/bin" })).toBeUndefined();
   await expect(
-    prepareManagedToolsRuntime({ LINGER_CLI_RELEASE_ID: "stable" }),
+    prepareManagedToolsRuntime({ TALOS_CLI_RELEASE_ID: "stable" }),
   ).rejects.toThrow("fixed release-id");
   await expect(
-    prepareManagedToolsRuntime({ LINGER_CLI_RELEASE_ID: "first" }),
+    prepareManagedToolsRuntime({ TALOS_CLI_RELEASE_ID: "first" }),
   ).rejects.toThrow("BASE_URL");
 });
 
@@ -258,9 +258,9 @@ it("refuses a bootstrap symlink without modifying user tools", async () => {
   await symlink(userRoot, path.join(toolsRoot, "bootstrap"));
   await expect(
     prepareManagedToolsRuntime({
-      LINGER_TOOLS_ROOT: toolsRoot,
-      LINGER_CLI_RELEASE_ID: "first",
-      LINGER_CLI_RELEASES_BASE_URL: root,
+      TALOS_TOOLS_ROOT: toolsRoot,
+      TALOS_CLI_RELEASE_ID: "first",
+      TALOS_CLI_RELEASES_BASE_URL: root,
     }),
   ).rejects.toThrow("symlinks");
   expect(await readFile(path.join(userRoot, "bin/lev8"), "utf8")).toBe(
@@ -271,9 +271,9 @@ it("refuses a bootstrap symlink without modifying user tools", async () => {
   await writeFile(path.join(toolsRoot, "bootstrap/bin/lev8"), "user-owned");
   await expect(
     prepareManagedToolsRuntime({
-      LINGER_TOOLS_ROOT: toolsRoot,
-      LINGER_CLI_RELEASE_ID: "first",
-      LINGER_CLI_RELEASES_BASE_URL: root,
+      TALOS_TOOLS_ROOT: toolsRoot,
+      TALOS_CLI_RELEASE_ID: "first",
+      TALOS_CLI_RELEASES_BASE_URL: root,
     }),
   ).rejects.toThrow("unmanaged");
   expect(

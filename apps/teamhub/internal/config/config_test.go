@@ -16,7 +16,7 @@ var teamhubEnvironment = []string{
 	"TEAMHUB_DOCUMENT_RUNTIME_URL",
 	"TEAMHUB_NODE_SERVICES_URL",
 	"AGENT_RUNNER_PUBLIC_GATEWAY_URL",
-	"LINGER_SECRET_SEED",
+	"TALOS_SECRET_SEED",
 	"TEAMHUB_ARTIFACT_STORAGE_ROOT",
 	"TEAMHUB_DOCUMENT_PREVIEW_PUBLIC_ORIGIN",
 	"COMPOSIO_API_KEY",
@@ -159,7 +159,7 @@ func TestLoadVoiceMediaIsOnByDefault(t *testing.T) {
 	if cfg, err := Load(); err != nil || !cfg.Voice.MediaEnabled || cfg.Voice.RuntimeToken != "" {
 		t.Fatalf("voice media without a seed: enabled=%v err=%v", cfg.Voice.MediaEnabled, err)
 	}
-	t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 	t.Setenv("SONIOX_API_KEY", "soniox-secret")
 	t.Setenv("XAI_API_KEY", "xai-secret")
 	cfg, err := Load()
@@ -181,7 +181,7 @@ func TestLoadVoiceMediaSetting(t *testing.T) {
 	}{{"on", true}, {"off", false}, {" off ", false}} {
 		clearTeamHubEnvironment(t)
 		t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
-		t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+		t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 		t.Setenv("TEAMHUB_VOICE_MEDIA", tc.value)
 		cfg, err := Load()
 		if err != nil || cfg.Voice.MediaEnabled != tc.want {
@@ -242,10 +242,10 @@ func TestLoadRunnerGatewayTurnsEnrollmentOnWithSecretSeed(t *testing.T) {
 	clearTeamHubEnvironment(t)
 	t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
 	t.Setenv("AGENT_RUNNER_PUBLIC_GATEWAY_URL", " wss://agent.example.test/v1/runner-gateway ")
-	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "LINGER_SECRET_SEED") {
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "TALOS_SECRET_SEED") {
 		t.Fatalf("Runner Gateway without a seed error = %v", err)
 	}
-	t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
@@ -262,7 +262,7 @@ func TestLoadRunnerGatewayTurnsEnrollmentOnWithSecretSeed(t *testing.T) {
 func TestLoadRejectsNodeServicesURLWithPath(t *testing.T) {
 	clearTeamHubEnvironment(t)
 	t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
-	t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 	t.Setenv("TEAMHUB_NODE_SERVICES_URL", "https://node-services.example.test/mcp")
 	if _, err := Load(); err == nil {
 		t.Fatal("Load accepted a Node Services URL with a path")
@@ -275,7 +275,7 @@ func TestLoadAllExistingEnvironmentOverrides(t *testing.T) {
 		"TEAMHUB_HTTP_ADDRESS":                   "127.0.0.1:9091",
 		"TEAMHUB_DATABASE_URL":                   "postgres://environment.example/teamhub",
 		"TEAMHUB_NODE_SERVICES_URL":              "https://node-services.environment.test/",
-		"LINGER_SECRET_SEED":                     testSecretSeed,
+		"TALOS_SECRET_SEED":                     testSecretSeed,
 		"WEB_PUBLIC_ORIGIN":                      "https://teamhub.environment.test",
 		"TEAMHUB_ARTIFACT_STORAGE_ROOT":          "environment-artifacts",
 		"TEAMHUB_DOCUMENT_PREVIEW_PUBLIC_ORIGIN": "https://preview.environment.test",
@@ -311,7 +311,7 @@ func TestLoadAllExistingEnvironmentOverrides(t *testing.T) {
 func TestLoadDefaultsServiceURLsWhenOnlyTheSeedIsSet(t *testing.T) {
 	clearTeamHubEnvironment(t)
 	t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
-	t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
@@ -338,7 +338,7 @@ func TestLoadRejectsInvalidConfiguration(t *testing.T) {
 	}{
 		{name: "database required"},
 		{name: "Node Services URL requires secret environment", env: map[string]string{"TEAMHUB_DATABASE_URL": "postgres://example", "TEAMHUB_NODE_SERVICES_URL": "https://node-services.example.test"}},
-		{name: "Node Services URL cannot contain path", env: map[string]string{"TEAMHUB_DATABASE_URL": "postgres://example", "TEAMHUB_NODE_SERVICES_URL": "https://node-services.example.test/v1", "LINGER_SECRET_SEED": testSecretSeed}},
+		{name: "Node Services URL cannot contain path", env: map[string]string{"TEAMHUB_DATABASE_URL": "postgres://example", "TEAMHUB_NODE_SERVICES_URL": "https://node-services.example.test/v1", "TALOS_SECRET_SEED": testSecretSeed}},
 		{name: "Document preview URL must be an origin", env: map[string]string{"TEAMHUB_DATABASE_URL": "postgres://example", "TEAMHUB_DOCUMENT_PREVIEW_PUBLIC_ORIGIN": "https://preview.example.test/private"}},
 		{name: "public URL must be an origin", env: map[string]string{"TEAMHUB_DATABASE_URL": "postgres://example", "WEB_PUBLIC_ORIGIN": "https://user@app.example.test/path"}},
 		{name: "Artifact storage root required", env: map[string]string{"TEAMHUB_DATABASE_URL": "postgres://example", "TEAMHUB_ARTIFACT_STORAGE_ROOT": " "}},
@@ -416,7 +416,7 @@ func TestPermissionReviewConfiguration(t *testing.T) {
 	if _, err = Load(); err == nil {
 		t.Fatal("the review requires the Agent Service link")
 	}
-	t.Setenv("LINGER_SECRET_SEED", testSecretSeed)
+	t.Setenv("TALOS_SECRET_SEED", testSecretSeed)
 	cfg, err = Load()
 	if err != nil {
 		t.Fatal(err)

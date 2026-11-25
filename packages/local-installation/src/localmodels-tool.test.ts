@@ -20,7 +20,7 @@ import path from "node:path";
 import os from "node:os";
 import { withInstanceLock, type Instance } from "./instance.js";
 import { REGION_SCHEMA, regionFile } from "./region.js";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 import { afterEach, expect, test, vi } from "vitest";
 import {
   ensureLocalmodelsTool,
@@ -55,7 +55,7 @@ afterEach(async () => {
 const hash = (b: string | Buffer) =>
   createHash("sha256").update(b).digest("hex");
 async function fixture() {
-  const home = await mkdtemp(path.join(os.tmpdir(), "linger-model-tool-"));
+  const home = await mkdtemp(path.join(os.tmpdir(), "talos-model-tool-"));
   roots.push(home);
   // A region resolved earlier, so no test probes the registries.
   await mkdir(path.dirname(regionFile(home)), { recursive: true });
@@ -442,14 +442,14 @@ for (const [label, add] of [
   );
 test("does not silently fall back to a user Python or local implementation", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", "");
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", "");
   await expect(ensureLocalmodelsTool(f.home)).rejects.toThrow(
     /distribution|metadata/i,
   );
 });
 test("invokes the verified upstream module with isolated module and state paths", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const run = vi.fn(async () => ({ code: 0, stdout: "{}", stderr: "" }));
   await runLocalmodels(
     f.home,
@@ -479,7 +479,7 @@ test("invokes the verified upstream module with isolated module and state paths"
 });
 test("forces Python UTF-8 mode and strips conflicting case variants from the environment", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   vi.stubEnv("PYTHONUTF8", "0");
   vi.stubEnv("pythonutf8", "0");
   vi.stubEnv("PYTHONIOENCODING", "gbk");
@@ -517,7 +517,7 @@ test("forces Python UTF-8 mode and strips conflicting case variants from the env
 });
 test("passes the resolved download region to every localmodels child", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   // The home's saved region decides: an inherited auto is replaced, so the
   // child never probes again.
   vi.stubEnv("SIMPLEX_REGION", "auto");
@@ -564,7 +564,7 @@ const libraryStatus = (
 });
 test("unloads the library's models, then stops the controller and the stack through the installed pinned kit", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const base = path.join(f.home, "runtime/localmodels/models");
   const run = vi.fn<typeof runLocalmodels>(async (_home, args) =>
     args[1] === "status"
@@ -808,12 +808,12 @@ test("stops the stack even when the library could not be read or a model did not
 test("a home without the pinned kit has nothing to stop and downloads nothing", async () => {
   const f = await fixture();
   vi.stubEnv(
-    "LINGER_LOCALMODELS_TOOL_JSON",
+    "TALOS_LOCALMODELS_TOOL_JSON",
     JSON.stringify({ ...f.source, sha256: "c".repeat(64) }),
   );
   const run = vi.fn<typeof runLocalmodels>();
   await stopLocalmodels(f.home, { signal: AbortSignal.timeout(5000) }, { run });
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", "");
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", "");
   await stopLocalmodels(f.home, { signal: AbortSignal.timeout(5000) }, { run });
   expect(run).not.toHaveBeenCalled();
   expect(await readdir(path.join(f.home, "tools/localmodels"))).toEqual([
@@ -827,7 +827,7 @@ test.for([false, true])(
     const f = await fixture();
     const file = path.join(f.directory, "modules/localmodels/__init__.py");
     await writeFile(file, "corrupt");
-    vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+    vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
     const fetcher = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetcher);
     const run = vi.fn<typeof runLocalmodels>();
@@ -846,7 +846,7 @@ test.for([false, true])(
 
 test("a kit disappearing after verification is not downloaded during stop", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const fetcher = vi.fn<typeof fetch>();
   vi.stubGlobal("fetch", fetcher);
   await expect(
@@ -932,7 +932,7 @@ test("verified tool reads do not contend with another process holding the public
 });
 test("forwards real Harness byte progress without forwarding native logs or secret fields", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const onEvent = vi.fn();
   const run = vi.fn<typeof import("./process.js").runProcess>(
     async (_file, _args, options) => {
@@ -958,7 +958,7 @@ test("forwards real Harness byte progress without forwarding native logs or secr
 });
 test("emits download:retrying stage and byte progress without a total when total is null", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const onEvent = vi.fn();
   const run = vi.fn<typeof import("./process.js").runProcess>(
     async (_file, _args, options) => {
@@ -992,7 +992,7 @@ test("emits download:retrying stage and byte progress without a total when total
 
 test("forwards safe extraction and verification stages after Harness downloads finish", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const onEvent = vi.fn();
   const run = vi.fn<typeof import("./process.js").runProcess>(
     async (_file, _args, options) => {
@@ -1046,13 +1046,13 @@ test("forwards safe extraction and verification stages after Harness downloads f
 });
 test("uses a configured development localmodels checkout without downloading a kit", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", "");
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", "");
   vi.stubEnv(
-    "LINGER_LOCALMODELS_DEV_PYTHON",
+    "TALOS_LOCALMODELS_DEV_PYTHON",
     path.join(f.directory, "python/python"),
   );
   vi.stubEnv(
-    "LINGER_LOCALMODELS_DEV_MODULE_DIR",
+    "TALOS_LOCALMODELS_DEV_MODULE_DIR",
     path.join(f.directory, "modules"),
   );
   const run = vi.fn(async () => ({ code: 0, stdout: "{}", stderr: "" }));
@@ -1092,7 +1092,7 @@ test.skipIf(process.platform === "win32")(
 
 test("maps source apply download stages to model gateway messages", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const onEvent = vi.fn();
   const lines = [
     {
@@ -1182,7 +1182,7 @@ test("maps source apply download stages to model gateway messages", async () => 
 
 test("labels gateway download stages as the application model gateway", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const onEvent = vi.fn();
   const run = vi.fn<typeof import("./process.js").runProcess>(
     async (_file, _args, options) => {
@@ -1203,7 +1203,7 @@ test("labels gateway download stages as the application model gateway", async ()
 
 test("reads source apply events from stderr while stdout stays the final document", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const onEvent = vi.fn();
   const { runProcess } = await import("./process.js");
   const run = vi.fn<typeof runProcess>((_file, _args, options) =>
@@ -1256,7 +1256,7 @@ async function listenLoopback(): Promise<{
 
 test("isolates tools dir, bifrost dir, and bifrost addr per home and overrides ambient env", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   vi.stubEnv("LOCALMODELS_TOOLS_DIR", "/ambient/tools");
   vi.stubEnv("LOCALMODELS_BIFROST_DIR", "/ambient/bifrost");
   vi.stubEnv("LOCALMODELS_BIFROST_ADDR", "127.0.0.1:19999");
@@ -1406,7 +1406,7 @@ test("prefers this home's owned.json gateway.bifrost.addr even while its port is
 
 test("stopLocalmodels and read-only commands isolate paths without allocating or persisting a port", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   vi.stubEnv("LOCALMODELS_TOOLS_DIR", "/foreign/tools");
   vi.stubEnv("LOCALMODELS_BIFROST_DIR", "/foreign/bifrost");
   vi.stubEnv("LOCALMODELS_BIFROST_ADDR", "127.0.0.1:19876");
@@ -1487,7 +1487,7 @@ async function legacyLayout(
   deploymentOwner?: string,
   removed = false,
 ) {
-  const userHome = await mkdtemp(path.join(os.tmpdir(), "linger-legacy-home-"));
+  const userHome = await mkdtemp(path.join(os.tmpdir(), "talos-legacy-home-"));
   roots.push(userHome);
   vi.stubEnv("HOME", userHome);
   vi.stubEnv("USERPROFILE", userHome);
@@ -1552,7 +1552,7 @@ function passedEnvironment(run: ReturnType<typeof vi.fn>, call = 0) {
 
 test("keeps a home whose plan was applied in the shared tools directory on that directory", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   const { legacyTools, legacyBifrost } = await legacyLayout(
     f.home,
     "qwen3.8-27b-18100",
@@ -1589,7 +1589,7 @@ test("keeps a home whose plan was applied in the shared tools directory on that 
 
 test("isolates a home whose plan the shared tools directory does not own", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   await legacyLayout(f.home, "inkling-2-mini-q4-poly-18100");
   const run = vi.fn(async () => ({ code: 0, stdout: "{}", stderr: "" }));
   await runLocalmodels(
@@ -1612,7 +1612,7 @@ test("isolates a home whose plan the shared tools directory does not own", async
 
 test("keeps a home that owns its per-home tools directory isolated", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   await legacyLayout(f.home, "qwen3.8-27b-18100");
   const toolsDir = localmodelsToolsDirectory(f.home);
   await mkdir(toolsDir, { recursive: true, mode: 0o700 });
@@ -1640,8 +1640,8 @@ test("keeps a home that owns its per-home tools directory isolated", async () =>
 
 test("isolates a new home whose plan reuses a deployment name another home owns", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
-  const otherHome = await mkdtemp(path.join(os.tmpdir(), "linger-other-home-"));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  const otherHome = await mkdtemp(path.join(os.tmpdir(), "talos-other-home-"));
   roots.push(otherHome);
   await legacyLayout(f.home, "qwen3.8-27b-18100", otherHome);
   const run = vi.fn(async () => ({ code: 0, stdout: "{}", stderr: "" }));
@@ -1665,7 +1665,7 @@ test("isolates a new home whose plan reuses a deployment name another home owns"
 
 test("isolates a home whose shared deployment localmodels marked removed", async () => {
   const f = await fixture();
-  vi.stubEnv("LINGER_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
+  vi.stubEnv("TALOS_LOCALMODELS_TOOL_JSON", JSON.stringify(f.source));
   await legacyLayout(f.home, "qwen3.8-27b-18100", undefined, true);
   const run = vi.fn(async () => ({ code: 0, stdout: "{}", stderr: "" }));
   await runLocalmodels(

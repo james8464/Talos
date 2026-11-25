@@ -1,7 +1,7 @@
 import type {
   AgentRunnerSnapshot,
   DaemonToAgentEnvelope,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import {
   type AgentRunnerCommand,

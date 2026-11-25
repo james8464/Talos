@@ -117,7 +117,7 @@ describe("Vite config", () => {
     expect(response.end).toHaveBeenCalledWith(
       JSON.stringify({
         ok: true,
-        service: "linger-web-dev",
+        service: "talos-web-dev",
       }),
     );
   });

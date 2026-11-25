@@ -59,7 +59,7 @@ func TestLoadRejectsInvalidTemplates(t *testing.T) {
 			name: "skill manifest version must be semantic", file: "builtin/helper.json",
 			mutate: func(value map[string]any) {
 				value["skill_bindings"] = []any{
-					map[string]any{"name": "x", "skill_id": "linger_x", "manifest_version": "latest"},
+					map[string]any{"name": "x", "skill_id": "talos_x", "manifest_version": "latest"},
 				}
 			},
 			wantSub: "skill_bindings[0] is invalid",

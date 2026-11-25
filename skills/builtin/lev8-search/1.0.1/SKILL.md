@@ -15,7 +15,7 @@ Cloud Host includes lev8 0.5.0 and supplies only CI connection defaults, never c
 
 ## Credentials
 
-- If credentials are missing, run `lev8 auth device start --name 'Linger' --storage config --json`. Send `data.verification_uri_complete` and `data.user_code` to the user to compare, and keep `data.authorization_id`. `data` depends on status: pending has approval details and `expires_at`; authorized has `source`, masked `token`, `completed_at` and `config_path` (file storage); terminal states have only ID and `status`, with guidance in `error`. No links remain after the attempt ends.
+- If credentials are missing, run `lev8 auth device start --name 'Talos' --storage config --json`. Send `data.verification_uri_complete` and `data.user_code` to the user to compare, and keep `data.authorization_id`. `data` depends on status: pending has approval details and `expires_at`; authorized has `source`, masked `token`, `completed_at` and `config_path` (file storage); terminal states have only ID and `status`, with guidance in `error`. No links remain after the attempt ends.
 - Finish the turn while they approve, then run `lev8 auth device complete --id <authorization_id> --json`. It waits at most 30 seconds; exit 7 means run it again later with the same ID. Without `--json`, `start` prints the same essentials.
 - The approving account becomes this Context's credential and billing account. Ask the requesting user to approve with their own account and only the link they requested. Opening the link never approves by itself. Never ask for an API key or put tokens in arguments, objectives, result files or progress messages.
 - Other login paths, storage and config: [auth-and-config.md](references/auth-and-config.md).

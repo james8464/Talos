@@ -8,11 +8,11 @@ import (
 	"log/slog"
 	"time"
 
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 type pendingOperationInput struct {
@@ -107,7 +107,7 @@ func (d *Daemon) operationInputOutcome(ctx, operationCtx context.Context, comman
 	defer stopView()
 	defer context.AfterFunc(operationCtx, stopView)()
 	if err := d.ensureContextView(viewCtx, command, command.InputContextViewRef); err != nil {
-		if errors.Is(err, lingercontext.ErrContextStorage) {
+		if errors.Is(err, taloscontext.ErrContextStorage) {
 			slog.Error("runner.context_view.read_failed", "operation_id", command.OperationID, "execution_context_key", command.ExecutionContextKey, "error", err)
 		}
 		return rejectedInputEvent(command, "definitely_not_applied", "rejected", "", "Operation input Context View is unavailable: "+err.Error())

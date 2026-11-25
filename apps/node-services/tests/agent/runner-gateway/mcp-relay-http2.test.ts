@@ -149,7 +149,7 @@ const createFixture = async (options: { holdToolCall?: boolean } = {}) => {
     stream.on("close", () => streams.delete(stream));
     requestSessions.push(stream.session!);
     expect(headers.authorization).toBe("Bearer upstream-test-credential");
-    expect(headers["x-linger-operation-id"]).toBeUndefined();
+    expect(headers["x-talos-operation-id"]).toBeUndefined();
     if (headers[":method"] === "GET") {
       subscribe(stream);
       return;
@@ -240,8 +240,8 @@ const createFixture = async (options: { holdToolCall?: boolean } = {}) => {
           headers: {
             authorization: `Bearer ${descriptor.relay_token}`,
             "content-type": "application/json",
-            "x-linger-operation-id": "operation-1",
-            "x-linger-execution-lease-id": "lease-1",
+            "x-talos-operation-id": "operation-1",
+            "x-talos-execution-lease-id": "lease-1",
           },
           signal,
           ...(method

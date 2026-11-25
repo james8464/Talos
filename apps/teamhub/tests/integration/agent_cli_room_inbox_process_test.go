@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 // The standalone CLI reads another Room or Thread the Agent belongs to through

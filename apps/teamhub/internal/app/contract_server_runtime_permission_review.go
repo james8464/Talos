@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/permissionreview"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/permissionreview"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // maxPermissionScreenshotBytes bounds a stored screenshot; the contract

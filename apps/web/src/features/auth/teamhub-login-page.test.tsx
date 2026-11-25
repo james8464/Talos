@@ -349,7 +349,7 @@ describe("TeamHubLoginPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Linger could not establish a browser session. Use the secure workspace address or contact your workspace administrator.",
+      "Talos could not establish a browser session. Use the secure workspace address or contact your workspace administrator.",
     );
     expect(onAuthenticated).not.toHaveBeenCalled();
   });
@@ -397,11 +397,11 @@ describe("TeamHubLoginPage in the desktop app", () => {
     available: () => Promise<boolean>;
     signIn: () => Promise<unknown>;
   }) => {
-    Object.assign(window, { lingerDesktop: { localAccount } });
+    Object.assign(window, { talosDesktop: { localAccount } });
     return localAccount;
   };
   afterEach(() => {
-    delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+    delete (window as { talosDesktop?: unknown }).talosDesktop;
   });
 
   it("offers no account button in a browser", () => {
@@ -497,14 +497,14 @@ describe("TeamHubLoginPage in the desktop app", () => {
       available: async () => true,
       signIn: async () => ({
         ok: false,
-        message: "The account file of Linger on this computer is missing.",
+        message: "The account file of Talos on this computer is missing.",
       }),
     });
     const onAuthenticated = vi.fn();
     renderAuthenticationPage({}, { onAuthenticated });
     fireEvent.click(await screen.findByRole("button", { name: LOCAL_BUTTON }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "The account file of Linger on this computer is missing.",
+      "The account file of Talos on this computer is missing.",
     );
     expect(onAuthenticated).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: LOCAL_BUTTON })).toBeEnabled();

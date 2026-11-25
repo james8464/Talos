@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
 )
 
 // decisionMessageResponse is a decision card Message as the Web reads it.

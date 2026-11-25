@@ -11,13 +11,13 @@ const configOption = `  --config <path>              Use another Computer config
 
 var commandHelp = map[string]string{
 	"login": `Usage:
-  linger-computer login [options]
+  talos-computer login [options]
 
 Authorize this computer in your browser, save its credential, and start the
 daemon. When it finishes, the computer is connected.
 
 Options:
-  --web-url <origin>           Linger site to sign in to
+  --web-url <origin>           Talos site to sign in to
   --name <name>                Computer name (default: host name)
   --enabled-runtime <type>     Enable only this Runtime; repeat for a subset (default: all)
   --token-stdin                Read the server connection token from standard input (hidden prompt in a terminal)
@@ -34,18 +34,18 @@ Options:
                                The localmodels model base directory
 ` + runtimePathOptions + "\n" + configOption + "\n",
 	"auth": `Usage:
-  linger-computer auth status [--json]
+  talos-computer auth status [--json]
 
 Commands:
   status                       Show the site, Computer, and authorization saved on this computer
 `,
 	"auth status": `Usage:
-  linger-computer auth status [--json] [--config <path>]
+  talos-computer auth status [--json] [--config <path>]
 
 Show the site, Computer, workspace, and Gateway this computer is authorized for.
 `,
 	"daemon": `Usage:
-  linger-computer daemon <command>
+  talos-computer daemon <command>
 
 Commands:
   start                        Start the background daemon
@@ -62,51 +62,51 @@ Commands:
   service stop <name>          Stop a managed service
 `,
 	"daemon start": `Usage:
-  linger-computer daemon start [--config <path>]
+  talos-computer daemon start [--config <path>]
 
 Start the background daemon and wait for the server to confirm the connection.
 `,
 	"daemon stop": `Usage:
-  linger-computer daemon stop [--if-idle] [--config <path>]
+  talos-computer daemon stop [--if-idle] [--config <path>]
 
 Options:
   --if-idle                    Stop only when no Operation is running
 `,
 	"daemon restart": `Usage:
-  linger-computer daemon restart [--config <path>]
+  talos-computer daemon restart [--config <path>]
 `,
 	"daemon status": `Usage:
-  linger-computer daemon status [--json] [--config <path>]
+  talos-computer daemon status [--json] [--config <path>]
 
 Show the daemon process, the server connection, and the runtime summary.
 `,
 	"daemon logs": `Usage:
-  linger-computer daemon logs [-f] [-n <lines>] [--config <path>]
+  talos-computer daemon logs [-f] [-n <lines>] [--config <path>]
 
 Options:
   -f, --follow                 Keep printing new log lines
   -n <lines>                   Number of lines to show (default: 200)
 `,
 	"daemon runners": `Usage:
-  linger-computer daemon runners [--json]
-  linger-computer daemon runners inspect <agent-id>
-  linger-computer daemon runners stop <agent-id>
+  talos-computer daemon runners [--json]
+  talos-computer daemon runners inspect <agent-id>
+  talos-computer daemon runners stop <agent-id>
 `,
 	"daemon service": `Usage:
-  linger-computer daemon service list [--json]
-  linger-computer daemon service start <name> -- <command> [args...]
-  linger-computer daemon service stop <name>
+  talos-computer daemon service list [--json]
+  talos-computer daemon service start <name> -- <command> [args...]
+  talos-computer daemon service stop <name>
 `,
 	"runtime": `Usage:
-  linger-computer runtime check [codex|claude|pi|antigravity] [options]
-  linger-computer runtime login <codex|claude|pi|antigravity> [options]
+  talos-computer runtime check [codex|claude|pi|antigravity] [options]
+  talos-computer runtime login <codex|claude|pi|antigravity> [options]
 
 Commands:
   check                        Check Codex, Claude Code, Pi, and Antigravity on this computer
   login                        Open one of them here so you can sign in to it
 `,
 	"runtime login": `Usage:
-  linger-computer runtime login <codex|claude|pi|antigravity> [options]
+  talos-computer runtime login <codex|claude|pi|antigravity> [options]
 
 Open a runtime on this terminal so you can sign in to it, for example enter
 /login in Pi. The runtime starts the way the daemon starts it: its native entry
@@ -116,7 +116,7 @@ Node on your PATH. When the runtime exits, this command checks it again.
 Options:
 ` + runtimePathOptions + "\n" + configOption + "\n",
 	"runtime check": `Usage:
-  linger-computer runtime check [codex|claude|pi|antigravity] [options]
+  talos-computer runtime check [codex|claude|pi|antigravity] [options]
 
 Check whether each runtime is installed, signed in, and compatible.
 Works without login and without a running daemon.
@@ -137,7 +137,7 @@ Options:
   --json                       Print machine-readable results
 ` + runtimePathOptions + "\n" + configOption + "\n",
 	"doctor": `Usage:
-  linger-computer doctor [--json] [--prune] [options]
+  talos-computer doctor [--json] [--prune] [options]
 
 Check the installation, configuration, connection, and runtimes.
 
@@ -146,14 +146,14 @@ Options:
   --prune                      Remove this computer's local enrollment
 ` + runtimePathOptions + "\n" + configOption + "\n",
 	"version": `Usage:
-  linger-computer version
+  talos-computer version
 `,
 }
 
-const generalHelp = `Linger Computer connects this computer to Linger so agents can run here.
+const generalHelp = `Talos Computer connects this computer to Talos so agents can run here.
 
 Usage:
-  linger-computer <command> [options]
+  talos-computer <command> [options]
 
 Commands:
   login                        Authorize and connect this computer
@@ -167,9 +167,9 @@ Commands:
   version                      Show the CLI version
 
 Get started:
-  linger-computer login
+  talos-computer login
 
-Run "linger-computer <command> --help" for options.
+Run "talos-computer <command> --help" for options.
 `
 
 // usage renders help naming this environment's own command.
@@ -178,5 +178,5 @@ func usage(topic, commandName string) string {
 	if topic != "" {
 		text = commandHelp[topic]
 	}
-	return strings.ReplaceAll(text, "linger-computer ", commandName+" ")
+	return strings.ReplaceAll(text, "talos-computer ", commandName+" ")
 }

@@ -10,9 +10,9 @@ import {
 } from "./shell-env.js";
 
 const framed = (variables: Record<string, string>): string =>
-  `banner\n__LINGER_ENV__${Object.entries(variables)
+  `banner\n__TALOS_ENV__${Object.entries(variables)
     .map(([key, value]) => `${key}=${value}\0`)
-    .join("")}__LINGER_ENV__`;
+    .join("")}__TALOS_ENV__`;
 
 describe.skipIf(process.platform === "win32")("loginShellEnvironment", () => {
   it("reads the interactive login shell's variables past its banner", async () => {

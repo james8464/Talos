@@ -16,7 +16,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { JsonLogger } from "@linger/service-kit/node";
+import type { JsonLogger } from "@talos/service-kit/node";
 
 import { AgentWikiBackend } from "../src/llm-wiki/agent-wiki-backend.js";
 import type { WikiInput } from "../src/llm-wiki/backend.js";
@@ -56,7 +56,7 @@ if (!args.get("state") || !corpusPrefix || !args.get("out"))
 const runtime = args.get("runtime") ?? "codex";
 const humanName = args.get("human-name") ?? "user";
 const concurrency = Number(args.get("concurrency") ?? 3);
-const dataRoot = path.join(state, "linger", "data");
+const dataRoot = path.join(state, "talos", "data");
 
 const sha = (value: string | Uint8Array) =>
   createHash("sha256").update(value).digest("hex");

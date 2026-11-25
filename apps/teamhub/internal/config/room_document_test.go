@@ -28,7 +28,7 @@ func TestLoadRoomDocumentEnvironmentOverrides(t *testing.T) {
 	t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
 	values := map[string]string{
 		"TEAMHUB_DOCUMENT_RUNTIME_URL": "https://runtime.environment.test",
-		"LINGER_SECRET_SEED":           testSecretSeed,
+		"TALOS_SECRET_SEED":           testSecretSeed,
 	}
 	for name, value := range values {
 		t.Setenv(name, value)
@@ -52,7 +52,7 @@ func TestLoadRejectsInvalidRoomDocumentRuntimeConfiguration(t *testing.T) {
 		},
 		"URL with path": {
 			"TEAMHUB_DOCUMENT_RUNTIME_URL": "https://runtime.example.test/internal",
-			"LINGER_SECRET_SEED":           testSecretSeed,
+			"TALOS_SECRET_SEED":           testSecretSeed,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

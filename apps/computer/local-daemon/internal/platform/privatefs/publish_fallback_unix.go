@@ -17,7 +17,7 @@ func publishWithFallback(source, destination string, renameErr error) error {
 	if !errors.Is(renameErr, unix.ENOSYS) && !errors.Is(renameErr, unix.EINVAL) && !errors.Is(renameErr, unix.ENOTSUP) {
 		return renameErr
 	}
-	lock, err := openWrite(filepath.Join(filepath.Dir(destination), ".linger-privatefs-publish.lock"), false)
+	lock, err := openWrite(filepath.Join(filepath.Dir(destination), ".talos-privatefs-publish.lock"), false)
 	if err != nil {
 		return err
 	}

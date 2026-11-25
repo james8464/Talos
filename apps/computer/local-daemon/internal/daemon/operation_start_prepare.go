@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/mcpproxy"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 func (d *Daemon) operationMCPProxies(ctx context.Context, command protocol.Command, spec provider.OperationSpec, prepared *preparedOperation) (*mcpproxy.Set, error) {

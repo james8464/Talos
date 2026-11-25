@@ -1,6 +1,6 @@
 # TeamHub CLI: standalone Agent business client
 
-- Use `pnpm --filter @linger/teamhub-cli test`, `typecheck`, and `build` for this boundary.
+- Use `pnpm --filter @talos/teamhub-cli test`, `typecheck`, and `build` for this boundary.
 - Keep the CLI independent of Agent Service, daemon, internal Runs, and MCP sessions.
 - TeamHub owns authorization and transactions; local configuration only selects identity and business defaults.
 - Call TeamHub through `client.api`, `openapi-fetch` typed by the generated `teamhub-agent-api` paths; `client.request` is only for byte transfers and the anonymous shared-link read. A new endpoint goes into the contract first.

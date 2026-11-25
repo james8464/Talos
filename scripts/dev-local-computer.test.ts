@@ -51,7 +51,7 @@ describe("dev Local Computer lifecycle script", () => {
     const root = await createTemporaryRoot();
     const fakeBin = path.join(root, "bin");
     const configPath = path.join(root, "computer.json");
-    const fakeCli = path.join(fakeBin, "linger-computer");
+    const fakeCli = path.join(fakeBin, "talos-computer");
     await writeFile(
       path.join(fakeBin, "node"),
       `#!/usr/bin/env bash\nprintf '%s\\n' "\${@: -1}"\n`,
@@ -75,10 +75,10 @@ describe("dev Local Computer lifecycle script", () => {
     const result = await runScript("status", {
       PATH: `${fakeBin}:/usr/bin:/bin`,
       HOME: root,
-      LINGER_LOCAL_COMPUTER_CONFIG: configPath,
-      LINGER_LOCAL_COMPUTER_CLI: fakeCli,
+      TALOS_LOCAL_COMPUTER_CONFIG: configPath,
+      TALOS_LOCAL_COMPUTER_CLI: fakeCli,
       // Run the script itself, not its environment loader through the fake node.
-      LINGER_LOCAL_COMPUTER_ENV_LOADED: "1",
+      TALOS_LOCAL_COMPUTER_ENV_LOADED: "1",
     });
 
     expect(result.stdout).toContain('"state":"running"');
@@ -92,7 +92,7 @@ describe("dev Local Computer lifecycle script", () => {
 
     await runScript("config", {
       ...configurationEnvironment(root, configPath),
-      LINGER_CODEX_AUTH_FILE: path.join(root, "missing-auth.json"),
+      TALOS_CODEX_AUTH_FILE: path.join(root, "missing-auth.json"),
     });
 
     const config = JSON.parse(await readFile(configPath, "utf8")) as {
@@ -112,7 +112,7 @@ describe("dev Local Computer lifecycle script", () => {
 
     await runScript("config", {
       ...configurationEnvironment(root, configPath),
-      LINGER_LOCAL_COMPUTER_MAX_CONCURRENT_RUNS: "4",
+      TALOS_LOCAL_COMPUTER_MAX_CONCURRENT_RUNS: "4",
     });
 
     const config = JSON.parse(await readFile(configPath, "utf8")) as {
@@ -128,12 +128,12 @@ describe("dev Local Computer lifecycle script", () => {
     const environment = {
       ...configurationEnvironment(root, configPath),
       TEAMHUB_BASE_URL: teamHub.url,
-      LINGER_LOCAL_COMPUTER_DISPLAY_NAME: "Dev Mac",
+      TALOS_LOCAL_COMPUTER_DISPLAY_NAME: "Dev Mac",
     };
     await writeFile(
-      environment.LINGER_LOCAL_OWNER_FILE!,
+      environment.TALOS_LOCAL_OWNER_FILE!,
       JSON.stringify({
-        owner_email: "owner@linger.local",
+        owner_email: "owner@talos.local",
         owner_password: "owner-test-password",
       }),
     );
@@ -193,7 +193,7 @@ describe("dev Local Computer lifecycle script", () => {
 });
 
 async function createTemporaryRoot(): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "linger-computer-script-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "talos-computer-script-"));
   temporaryDirectories.push(root);
   const fakeBin = path.join(root, "bin");
   await Promise.all([mkdir(path.join(root, "workspace")), mkdir(fakeBin)]);
@@ -237,7 +237,7 @@ async function startTeamHubEnrollmentFixture() {
       };
       if (request.url === "/v0/auth/login") {
         if (
-          body.identifier !== "owner@linger.local" ||
+          body.identifier !== "owner@talos.local" ||
           body.password !== "owner-test-password"
         )
           return reply(401);
@@ -320,12 +320,12 @@ function configurationEnvironment(
     HOME: root,
     // Never reach a developer's TeamHub or read this checkout's owner.
     TEAMHUB_BASE_URL: "http://127.0.0.1:1",
-    LINGER_LOCAL_OWNER_FILE: path.join(root, "local-owner.json"),
-    LINGER_LOCAL_COMPUTER_WORKSPACE: path.join(root, "workspace"),
-    LINGER_LOCAL_COMPUTER_STATE_DIRECTORY: path.join(root, "state"),
-    LINGER_LOCAL_COMPUTER_CONFIG: configPath,
-    LINGER_LOCAL_COMPUTER_SKIP_BUILD: "1",
-    LINGER_CODEX_PATH: codexFixturePath,
+    TALOS_LOCAL_OWNER_FILE: path.join(root, "local-owner.json"),
+    TALOS_LOCAL_COMPUTER_WORKSPACE: path.join(root, "workspace"),
+    TALOS_LOCAL_COMPUTER_STATE_DIRECTORY: path.join(root, "state"),
+    TALOS_LOCAL_COMPUTER_CONFIG: configPath,
+    TALOS_LOCAL_COMPUTER_SKIP_BUILD: "1",
+    TALOS_CODEX_PATH: codexFixturePath,
   };
 }
 
@@ -337,7 +337,7 @@ async function runScript(
     cwd: repositoryRoot,
     env: {
       ...environment,
-      LOCAL_ENV_FILE: path.join(os.tmpdir(), "missing-linger-env"),
+      LOCAL_ENV_FILE: path.join(os.tmpdir(), "missing-talos-env"),
     },
   });
 }

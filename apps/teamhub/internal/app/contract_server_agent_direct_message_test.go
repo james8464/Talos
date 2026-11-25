@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentdirectmessage"
-	teamhubagentapi "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentdirectmessage"
+	teamhubagentapi "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 type fakeAgentDirectMessageService struct {

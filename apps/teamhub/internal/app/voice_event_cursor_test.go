@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
 )
 
 func TestVoiceEventCursorScopesAndPreservesBigint(t *testing.T) {

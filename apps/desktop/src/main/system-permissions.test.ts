@@ -138,16 +138,16 @@ describe("runDesktopPermissionStep", () => {
     };
   };
 
-  it("prompts and opens Settings for Linger itself", async () => {
+  it("prompts and opens Settings for Talos itself", async () => {
     const { calls, host } = fixture();
     await runDesktopPermissionStep(host, {
       action: "prompt",
-      subject: "linger",
+      subject: "talos",
       permission: "screen_recording",
     });
     await runDesktopPermissionStep(host, {
       action: "open_settings",
-      subject: "linger",
+      subject: "talos",
       permission: "accessibility",
     });
     // Each step reads the status after it, which checks trust unprompted.
@@ -157,7 +157,7 @@ describe("runDesktopPermissionStep", () => {
     ]);
   });
 
-  it("opens CuaDriver's pane without counting it as Linger asking", async () => {
+  it("opens CuaDriver's pane without counting it as Talos asking", async () => {
     const { calls, host, permissions } = fixture();
     await runDesktopPermissionStep(host, {
       action: "open_settings",
@@ -172,7 +172,7 @@ describe("runDesktopPermissionStep", () => {
     const { calls, host } = fixture();
     await runDesktopPermissionStep(host, {
       action: "relaunch",
-      subject: "linger",
+      subject: "talos",
     });
     expect(calls).toEqual([]);
     await new Promise((resolve) => setImmediate(resolve));

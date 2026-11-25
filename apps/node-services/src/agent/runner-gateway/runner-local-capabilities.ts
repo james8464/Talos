@@ -10,11 +10,11 @@ import type {
   CapabilitySkillsScanned,
   DaemonToAgentEnvelope,
   ModelSourceStatus,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   RUNNER_GATEWAY_PROTOCOL_VERSION,
   parseAgentToDaemonEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 import {
   FIRST_BYOK_ENDPOINT_COMPUTER_VERSION,
   FIRST_MODEL_SOURCE_COMPUTER_VERSION,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 func TestMessageActivityRecordMatchesNativeTurn(t *testing.T) {

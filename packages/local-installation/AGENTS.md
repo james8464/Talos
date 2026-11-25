@@ -2,13 +2,13 @@
 
 This package owns instance state, the Native service lifecycle, local account
 provisioning and Computer enrollment. The installer service
-(`apps/linger-installer`) adapts its structured inputs and redacted events;
+(`apps/talos-installer`) adapts its structured inputs and redacted events;
 the core must not import app source or depend on browser/terminal UI.
 
 Keep instance mutations locked and private state owner-only. Never infer real
 Room execution from readiness. Do not reset existing accounts or Computer IDs,
 stop unrelated processes, pull mutable images, or delete volumes as recovery.
-Every installation runs natively from a Linger source checkout; Docker is not
+Every installation runs natively from a Talos source checkout; Docker is not
 used.
 
 On Windows `windowsPrivatePath` makes a private path owner-only and refuses it
@@ -76,7 +76,7 @@ continues. The services' `voice`
 setting tracks only the tools, so a key change never restarts them through
 it. A native process restarts when its generated environment changes.
 The desktop passes the system proxy it resolved for Soniox as
-`LINGER_SYSTEM_HTTPS_PROXY` (`service-proxy.ts`). When the person set no
+`TALOS_SYSTEM_HTTPS_PROXY` (`service-proxy.ts`). When the person set no
 `HTTPS_PROXY` themselves, Native gives only TeamHub and node-services
 `HTTPS_PROXY` with loopback added to `NO_PROXY`. TeamHub then sends every
 https call to the outside through it (voice key checks and file
@@ -128,14 +128,14 @@ still up, so its graceful shutdown requeues in-flight Agent Runs.
 `inspectSetup` keeps tool downloads and state in `home`; `targetHome`, when
 provided, selects the installation paths to inspect independently of that cache.
 
-The home is `LINGER_HOME`, else `~/.simplexai` (`home.ts`). Installs from
-before the product was renamed Linger convert once in
+The home is `TALOS_HOME`, else `~/.simplexai` (`home.ts`). Installs from
+before the product was renamed Talos convert once in
 `legacy-migration.ts`, which the installer runs before it opens the home (except
 inspection and stop modes) and
 the desktop runs through `installer.js --migrate`. Under each instance's lock
 it stops the instance's Computer and native services, renames `SIMPLEX_*`
 keys in the generated env files, and gives the instance its
-`linger-<name>-<hash>` project name. The legacy project name in
+`talos-<name>-<hash>` project name. The legacy project name in
 `instance.json` marks an instance as not yet converted, so it is written last
 and a rerun after a crash converges. A damaged record is skipped. An
 instance that fails keeps its legacy names and is returned with its reason;
@@ -192,7 +192,7 @@ only when their files still match the manifest's sizes and hashes. A missing
 or damaged installed file is copied again from the bundle, so Native can use
 the verified binaries without downloading Go and compiling from source.
 
-Every Linger release creates TeamHub's schema from the 852 baseline
+Every Talos release creates TeamHub's schema from the 852 baseline
 migration, which refuses a database that already holds one. A database from
 the desktop app before the rename has `public.accounts` but no applied 852
 row in `goose_db_version`, so it can never migrate (`legacy-database.ts`).
@@ -215,7 +215,7 @@ library (`localmodels-computer.ts`). A fresh login passes it as
 `--localmodels-*` options; it is part of the managed-runtime fingerprint, so an
 existing Computer is rebound once on its next connect. A distribution without
 the tool writes none. External Computers (the Desktop's) get the same paths as
-the `LINGER_LOCALMODELS_*` keys of the installer's instance runtime. Every
+the `TALOS_LOCALMODELS_*` keys of the installer's instance runtime. Every
 `localmodels` invocation in both the installer and the Daemon also isolates
 `LOCALMODELS_TOOLS_DIR` (`<home>/runtime/localmodels/tools`),
 `LOCALMODELS_BIFROST_DIR` (`<home>/runtime/localmodels/bifrost`), and
@@ -297,7 +297,7 @@ configuration, so the key never passes through Node. Each re-mount sends
 the kit's one small probe request to the person's endpoint and adds a few
 seconds to a launch after a quit. A failure (`LOCAL_MODELS_BUSY` when the
 lock never frees) is logged and returned as `details.byokGateway`
-(`{ code, message }`) of a successful resume, so Linger still opens; the
+(`{ code, message }`) of a successful resume, so Talos still opens; the
 Computer mounts the gateway again before the next Run on it
 (`EnsureGateway` in the Daemon's `internal/localmodels`).
 
@@ -349,7 +349,7 @@ differs from the current user is treated as foreign and cleared without
 signalling it, and `EPERM` while signalling a leased process revalidates the
 lease before raising `NATIVE_PROCESS_SIGNAL_DENIED` with the service and PID.
 On macOS every identity check reads `ps` start times in the C locale.
-Linger 0.1.2 recorded them in the locale it ran in; such a record is
+Talos 0.1.2 recorded them in the locale it ran in; such a record is
 converted once to the C-locale birth when `ps` in the installer's own
 locale still prints the recorded birth for the live leader holding the
 lease, and is otherwise left as it is. A start
@@ -362,7 +362,7 @@ under a lease no record holds, once its environment proves that lease; an
 attempt that failed or was killed before keeping a record would otherwise
 leave PostgreSQL holding `postmaster.pid` against every retry.
 
-The supervisor writes one `[linger-supervisor] <name>` line to the service's
+The supervisor writes one `[talos-supervisor] <name>` line to the service's
 log when it starts the service and for every exit (code, signal, uptime and
 whether it restarts). A start with `restartOnExit` (TeamHub, node-services and
 web, at `SERVICE_RESTART_POLICY`) makes the supervisor itself start the service
@@ -421,7 +421,7 @@ model data and tool state remain writable. Setup can replace a damaged kit
 from its pinned archive; quit and uninstall do not download or execute a kit
 that fails verification.
 
-Setting `LINGER_LOCALMODELS_DEV_PYTHON` and `LINGER_LOCALMODELS_DEV_MODULE_DIR`
+Setting `TALOS_LOCALMODELS_DEV_PYTHON` and `TALOS_LOCALMODELS_DEV_MODULE_DIR`
 to absolute paths runs a local `localmodels` checkout instead of fetching the
 published kit, and `LOCALMODELS_DEBUG` (`simulate` or `tiny`, or
 `~/.config/localmodels/debug.json`) passes straight through to `localmodels`.
@@ -466,7 +466,7 @@ keeps its 90 s wall clock. `prepareByokRuntime` logs elapsed time every 10 s whi
 the BYOK gateway (a log line, since the job appends and persists every stage
 event).
 
-Run `pnpm --filter @linger/local-installation check` (`make check-packages`
+Run `pnpm --filter @talos/local-installation check` (`make check-packages`
 runs it too); `make check-installer` runs its consumer, the installer, and
 applies to changes that affect its public behavior.
 
@@ -475,17 +475,17 @@ applies to changes that affect its public behavior.
 Unit tests mock every process, so a change to install ordering, concurrency,
 rollback, resume, or checkout switching also gets one real run on a
 developer machine. Never touch the machine's own install (`~/.simplexai`,
-`~/Library/Application Support/Linger`) or stop processes the run did not
+`~/Library/Application Support/Talos`) or stop processes the run did not
 start.
 
-- Isolate everything a run writes. `LINGER_HOME` alone is not enough: the
+- Isolate everything a run writes. `TALOS_HOME` alone is not enough: the
   localmodels kit defaults to `~/.local/share/localmodels` and Pi to the one
   on `PATH`, so also set `HOME` to a scratch directory and
-  `PATH=/usr/bin:/bin:/usr/sbin:/sbin`, plus `LINGER_DESKTOP_USER_DATA` and
-  `LINGER_BRIDGE_STATE_DIR` (otherwise the desktop removes the real bridge
+  `PATH=/usr/bin:/bin:/usr/sbin:/sbin`, plus `TALOS_DESKTOP_USER_DATA` and
+  `TALOS_BRIDGE_STATE_DIR` (otherwise the desktop removes the real bridge
   state). Use real paths: on macOS `/tmp` is a symlink and localmodels
   refuses it (`Unsafe runtime root`), so use `/private/tmp/...`.
-- Run the desktop from source with `LINGER_CHECKOUT` naming the checkout under
+- Run the desktop from source with `TALOS_CHECKOUT` naming the checkout under
   test (`apps/desktop/AGENTS.md`); add `--remote-debugging-port` to Electron to
   drive `app://setup/` over CDP. From source there are no bundled TeamHub
   binaries, so the installer prepares Go and compiles TeamHub, and its
@@ -495,7 +495,7 @@ start.
   check. Exercise a full install through BYOK instead, against the kit's
   stub endpoint once the installer has unpacked the kit:
   `PYTHONPATH=$K/modules $K/python/bin/python3.12 -P -s -m localmodels.debug_stub_server --bind 127.0.0.1 --port 18950 --model stub-model`
-  with `K=$LINGER_HOME/tools/localmodels/<kit hash>`, then enter
+  with `K=$TALOS_HOME/tools/localmodels/<kit hash>`, then enter
   `http://127.0.0.1:18950/v1` and any key in setup. `--stop` leaves the
   simulated stub servers running; stop them yourself.
 - Scenarios: a fresh install (runtime overlaps services and account in the

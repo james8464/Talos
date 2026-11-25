@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 var _ permission.Requester = (*HumanInteractionBridge)(nil)

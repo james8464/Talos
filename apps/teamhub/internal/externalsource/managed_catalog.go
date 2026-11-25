@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/secretbox"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/secretbox"
 )
 
 // managedAuthScheme is the auth scheme of a curated app's Composio-managed

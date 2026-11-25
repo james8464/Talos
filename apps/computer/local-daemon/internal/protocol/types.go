@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"time"
 
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 // Command is the host-facing command envelope. The daemon core only depends on
-// this local model; the Linger transport owns wire encoding and authentication.
+// this local model; the Talos transport owns wire encoding and authentication.
 type Command struct {
 	Type                  string          `json:"type"`
 	CommandID             string          `json:"command_id"`

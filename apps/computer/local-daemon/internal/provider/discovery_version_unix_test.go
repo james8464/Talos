@@ -31,9 +31,9 @@ fi
 if [ "$1" = "auth" ]; then echo '{"status":"ready"}'; exit 0; fi
 while IFS= read -r line; do
  case "$line" in
- *linger-probe*) echo '{"type":"response","id":"linger-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
- *linger-state*) echo '{"type":"response","id":"linger-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"model"},"thinkingLevel":"off"}}' ;;
- *linger-models*) echo '{"type":"response","id":"linger-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"fixture","id":"model"}]}}' ;;
+ *talos-probe*) echo '{"type":"response","id":"talos-probe","command":"get_state","success":true,"data":{"isStreaming":false}}' ;;
+ *talos-state*) echo '{"type":"response","id":"talos-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"model"},"thinkingLevel":"off"}}' ;;
+ *talos-models*) echo '{"type":"response","id":"talos-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"fixture","id":"model"}]}}' ;;
  esac
 done
 `

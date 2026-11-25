@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // Membership revocation already holds its authority and Context locks and

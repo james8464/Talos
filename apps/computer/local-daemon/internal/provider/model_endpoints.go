@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 // The vendors' own hosts, which a Runtime calls when its configuration names

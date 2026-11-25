@@ -17,7 +17,7 @@ afterEach(async () => {
 
 // A Mac whose developer directory gains clang once `installed` is set.
 async function mac() {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-xcode-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-xcode-"));
   roots.push(root);
   const state = { installed: false, windowOpen: false };
   const calls: string[][] = [];

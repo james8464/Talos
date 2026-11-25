@@ -53,8 +53,8 @@ vi.mock("livekit-client", () => ({
       identity: "trusted-runtime",
       isAgent: true,
       attributes: {
-        "linger.voice_ready_generation": "2",
-        "linger.voice_ready_track": "fixture-track",
+        "talos.voice_ready_generation": "2",
+        "talos.voice_ready_track": "fixture-track",
       },
     };
     remoteParticipants = new Map(
@@ -74,11 +74,11 @@ vi.mock("livekit-client", () => ({
       if (media.failBeforeReady)
         this.listeners.get("attributes")?.(
           {
-            "linger.voice_dictation_failure": "transcript_unconfirmed",
-            "linger.voice_dictation_failure_generation": "2",
+            "talos.voice_dictation_failure": "transcript_unconfirmed",
+            "talos.voice_dictation_failure_generation": "2",
             ...(media.failureCode === undefined
               ? {}
-              : { "linger.voice_dictation_failure_code": media.failureCode }),
+              : { "talos.voice_dictation_failure_code": media.failureCode }),
           },
           this.runtime,
         );

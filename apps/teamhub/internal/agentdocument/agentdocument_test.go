@@ -3,7 +3,7 @@ package agentdocument
 import (
 	"context"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
 )
 
 type fakeAuthorizer struct {

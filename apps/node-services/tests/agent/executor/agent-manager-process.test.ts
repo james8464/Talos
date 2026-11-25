@@ -7,11 +7,11 @@ import { createServer, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 
 const secretSeed = "test-seed-0123456789abcdef0123456789";
 const serviceToken = serviceCredential("node-services-internal", {
-  LINGER_SECRET_SEED: secretSeed,
+  TALOS_SECRET_SEED: secretSeed,
 })!;
 
 const packageRoot = fileURLToPath(new URL("../../../", import.meta.url));
@@ -249,7 +249,7 @@ const agentServiceEnvironment = (runtimeRoot: string): NodeJS.ProcessEnv => {
     ...process.env,
     NODE_SERVICES_HTTP_ADDRESS: "127.0.0.1:0",
     NODE_SERVICES_ROLES: "agent",
-    LINGER_SECRET_SEED: secretSeed,
+    TALOS_SECRET_SEED: secretSeed,
     AGENT_HOME: runtimeRoot,
     NODE_ENV: "test",
     TEAMHUB_BASE_URL: "http://127.0.0.1:1",

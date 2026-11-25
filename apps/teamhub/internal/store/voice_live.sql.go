@@ -896,7 +896,7 @@ type ListVoiceLiveKnownAddressesRow struct {
 
 // Where the user's email addresses are written, for the live voice to check a
 // recipient it heard against: their own (login, connected Gmail, Profile)
-// first, then the emails they sent from Linger, newest first. The caller
+// first, then the emails they sent from Talos, newest first. The caller
 // reads the addresses out of each text.
 func (q *Queries) ListVoiceLiveKnownAddresses(ctx context.Context, arg ListVoiceLiveKnownAddressesParams) ([]ListVoiceLiveKnownAddressesRow, error) {
 	rows, err := q.db.Query(ctx, listVoiceLiveKnownAddresses, arg.ActorID, arg.TenantID)

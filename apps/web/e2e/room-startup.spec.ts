@@ -26,7 +26,7 @@ test("Room startup keeps chat usable while auxiliary services load", async ({
   test.setTimeout(120_000);
   // Reset also restarts Runtime after a preceding recovery test stopped it.
   const fixture = await new RoomDocumentE2EHarnessClient(request).reset();
-  if (process.env.VERIFY_LINGER_EVIDENCE) {
+  if (process.env.VERIFY_TALOS_EVIDENCE) {
     await test.step("Doctor: verify this run's owned services", async () => {
       const output = execFileSync("apps/web/e2e/doctor.sh", {
         encoding: "utf8",
@@ -300,7 +300,7 @@ test("Room sending releases the next draft and Document opening avoids the crede
   const roomUrl = `/t/${fixture.tenant_id}/rooms/${fixture.room_id}/chat`;
   const documentUrl = `/t/${fixture.tenant_id}/documents/${fixture.document_id}`;
   const proof: Record<string, unknown> = { simulatedBusinessResponses: false };
-  if (process.env.VERIFY_LINGER_EVIDENCE) {
+  if (process.env.VERIFY_TALOS_EVIDENCE) {
     await writeFile(
       info.outputPath("doctor.txt"),
       execFileSync("apps/web/e2e/doctor.sh", {

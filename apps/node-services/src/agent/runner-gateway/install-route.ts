@@ -31,7 +31,7 @@ export const resolveInstallOrigin = (
 };
 
 const templateLine = {
-  webOrigin: 'web_origin="${LINGER_WEB_URL:-http://localhost:3000}"',
+  webOrigin: 'web_origin="${TALOS_WEB_URL:-http://localhost:3000}"',
   release: (target: string) => `release_${target.replace("-", "_")}=""`,
 };
 
@@ -73,7 +73,7 @@ export const renderShellInstallers = (
 ): ShellInstallers => {
   const originLine: [string, string] = [
     templateLine.webOrigin,
-    `web_origin="\${LINGER_WEB_URL:-${origin}}"`,
+    `web_origin="\${TALOS_WEB_URL:-${origin}}"`,
   ];
   const replacements = new Map<string, string>([
     originLine,
@@ -100,7 +100,7 @@ export const renderShellInstallers = (
   };
 };
 
-const WINDOWS_RELEASE_METADATA_MARKER = "__LINGER_RELEASE_METADATA_BASE64__";
+const WINDOWS_RELEASE_METADATA_MARKER = "__TALOS_RELEASE_METADATA_BASE64__";
 
 export interface WindowsInstallers {
   readonly install: string;
@@ -216,19 +216,19 @@ export function createComputerInstallRoute(
       const pathname = new URL(request.url).pathname;
       // irm decodes text/plain as UTF-8 and iex runs it.
       const scripts = new Map<string, readonly [string | undefined, string?]>([
-        ["/install/linger-computer.sh", [installation.shell?.install]],
+        ["/install/talos-computer.sh", [installation.shell?.install]],
         [
-          "/install/uninstall-linger-computer.sh",
+          "/install/uninstall-talos-computer.sh",
           [installation.shell?.uninstall],
         ],
         ...(hasWindows
           ? ([
               [
-                "/install/linger-computer.ps1",
+                "/install/talos-computer.ps1",
                 [installation.windows?.install, "text/plain"],
               ],
               [
-                "/install/uninstall-linger-computer.ps1",
+                "/install/uninstall-talos-computer.ps1",
                 [installation.windows?.uninstall, "text/plain"],
               ],
             ] as const)

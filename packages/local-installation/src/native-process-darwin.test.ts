@@ -57,32 +57,32 @@ describe("nativeProcessIdentity on macOS", () => {
     process.getuid = () => 501;
     process.env.LC_ALL = "zh_CN.UTF-8";
     process.env.LANG = "zh_CN.UTF-8";
-    process.env.LINGER_NATIVE_PROCESS_LEASE = lease;
+    process.env.TALOS_NATIVE_PROCESS_LEASE = lease;
   });
   afterEach(() => {
     Object.defineProperty(process, "platform", { value: platform });
     process.getuid = getuid;
     delete process.env.LC_ALL;
     delete process.env.LANG;
-    delete process.env.LINGER_NATIVE_PROCESS_LEASE;
+    delete process.env.TALOS_NATIVE_PROCESS_LEASE;
   });
 
   it("runs every ps in the C locale without the lease", async () => {
     output.identity = "Wed Nov 18 06:04:14 2026   501 73285 Ss\n";
-    output.environment = `node worker.mjs LINGER_NATIVE_PROCESS_LEASE=${lease}\n`;
+    output.environment = `node worker.mjs TALOS_NATIVE_PROCESS_LEASE=${lease}\n`;
     await expect(nativeProcessIdentity(73285, lease)).resolves.toBe(
       "darwin:Wed:Nov:18:06:04:14:2026:501:73285",
     );
     expect(calls).toHaveLength(2);
     for (const { env } of calls) {
       expect(env).toMatchObject({ LC_ALL: "C", LANG: "C" });
-      expect(env.LINGER_NATIVE_PROCESS_LEASE).toBeUndefined();
+      expect(env.TALOS_NATIVE_PROCESS_LEASE).toBeUndefined();
     }
   });
 
   it("verifies a process whose start time still prints localized", async () => {
     output.identity = `${zhStart}   501 73285 Ss\n`;
-    output.environment = `node worker.mjs LINGER_NATIVE_PROCESS_LEASE=${lease}\n`;
+    output.environment = `node worker.mjs TALOS_NATIVE_PROCESS_LEASE=${lease}\n`;
     await expect(nativeProcessIdentity(73285, lease)).resolves.toBe(
       `darwin:${zhStart.split(" ").join(":")}:501:73285`,
     );

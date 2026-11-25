@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 // An ask-user card asks the Agent's Sponsor and carries no Runtime request:

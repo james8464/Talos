@@ -3,9 +3,9 @@ package app
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // The owner's card may raise a prompt or open a pane only for a named
@@ -18,13 +18,13 @@ func TestLocalComputerPermissionActionNeedsItsPermission(t *testing.T) {
 		request httpapi.ComputerPermissionAction
 		ok      bool
 	}{
-		{httpapi.ComputerPermissionAction{Action: "prompt", Subject: "linger", Permission: &screen}, true},
+		{httpapi.ComputerPermissionAction{Action: "prompt", Subject: "talos", Permission: &screen}, true},
 		{httpapi.ComputerPermissionAction{Action: "open_settings", Subject: "computer_use", Permission: &screen}, true},
-		{httpapi.ComputerPermissionAction{Action: "relaunch", Subject: "linger"}, true},
-		{httpapi.ComputerPermissionAction{Action: "prompt", Subject: "linger"}, false},
-		{httpapi.ComputerPermissionAction{Action: "prompt", Subject: "linger", Permission: &camera}, false},
-		{httpapi.ComputerPermissionAction{Action: "relaunch", Subject: "linger", Permission: &screen}, false},
-		{httpapi.ComputerPermissionAction{Action: "status", Subject: "linger"}, false},
+		{httpapi.ComputerPermissionAction{Action: "relaunch", Subject: "talos"}, true},
+		{httpapi.ComputerPermissionAction{Action: "prompt", Subject: "talos"}, false},
+		{httpapi.ComputerPermissionAction{Action: "prompt", Subject: "talos", Permission: &camera}, false},
+		{httpapi.ComputerPermissionAction{Action: "relaunch", Subject: "talos", Permission: &screen}, false},
+		{httpapi.ComputerPermissionAction{Action: "status", Subject: "talos"}, false},
 		{httpapi.ComputerPermissionAction{Action: "prompt", Subject: "cua", Permission: &screen}, false},
 	} {
 		command, ok := localComputerPermissionAction(test.request)
@@ -39,17 +39,17 @@ func TestComputerPermissionDecisionValidatesTheAgentRequest(t *testing.T) {
 	reason := " Take a screenshot "
 	blank := "  "
 	decision, ok := computerPermissionDecision("computer-1", api.RequestAgentComputerPermissionsJSONRequestBody{
-		Subject: "linger", Permissions: []api.ComputerPermissionId{"screen_recording", "accessibility"}, Reason: &reason,
+		Subject: "talos", Permissions: []api.ComputerPermissionId{"screen_recording", "accessibility"}, Reason: &reason,
 	})
 	if !ok || decision.Reason != "Take a screenshot" || len(decision.Permissions) != 2 || decision.ComputerID != "computer-1" {
 		t.Fatalf("decision=%+v ok=%v", decision, ok)
 	}
 	for _, request := range []api.RequestAgentComputerPermissionsJSONRequestBody{
-		{Subject: "linger"},
-		{Subject: "linger", Permissions: []api.ComputerPermissionId{"camera"}},
-		{Subject: "linger", Permissions: []api.ComputerPermissionId{"accessibility", "accessibility"}},
+		{Subject: "talos"},
+		{Subject: "talos", Permissions: []api.ComputerPermissionId{"camera"}},
+		{Subject: "talos", Permissions: []api.ComputerPermissionId{"accessibility", "accessibility"}},
 		{Subject: "cua", Permissions: []api.ComputerPermissionId{"accessibility"}},
-		{Subject: "linger", Permissions: []api.ComputerPermissionId{"accessibility"}, Reason: &blank},
+		{Subject: "talos", Permissions: []api.ComputerPermissionId{"accessibility"}, Reason: &blank},
 	} {
 		if _, ok := computerPermissionDecision("computer-1", request); ok {
 			t.Fatalf("accepted %+v", request)

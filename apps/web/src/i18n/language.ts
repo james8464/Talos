@@ -26,7 +26,7 @@ export const SOURCE_LANGUAGE = "en" satisfies Language;
  * the user has not chosen, so a default other than English can be introduced
  * later without rewriting what is stored.
  */
-export const LANGUAGE_STORAGE_KEY = "linger.language";
+export const LANGUAGE_STORAGE_KEY = "talos.language";
 
 const catalogLoaders: Record<
   Exclude<Language, typeof SOURCE_LANGUAGE>,

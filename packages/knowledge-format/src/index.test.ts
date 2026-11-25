@@ -101,7 +101,7 @@ describe("validateOkfDocument", () => {
 type: Project Memory
 title: Delivery
 status: stable
-generated: { by: linger-memory/1, at: 2026-09-08T10:00:00+08:00 }
+generated: { by: talos-memory/1, at: 2026-09-08T10:00:00+08:00 }
 verified: []
 sources:
   - resource: memory://session/1

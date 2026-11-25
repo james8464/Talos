@@ -3,9 +3,9 @@ import { randomBytes } from "node:crypto";
 import { createServer, type AddressInfo } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isMuted, isRecord } from "@linger/service-kit";
-import { sha256Hex, type JsonLogger } from "@linger/service-kit/node";
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
+import { isMuted, isRecord } from "@talos/service-kit";
+import { sha256Hex, type JsonLogger } from "@talos/service-kit/node";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
 import type { HttpHost } from "../http-host.js";
 import {
   installModelPackages,
@@ -246,7 +246,7 @@ export async function startVoiceService(options: {
     }, restart);
     function spawnWorker(port: number, key: { variable: string; key: string }) {
       const workerEntry = fileURLToPath(
-        import.meta.resolve("@linger/voice-runtime/worker"),
+        import.meta.resolve("@talos/voice-runtime/worker"),
       );
       let child: ChildProcess;
       try {
@@ -256,7 +256,7 @@ export async function startVoiceService(options: {
           args: [
             ...(workerEntry.endsWith(".ts")
               ? ["--import", "tsx"]
-              : ["--conditions=linger-production"]),
+              : ["--conditions=talos-production"]),
             workerEntry,
             "start",
             ...(worker === "asr" ? [] : [`--${worker}`]),

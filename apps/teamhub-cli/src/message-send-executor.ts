@@ -3,7 +3,7 @@ import path from "node:path";
 import {
   bundleDocumentImages,
   inferFileMetadata,
-} from "@linger/document-files";
+} from "@talos/document-files";
 import {
   readExactHostFile,
   windowsWslPathIsAlias,

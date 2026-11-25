@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/personalinsight"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/personalprofile"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/personalinsight"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/personalprofile"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 type recordingPersonalInsightGenerator struct {

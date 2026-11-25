@@ -7,10 +7,10 @@ import (
 	"io"
 	"testing"
 
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func TestOperationStartPrepareWaitDoesNotBlockGatewayCancel(t *testing.T) {
@@ -197,17 +197,17 @@ func TestOperationStartPrepareWaitRevalidatesPublishedAuthority(t *testing.T) {
 			if _, err = d.registrations.Apply(t.Context(), observation); err != nil {
 				t.Fatal(err)
 			}
-			d.operationResolver = lingercontext.ExecutionResolver{
-				Views: views, Providers: map[string]lingercontext.ProviderInstallation{"codex": {Type: "codex", ExecutablePath: "/bin/codex", Version: "0.155.1"}},
-				WorkspaceGrants: map[string]lingercontext.WorkspaceGrant{prepare.WorkspaceGrantID: {GrantID: prepare.WorkspaceGrantID, TenantID: prepare.TenantID, Path: ready.WorkspacePath}},
-				RegistrationLookup: func(ctx context.Context, id string) (lingercontext.RegistrationBinding, bool, error) {
+			d.operationResolver = taloscontext.ExecutionResolver{
+				Views: views, Providers: map[string]taloscontext.ProviderInstallation{"codex": {Type: "codex", ExecutablePath: "/bin/codex", Version: "0.155.1"}},
+				WorkspaceGrants: map[string]taloscontext.WorkspaceGrant{prepare.WorkspaceGrantID: {GrantID: prepare.WorkspaceGrantID, TenantID: prepare.TenantID, Path: ready.WorkspacePath}},
+				RegistrationLookup: func(ctx context.Context, id string) (taloscontext.RegistrationBinding, bool, error) {
 					items, err := d.registrations.List(ctx)
 					for _, item := range items {
 						if item.RegistrationID == id {
-							return lingercontext.RegistrationBinding{RegistrationID: id, TenantID: item.Key.TenantID, OwnerActorID: item.Key.OwnerActorID, ProviderType: item.Key.ProviderType, Status: item.Status}, true, err
+							return taloscontext.RegistrationBinding{RegistrationID: id, TenantID: item.Key.TenantID, OwnerActorID: item.Key.OwnerActorID, ProviderType: item.Key.ProviderType, Status: item.Status}, true, err
 						}
 					}
-					return lingercontext.RegistrationBinding{}, false, err
+					return taloscontext.RegistrationBinding{}, false, err
 				},
 			}
 			prepare.ContextViewRef = ref

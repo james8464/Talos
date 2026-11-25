@@ -10,8 +10,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
 )
 
 type SlackImportRequest struct {

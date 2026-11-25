@@ -67,7 +67,7 @@ type Stats struct {
 \tUser, System, Idle, Nice, Total uint64
 }
 
-// Get reports an idle CPU: the counters need cgo (patched for Linger).
+// Get reports an idle CPU: the counters need cgo (patched for Talos).
 func Get() (*Stats, error) {
 \tticks := uint64(time.Now().UnixNano() / int64(10*time.Millisecond))
 \treturn &Stats{Idle: ticks, Total: ticks}, nil

@@ -236,7 +236,7 @@ async function loadCases(): Promise<{ cases: Case[]; subjects: Subject[] }> {
       root: path.join(
         memoEval,
         sources.runtime,
-        "linger/data",
+        "talos/data",
         c.agentId,
         "memory",
       ),

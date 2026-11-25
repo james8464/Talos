@@ -1,5 +1,5 @@
 # Run Prepare as the test user, Links as an administrator with symlink rights,
-# then set LINGER_TEST_WINDOWS_FILE_LINKS to Root and run the two
+# then set TALOS_TEST_WINDOWS_FILE_LINKS to Root and run the two
 # windows-precreated-{file-executor,resources}.test.ts files as the test user.
 # Run Clean as the test user after the tests. Use a new Root for each run.
 param(

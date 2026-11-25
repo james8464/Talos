@@ -10,8 +10,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	teamhubapi "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	teamhubapi "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 type agentKnowledgeInput struct {

@@ -1,4 +1,4 @@
-import { defineMessages } from "@linger/service-kit/messages";
+import { defineMessages } from "@talos/service-kit/messages";
 
 // The status line at the top of the tray menu and in the title bar.
 export const statusMessages = defineMessages("status", {
@@ -15,27 +15,27 @@ export const statusMessages = defineMessages("status", {
 
 // The tray menu, its tooltip and the update notifications.
 export const trayMessages = defineMessages("tray", {
-  tooltip: "Linger · {status}",
-  open: "Open Linger",
+  tooltip: "Talos · {status}",
+  open: "Open Talos",
   reconnect: "Reconnect This Computer",
   connect: "Connect This Computer…",
   preventSleep: "Prevent Sleep",
   showLogs: "Show Logs",
   saveDiagnostics: "Save Diagnostics…",
   sendDiagnostics: "Send Diagnostics…",
-  quit: "Quit Linger",
+  quit: "Quit Talos",
   downloading: "Downloading Update {version}…",
   restartToUpdate: "Restart to Update ({version})",
   waiting: "Updating to {version} When Tasks Finish",
-  download: "Download Linger {version}…",
+  download: "Download Talos {version}…",
   updateFailed: "Update Failed: {reason}",
   tryUpdatingAgain: "Try Updating Again",
   availableTitle: "Update available",
-  available: "Linger {version} is available. Click to open its download page.",
+  available: "Talos {version} is available. Click to open its download page.",
   readyTitle: "Update ready",
-  ready: "Linger {version} is downloaded. Click to restart Linger and update.",
+  ready: "Talos {version} is downloaded. Click to restart Talos and update.",
   signInFirst: "Sign in first",
   signInFirstDetail:
-    "Sign in to Linger in the window, then choose Connect This Computer again.",
+    "Sign in to Talos in the window, then choose Connect This Computer again.",
   enrollFailed: "Couldn't connect this computer",
 });

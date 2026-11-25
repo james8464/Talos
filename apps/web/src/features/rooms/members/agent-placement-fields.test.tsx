@@ -20,12 +20,12 @@ function emptySelection(): ReturnType<typeof useLocalRuntimeSelection> {
 
 describe("AgentPlacementFields", () => {
   afterEach(() => {
-    delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+    delete (window as { talosDesktop?: unknown }).talosDesktop;
   });
 
   it("hides CLI setup commands when running against the desktop app's own local server", async () => {
     const available = vi.fn(async () => true);
-    (window as { lingerDesktop?: unknown }).lingerDesktop = {
+    (window as { talosDesktop?: unknown }).talosDesktop = {
       localAccount: { available },
     };
 

@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
 )
 
 // Invalid input and an unconfigured Gateway stop before any database read.

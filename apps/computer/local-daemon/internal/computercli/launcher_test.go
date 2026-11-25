@@ -70,22 +70,22 @@ func (c *statusClient) Status(context.Context) (object, error) {
 
 func TestStartWaitsForThisLaunchNonce(t *testing.T) {
 	client := &statusClient{errs: []error{errControlRefused, errControlRefused}, statuses: []object{object{}.with("launch_nonce", "nonce-1")}}
-	if err := waitUntilReachableOrExit(context.Background(), client, "nonce-1", make(chan string), time.Second, "linger-computer"); err != nil {
+	if err := waitUntilReachableOrExit(context.Background(), client, "nonce-1", make(chan string), time.Second, "talos-computer"); err != nil {
 		t.Fatal(err)
 	}
 	other := &statusClient{statuses: []object{object{}.with("launch_nonce", "other")}}
-	if err := waitUntilReachableOrExit(context.Background(), other, "nonce-1", make(chan string), time.Second, "linger-computer"); !errors.Is(err, errExistingDaemon) {
+	if err := waitUntilReachableOrExit(context.Background(), other, "nonce-1", make(chan string), time.Second, "talos-computer"); !errors.Is(err, errExistingDaemon) {
 		t.Fatalf("existing daemon err=%v", err)
 	}
 	exited := make(chan string, 1)
 	exited <- "1"
 	unreachable := &statusClient{errs: []error{errControlRefused}}
-	if err := waitUntilReachableOrExit(context.Background(), unreachable, "nonce-1", exited, time.Second, "linger-computer"); err == nil || err.Error() != "Computer daemon exited before becoming ready (1)" {
+	if err := waitUntilReachableOrExit(context.Background(), unreachable, "nonce-1", exited, time.Second, "talos-computer"); err == nil || err.Error() != "Computer daemon exited before becoming ready (1)" {
 		t.Fatalf("early exit err=%v", err)
 	}
 	never := &statusClient{errs: []error{errControlRefused, errControlRefused, errControlRefused, errControlRefused}}
-	err := waitUntilReachableOrExit(context.Background(), never, "nonce-1", make(chan string), 60*time.Millisecond, "linger-computer-dev")
-	if failure := asCLIError(err); failure.category != categoryDaemonLifecycle || failure.message != "Computer daemon did not become ready; inspect linger-computer-dev daemon logs" {
+	err := waitUntilReachableOrExit(context.Background(), never, "nonce-1", make(chan string), 60*time.Millisecond, "talos-computer-dev")
+	if failure := asCLIError(err); failure.category != categoryDaemonLifecycle || failure.message != "Computer daemon did not become ready; inspect talos-computer-dev daemon logs" {
 		t.Fatalf("timeout err=%v", err)
 	}
 }
@@ -98,14 +98,14 @@ func TestWaitUntilDaemonStopsNeedsControlAndProcessGone(t *testing.T) {
 }
 
 func TestDaemonExecutableRequiresAnAbsoluteDevelopmentPath(t *testing.T) {
-	if _, err := daemonExecutable(map[string]string{"LINGER_GO_LOCAL_DAEMON_PATH": "relative/daemon"}); err == nil {
+	if _, err := daemonExecutable(map[string]string{"TALOS_GO_LOCAL_DAEMON_PATH": "relative/daemon"}); err == nil {
 		t.Fatal("relative daemon path accepted")
 	}
 	explicit := filepath.Join(t.TempDir(), "daemon")
-	if got, err := daemonExecutable(map[string]string{"LINGER_GO_LOCAL_DAEMON_PATH": explicit}); err != nil || got != explicit {
+	if got, err := daemonExecutable(map[string]string{"TALOS_GO_LOCAL_DAEMON_PATH": explicit}); err != nil || got != explicit {
 		t.Fatalf("daemon=%q err=%v", got, err)
 	}
-	if _, err := daemonExecutable(map[string]string{}); err == nil || err.Error() != "LINGER_GO_LOCAL_DAEMON_PATH is required for source development" {
+	if _, err := daemonExecutable(map[string]string{}); err == nil || err.Error() != "TALOS_GO_LOCAL_DAEMON_PATH is required for source development" {
 		t.Fatalf("source run err=%v", err)
 	}
 }
@@ -113,7 +113,7 @@ func TestDaemonExecutableRequiresAnAbsoluteDevelopmentPath(t *testing.T) {
 func TestInstalledServiceCommandBindsTheStableLauncher(t *testing.T) {
 	root := t.TempDir()
 	bundle := "lib-0123456789abcdef-1"
-	executable := filepath.Join(root, bundle, "cli", "linger-computer.exe")
+	executable := filepath.Join(root, bundle, "cli", "talos-computer.exe")
 	if err := os.MkdirAll(filepath.Dir(executable), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -123,15 +123,15 @@ func TestInstalledServiceCommandBindsTheStableLauncher(t *testing.T) {
 	if err := os.Mkdir(launchers, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	launcher := filepath.Join(launchers, "linger-computer-dev.exe")
-	writeFile(t, launcher, "MZ linger-native-cli-launcher-v1")
-	writeFile(t, filepath.Join(launchers, "linger-computer-dev.launcher.json"), `{"schemaVersion":1,"dataRoot":`+quote(root)+`}`)
+	launcher := filepath.Join(launchers, "talos-computer-dev.exe")
+	writeFile(t, launcher, "MZ talos-native-cli-launcher-v1")
+	writeFile(t, filepath.Join(launchers, "talos-computer-dev.launcher.json"), `{"schemaVersion":1,"dataRoot":`+quote(root)+`}`)
 	resolved, _ := filepath.EvalSymlinks(executable)
 	got, err := boundLauncher(resolved, "/data/config.json", root, launcher)
 	if err != nil || strings.Join(got, " ") != launcher+" --config /data/config.json" {
 		t.Fatalf("command=%v err=%v", got, err)
 	}
-	if got, _ := boundLauncher("/elsewhere/linger-computer.exe", "/data/config.json", root, launcher); got != nil {
+	if got, _ := boundLauncher("/elsewhere/talos-computer.exe", "/data/config.json", root, launcher); got != nil {
 		t.Fatalf("a source launch was bound: %v", got)
 	}
 	writeFile(t, launcher, "not a launcher")

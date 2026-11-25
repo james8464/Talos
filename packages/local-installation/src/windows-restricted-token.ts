@@ -20,7 +20,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 
-public static class LingerWithoutAdministrators {
+public static class TalosWithoutAdministrators {
   [StructLayout(LayoutKind.Sequential)]
   struct SidAndAttributes { public IntPtr Sid; public uint Attributes; }
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -111,7 +111,7 @@ public static class LingerWithoutAdministrators {
   }
 }
 '@
-  exit ([LingerWithoutAdministrators]::Run($command))
+  exit ([TalosWithoutAdministrators]::Run($command))
 } catch {
   # Plain output: it reaches the service log even where PowerShell runs in
   # Constrained Language mode and refuses Add-Type.

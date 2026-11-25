@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/taskexecution"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/taskexecution"
 )
 
 // ProgressScopes are what list_tasks can report on: the tasks this voice

@@ -16,7 +16,7 @@ describe("OAuth popup", () => {
     expect(openOAuthPopup("https://connect.example.test/oauth")).toBe(popup);
     expect(window.open).toHaveBeenCalledWith(
       "https://connect.example.test/oauth",
-      "linger_composio_oauth",
+      "talos_composio_oauth",
       expect.stringMatching(
         /popup=yes,width=560,height=720,left=\d+,top=\d+,resizable=yes,scrollbars=yes/,
       ),
@@ -30,7 +30,7 @@ describe("OAuth popup", () => {
   });
 
   it("accepts Electron's handoff to the system browser", () => {
-    vi.stubGlobal("lingerDesktop", { connectorOAuth: {} });
+    vi.stubGlobal("talosDesktop", { connectorOAuth: {} });
     vi.spyOn(window, "open").mockReturnValue(null);
     expect(openOAuthUrl("https://connect.example.test/oauth")).toBe(true);
   });

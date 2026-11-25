@@ -66,15 +66,15 @@ const RELEASE_APPLICATION_ENTRIES = [
 ];
 const windows = (target) => target.startsWith("win32-");
 const daemonEntry = (target) =>
-  `daemon/linger-computer-daemon${windows(target) ? ".exe" : ""}`;
+  `daemon/talos-computer-daemon${windows(target) ? ".exe" : ""}`;
 const cliEntry = (target) =>
-  `cli/linger-computer${windows(target) ? ".exe" : ""}`;
+  `cli/talos-computer${windows(target) ? ".exe" : ""}`;
 const nodeEntry = (target) =>
   `runtime/bin/node${windows(target) ? ".exe" : ""}`;
-// The Windows launcher serves as both the stable bin/linger-computer-*.exe
+// The Windows launcher serves as both the stable bin/talos-computer-*.exe
 // commands and the TeamHub CLI entry.
 const WINDOWS_LAUNCHER_ENTRY = "cli/teamhub.exe";
-const INSTALLER_ENTRY = "installer/linger-computer.sh";
+const INSTALLER_ENTRY = "installer/talos-computer.sh";
 const RELEASE_TIMESTAMP = new Date("2000-01-01T00:00:00.000Z");
 const GZIP_LEVEL = 9;
 
@@ -86,7 +86,7 @@ const GZIP_LEVEL = 9;
 export function parseReleaseArguments(arguments_, environment = process.env) {
   const options = {
     deps: null,
-    output: path.join(repositoryRoot, ".linger-runtime/computer-release"),
+    output: path.join(repositoryRoot, ".talos-runtime/computer-release"),
     part: "all",
     targets:
       environment.COMPUTER_RELEASE_TARGETS?.trim() ||
@@ -150,7 +150,7 @@ export async function prepareLocalComputerRelease(
   const filesDirectory = path.join(options.output, "files");
   await mkdir(filesDirectory, { recursive: true });
   const temporaryRoot = await mkdtemp(
-    path.join(os.tmpdir(), "linger-computer-release-"),
+    path.join(os.tmpdir(), "talos-computer-release-"),
   );
   try {
     if (options.part !== "app") {
@@ -190,14 +190,14 @@ export async function prepareLocalComputerRelease(
     // node-services renders these templates next to release.json.
     await publishWindowsInstallers(options.output);
     for (const name of [
-      "install-linger-computer.sh",
-      "uninstall-linger-computer.sh",
+      "install-talos-computer.sh",
+      "uninstall-talos-computer.sh",
     ]) {
       await cp(
         path.join(repositoryRoot, "scripts", name),
         path.join(
           options.output,
-          name === "install-linger-computer.sh" ? "linger-computer.sh" : name,
+          name === "install-talos-computer.sh" ? "talos-computer.sh" : name,
         ),
       );
     }
@@ -323,7 +323,7 @@ const buildApplicationArchives = async (
   await buildBundle(applicationBundle);
   await mkdir(path.join(applicationBundle, "installer"), { recursive: true });
   await cp(
-    path.join(repositoryRoot, "scripts/install-linger-computer.sh"),
+    path.join(repositoryRoot, "scripts/install-talos-computer.sh"),
     path.join(applicationBundle, INSTALLER_ENTRY),
   );
   await chmod(path.join(applicationBundle, INSTALLER_ENTRY), 0o755);
@@ -348,7 +348,7 @@ const buildApplicationArchives = async (
         const result = await runCapture(path.join(bundle, cliEntry(target)), [
           "version",
         ]);
-        if (result.trim() !== `linger-computer ${version}`)
+        if (result.trim() !== `talos-computer ${version}`)
           throw new Error(
             "Release CLI version does not match release metadata.",
           );
@@ -418,23 +418,23 @@ const stageReleaseGoBinaries = async (bundle, target, version) => {
   };
   const versioned = [
     "-ldflags",
-    `-X github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport.ReleaseVersion=${version}`,
+    `-X github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport.ReleaseVersion=${version}`,
   ];
   await build(
     path.join(bundle, daemonEntry(target)),
     versioned,
-    "./cmd/linger-computer-daemon",
+    "./cmd/talos-computer-daemon",
   );
   await build(
     path.join(bundle, cliEntry(target)),
     versioned,
-    "./cmd/linger-computer",
+    "./cmd/talos-computer",
   );
   if (windows(target)) {
     await build(
       path.join(bundle, WINDOWS_LAUNCHER_ENTRY),
       [],
-      "./cmd/linger-computer-launcher",
+      "./cmd/talos-computer-launcher",
     );
   }
 };
@@ -444,8 +444,8 @@ export const ensurePinnedNodeRuntimeArchive = async (target) => {
 };
 
 const nodeRuntimeCacheDirectory = () =>
-  process.env.LINGER_COMPUTER_NODE_DISTRIBUTION_CACHE?.trim() ||
-  path.join(repositoryRoot, ".linger-runtime", "node-distributions");
+  process.env.TALOS_COMPUTER_NODE_DISTRIBUTION_CACHE?.trim() ||
+  path.join(repositoryRoot, ".talos-runtime", "node-distributions");
 
 export const extractNodeRuntime = async (archivePath, bundle, archiveName) => {
   if (archiveName.endsWith(".zip")) {

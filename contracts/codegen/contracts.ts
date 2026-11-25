@@ -47,8 +47,8 @@ export const contractEntries: ContractEntry[] = [
     go: { package: "nodeservicesinternal", mode: "client" },
   },
   {
-    id: "linger-installer",
-    entrypoint: "contracts/openapi/linger-installer/openapi.yaml",
+    id: "talos-installer",
+    entrypoint: "contracts/openapi/talos-installer/openapi.yaml",
   },
 ];
 
@@ -284,7 +284,7 @@ export function verifyContracts(entries: ContractEntry[] = contractEntries) {
       ].join("\n"),
     );
   }
-  const scratch = mkdtempSync(path.join(tmpdir(), "linger-contracts."));
+  const scratch = mkdtempSync(path.join(tmpdir(), "talos-contracts."));
   try {
     const outputRoot = path.join(scratch, "generated");
     generateContracts(outputRoot, path.join(scratch, "build"), entries);

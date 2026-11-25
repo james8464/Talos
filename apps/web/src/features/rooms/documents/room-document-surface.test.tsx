@@ -180,7 +180,7 @@ describe("Unified Document legacy convergence", () => {
     wikiLink.href = "../projects/project.md#working-preferences";
     window.sessionStorage.clear();
     window.sessionStorage.setItem(
-      "linger:library-shared-collapsed:v2:tenant-northstar",
+      "talos:library-shared-collapsed:v2:tenant-northstar",
       "false",
     );
   });
@@ -884,7 +884,7 @@ describe("Unified Document page", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     window.sessionStorage.setItem(
-      "linger:library-shared-collapsed:v2:tenant-northstar",
+      "talos:library-shared-collapsed:v2:tenant-northstar",
       "false",
     );
   });

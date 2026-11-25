@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
 )
 
 // Card budgets. The card is part of every timeline load, so the full call and

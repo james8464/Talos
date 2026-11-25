@@ -15,7 +15,7 @@ const SECONDARY_NAVIGATION_DEFAULT_WIDTH = 240;
 /** Workspace and Wiki draw their secondary navigation at one shared width. */
 export function useSecondaryNavigationWidth(tenantId: string) {
   return useSidebarWidth(
-    `linger:chat-navigation-width:${tenantId}`,
+    `talos:chat-navigation-width:${tenantId}`,
     SECONDARY_NAVIGATION_DEFAULT_WIDTH,
   );
 }
@@ -28,7 +28,7 @@ export function useRoomListWidth(tenantId: string) {
   // The desktop app keeps its narrower Chat list, one width with Workspace.
   const desktop = isDesktopShell();
   return useSidebarWidth(
-    `linger:${desktop ? "chat-navigation" : "room-list"}-width:${tenantId}`,
+    `talos:${desktop ? "chat-navigation" : "room-list"}-width:${tenantId}`,
     desktop ? SECONDARY_NAVIGATION_DEFAULT_WIDTH : 380,
     desktop ? {} : { min: 260, max: 460 },
   );

@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const maxConfigBytes = 1024 * 1024

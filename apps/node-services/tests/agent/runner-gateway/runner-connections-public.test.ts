@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   OperationStart,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   LocalComputerOfflineError,
   MINIMUM_CURRENT_COMPUTER_VERSION,

@@ -10,11 +10,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomcreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func (a *App) listTenants(c *gin.Context) {
@@ -253,12 +253,12 @@ func (a *App) createMessage(c *gin.Context) {
 }
 
 func (a *App) recordMessageCommitTiming(c *gin.Context) {
-	correlationID := c.GetHeader("X-Linger-Latency-ID")
+	correlationID := c.GetHeader("X-Talos-Latency-ID")
 	if !idempotencyKeyPattern.MatchString(correlationID) {
 		return
 	}
 	committedAt := time.Now().UTC()
-	c.Header("X-Linger-Message-Commit-Unix-Ms", strconv.FormatInt(committedAt.UnixMilli(), 10))
+	c.Header("X-Talos-Message-Commit-Unix-Ms", strconv.FormatInt(committedAt.UnixMilli(), 10))
 	if a.logger != nil {
 		a.logger.Info("local_agent_ingress.message_committed",
 			"correlation_id", correlationID,

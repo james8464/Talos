@@ -20,7 +20,7 @@ import {
   TrackPublishOptions,
   TrackSource,
 } from "@livekit/rtc-node";
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 
 type VoiceCapture = components["schemas"]["VoiceCapture"];
 type VoiceSession = components["schemas"]["VoiceSession"];
@@ -471,7 +471,7 @@ try {
     baseUrl,
     cookie,
     runtimeRoot: fileURLToPath(
-      new URL("../../../.linger-runtime/voice-acceptance", import.meta.url),
+      new URL("../../../.talos-runtime/voice-acceptance", import.meta.url),
     ),
     requireSpeech: minFinalEvents > 0,
     requireTask: false,

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
 // makensis runs only in the Windows packaging; these check how its script
-// stops Linger before files are replaced or removed.
+// stops Talos before files are replaced or removed.
 const script = readFileSync(
   path.join(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -26,27 +26,27 @@ const order = (text: string, ...steps: string[]) => {
 
 it("stops an earlier release before an install replaces its files", () => {
   order(
-    block('Section "Linger"', "SectionEnd"),
-    "Call StopEarlierLinger",
-    "Call CloseLinger",
+    block('Section "Talos"', "SectionEnd"),
+    "Call StopEarlierTalos",
+    "Call CloseTalos",
     'RMDir /r "$INSTDIR\\resources"',
     'File /r "${STAGE}\\*"',
     'FileOpen $0 "${STOP_MARKER}" w',
   );
 });
 
-it("stops Linger before the uninstall removes it", () => {
+it("stops Talos before the uninstall removes it", () => {
   order(
     block('Section "Uninstall"', "SectionEnd"),
     'StrCpy $R0 "${INSTALLER_SCRIPT}"',
-    "Call un.StopLinger",
-    "Call un.CloseLinger",
+    "Call un.StopTalos",
+    "Call un.CloseTalos",
     'RMDir /r "$INSTDIR"',
   );
 });
 
 it("asks only a release that knows --quit to quit, then runs the stop", () => {
-  const stop = block("Function ${UN}StopLinger", "FunctionEnd");
+  const stop = block("Function ${UN}StopTalos", "FunctionEnd");
   order(
     stop,
     'IfFileExists "${STOP_MARKER}" 0 stop',
@@ -57,7 +57,7 @@ it("asks only a release that knows --quit to quit, then runs the stop", () => {
 });
 
 it("waits for the app to exit only when it was asked to quit", () => {
-  const stop = block("Function ${UN}StopLinger", "FunctionEnd");
+  const stop = block("Function ${UN}StopTalos", "FunctionEnd");
   order(
     stop,
     "--instance desktop --stop",
@@ -69,29 +69,29 @@ it("waits for the app to exit only when it was asked to quit", () => {
 });
 
 it("stops every earlier release with this release's script", () => {
-  const earlier = block("Function StopEarlierLinger", "FunctionEnd");
+  const earlier = block("Function StopEarlierTalos", "FunctionEnd");
   // An earlier release's own script may leave its services running.
   expect(earlier).not.toContain("STOP_MARKER");
   order(
     earlier,
-    'IfFileExists "$INSTDIR\\Linger.exe" 0 done',
+    'IfFileExists "$INSTDIR\\Talos.exe" 0 done',
     "${STAGE}\\resources\\app\\dist\\installer\\installer.js",
     'IfFileExists "$INSTDIR\\resources\\app\\dist\\installer\\distribution.json"',
     'CopyFiles /SILENT "$INSTDIR\\resources\\app\\dist\\installer\\distribution.json" "$PLUGINSDIR"',
     'StrCpy $R0 "$PLUGINSDIR\\stop.mjs"',
-    "Call StopLinger",
+    "Call StopTalos",
   );
   expect(script).toContain(
     '!define INSTALLER_SCRIPT "$INSTDIR\\resources\\app\\dist\\installer\\installer.js"',
   );
 });
 
-it("stops the services again when Retry follows a running Linger", () => {
+it("stops the services again when Retry follows a running Talos", () => {
   order(
-    block("Function ${UN}CloseLinger", "FunctionEnd"),
+    block("Function ${UN}CloseTalos", "FunctionEnd"),
     "IDRETRY again",
     "again:",
-    "Call ${UN}StopLinger",
+    "Call ${UN}StopTalos",
     "Goto retry",
   );
 });
@@ -108,11 +108,11 @@ it("reads /update and /relaunch from the command line", () => {
   expect(script).toContain('!include "FileFunc.nsh"');
 });
 
-it("starts Linger after an install only when asked to relaunch", () => {
+it("starts Talos after an install only when asked to relaunch", () => {
   order(
     block("Function .onInstSuccess", "FunctionEnd"),
     "StrCmp $Relaunch 1 0 done",
-    "Exec '\"$INSTDIR\\Linger.exe\"'",
+    "Exec '\"$INSTDIR\\Talos.exe\"'",
     "done:",
   );
 });
@@ -134,7 +134,7 @@ it("shows an update only its progress page", () => {
   order(
     block("Function ShowProgress", "FunctionEnd"),
     "$Updating",
-    "Updating Linger to ${VERSION}",
+    "Updating Talos to ${VERSION}",
   );
   // A custom folder from /D= stays where it is.
   expect(script).toContain(
@@ -144,7 +144,7 @@ it("shows an update only its progress page", () => {
 
 it("starts the earlier app after a failed update only if no file was replaced", () => {
   order(
-    block('Section "Linger"', "SectionEnd"),
+    block('Section "Talos"', "SectionEnd"),
     "Call RemoveLegacyInstall",
     "StrCpy $Replacing 1",
     'RMDir /r "$INSTDIR\\resources"',
@@ -154,9 +154,9 @@ it("starts the earlier app after a failed update only if no file was replaced", 
     failed,
     "StrCmp $Updating 1 0 done",
     "StrCmp $Replacing 1 rerun",
-    'IfFileExists "$INSTDIR\\Linger.exe" 0 rerun',
+    'IfFileExists "$INSTDIR\\Talos.exe" 0 rerun',
     "StrCmp $Relaunch 1 0 done",
-    "Exec '\"$INSTDIR\\Linger.exe\"'",
+    "Exec '\"$INSTDIR\\Talos.exe\"'",
     "rerun:",
     "Run this setup again",
     "$EXEPATH",

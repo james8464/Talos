@@ -4,14 +4,14 @@ import { markStartMenuShortcut } from "./start-menu-shortcut.js";
 
 const APP_DATA = "C:\\Users\\Administrator\\AppData\\Roaming";
 const SHORTCUT =
-  "C:\\Users\\Administrator\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Linger.lnk";
+  "C:\\Users\\Administrator\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Talos.lnk";
 const INSTALLED =
-  "C:\\Users\\Administrator\\AppData\\Local\\Programs\\Linger\\Linger.exe";
-const PORTABLE = "C:\\lv015\\app\\Linger\\Linger.exe";
-const APP_ID = "com.simplexai.linger.desktop.preview";
+  "C:\\Users\\Administrator\\AppData\\Local\\Programs\\Talos\\Talos.exe";
+const PORTABLE = "C:\\lv015\\app\\Talos\\Talos.exe";
+const APP_ID = "com.simplexai.talos.desktop.preview";
 
 describe("markStartMenuShortcut", () => {
-  it("does not touch the Start Menu shortcut when LINGER_DESKTOP_USER_DATA is set", () => {
+  it("does not touch the Start Menu shortcut when TALOS_DESKTOP_USER_DATA is set", () => {
     const readShortcutLink = vi.fn(() => ({ target: INSTALLED }));
     const writeShortcutLink = vi.fn(() => true);
 
@@ -20,7 +20,7 @@ describe("markStartMenuShortcut", () => {
         appData: APP_DATA,
         execPath: INSTALLED,
         appUserModelId: APP_ID,
-        env: { LINGER_DESKTOP_USER_DATA: "C:\\lv015\\ud" },
+        env: { TALOS_DESKTOP_USER_DATA: "C:\\lv015\\ud" },
         exists: () => true,
         readShortcutLink,
         writeShortcutLink,
@@ -129,11 +129,11 @@ describe("markStartMenuShortcut", () => {
     expect(
       markStartMenuShortcut({
         appData: APP_DATA,
-        execPath: "Linger.exe",
+        execPath: "Talos.exe",
         appUserModelId: APP_ID,
         env: {},
         exists: () => true,
-        readShortcutLink: () => ({ target: "Linger.exe" }),
+        readShortcutLink: () => ({ target: "Talos.exe" }),
         writeShortcutLink,
       }),
     ).toBe(false);
@@ -143,7 +143,7 @@ describe("markStartMenuShortcut", () => {
   it("canonicalizes paths via realpath and strips extended-length prefixes before comparing", () => {
     const writeShortcutLink = vi.fn(() => true);
     const shortTarget =
-      "C:\\Users\\ADMINI~1\\AppData\\Local\\Programs\\Linger\\Linger.exe";
+      "C:\\Users\\ADMINI~1\\AppData\\Local\\Programs\\Talos\\Talos.exe";
 
     expect(
       markStartMenuShortcut({

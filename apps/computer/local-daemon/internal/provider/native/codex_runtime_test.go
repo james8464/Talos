@@ -67,7 +67,7 @@ func TestCodexPrepareStrictResume(t *testing.T) {
 			t.Fatalf("outcome = %+v", out)
 		}
 		names := fake.requests("thread/name/set")
-		if len(names) != 1 || names[0]["params"].(map[string]any)["name"] != "Linger session" || fake.count("turn/start") != 0 {
+		if len(names) != 1 || names[0]["params"].(map[string]any)["name"] != "Talos session" || fake.count("turn/start") != 0 {
 			t.Fatalf("requests = %v", fake.methods())
 		}
 		start := fake.requests("thread/start")[0]["params"].(map[string]any)
@@ -992,13 +992,13 @@ func TestCodexThreadRunsTheShellTextHookBeforeShellCommands(t *testing.T) {
 	fake := newCodexFake(t, []codexFakeTurn{{Status: "completed"}}, nil)
 	codexResidentCapForTest(t, 0)
 	spec := fake.spec()
-	spec.ShellTextHook = "/opt/linger/linger-computer-daemon"
+	spec.ShellTextHook = "/opt/talos/talos-computer-daemon"
 	if out, _ := codexDrain(t, fake.runtime(nil), "hello", spec); out.Status != statusCompleted {
 		t.Fatalf("outcome = %+v", out)
 	}
 	config, _ := fake.requests("thread/start")[0]["params"].(map[string]any)["config"].(map[string]any)
 	hooks, _ := json.Marshal(config["hooks"])
-	found := strings.Contains(string(hooks), `"PreToolUse":[{"hooks":[{"command":"'/opt/linger/linger-computer-daemon' shell-text-hook"`) && strings.Contains(string(hooks), `"matcher":"^Bash$"`)
+	found := strings.Contains(string(hooks), `"PreToolUse":[{"hooks":[{"command":"'/opt/talos/talos-computer-daemon' shell-text-hook"`) && strings.Contains(string(hooks), `"matcher":"^Bash$"`)
 	if !found || config["bypass_hook_trust"] != true {
 		t.Fatalf("config = %v", config)
 	}

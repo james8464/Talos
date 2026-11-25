@@ -55,7 +55,7 @@ async function fixture() {
   await mkdir(path.join(repo, "scripts"), { recursive: true });
   await writeFile(
     path.join(repo, "package.json"),
-    JSON.stringify({ name: "linger" }),
+    JSON.stringify({ name: "talos" }),
   );
   await writeFile(path.join(repo, "scripts/source-native.mjs"), "export {};\n");
   return { home, repo };
@@ -97,7 +97,7 @@ test("native checkout identities are stable", async () => {
   };
   if (expected.LIVEKIT_URL !== previous.LIVEKIT_URL)
     expect(second.warnings).toContain(
-      `Port ${new URL(previous.LIVEKIT_URL!).port} is in use by another program; Linger's livekit uses port ${liveKit.httpPort} instead.\n`,
+      `Port ${new URL(previous.LIVEKIT_URL!).port} is in use by another program; Talos's livekit uses port ${liveKit.httpPort} instead.\n`,
     );
   const current = parseEnv(await readFile(nativeFile, "utf8"));
   const keys = new Set([...Object.keys(expected), ...Object.keys(current)]);
@@ -129,7 +129,7 @@ test.each(["O'Neil", "O'Neil`files"])(
 
 test("native environment quoting preserves literal Windows backslashes", async () => {
   const f = await fixture();
-  const value = String.raw`C:\new\O'Neil\linger`;
+  const value = String.raw`C:\new\O'Neil\talos`;
   await writeFile(path.join(f.repo, ".env"), `FIXTURE_PATH=\`${value}\`\n`);
   const native = await prepareNativeConfiguration(f.repo, {
     home: f.home,
@@ -355,7 +355,7 @@ test(
     expect(moved.apiSecret).toBe(livekit.apiSecret);
     expect(second.env.LIVEKIT_URL).toBe(`ws://127.0.0.1:${moved.httpPort}`);
     expect(second.warnings.join("")).toContain(
-      `Port ${before.teamhub} is in use by another program; Linger's teamhub uses port ${after.teamhub} instead.`,
+      `Port ${before.teamhub} is in use by another program; Talos's teamhub uses port ${after.teamhub} instead.`,
     );
     expect(second.warnings).toHaveLength(5);
 
@@ -419,7 +419,7 @@ test("the desktop's web origin moves off a taken port after the account exists",
   expect(second.env.WEB_PUBLIC_ORIGIN).toBe(second.instance.origin);
   expect(second.env.WEB_HTTP_PORT).toBe(String(after.web));
   expect(second.warnings.join("")).toContain(
-    `Port ${before.web} is in use by another program; Linger's web uses port ${after.web} instead.`,
+    `Port ${before.web} is in use by another program; Talos's web uses port ${after.web} instead.`,
   );
   // The moved origin is saved at once; the checkout only once the services
   // serve from it.

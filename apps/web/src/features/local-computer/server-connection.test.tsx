@@ -74,7 +74,7 @@ it("generates a short-lived enrollment token for the selected tenant without exc
     }),
   );
   expect(
-    screen.getByText("linger-computer-local-3000 login --token-stdin"),
+    screen.getByText("talos-computer-local-3000 login --token-stdin"),
   ).toBeVisible();
 });
 

@@ -4,25 +4,25 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMMAND="${1:-start}"
 
-if [[ "${LINGER_LOCAL_COMPUTER_ENV_LOADED:-0}" != "1" ]]; then
-  export LINGER_LOCAL_COMPUTER_ENV_LOADED=1
+if [[ "${TALOS_LOCAL_COMPUTER_ENV_LOADED:-0}" != "1" ]]; then
+  export TALOS_LOCAL_COMPUTER_ENV_LOADED=1
   exec node "$ROOT/scripts/with-local-env.mjs" --optional -- bash "$0" "$@"
 fi
 
-DISPLAY_NAME="${LINGER_LOCAL_COMPUTER_DISPLAY_NAME:-$(hostname -s)}"
+DISPLAY_NAME="${TALOS_LOCAL_COMPUTER_DISPLAY_NAME:-$(hostname -s)}"
 TEAMHUB_URL="${TEAMHUB_BASE_URL:-http://127.0.0.1:8080}"
-OWNER_FILE="${LINGER_LOCAL_OWNER_FILE:-$ROOT/.linger-runtime/local-owner.json}"
-WORKSPACE_PATH="${LINGER_LOCAL_COMPUTER_WORKSPACE:-$ROOT}"
-GRANT_ID="${LINGER_LOCAL_COMPUTER_GRANT_ID:-workspace-local-dev}"
-GRANT_LABEL="${LINGER_LOCAL_COMPUTER_GRANT_LABEL:-Linger Workspace}"
-MAX_CONCURRENT_RUNS="${LINGER_LOCAL_COMPUTER_MAX_CONCURRENT_RUNS:-${LINGER_LOCAL_COMPUTER_CAPACITY:-}}"
-STATE_DIRECTORY="${LINGER_LOCAL_COMPUTER_STATE_DIRECTORY:-$ROOT/.linger-runtime/computer}"
-CONFIG_PATH="${LINGER_LOCAL_COMPUTER_CONFIG:-$STATE_DIRECTORY/config.json}"
-CODEX_AUTH_FILE="${LINGER_CODEX_AUTH_FILE:-${CODEX_HOME:-$HOME/.codex}/auth.json}"
+OWNER_FILE="${TALOS_LOCAL_OWNER_FILE:-$ROOT/.talos-runtime/local-owner.json}"
+WORKSPACE_PATH="${TALOS_LOCAL_COMPUTER_WORKSPACE:-$ROOT}"
+GRANT_ID="${TALOS_LOCAL_COMPUTER_GRANT_ID:-workspace-local-dev}"
+GRANT_LABEL="${TALOS_LOCAL_COMPUTER_GRANT_LABEL:-Talos Workspace}"
+MAX_CONCURRENT_RUNS="${TALOS_LOCAL_COMPUTER_MAX_CONCURRENT_RUNS:-${TALOS_LOCAL_COMPUTER_CAPACITY:-}}"
+STATE_DIRECTORY="${TALOS_LOCAL_COMPUTER_STATE_DIRECTORY:-$ROOT/.talos-runtime/computer}"
+CONFIG_PATH="${TALOS_LOCAL_COMPUTER_CONFIG:-$STATE_DIRECTORY/config.json}"
+CODEX_AUTH_FILE="${TALOS_CODEX_AUTH_FILE:-${CODEX_HOME:-$HOME/.codex}/auth.json}"
 NODE_SERVICES_URL="${TEAMHUB_NODE_SERVICES_URL:-http://127.0.0.1:4319}"
-AGENT_HEALTH_URL="${LINGER_LOCAL_AGENT_HEALTH_URL:-${NODE_SERVICES_URL%/}/healthz}"
+AGENT_HEALTH_URL="${TALOS_LOCAL_AGENT_HEALTH_URL:-${NODE_SERVICES_URL%/}/healthz}"
 # The CLI starts the Daemon built beside it in dist/daemon.
-COMPUTER_CLI="${LINGER_LOCAL_COMPUTER_CLI:-$ROOT/apps/computer/dist/cli/linger-computer}"
+COMPUTER_CLI="${TALOS_LOCAL_COMPUTER_CLI:-$ROOT/apps/computer/dist/cli/talos-computer}"
 
 usage() {
   cat <<'EOF'
@@ -73,7 +73,7 @@ write_config() {
   if [[ -n "$MAX_CONCURRENT_RUNS" ]]; then
     [[ "$MAX_CONCURRENT_RUNS" =~ ^[1-9][0-9]*$ ]] &&
       ((MAX_CONCURRENT_RUNS <= 100)) || {
-      printf 'LINGER_LOCAL_COMPUTER_MAX_CONCURRENT_RUNS must be an integer between 1 and 100\n' >&2
+      printf 'TALOS_LOCAL_COMPUTER_MAX_CONCURRENT_RUNS must be an integer between 1 and 100\n' >&2
       exit 2
     }
   fi
@@ -87,10 +87,10 @@ write_config() {
   else
     CODEX_AUTH_FILE=""
   fi
-  # Pin the Runtimes LINGER_<TYPE>_PATH names; the Daemon discovers the rest.
+  # Pin the Runtimes TALOS_<TYPE>_PATH names; the Daemon discovers the rest.
   local runtime_paths='{}' runtime_type runtime_path
   for runtime_type in codex claude pi; do
-    runtime_path="$(printenv "LINGER_$(printf '%s' "$runtime_type" | tr '[:lower:]' '[:upper:]')_PATH" || true)"
+    runtime_path="$(printenv "TALOS_$(printf '%s' "$runtime_type" | tr '[:lower:]' '[:upper:]')_PATH" || true)"
     [[ -n "$runtime_path" ]] || continue
     runtime_paths="$(jq -c --arg type "$runtime_type" --arg path "$(absolute_path "$runtime_path")" '. + {($type): $path}' <<<"$runtime_paths")"
   done
@@ -136,18 +136,18 @@ build_computer() {
   require_command go
   local version
   version="$(jq -er '.version' "$ROOT/apps/computer/package.json")"
-  local ldflags="-X github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport.ReleaseVersion=$version"
+  local ldflags="-X github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport.ReleaseVersion=$version"
   (
     cd "$ROOT/apps/computer/local-daemon"
-    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o ../dist/cli/linger-computer ./cmd/linger-computer
-    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o ../dist/daemon/linger-computer-daemon ./cmd/linger-computer-daemon
+    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o ../dist/cli/talos-computer ./cmd/talos-computer
+    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o ../dist/daemon/talos-computer-daemon ./cmd/talos-computer-daemon
   )
 }
 
 prepare_runtime_config() {
   require_command node
   require_command jq
-  if [[ "${LINGER_LOCAL_COMPUTER_SKIP_BUILD:-0}" != "1" ]]; then
+  if [[ "${TALOS_LOCAL_COMPUTER_SKIP_BUILD:-0}" != "1" ]]; then
     build_computer
   fi
   STATE_DIRECTORY="$(absolute_path "$STATE_DIRECTORY")"

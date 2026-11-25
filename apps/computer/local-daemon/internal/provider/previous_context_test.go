@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 func TestExportPreviousContextCodexWritesRedactedMarkdown(t *testing.T) {

@@ -13,9 +13,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/keywordsearch"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/keywordsearch"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 var (

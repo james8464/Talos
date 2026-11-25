@@ -1,4 +1,4 @@
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 import type { ComposedContextFeatures } from "../../../src/agent/agent-features/compose.js";
 import type {
   ContextInstructionFacts,

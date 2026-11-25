@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/computerconfig"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/computerconfig"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 // runtimeDiagnostic is one Runtime as login, doctor and runtime check see it.
@@ -58,7 +58,7 @@ func checkRuntime(ctx context.Context, runtimeType string, request runtimeReques
 }
 
 func requestRuntimeChecks(ctx context.Context, types []string, request runtimeRequest) ([]runtimeCheck, error) {
-	// LINGER_<TYPE>_PATH selects a Runtime that no configured path names. The
+	// TALOS_<TYPE>_PATH selects a Runtime that no configured path names. The
 	// Runtime itself never receives these variables.
 	selected := map[string]string{}
 	for _, runtimeType := range runtimeTypes {
@@ -119,15 +119,15 @@ func requestRuntimeChecks(ctx context.Context, types []string, request runtimeRe
 	return checks, nil
 }
 
-// selectedRuntimePath is the executable LINGER_<TYPE>_PATH selects.
+// selectedRuntimePath is the executable TALOS_<TYPE>_PATH selects.
 func selectedRuntimePath(environment map[string]string, runtimeType string) string {
 	switch runtimeType {
 	case "codex":
-		return environment["LINGER_CODEX_PATH"]
+		return environment["TALOS_CODEX_PATH"]
 	case "claude":
-		return environment["LINGER_CLAUDE_PATH"]
+		return environment["TALOS_CLAUDE_PATH"]
 	case "pi":
-		return environment["LINGER_PI_PATH"]
+		return environment["TALOS_PI_PATH"]
 	}
 	return ""
 }

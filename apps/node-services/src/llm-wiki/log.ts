@@ -1,4 +1,4 @@
-import { createJsonLogger, type JsonLogger } from "@linger/service-kit/node";
+import { createJsonLogger, type JsonLogger } from "@talos/service-kit/node";
 
 export type WikiLogLevel = "ERROR" | "INFO";
 

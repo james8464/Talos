@@ -50,8 +50,8 @@ import {
 } from "./voice-activity.js";
 import { liveInputRate, xaiSpeedTool } from "./xai-live.js";
 
-export const liveDataTopic = "linger.voice.live";
-export const liveReplyTrackName = "linger-live-reply";
+export const liveDataTopic = "talos.voice.live";
+export const liveReplyTrackName = "talos-live-reply";
 const replySampleRate = 24_000;
 const replyChunkSamples = 480;
 /** Local speech this long means the user is talking (16 kHz samples). */
@@ -2116,7 +2116,7 @@ export class LiveVoiceWorker {
     this.userSpeaking = false;
     const epoch = this.nextEpoch++;
     const generation = Number(
-      participant.attributes?.["linger.voice_generation"] ?? 0,
+      participant.attributes?.["talos.voice_generation"] ?? 0,
     );
     let readinessTimer: ReturnType<typeof setInterval> | undefined;
     let consuming = true;
@@ -2144,10 +2144,10 @@ export class LiveVoiceWorker {
         const renew = () =>
           withTimeout(
             this.ctx.room.localParticipant!.setAttributes({
-              "linger.voice_ready_generation": String(generation),
-              "linger.voice_ready_track": trackSid,
-              "linger.voice_ready_at": String(Date.now()),
-              "linger.voice_purpose": "chat_live",
+              "talos.voice_ready_generation": String(generation),
+              "talos.voice_ready_track": trackSid,
+              "talos.voice_ready_at": String(Date.now()),
+              "talos.voice_purpose": "chat_live",
             }),
             1_000,
             "Voice input readiness timed out",
@@ -2195,9 +2195,9 @@ export class LiveVoiceWorker {
       if (generation > 0)
         await withTimeout(
           this.ctx.room.localParticipant?.setAttributes({
-            "linger.voice_ready_generation": "0",
-            "linger.voice_ready_track": "",
-            "linger.voice_ready_at": "0",
+            "talos.voice_ready_generation": "0",
+            "talos.voice_ready_track": "",
+            "talos.voice_ready_at": "0",
           }) ?? Promise.resolve(),
           1_000,
           "Voice input readiness reset timed out",

@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 // TaskTempDirPrefix names every Operation temp directory. The sweep only
 // considers directories carrying it.
-const TaskTempDirPrefix = "linger-operation-"
+const TaskTempDirPrefix = "talos-operation-"
 
 // taskTempClaimFile exists only while LockTaskTempDir is publishing ownership.
 const taskTempClaimFile = ".operation_claim"

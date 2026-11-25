@@ -5,14 +5,14 @@ import { useT } from "@/i18n/use-translation";
 
 import { authMessages as m } from "./auth.messages";
 
-/** What Linger says first, one nudge at a time, across a working day. */
+/** What Talos says first, one nudge at a time, across a working day. */
 const NUDGES = [
   { key: "morning", time: m.nudgeMorningTime, text: m.nudgeMorning },
   { key: "midday", time: m.nudgeMiddayTime, text: m.nudgeMidday },
   { key: "evening", time: m.nudgeEveningTime, text: m.nudgeEvening },
 ] as const;
 
-const LINGER_AVATAR = "figure:red_panda:79524A";
+const TALOS_AVATAR = "figure:red_panda:79524A";
 // The first nudge waits for the headline and the timeline to settle.
 const FIRST_NUDGE_MS = 3_000;
 const NUDGE_EVERY_MS = 4_000;
@@ -23,7 +23,7 @@ const AWAKE_MS = 1_000;
 type MomentState = "later" | "now" | "past";
 
 /**
- * The login page's picture: Linger's working day, a personal AI on your
+ * The login page's picture: Talos's working day, a personal AI on your
  * own computer reaching out before it is asked, one nudge lighting up at a
  * time. It is decorative; the login shell hides it from assistive technology.
  */
@@ -69,7 +69,7 @@ export function AuthIllustration() {
       <div className="auth-art-day">
         <div className="auth-art-day-head">
           <span className="auth-art-avatar">
-            <AgentAvatarPortrait animate={awake} avatarKey={LINGER_AVATAR} />
+            <AgentAvatarPortrait animate={awake} avatarKey={TALOS_AVATAR} />
             {/* Keyed by the landing so the badge pops again for each nudge. */}
             {current === null ? null : (
               <span className="auth-art-badge town-pill-pop" key={landed}>
@@ -77,7 +77,7 @@ export function AuthIllustration() {
               </span>
             )}
           </span>
-          <span className="auth-art-day-name">Linger</span>
+          <span className="auth-art-day-name">Talos</span>
         </div>
         <ol className="auth-art-timeline">
           {NUDGES.map((nudge, index) => (

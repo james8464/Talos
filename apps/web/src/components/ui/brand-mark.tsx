@@ -1,4 +1,4 @@
-/** The Linger L and amber dot on the approved dark app tile. */
+/** The Talos L and amber dot on the approved dark app tile. */
 export function BrandMark({
   className = "",
   decorative = false,
@@ -8,9 +8,9 @@ export function BrandMark({
 }) {
   return (
     <img
-      alt={decorative ? "" : "Linger"}
+      alt={decorative ? "" : "Talos"}
       aria-hidden={decorative || undefined}
-      className={`linger-brand-mark ${className}`}
+      className={`talos-brand-mark ${className}`}
       draggable={false}
       src="/favicon.svg"
     />

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
 )
 
 func pollTestProvider(t *testing.T, respond func(string, map[string]string) (int, any)) *composio.Client {

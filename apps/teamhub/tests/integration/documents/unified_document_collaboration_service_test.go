@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	documentfixture "github.com/simplexai-labs/linger/apps/teamhub/tests/integration/documents/fixture"
+	documentfixture "github.com/simplexai-labs/talos/apps/teamhub/tests/integration/documents/fixture"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 func TestUnifiedDocumentCollaborationCredentialCarriesThePermissionCount(t *testing.T) {

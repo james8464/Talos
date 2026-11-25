@@ -16,7 +16,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
 )
 
 const (
@@ -366,7 +366,7 @@ func (s *codexModelServer) stop() {
 
 func (s *codexModelServer) initialize(ctx context.Context) error {
 	params := map[string]any{
-		"clientInfo":   map[string]any{"name": "linger-computer", "title": "Linger Computer", "version": "1"},
+		"clientInfo":   map[string]any{"name": "talos-computer", "title": "Talos Computer", "version": "1"},
 		"capabilities": map[string]any{"experimentalApi": true},
 	}
 	if _, _, err := s.transport.call(ctx, "initialize", params, codexModelSessionStartup, nil); err != nil {

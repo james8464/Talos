@@ -10,7 +10,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { getRequestListener } from "@hono/node-server";
 import { HocuspocusProvider } from "@hocuspocus/provider";
-import { materializeRoomDocument } from "@linger/document-model";
+import { materializeRoomDocument } from "@talos/document-model";
 import * as Y from "yjs";
 
 import { createDocumentRuntimeApp } from "../../src/document/app.js";

@@ -1,5 +1,5 @@
 {
-  "name": "@linger/teamhub-cli",
+  "name": "@talos/teamhub-cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -39,8 +39,8 @@
     "tsx": "4.22.4"
   },
   "dependencies": {
-    "@linger/wire-contracts": "workspace:*",
-    "@linger/document-files": "workspace:*",
-    "@linger/service-kit": "workspace:*"
+    "@talos/wire-contracts": "workspace:*",
+    "@talos/document-files": "workspace:*",
+    "@talos/service-kit": "workspace:*"
   }
 }

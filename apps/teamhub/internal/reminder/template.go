@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // TemplateRoutine contains no live Room, Actor, schedule cursor, or run history.

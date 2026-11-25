@@ -24,8 +24,8 @@ func TestPiAuthenticationPreservesClosedContextStage(t *testing.T) {
 if [ "$FIXTURE_STAGE" = catalog ] || [ "$1" = auth ]; then echo $$ > "$HOME/pid"; exec /bin/sleep 60; fi
 while IFS= read -r line; do
  case "$line" in
- *linger-state*) echo '{"type":"response","id":"linger-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"model"}}}' ;;
- *linger-models*) echo '{"type":"response","id":"linger-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"fixture","id":"model"}]}}' ;;
+ *talos-state*) echo '{"type":"response","id":"talos-state","command":"get_state","success":true,"data":{"model":{"provider":"fixture","id":"model"}}}' ;;
+ *talos-models*) echo '{"type":"response","id":"talos-models","command":"get_available_models","success":true,"data":{"models":[{"provider":"fixture","id":"model"}]}}' ;;
  esac
 done
 `

@@ -4,16 +4,16 @@ import { unprovisionLocalAccount } from "./account.js";
 import { renameRetrying } from "./fs-retry.js";
 import { privateDirectory } from "./private-files.js";
 
-// Every Linger release applies TeamHub's schema from this baseline
+// Every Talos release applies TeamHub's schema from this baseline
 // (apps/teamhub/migrations/00852_baseline.sql), which refuses a database
 // that already holds a TeamHub schema. Only the desktop app from before the
-// rename to Linger made such a database without the baseline.
+// rename to Talos made such a database without the baseline.
 export const TEAMHUB_BASELINE_VERSION = 852;
 
 // Whether the database holds a TeamHub schema that the baseline never
 // created, so no migration can ever apply to it. `query` returns psql's
 // unaligned output for one statement.
-export async function preLingerSchema(
+export async function preTalosSchema(
   query: (sql: string) => Promise<string>,
 ): Promise<boolean> {
   const [accounts, versions] = (
@@ -35,7 +35,7 @@ export async function preLingerSchema(
 }
 
 // The instance data that belongs to a database. A database from before
-// Linger moves into one timestamped folder with them, and nothing is deleted.
+// Talos moves into one timestamped folder with them, and nothing is deleted.
 const LEGACY_DATA = [
   ["data/agent", "agent"],
   ["data/artifacts", "artifacts"],
@@ -116,7 +116,7 @@ export async function setAsideLegacyData(
   return backup;
 }
 
-// The folder the latest database from before Linger went to, if any. The
+// The folder the latest database from before Talos went to, if any. The
 // desktop tells the person about it once and enrolls its Computer again.
 export async function latestLegacyBackup(
   root: string,

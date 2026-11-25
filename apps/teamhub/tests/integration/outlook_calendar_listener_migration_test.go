@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pressly/goose/v3"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 )
 
 // Existing Outlook proactive listener Routines gain an ordinal-1

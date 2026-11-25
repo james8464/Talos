@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Builds Linger-<version>-linux-x64.tar.gz.
+"""Builds Talos-<version>-linux-x64.tar.gz.
 
 Inputs: the desktop bundle from `node build.mjs` (dist/, which includes the
-teamhub CLI and, built with LINGER_DESKTOP_DAEMON_TARGETS=linux-x64, the Go
+teamhub CLI and, built with TALOS_DESKTOP_DAEMON_TARGETS=linux-x64, the Go
 daemon) and the official Electron zip for linux-x64.
 
     python3 packaging/linux/package.py [--out DIR]
 
-The archive holds one folder, Linger-<version>-linux-x64/, with the
-`linger` executable at the top; it runs from wherever it is unpacked. The Go
+The archive holds one folder, Talos-<version>-linux-x64/, with the
+`talos` executable at the top; it runs from wherever it is unpacked. The Go
 daemon goes to resources/computer/ and the browser and computer-control tools
 it loads to resources/cli/ and resources/runtime/ (../computer_tools.py); the
 finished archive is checked for them. With a bundled source package, the
@@ -34,7 +34,7 @@ import computer_tools  # noqa: E402
 from native_bundle import check_runtime, check_teamhub  # noqa: E402
 
 TARGET = "linux-x64"
-DAEMON = os.path.join(DESKTOP, "dist", "computer", TARGET, "linger-computer-daemon")
+DAEMON = os.path.join(DESKTOP, "dist", "computer", TARGET, "talos-computer-daemon")
 # The app speaks English and Chinese; Chromium falls back to en-US.
 KEPT_LOCALES = {"en-US.pak", "zh-CN.pak"}
 
@@ -73,20 +73,20 @@ def stage_app(version, electron_version, root, cache):
     shutil.copytree(os.path.join(DESKTOP, "dist"), os.path.join(app_dir, "dist"),
                     ignore=shutil.ignore_patterns("*.map", "computer", "computer-tools"), symlinks=True)
     with open(os.path.join(app_dir, "package.json"), "w") as out:
-        json.dump({"name": "linger-desktop", "productName": "Linger", "version": version,
+        json.dump({"name": "talos-desktop", "productName": "Talos", "version": version,
                    "type": "module", "main": "dist/main/index.mjs"}, out, indent=2)
     computer = os.path.join(resources, "computer")
     os.makedirs(computer)
     shutil.copy2(DAEMON, computer)
     computer_tools.copy(resources, TARGET)
     shutil.copy2(os.path.join(DESKTOP, "resources", "icon.png"), resources)
-    os.rename(os.path.join(root, "electron"), os.path.join(root, "linger"))
+    os.rename(os.path.join(root, "electron"), os.path.join(root, "talos"))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default=os.path.join(DESKTOP, "out"))
-    parser.add_argument("--cache", default=os.path.expanduser("~/.cache/linger-desktop"))
+    parser.add_argument("--cache", default=os.path.expanduser("~/.cache/talos-desktop"))
     args = parser.parse_args()
     with open(os.path.join(DESKTOP, "package.json")) as source:
         package = json.load(source)
@@ -94,12 +94,12 @@ def main():
     electron_version = package["devDependencies"]["electron"].lstrip("^~")
     if not os.path.exists(DAEMON):
         sys.exit(f"dist/ is missing the daemon for {TARGET}; run "
-                 f"`LINGER_DESKTOP_DAEMON_TARGETS={TARGET} node build.mjs` first")
+                 f"`TALOS_DESKTOP_DAEMON_TARGETS={TARGET} node build.mjs` first")
     check_teamhub(TARGET)
     check_runtime(TARGET)
     os.makedirs(args.out, exist_ok=True)
-    name = f"Linger-{version}-{TARGET}"
-    workdir = tempfile.mkdtemp(prefix="linger-linux-")
+    name = f"Talos-{version}-{TARGET}"
+    workdir = tempfile.mkdtemp(prefix="talos-linux-")
     try:
         root = os.path.join(workdir, name)
         stage_app(version, electron_version, root, args.cache)

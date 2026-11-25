@@ -6,16 +6,16 @@ import {
   type DesktopDriverInstallState,
   type DesktopSettings,
   type DesktopUpdateState,
-  type LingerDesktopApi,
+  type TalosDesktopApi,
   type PreviewViewState,
 } from "../shared/api.js";
 
-// Sandboxed preload: exposes only window.lingerDesktop, never ipcRenderer.
+// Sandboxed preload: exposes only window.talosDesktop, never ipcRenderer.
 declare const __DESKTOP_VERSION__: string;
 
-const api: LingerDesktopApi = {
+const api: TalosDesktopApi = {
   version: __DESKTOP_VERSION__,
-  platform: process.platform as LingerDesktopApi["platform"],
+  platform: process.platform as TalosDesktopApi["platform"],
   computer: {
     getStatus: () => ipcRenderer.invoke(IPC.computerStatus),
     onStatus: (callback) => {
@@ -139,7 +139,7 @@ const api: LingerDesktopApi = {
     : {}),
 };
 
-contextBridge.exposeInMainWorld("lingerDesktop", api);
+contextBridge.exposeInMainWorld("talosDesktop", api);
 
 // On macOS the page runs under the traffic lights with no title bar; pages
 // style html[data-desktop-chrome="inset"] to leave room and a drag region.

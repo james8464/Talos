@@ -478,7 +478,7 @@ describe("WindowManagerModule", () => {
     expect(logs).toContainEqual({
       level: "info",
       event: "local_server.timing",
-      fields: { step: "open_linger_to_load", ms: 0 },
+      fields: { step: "open_talos_to_load", ms: 0 },
     });
     await host.stop("quit");
   });
@@ -670,19 +670,19 @@ describe("WindowManagerModule", () => {
     expect(content.send).not.toHaveBeenCalled();
 
     expect(
-      respond({ frame: { name: "linger-url-preview:a" }, statusCode: 302 }),
+      respond({ frame: { name: "talos-url-preview:a" }, statusCode: 302 }),
     ).toEqual({});
     expect(content.send).not.toHaveBeenCalled();
 
-    expect(respond({ frame: { name: "linger-url-preview:a" } })).toEqual({});
+    expect(respond({ frame: { name: "talos-url-preview:a" } })).toEqual({});
     expect(content.send).toHaveBeenCalledExactlyOnceWith(
       IPC.previewFrameRefused,
-      "linger-url-preview:a",
+      "talos-url-preview:a",
       "https://linear.app/a",
     );
 
     expect(
-      respond({ frame: { name: "linger-url-preview:a" }, webContentsId: 99 }),
+      respond({ frame: { name: "talos-url-preview:a" }, webContentsId: 99 }),
     ).toEqual({});
     expect(respond({ resourceType: "mainFrame" })).toEqual({});
     expect(content.send).toHaveBeenCalledTimes(1);

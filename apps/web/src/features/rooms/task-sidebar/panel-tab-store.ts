@@ -8,7 +8,7 @@ import {
   type PanelTabState,
 } from "./panel-tab-types";
 
-const prefix = "linger.panel-tabs.v3:";
+const prefix = "talos.panel-tabs.v3:";
 
 function key(scope: PanelTabScope) {
   return `${prefix}${[scope.accountId, scope.tenantId, scope.roomId]

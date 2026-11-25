@@ -5,7 +5,7 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 
-import type { LocalMcpRelayDescriptor } from "@linger/wire-contracts/runner-gateway/types";
+import type { LocalMcpRelayDescriptor } from "@talos/wire-contracts/runner-gateway/types";
 import { Agent } from "undici";
 
 import type { LocalMcpRelayRunIdentity } from "./runner-gateway.js";
@@ -14,7 +14,7 @@ import {
   logAgentEvent,
   type AgentLogger,
 } from "../observability/agent-log.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 export interface LocalMcpRelayServer {
   readonly name: string;
@@ -119,8 +119,8 @@ const RELAY_IDENTITY_HEADERS = [
   "x-forwarded-for",
   "x-forwarded-host",
   "x-forwarded-proto",
-  "x-linger-operation-id",
-  "x-linger-execution-lease-id",
+  "x-talos-operation-id",
+  "x-talos-execution-lease-id",
 ] as const;
 
 export class LocalMcpRelay implements LocalMcpRelayRegistrar {
@@ -275,7 +275,7 @@ export class LocalMcpRelay implements LocalMcpRelayRegistrar {
     const totalStartedAt = performance.now();
     if (this.#closed) {
       return relayError(503, "Local MCP Relay is closed", {
-        "x-linger-relay-not-dispatched": "1",
+        "x-talos-relay-not-dispatched": "1",
       });
     }
     const authority = this.#authorities.get(relayId);
@@ -298,8 +298,8 @@ export class LocalMcpRelay implements LocalMcpRelayRegistrar {
     if (!token || !matchesToken(authority.tokenHash, token)) {
       return relayError(401, "Local MCP Relay token is invalid");
     }
-    const operationId = request.headers.get("x-linger-operation-id");
-    const executionLeaseId = request.headers.get("x-linger-execution-lease-id");
+    const operationId = request.headers.get("x-talos-operation-id");
+    const executionLeaseId = request.headers.get("x-talos-execution-lease-id");
     if (!operationId || !executionLeaseId) {
       return relayError(401, "Local MCP Relay operation identity is missing");
     }
@@ -503,7 +503,7 @@ export class LocalMcpRelay implements LocalMcpRelayRegistrar {
       logRequestTiming(response.status, response.ok ? "succeeded" : "failed");
       // Only this relay may attest non-dispatch. Never trust an upstream's hint.
       const responseHeaders = new Headers(response.headers);
-      responseHeaders.delete("x-linger-relay-not-dispatched");
+      responseHeaders.delete("x-talos-relay-not-dispatched");
       if (!response.body) {
         finishAudit(
           auditOutcomes({

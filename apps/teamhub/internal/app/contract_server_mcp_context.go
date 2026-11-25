@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/mcpcontext"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/mcpcontext"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 const mcpContextRequestMaxBytes = 64 << 10

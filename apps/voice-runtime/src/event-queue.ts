@@ -1,5 +1,5 @@
 import { asrEventBytes, type ASREvent } from "./asr.js";
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 import { VoiceFailure } from "./voice-failure.js";
 
 export class ASREventQueue {

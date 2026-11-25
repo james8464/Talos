@@ -7,7 +7,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
 )
 
 func authoredTestPart(mimeType, body string) gmailPart {

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/clicredential"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
 )
 
 // fakeCardCLI installs a teamhub program that records how it was run and
@@ -143,9 +143,9 @@ func TestPlaygroundCardFindsTheCLIOnEveryLayout(t *testing.T) {
 	if _, _, _, ok := cardCLIProgram(desktop, "windows"); ok {
 		t.Fatal("ran teamhub.cmd without the app beside it")
 	}
-	touch(filepath.Join(app, "Linger.exe"))
+	touch(filepath.Join(app, "Talos.exe"))
 	program, prefix, environment, ok := cardCLIProgram(desktop, "windows")
-	if !ok || program != filepath.Join(app, "Linger.exe") || len(prefix) != 2 || prefix[1] != filepath.Join(desktop, "teamhub.js") || environment[0] != "ELECTRON_RUN_AS_NODE=1" {
+	if !ok || program != filepath.Join(app, "Talos.exe") || len(prefix) != 2 || prefix[1] != filepath.Join(desktop, "teamhub.js") || environment[0] != "ELECTRON_RUN_AS_NODE=1" {
 		t.Fatalf("Desktop: %s %v %v %v", program, prefix, environment, ok)
 	}
 	if _, _, _, ok := cardCLIProgram(t.TempDir(), "darwin"); ok {

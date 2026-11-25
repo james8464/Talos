@@ -89,7 +89,7 @@ if (process.platform === "win32") {
       "-trimpath",
       "-o",
       fileURLToPath(new URL("teamhub.exe", cli)),
-      "./cmd/linger-computer-launcher",
+      "./cmd/talos-computer-launcher",
     ],
     {
       cwd: fileURLToPath(new URL("../local-daemon/", import.meta.url)),

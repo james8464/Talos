@@ -2,7 +2,7 @@ import { Worker } from "node:worker_threads";
 
 import { serviceModule } from "../paths.js";
 
-import type { JsonLogger } from "@linger/service-kit/node";
+import type { JsonLogger } from "@talos/service-kit/node";
 
 import { workerExecArgv } from "./computation-pool.js";
 

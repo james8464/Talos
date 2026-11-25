@@ -237,7 +237,7 @@ export class WindowManagerModule implements Module {
     ) {
       this.#openFromSetupAt = undefined;
       this.#ctx?.log.info("local_server.timing", {
-        step: "open_linger_to_load",
+        step: "open_talos_to_load",
         ms: 0,
       });
       return;
@@ -313,7 +313,7 @@ export class WindowManagerModule implements Module {
       minWidth: 800,
       minHeight: 560,
       show: false,
-      title: "Linger",
+      title: "Talos",
       backgroundColor: CANVAS,
       icon: nativeImage.createFromBuffer(Buffer.from(iconPng)),
       ...chrome(process.platform),
@@ -655,7 +655,7 @@ export class WindowManagerModule implements Module {
         return {
           action: "allow",
           overrideBrowserWindowOptions: {
-            title: "Linger",
+            title: "Talos",
             // The page asks for the size of its content, as in a browser.
             useContentSize: true,
             minWidth: VOICE_WINDOW_MIN.width,
@@ -757,7 +757,7 @@ export class WindowManagerModule implements Module {
       const startedAt = this.#openFromSetupAt;
       this.#openFromSetupAt = undefined;
       this.#ctx?.log.info("local_server.timing", {
-        step: "open_linger_to_load",
+        step: "open_talos_to_load",
         ms: Date.now() - startedAt,
       });
     });

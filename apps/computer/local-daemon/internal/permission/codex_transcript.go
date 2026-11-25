@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/runtimehistory"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/runtimehistory"
 )
 
 // codexTranscriptRecords is how many of the newest rollout records are read; the

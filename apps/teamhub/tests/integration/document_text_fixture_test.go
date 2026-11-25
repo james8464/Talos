@@ -13,10 +13,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/documenttext"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/documenttext"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // readyDocumentTexts runs every queued text sync job, as the background

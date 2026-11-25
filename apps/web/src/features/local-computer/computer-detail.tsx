@@ -92,7 +92,7 @@ export function ComputerDetail({
   agents: TeamHubTenantAgent[];
   /** The browser status as a progress chip or an Access row; the page owns its TeamHub reads. */
   browserConnection?: (variant: "chip" | "row") => ReactNode;
-  /** Whether the active server ships the standalone CLI daemon (`linger-computer`). */
+  /** Whether the active server ships the standalone CLI daemon (`talos-computer`). */
   cliInstallAvailable?: boolean;
   computer: LocalComputer;
   /** Where this Computer's Local models page is; the page owns the route. */
@@ -269,7 +269,7 @@ export function ComputerDetail({
                 ? t(computersMessages.updateTo, {
                     version: computer.recommended_version,
                   })
-                : t(computersMessages.updateLingerComputer)
+                : t(computersMessages.updateTalosComputer)
           }
         >
           <div className="px-5 py-4 text-sm text-muted-foreground">
@@ -386,7 +386,7 @@ function ComputerSummary({
         >
           {computer.upgrade_required ? (
             <ProgressChip
-              hint={t(computersMessages.lingerTooOld)}
+              hint={t(computersMessages.talosTooOld)}
               icon={LaptopIcon}
               attentionIcon={RefreshIcon}
               label={t(computersMessages.update)}
@@ -395,7 +395,7 @@ function ComputerSummary({
             />
           ) : (
             <ProgressChip
-              hint={t(computersMessages.lingerRunning)}
+              hint={t(computersMessages.talosRunning)}
               icon={LaptopIcon}
               label={t(computersMessages.connected)}
               state="done"

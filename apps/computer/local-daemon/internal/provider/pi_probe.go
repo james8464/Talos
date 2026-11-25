@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 func probePiAuthentication(ctx context.Context, executable string, environment map[string]string, timeout time.Duration) runtimeProbeOutcome {

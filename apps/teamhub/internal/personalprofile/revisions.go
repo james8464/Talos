@@ -10,7 +10,7 @@ import (
 	"sort"
 
 	"github.com/jackc/pgx/v5"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 )
 
 const agentWriteOperation = "agent_write_profile_revision"

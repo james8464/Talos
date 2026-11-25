@@ -73,12 +73,12 @@ line breaks into its opening line.
   At process start, downloaded packages `models.json` no longer lists are
   deleted, so a retired feature's model data leaves the machine.
 - Roles log through the `JsonLogger` the host passes to `start*Service`
-  (`createJsonLogger` from `@linger/service-kit/node`); the `document` role
+  (`createJsonLogger` from `@talos/service-kit/node`); the `document` role
   creates its own inside its worker thread, and the `agent` role keeps its own
   file-backed Agent log (`src/agent/observability/`), which the host drains
   on exit. Log events are `<area>.<what>` with snake_case fields; CLIs keep
   plain text. Shared guards and hashing (`isRecord`, `isNodeError`, `sleep`,
-  `sha256Hex`) come from `@linger/service-kit`; do not redefine them.
+  `sha256Hex`) come from `@talos/service-kit`; do not redefine them.
 
 ## Document normalization
 
@@ -112,17 +112,17 @@ is unchanged. Invalid JSON remains `DOCUMENT_SOURCE_INVALID`.
 
 ## Commands
 
-- `pnpm --filter @linger/node-services check`: typecheck and lint
+- `pnpm --filter @talos/node-services check`: typecheck and lint
   concurrently, then test. `make check-node-services` runs the same gate.
-- `pnpm --filter @linger/node-services exec vitest run <test-file>`: run
+- `pnpm --filter @talos/node-services exec vitest run <test-file>`: run
   one test.
 - `pnpm dev:node-services` (root): start every role through
   `scripts/dev-supervisor.ts`, which waits for TeamHub, regenerates the Agent
   feature catalog, and restarts the process after a crash. It does not watch
   files, so a source change never restarts a running Wiki generation.
-- `pnpm --filter @linger/node-services dev`: watch every role during
+- `pnpm --filter @talos/node-services dev`: watch every role during
   focused work; `NODE_SERVICES_ROLES=agent` (or another role) narrows it.
-- Memory CLIs: `pnpm --filter @linger/node-services memory:<command>`.
+- Memory CLIs: `pnpm --filter @talos/node-services memory:<command>`.
 
 ## Large text documents
 

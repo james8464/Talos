@@ -35,8 +35,8 @@ import { VoiceModeDisconnectedError } from "../voice-mode-errors";
 import { translate } from "@/i18n/language";
 import { voiceSessionMessages as m } from "../voice-session.messages";
 
-export const voiceLiveTopic = "linger.voice.live";
-export const voiceLiveReplyTrack = "linger-live-reply";
+export const voiceLiveTopic = "talos.voice.live";
+export const voiceLiveReplyTrack = "talos-live-reply";
 /** The browser's own identity; never a source of replies or events. */
 const publisherPrefix = "publisher-";
 /** Reply playback louder than this counts as audible. */
@@ -353,7 +353,7 @@ export async function openVoiceLive(input: {
       [...media.remoteParticipants.values()].some(
         (participant) =>
           participant.isAgent &&
-          participant.attributes["linger.voice_ready_generation"] ===
+          participant.attributes["talos.voice_ready_generation"] ===
             generation,
       );
     let wakeReady: (() => void) | undefined;

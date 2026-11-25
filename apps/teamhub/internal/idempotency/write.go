@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // Result is the response of an idempotent write: the outcome it committed, or

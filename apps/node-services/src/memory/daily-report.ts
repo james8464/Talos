@@ -1,7 +1,7 @@
 import {
   DAILY_REPORT_SECTIONS,
   SUGGESTED_FOCUS_LABEL,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 import {
   renderReportMarkdown,
   reportBullets,
@@ -74,7 +74,7 @@ export function renderDailyReport(
       date: context.date,
       memory_subject_key: context.memorySubjectKey,
       status: "stable",
-      generated: { by: "linger-memory/1", at: context.now.toISOString() },
+      generated: { by: "talos-memory/1", at: context.now.toISOString() },
     },
     title: report.title,
     sections: [

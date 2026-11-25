@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 // A Message's transaction decides how it reaches each Context: it joins the

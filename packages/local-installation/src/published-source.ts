@@ -14,7 +14,7 @@ export async function readPublishedSource(
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
     throw new Error(
-      "The Linger distribution metadata is invalid. Download the installer again.",
+      "The Talos distribution metadata is invalid. Download the installer again.",
       { cause: error },
     );
   }
@@ -24,7 +24,7 @@ export async function readPublishedSource(
     value.arch !== process.arch
   )
     throw new Error(
-      "The Linger distribution target does not match this computer.",
+      "The Talos distribution target does not match this computer.",
     );
   if (value.serviceRelease === undefined) return;
   return validatePublishedServiceSource(value.serviceRelease);

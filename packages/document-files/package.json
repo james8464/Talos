@@ -1,5 +1,5 @@
 {
-  "name": "@linger/document-files",
+  "name": "@talos/document-files",
   "version": "0.0.0",
   "description": "Document Files: shared Document file type and Markdown helpers.",
   "private": true,
@@ -7,12 +7,12 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "linger-production": "./dist/index.js",
+      "talos-production": "./dist/index.js",
       "default": "./src/index.ts"
     },
     "./media-type": {
       "types": "./src/media-type.ts",
-      "linger-production": "./dist/media-type.js",
+      "talos-production": "./dist/media-type.js",
       "default": "./src/media-type.ts"
     }
   },

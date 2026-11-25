@@ -3,8 +3,8 @@ import {
   inspectRoomDocumentState,
   ROOM_DOCUMENT_MAX_STATE_BYTES,
   ROOM_DOCUMENT_SESSION_LIMITS,
-} from "@linger/document-model";
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+} from "@talos/document-model";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 import * as Y from "yjs";
 
 import type { DocumentBodySave } from "./bodies.js";

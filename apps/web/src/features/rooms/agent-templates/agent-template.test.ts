@@ -20,7 +20,7 @@ describe("agentTemplateFromAgent", () => {
       is_default: true,
       manifest_version: "1.0.1",
       name: "docx",
-      skill_id: "linger_docx",
+      skill_id: "talos_docx",
     });
 
     expect(

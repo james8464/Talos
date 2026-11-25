@@ -13,7 +13,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { x as extract } from "tar";
-import { orderByRegion } from "@linger/service-kit";
+import { orderByRegion } from "@talos/service-kit";
 import { downloadVerified } from "./download.js";
 import {
   configuredNpmRegistry,
@@ -66,7 +66,7 @@ export interface NativeDependencySource {
   pgvectorVersion: string;
 }
 // A bundled `file` is relative to `directory` when given (distribution.json),
-// else absolute (LINGER_NATIVE_DEPENDENCIES_JSON, which holds resolved paths).
+// else absolute (TALOS_NATIVE_DEPENDENCIES_JSON, which holds resolved paths).
 function validateArchive(
   value: unknown,
   directory: string | undefined,
@@ -289,7 +289,7 @@ async function copyVerified(
   const info = await stat(options.file).catch(() => undefined);
   if (!info?.isFile())
     throw new Error(
-      `The bundled ${label} archive is missing. Install Linger again.`,
+      `The bundled ${label} archive is missing. Install Talos again.`,
     );
   if (info.size > options.maxBytes)
     throw new Error(`The bundled ${label} archive is larger than pinned.`);
@@ -314,7 +314,7 @@ async function copyVerified(
   );
   if (hash.digest("hex") !== options.digest)
     throw new Error(
-      `The bundled ${label} archive does not match its checksum. Install Linger again.`,
+      `The bundled ${label} archive does not match its checksum. Install Talos again.`,
     );
 }
 /**
@@ -475,7 +475,7 @@ export async function acquireNativeArtifact(
             path.join(stage, "bin", `${program}.exe.manifest`),
             `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity name="Linger.PostgreSQL.${program}" version="1.0.0.0" type="win32"/>
+  <assemblyIdentity name="Talos.PostgreSQL.${program}" version="1.0.0.0" type="win32"/>
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
       <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>
@@ -576,17 +576,17 @@ export async function prepareNativeDependencies(options: {
   const goSource = pinnedGoSources[`${versions.go}-${target}`];
   if (withGo && !goSource)
     throw new Error(
-      "The checkout Go version has no verified Linger release pin. Use Go 1.26.5 or update the Linger distribution.",
+      "The checkout Go version has no verified Talos release pin. Use Go 1.26.5 or update the Talos distribution.",
     );
   const node = process.versions.node.split(".").map(Number);
   if (node[0] !== 26 || (node[1] ?? 0) < 5)
     throw new Error(
-      "Use the Linger bundled Node 26.5+ runtime for native source.",
+      "Use the Talos bundled Node 26.5+ runtime for native source.",
     );
-  const raw = process.env.LINGER_NATIVE_DEPENDENCIES_JSON;
+  const raw = process.env.TALOS_NATIVE_DEPENDENCIES_JSON;
   if (!raw)
     throw new Error(
-      "Native PostgreSQL distribution metadata is unavailable. Use a Linger distribution published with --native-source.",
+      "Native PostgreSQL distribution metadata is unavailable. Use a Talos distribution published with --native-source.",
     );
   let sources: NativeDependencySource[];
   try {
@@ -599,7 +599,7 @@ export async function prepareNativeDependencies(options: {
   const postgres = sources.find((s) => s.target === target);
   if (!postgres)
     throw new Error(
-      "The Linger distribution does not include PostgreSQL for this host.",
+      "The Talos distribution does not include PostgreSQL for this host.",
     );
   await privateDirectory(path.resolve(options.home));
   await privateDirectory(path.join(path.resolve(options.home), "tools"));
@@ -843,7 +843,7 @@ export async function prepareNativeDependencies(options: {
 }
 /**
  * The verified LiveKit server and ffmpeg for this computer, from
- * LINGER_NATIVE_VOICE_TOOLS_JSON; undefined when the distribution has none
+ * TALOS_NATIVE_VOICE_TOOLS_JSON; undefined when the distribution has none
  * for it, and Native voice stays off.
  */
 export async function prepareNativeVoiceTools(options: {
@@ -853,7 +853,7 @@ export async function prepareNativeVoiceTools(options: {
   fetcher?: typeof fetch;
 }): Promise<{ bin: string; livekit: string } | undefined> {
   const target = `${process.platform}-${process.arch}`;
-  const raw = process.env.LINGER_NATIVE_VOICE_TOOLS_JSON;
+  const raw = process.env.TALOS_NATIVE_VOICE_TOOLS_JSON;
   if (!raw) return undefined;
   let sources: NativeVoiceTools[];
   try {

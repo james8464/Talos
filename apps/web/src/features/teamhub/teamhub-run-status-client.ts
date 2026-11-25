@@ -1,4 +1,4 @@
-import type { operations as TeamHubPublicOperations } from "@linger/wire-contracts/teamhub-public/types";
+import type { operations as TeamHubPublicOperations } from "@talos/wire-contracts/teamhub-public/types";
 
 import { runStatusView } from "./run-status";
 import { teamHubData, type TeamHubApi } from "./teamhub-api";

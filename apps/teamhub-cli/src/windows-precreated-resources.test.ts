@@ -6,7 +6,7 @@ import type { TeamHubHttpClient } from "./http-client.js";
 import { packContextSkillFolder } from "./files/context-skill-folder-packer.js";
 import { createHostTeamHubWorkspaceFiles } from "./files/teamhub-workspace-files.js";
 
-const fixtureRoot = process.env.LINGER_TEST_WINDOWS_FILE_LINKS;
+const fixtureRoot = process.env.TALOS_TEST_WINDOWS_FILE_LINKS;
 const enabled = process.platform === "win32" && !!fixtureRoot;
 
 it.runIf(enabled)(

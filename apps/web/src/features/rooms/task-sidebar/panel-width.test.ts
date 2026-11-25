@@ -49,7 +49,7 @@ describe("panel sidebar width", () => {
     expect(clampPanelSidebarWidth(200)).toBe(PANEL_SIDEBAR_MIN_WIDTH);
     expect(clampPanelSidebarWidth(2000)).toBe(panelSidebarMaxWidth());
     expect(clampPanelSidebarWidth(480)).toBe(480);
-    globalThis.localStorage.setItem("linger.panel-sidebar.width", "400");
+    globalThis.localStorage.setItem("talos.panel-sidebar.width", "400");
     expect(readPanelSidebarWidth()).toBe(PANEL_SIDEBAR_DEFAULT_WIDTH);
   });
 

@@ -8,8 +8,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/skill"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
 )
 
 // agentSkillPackage downloads one Skill package the way the Agent's Computer

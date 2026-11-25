@@ -139,7 +139,7 @@ export function useTeamHubAuthentication(input: {
     });
   }
 
-  // The desktop app signs this window in with the account of the Linger on
+  // The desktop app signs this window in with the account of the Talos on
   // this computer and sets the Session cookie; the page only confirms it.
   async function signInWithDesktopAccount(account: DesktopLocalAccount) {
     await runAttempt(async (signal) => {

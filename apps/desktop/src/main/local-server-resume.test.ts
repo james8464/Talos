@@ -6,7 +6,7 @@ import {
   composeProject,
   instanceRoot,
   privateDirectory,
-} from "@linger/local-installation/instance";
+} from "@talos/local-installation/instance";
 import { describe, expect, it, vi } from "vitest";
 
 import { NODE_RUNTIME_VERSION } from "../../../../scripts/local-computer-node-distributions.mjs";
@@ -34,7 +34,7 @@ async function writeDesktopInstance(home: string, port: number): Promise<void> {
       port,
       releaseDir: "/source",
       computerConfig: path.join(root, "computer", "config.json"),
-      computerExecutable: "linger-computer",
+      computerExecutable: "talos-computer",
     }) + "\n",
   );
 }
@@ -191,14 +191,14 @@ describe("LocalServerModule resume coordination", () => {
     ["PROXY 127.0.0.1:7890; DIRECT", "system", "http://127.0.0.1:7890"],
     ["DIRECT", "none", ""],
   ])(
-    "passes the system proxy %s to the resume as LINGER_SYSTEM_HTTPS_PROXY",
+    "passes the system proxy %s to the resume as TALOS_SYSTEM_HTTPS_PROXY",
     async (resolution, source, passed) => {
       vi.stubEnv("HTTPS_PROXY", undefined);
       vi.stubEnv("https_proxy", undefined);
       const resolveProxy = vi.fn(async () => resolution);
       const f = setupResumeFixture(
         `
-      require("node:fs").writeFileSync(require("node:path").join(__dirname, "proxy.txt"), process.env.LINGER_SYSTEM_HTTPS_PROXY ?? "");
+      require("node:fs").writeFileSync(require("node:path").join(__dirname, "proxy.txt"), process.env.TALOS_SYSTEM_HTTPS_PROXY ?? "");
       process.stdout.write(JSON.stringify({ code: 0, details: { origin: "http://localhost:3000" } }) + "\\n");
     `,
         { resolveProxy },
@@ -304,7 +304,7 @@ describe("LocalServerModule resume coordination", () => {
     const f = setupResumeFixture(`
       process.stdout.write(JSON.stringify({
         code: 1,
-        message: "Failed at https://linger.example.com/auth?token=secret123#frag with Bearer super-secret-token-123 ${longPadding}"
+        message: "Failed at https://talos.example.com/auth?token=secret123#frag with Bearer super-secret-token-123 ${longPadding}"
       }) + "\\n");
     `);
 
@@ -378,7 +378,7 @@ describe("LocalServerModule resume coordination", () => {
         stdio: ["ignore", 1, "ignore"],
       });
       holder.unref();
-      writeFileSync(path.join(process.env.LINGER_HOME, "holder.pid"), String(holder.pid));
+      writeFileSync(path.join(process.env.TALOS_HOME, "holder.pid"), String(holder.pid));
       process.stdout.write(JSON.stringify({
         code: 0,
         details: { origin: "http://localhost:63009" },
@@ -432,7 +432,7 @@ describe("LocalServerModule resume coordination", () => {
         },
       );
       holder.unref();
-      writeFileSync(path.join(process.env.LINGER_HOME, "holder.pid"), String(holder.pid));
+      writeFileSync(path.join(process.env.TALOS_HOME, "holder.pid"), String(holder.pid));
       process.stdout.write(JSON.stringify({
         code: 0,
         details: { origin: "http://localhost:63010" },

@@ -6,10 +6,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagecreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomcreation"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagecreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // createTaskWorkRoom creates the Task's Work Room in the caller's transaction.

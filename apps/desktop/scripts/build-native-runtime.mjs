@@ -18,7 +18,7 @@
 // runtime/ folder beside node/bin/node instead, unpacked
 // (RUNTIME_LAYOUTS); packaging/mac/package.py signs them.
 //
-//   node scripts/build-native-runtime.mjs --target win32-x64 --source linger-<label>.tar.gz
+//   node scripts/build-native-runtime.mjs --target win32-x64 --source talos-<label>.tar.gz
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import {
@@ -259,7 +259,7 @@ async function listFiles(root) {
 // runtime and Computer tools reuse one pinned Node.js download per target.
 const nodeCache = path.join(
   desktop,
-  "../../.linger-runtime/node-distributions",
+  "../../.talos-runtime/node-distributions",
 );
 
 async function downloadNode(target, output) {
@@ -346,7 +346,7 @@ export async function buildRuntime(
   const commit = await sourceCommit(archive);
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
-  const work = await mkdtemp(path.join(tmpdir(), "linger-runtime-"));
+  const work = await mkdtemp(path.join(tmpdir(), "talos-runtime-"));
   const timings = {};
   const timed = async (name, action) => {
     const started = Date.now();
@@ -368,9 +368,9 @@ export async function buildRuntime(
         [
           "install",
           "--filter",
-          "@linger/node-services...",
+          "@talos/node-services...",
           "--filter",
-          "@linger/web...",
+          "@talos/web...",
           "--frozen-lockfile",
           "--prefer-offline",
           "--reporter",
@@ -388,7 +388,7 @@ export async function buildRuntime(
           "pnpm",
           [
             "--filter",
-            "@linger/web",
+            "@talos/web",
             "run",
             "build:assets",
             "--skip-precompress",
@@ -420,7 +420,7 @@ export async function buildRuntime(
           await writeFile(
             path.join(services, "package.json"),
             JSON.stringify(
-              { name: "@linger/node-services", private: true, type: "module" },
+              { name: "@talos/node-services", private: true, type: "module" },
               null,
               2,
             ),
@@ -433,7 +433,7 @@ export async function buildRuntime(
             "pnpm",
             [
               "--filter",
-              "@linger/node-services",
+              "@talos/node-services",
               "deploy",
               "--config.inject-workspace-packages=true",
               "--config.node-linker=hoisted",

@@ -57,7 +57,7 @@ func ClaudeSourceHome(environment map[string]string) string {
 }
 
 func writePrivateRuntimeFile(path string, content []byte) error {
-	temporary, err := os.CreateTemp(filepath.Dir(path), ".linger-config-*")
+	temporary, err := os.CreateTemp(filepath.Dir(path), ".talos-config-*")
 	if err != nil {
 		return err
 	}

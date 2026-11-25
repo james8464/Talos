@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 // A deployment gap must not turn a queued, unstarted input into a failed

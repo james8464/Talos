@@ -11,7 +11,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	builtinskills "github.com/simplexai-labs/linger/skills"
+	builtinskills "github.com/simplexai-labs/talos/skills"
 )
 
 const loaderFixtureDirectory = "builtin/fixture/1.0.0"

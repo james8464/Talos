@@ -20,8 +20,8 @@ import { gunzipSync } from "node:zlib";
 import { setTimeout as delay } from "node:timers/promises";
 
 export const WINDOWS_BUNDLE_ENTRIES = [
-  "cli/linger-computer.exe",
-  "daemon/linger-computer-daemon.exe",
+  "cli/talos-computer.exe",
+  "daemon/talos-computer-daemon.exe",
   "runtime/bin/node.exe",
   "runtime/LICENSE",
 ];
@@ -753,7 +753,7 @@ export async function runWindowsInstaller(settings, dependencies = {}) {
   const platform =
     dependencies.platform ??
     nativePlatform(
-      path.join(settings.bootstrapRoot, "daemon/linger-computer-daemon.exe"),
+      path.join(settings.bootstrapRoot, "daemon/talos-computer-daemon.exe"),
     );
   const root = path.resolve(settings.dataRoot);
   try {
@@ -783,9 +783,9 @@ export async function runWindowsInstaller(settings, dependencies = {}) {
 // and process adapters, and the progress reporter of the current run.
 function installContext(settings, dependencies) {
   const root = path.resolve(settings.dataRoot);
-  // Each environment has its own launcher, linger-computer-<environment>.exe,
+  // Each environment has its own launcher, talos-computer-<environment>.exe,
   // bound to its install root by the configuration beside it.
-  if (!/^linger-computer-[a-z0-9][a-z0-9-]*$/u.test(settings.commandName ?? ""))
+  if (!/^talos-computer-[a-z0-9][a-z0-9-]*$/u.test(settings.commandName ?? ""))
     throw new Error("Installer command name is invalid.");
   const launcher = path.join(
     path.resolve(settings.binDirectory),
@@ -807,16 +807,16 @@ function installContext(settings, dependencies) {
       path.dirname(launcher),
       `${settings.commandName}.launcher.json`,
     ),
-    legacyLauncher: path.join(path.dirname(launcher), "linger-computer.cmd"),
-    // linger-computer.exe runs the only environment launcher beside it and
+    legacyLauncher: path.join(path.dirname(launcher), "talos-computer.cmd"),
+    // talos-computer.exe runs the only environment launcher beside it and
     // lists them otherwise. A file there that is not a native launcher is left
     // alone, and a copy that is running keeps its current version.
-    dispatcher: path.join(path.dirname(launcher), "linger-computer.exe"),
+    dispatcher: path.join(path.dirname(launcher), "talos-computer.exe"),
     configFile,
     environment: {
       ...process.env,
-      LINGER_COMPUTER_DATA_DIR: root,
-      LINGER_COMPUTER_CONFIG: configFile,
+      TALOS_COMPUTER_DATA_DIR: root,
+      TALOS_COMPUTER_CONFIG: configFile,
     },
   };
 }
@@ -843,7 +843,7 @@ async function writeValue(c, name, value) {
   if (value === null) {
     if ((await readOptional(c, file)) !== null) await rm(file);
   } else await c.platform.write(file, `${value}\n`);
-  if (process.env.LINGER_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE === name)
+  if (process.env.TALOS_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE === name)
     throw new Error(`Injected metadata failure: ${name}`);
 }
 
@@ -856,7 +856,7 @@ async function readLauncher(c) {
   }
   await c.platform.check(c.launcher, "file");
   const content = await readFile(c.launcher);
-  if (!content.includes(Buffer.from("linger-native-cli-launcher-v1")))
+  if (!content.includes(Buffer.from("talos-native-cli-launcher-v1")))
     throw new Error(
       "Existing launcher is not owned by this installation; it was preserved.",
     );
@@ -868,12 +868,12 @@ async function writeLauncher(c, content) {
     await rm(c.launcher, { force: true });
     return;
   }
-  if (!content.includes(Buffer.from("linger-native-cli-launcher-v1")))
+  if (!content.includes(Buffer.from("talos-native-cli-launcher-v1")))
     throw new Error("Native launcher is invalid.");
   if ((await readLauncher(c))?.equals(content)) return;
   const temporary = path.join(
     path.dirname(c.launcher),
-    `.linger-launcher-${randomUUID()}`,
+    `.talos-launcher-${randomUUID()}`,
   );
   try {
     await writeFile(temporary, content, { flag: "wx", mode: 0o600 });
@@ -936,7 +936,7 @@ async function readDispatcher(c) {
     throw error;
   });
   return content === null ||
-    content.includes(Buffer.from("linger-native-cli-launcher-v1"))
+    content.includes(Buffer.from("talos-native-cli-launcher-v1"))
     ? content
     : undefined;
 }
@@ -949,7 +949,7 @@ async function refreshDispatcher(c) {
   if (current === undefined || current?.equals(content)) return;
   const temporary = path.join(
     path.dirname(c.launcher),
-    `.linger-launcher-${randomUUID()}`,
+    `.talos-launcher-${randomUUID()}`,
   );
   try {
     await writeFile(temporary, content, { flag: "wx", mode: 0o600 });
@@ -964,7 +964,7 @@ async function refreshDispatcher(c) {
 
 async function removeDispatcherWithLastEnvironment(c) {
   const remaining = (await readdir(path.dirname(c.launcher))).some((name) =>
-    /^linger-computer-[a-z0-9][a-z0-9-]*\.launcher\.json$/u.test(name),
+    /^talos-computer-[a-z0-9][a-z0-9-]*\.launcher\.json$/u.test(name),
   );
   if (remaining || !(await readDispatcher(c))) return;
   await rm(c.dispatcher, { force: true }).catch((error) => {
@@ -974,7 +974,7 @@ async function removeDispatcherWithLastEnvironment(c) {
 
 async function cli(c, bundle, arguments_) {
   return await c.execute(
-    path.join(bundle, "cli/linger-computer.exe"),
+    path.join(bundle, "cli/talos-computer.exe"),
     arguments_,
     c.environment,
   );
@@ -1252,7 +1252,7 @@ async function checkInstallDestination(c) {
     );
   if (
     priorLegacyLauncher !== null &&
-    !priorLegacyLauncher.includes("\r\nrem linger-computer-launcher-v1\r\n")
+    !priorLegacyLauncher.includes("\r\nrem talos-computer-launcher-v1\r\n")
   )
     throw new Error(
       "Existing launcher is not owned by this installation; it was preserved.",
@@ -1486,7 +1486,7 @@ async function verifyRelease(c, archives, temporary) {
     );
   }
   const version = (await cliChecked(c, staged, ["version"])).trim();
-  if (!/^linger-computer \S+$/u.test(version))
+  if (!/^talos-computer \S+$/u.test(version))
     throw new Error("CLI version is invalid.");
   const runtimeVersion = await c.execute(
     path.join(staged, "runtime/bin/node.exe"),
@@ -1650,7 +1650,7 @@ async function install(c, installed) {
       await refreshDispatcher(c);
       completed = true;
       progress.end("up to date");
-      c.log("Linger Computer is already up to date.");
+      c.log("Talos Computer is already up to date.");
       return { installed: true, unchanged: true, launcher };
     }
     const archives = await downloadRelease(c, temporary);
@@ -1681,11 +1681,11 @@ async function install(c, installed) {
     completed = true;
     await refreshDispatcher(c);
     progress.end();
-    const label = version.replace(/^linger-computer /u, "");
+    const label = version.replace(/^talos-computer /u, "");
     c.log(
       installed.oldName
-        ? `Linger Computer upgraded to ${label} in ${progress.total()}.`
-        : `Linger Computer ${label} installed in ${progress.total()}.`,
+        ? `Talos Computer upgraded to ${label} in ${progress.total()}.`
+        : `Talos Computer ${label} installed in ${progress.total()}.`,
     );
     return { installed: true, unchanged: false, launcher };
   } catch (error) {

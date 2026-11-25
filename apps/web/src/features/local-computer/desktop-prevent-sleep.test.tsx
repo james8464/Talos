@@ -10,13 +10,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DesktopPreventSleep } from "./desktop-prevent-sleep";
 
-function setDesktop(lingerDesktop: unknown) {
-  Object.assign(window, { lingerDesktop });
+function setDesktop(talosDesktop: unknown) {
+  Object.assign(window, { talosDesktop });
 }
 
 afterEach(() => {
   cleanup();
-  delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+  delete (window as { talosDesktop?: unknown }).talosDesktop;
 });
 
 describe("DesktopPreventSleep", () => {

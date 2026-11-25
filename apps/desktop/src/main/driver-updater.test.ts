@@ -2,7 +2,7 @@ import {
   NVIDIA_DRIVER_DOWNLOAD_URL,
   NVIDIA_DRIVER_GUIDE_URL,
   type DesktopDriverInstallState,
-} from "@linger/service-kit/nvidia-driver";
+} from "@talos/service-kit/nvidia-driver";
 import { existsSync } from "node:fs";
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -21,7 +21,7 @@ import {
 const tempDirs: string[] = [];
 
 async function makeTempDir(): Promise<string> {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "linger-driver-updater-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "talos-driver-updater-"));
   tempDirs.push(dir);
   return dir;
 }

@@ -1,4 +1,4 @@
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 export type TeamHubActor = components["schemas"]["Actor"];
 export type TeamHubActorRef = components["schemas"]["ActorRef"];
 export type TeamHubTeamMdDocument = components["schemas"]["TeamMdDocument"];

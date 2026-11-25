@@ -1,9 +1,9 @@
 /**
  * Room timing diagnostics (`room.*` console.debug events) cost serialization,
  * timers and animation frames on every render, so they run only when asked:
- * `localStorage.setItem("linger.roomDiagnostics", "1")`, then reload.
+ * `localStorage.setItem("talos.roomDiagnostics", "1")`, then reload.
  */
-export const ROOM_DIAGNOSTICS_STORAGE_KEY = "linger.roomDiagnostics";
+export const ROOM_DIAGNOSTICS_STORAGE_KEY = "talos.roomDiagnostics";
 
 let enabled: boolean | undefined;
 

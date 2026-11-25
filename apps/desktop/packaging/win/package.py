@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Builds Linger-<version>-x64-setup.exe and Linger-<version>-x64.zip on Linux.
+"""Builds Talos-<version>-x64-setup.exe and Talos-<version>-x64.zip on Linux.
 
 Inputs: the desktop bundle from `node build.mjs` (dist/, which includes the
-teamhub CLI and, built with LINGER_DESKTOP_DAEMON_TARGETS=win32-x64, the Go
+teamhub CLI and, built with TALOS_DESKTOP_DAEMON_TARGETS=win32-x64, the Go
 daemon) and the official Electron zip for win32-x64.
 Tools: the `wintool` image from ./Dockerfile (NSIS, ImageMagick, resedit).
 
@@ -10,13 +10,13 @@ Tools: the `wintool` image from ./Dockerfile (NSIS, ImageMagick, resedit).
     python3 packaging/win/package.py [--out DIR]
 
 The setup program installs for the current user into
-%LOCALAPPDATA%\\Programs\\Linger without administrator rights, adds a Start
+%LOCALAPPDATA%\\Programs\\Talos without administrator rights, adds a Start
 menu shortcut and an entry under Installed apps. The zip holds the same
 folder for running without installing.
 
 Neither is Authenticode-signed yet, so SmartScreen asks the user to confirm
 the first start. The desktop updater runs a newer setup program with
-/update /relaunch: it stops Linger, replaces the installed version behind a
+/update /relaunch: it stops Talos, replaces the installed version behind a
 progress page and starts it again. The zip has no self-update.
 
 The Go daemon goes to resources/computer/ and the browser and computer-control
@@ -42,7 +42,7 @@ sys.path.insert(0, os.path.dirname(HERE))
 from archive import sha256  # noqa: E402
 import computer_tools  # noqa: E402
 from native_bundle import check_runtime, check_teamhub  # noqa: E402
-DAEMON = os.path.join(DESKTOP, "dist", "computer", "win32-x64", "linger-computer-daemon.exe")
+DAEMON = os.path.join(DESKTOP, "dist", "computer", "win32-x64", "talos-computer-daemon.exe")
 
 
 def run(*args, **kwargs):
@@ -69,14 +69,14 @@ def electron_zip(version, cache):
 
 def write_icon(output):
     """The logo's Windows icon (apps/assets/logo/windows), 16 to 256 px."""
-    shutil.copy(os.path.join(DESKTOP, "resources", "linger.ico"), output)
+    shutil.copy(os.path.join(DESKTOP, "resources", "talos.ico"), output)
 
 
 KEPT_LOCALES = {"en-US.pak", "zh-CN.pak"}
 
 
 def stage_app(version, electron_version, workdir, cache):
-    stage = os.path.join(workdir, "Linger")
+    stage = os.path.join(workdir, "Talos")
     with zipfile.ZipFile(electron_zip(electron_version, cache)) as archive:
         archive.extractall(stage)
     resources = os.path.join(stage, "resources")
@@ -98,26 +98,26 @@ def stage_app(version, electron_version, workdir, cache):
     shutil.copytree(dist, os.path.join(app_dir, "dist"),
                     ignore=shutil.ignore_patterns("*.map", "computer", "computer-tools"))
     with open(os.path.join(app_dir, "package.json"), "w") as out:
-        json.dump({"name": "linger-desktop", "productName": "Linger", "version": version,
+        json.dump({"name": "talos-desktop", "productName": "Talos", "version": version,
                    "type": "module", "main": "dist/main/index.mjs"}, out, indent=2)
     computer = os.path.join(resources, "computer")
     os.makedirs(computer)
     shutil.copy2(DAEMON, computer)
     computer_tools.copy(resources, "win32-x64")
 
-    write_icon(os.path.join(resources, "linger.ico"))
-    os.rename(os.path.join(stage, "electron.exe"), os.path.join(stage, "Linger.exe"))
+    write_icon(os.path.join(resources, "talos.ico"))
+    os.rename(os.path.join(stage, "electron.exe"), os.path.join(stage, "Talos.exe"))
     shutil.copy(os.path.join(HERE, "resources.mjs"), workdir)
-    wintool(workdir, "node", "resources.mjs", "Linger/Linger.exe", "Linger/resources/linger.ico", version)
+    wintool(workdir, "node", "resources.mjs", "Talos/Talos.exe", "Talos/resources/talos.ico", version)
     return stage
 
 
 def build_setup(workdir, version, output):
     shutil.copy(os.path.join(HERE, "installer.nsi"), workdir)
     wintool(workdir, "makensis", "-V2", f"-DVERSION={version}",
-            f"-DNUMERIC_VERSION={version.split('-')[0]}", "-DSTAGE=Linger",
-            "-DOUTPUT=Linger-setup.exe", "installer.nsi")
-    shutil.move(os.path.join(workdir, "Linger-setup.exe"), output)
+            f"-DNUMERIC_VERSION={version.split('-')[0]}", "-DSTAGE=Talos",
+            "-DOUTPUT=Talos-setup.exe", "installer.nsi")
+    shutil.move(os.path.join(workdir, "Talos-setup.exe"), output)
 
 
 # Extensions already compressed with high-entropy formats; storing them skips
@@ -137,7 +137,7 @@ def build_zip(stage, output):
                 )
                 archive.write(
                     path,
-                    os.path.join("Linger", os.path.relpath(path, stage)),
+                    os.path.join("Talos", os.path.relpath(path, stage)),
                     compress_type=compress_type,
                 )
 
@@ -149,7 +149,7 @@ def report(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default=os.path.join(DESKTOP, "out"))
-    parser.add_argument("--cache", default=os.path.expanduser("~/.cache/linger-desktop"))
+    parser.add_argument("--cache", default=os.path.expanduser("~/.cache/talos-desktop"))
     args = parser.parse_args()
     with open(os.path.join(DESKTOP, "package.json")) as source:
         package = json.load(source)
@@ -157,15 +157,15 @@ def main():
     electron_version = package["devDependencies"]["electron"].lstrip("^~")
     if not os.path.exists(DAEMON):
         sys.exit("dist/ is missing the daemon for win32-x64; run "
-                 "`LINGER_DESKTOP_DAEMON_TARGETS=win32-x64 node build.mjs` first")
+                 "`TALOS_DESKTOP_DAEMON_TARGETS=win32-x64 node build.mjs` first")
     check_teamhub("win32-x64")
     check_runtime("win32-x64")
     os.makedirs(args.out, exist_ok=True)
-    workdir = tempfile.mkdtemp(prefix="linger-win-")
+    workdir = tempfile.mkdtemp(prefix="talos-win-")
     try:
         stage = stage_app(version, electron_version, workdir, args.cache)
-        setup = os.path.join(args.out, f"Linger-{version}-x64-setup.exe")
-        archive = os.path.join(args.out, f"Linger-{version}-x64.zip")
+        setup = os.path.join(args.out, f"Talos-{version}-x64-setup.exe")
+        archive = os.path.join(args.out, f"Talos-{version}-x64.zip")
 
         def make_setup():
             build_setup(workdir, version, setup)
@@ -173,7 +173,7 @@ def main():
 
         def make_zip():
             build_zip(stage, archive)
-            computer_tools.check_archive(archive, "Linger/resources/", "win32-x64")
+            computer_tools.check_archive(archive, "Talos/resources/", "win32-x64")
             report(archive)
 
         # Both read the finalized stage folder and write distinct outputs.

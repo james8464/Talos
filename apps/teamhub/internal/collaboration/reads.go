@@ -6,9 +6,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/oapi-codegen/runtime/types"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/messagereaction"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/messagereaction"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // Page is one cursor page of a list read.

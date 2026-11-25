@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Guided interactive installer for Linger Docker Compose local models and
+# Guided interactive installer for Talos Docker Compose local models and
 # Local Computer connection on macOS (Apple silicon) and Linux.
 
 SCRIPT_PATH="${BASH_SOURCE[0]:-}"
@@ -17,7 +17,7 @@ if [[ -n "$SCRIPT_PATH" && -e "$SCRIPT_PATH" ]]; then
   fi
 fi
 
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/linger-install.XXXXXX")"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/talos-install.XXXXXX")"
 chmod 0700 "$WORK_DIR"
 TEMP_KIT_DIR=""
 cleanup() {
@@ -32,7 +32,7 @@ trap cleanup EXIT
 MODE="guide"
 EXPLICIT_WEB_URL=""
 WEB_URL=""
-CONNECT_LINGER=1
+CONNECT_TALOS=1
 PURGE=0
 YES=0
 
@@ -49,13 +49,13 @@ usage() {
   cat <<EOF
 Usage: $SELF_CMD [options]
 
-Guided setup for Linger local models and connecting this computer to Linger.
+Guided setup for Talos local models and connecting this computer to Talos.
 
 Options:
-  --web-url <origin>   Linger server URL (default: http://localhost:3000)
-  --connect            Install and connect linger-computer only
-  --up                 Start installed local models and refresh linger-computer
-  --status             Show local model and linger-computer status
+  --web-url <origin>   Talos server URL (default: http://localhost:3000)
+  --connect            Install and connect talos-computer only
+  --up                 Start installed local models and refresh talos-computer
+  --status             Show local model and talos-computer status
   --remove             Uninstall local model services (keeps downloaded files)
   --purge              With --remove, also delete downloaded weights and caches
   --yes                Confirm non-interactively for supported flags
@@ -189,8 +189,8 @@ sanitize_engine_stream() {
   sed -E \
     -e 's/^stack:/install.sh:/g' \
     -e 's/stack\.sh:/install.sh:/g' \
-    -e 's/on Windows use stack\.ps1/on Windows use the Linger desktop app/g' \
-    -e 's/stack\.ps1/the Linger desktop app/g' \
+    -e 's/on Windows use stack\.ps1/on Windows use the Talos desktop app/g' \
+    -e 's/stack\.ps1/the Talos desktop app/g' \
     -e "s/'stack service[^']*'/the existing local service/g" \
     -e "s/stack service [^;,.]*/the existing local service/g" \
     -e "s/ or plan another --llm-port//g" \
@@ -242,7 +242,7 @@ computer_environment_name() {
         name="ip-${host//./-}"
       else
         name="${host%%.*}"
-        [[ "$name" == linger ]] || name="${name%-linger}"
+        [[ "$name" == talos ]] || name="${name%-talos}"
       fi
       ;;
   esac
@@ -262,7 +262,7 @@ check_supported_platform() {
       fi
       ;;
     *)
-      die "Unsupported operating system ($sys). On Windows, use the Linger desktop app or see docs/local-inference.md."
+      die "Unsupported operating system ($sys). On Windows, use the Talos desktop app or see docs/local-inference.md."
       ;;
   esac
   command -v curl >/dev/null 2>&1 || die "curl is required."
@@ -344,10 +344,10 @@ ensure_kit_home() {
   local real_home=""
   real_home="$(canonical_existing_parent "$HOME" 2>/dev/null || true)"
   if [[ -n "$real_home" ]] && ancestors_are_private "$real_home"; then
-    if ensure_private_subdir "$real_home/.linger" &&
-       ensure_private_subdir "$real_home/.linger/localmodels" &&
-       ensure_private_subdir "$real_home/.linger/localmodels/kits"; then
-      export LOCALMODELS_KIT_HOME="$real_home/.linger/localmodels/kits"
+    if ensure_private_subdir "$real_home/.talos" &&
+       ensure_private_subdir "$real_home/.talos/localmodels" &&
+       ensure_private_subdir "$real_home/.talos/localmodels/kits"; then
+      export LOCALMODELS_KIT_HOME="$real_home/.talos/localmodels/kits"
       return 0
     fi
   fi
@@ -355,7 +355,7 @@ ensure_kit_home() {
   local real_tmp=""
   real_tmp="$(canonical_existing_parent "${TMPDIR:-/tmp}" 2>/dev/null || true)"
   if [[ -n "$real_tmp" ]] && ancestors_are_private "$real_tmp"; then
-    TEMP_KIT_DIR="$(mktemp -d "$real_tmp/linger-kit.XXXXXX")"
+    TEMP_KIT_DIR="$(mktemp -d "$real_tmp/talos-kit.XXXXXX")"
     chmod 0700 "$TEMP_KIT_DIR"
     export LOCALMODELS_KIT_HOME="$TEMP_KIT_DIR"
     return 0
@@ -454,14 +454,14 @@ download_pinned_stack_script() {
 ensure_engine() {
   check_supported_platform
   ensure_kit_home
-  if [[ -n "${LINGER_STACK_SCRIPT:-}" ]]; then
-    [[ -r "$LINGER_STACK_SCRIPT" ]] || die "Configured engine helper is not readable: $LINGER_STACK_SCRIPT"
-    STACK_SCRIPT="$LINGER_STACK_SCRIPT"
+  if [[ -n "${TALOS_STACK_SCRIPT:-}" ]]; then
+    [[ -r "$TALOS_STACK_SCRIPT" ]] || die "Configured engine helper is not readable: $TALOS_STACK_SCRIPT"
+    STACK_SCRIPT="$TALOS_STACK_SCRIPT"
   elif [[ -n "$REPO_ROOT" && -r "$REPO_ROOT/scripts/installs/stack.sh" ]]; then
     STACK_SCRIPT="$REPO_ROOT/scripts/installs/stack.sh"
-  elif [[ -n "${LINGER_STACK_URL:-}" ]]; then
+  elif [[ -n "${TALOS_STACK_URL:-}" ]]; then
     STACK_SCRIPT="$WORK_DIR/engine.sh"
-    curl -fsSL "$LINGER_STACK_URL" -o "$STACK_SCRIPT" || die "Could not download the local model runtime bootstrap."
+    curl -fsSL "$TALOS_STACK_URL" -o "$STACK_SCRIPT" || die "Could not download the local model runtime bootstrap."
     chmod 0700 "$STACK_SCRIPT"
   else
     STACK_SCRIPT="$WORK_DIR/engine.sh"
@@ -489,22 +489,22 @@ default_web_url() {
   local candidate=""
   if [[ -n "$EXPLICIT_WEB_URL" ]]; then
     candidate="$EXPLICIT_WEB_URL"
-  elif [[ -n "${LINGER_WEB_URL:-}" ]]; then
-    candidate="$LINGER_WEB_URL"
+  elif [[ -n "${TALOS_WEB_URL:-}" ]]; then
+    candidate="$TALOS_WEB_URL"
   elif [[ -n "$REPO_ROOT" && -f "$REPO_ROOT/.env" ]]; then
     candidate="$(read_env_value "$REPO_ROOT/.env" "WEB_PUBLIC_ORIGIN" || true)"
   fi
   if [[ -z "$candidate" ]]; then
     candidate="http://localhost:3000"
   fi
-  normalize_origin "$candidate" || die "Invalid Linger server URL: $candidate"
+  normalize_origin "$candidate" || die "Invalid Talos server URL: $candidate"
 }
 
-probe_linger_origin() {
+probe_talos_origin() {
   local origin="$1"
-  local probe_file="$WORK_DIR/probe-linger.sh"
-  if curl -fsS --max-time 5 "$origin/install/linger-computer.sh" -o "$probe_file" 2>/dev/null; then
-    grep -Fq '# linger-computer-launcher-v2' "$probe_file"
+  local probe_file="$WORK_DIR/probe-talos.sh"
+  if curl -fsS --max-time 5 "$origin/install/talos-computer.sh" -o "$probe_file" 2>/dev/null; then
+    grep -Fq '# talos-computer-launcher-v2' "$probe_file"
     return $?
   fi
   return 1
@@ -545,8 +545,8 @@ is_port_busy() {
     return 1
   fi
 
-  if [[ -n "${LINGER_INSTALL_BUSY_PORTS+set}" ]]; then
-    local spec=",${LINGER_INSTALL_BUSY_PORTS// /},"
+  if [[ -n "${TALOS_INSTALL_BUSY_PORTS+set}" ]]; then
+    local spec=",${TALOS_INSTALL_BUSY_PORTS// /},"
     if [[ "$spec" == *",$port,"* || "$spec" == *",$port/$proto,"* ]]; then
       return 0
     fi
@@ -608,7 +608,7 @@ ensure_compose_ports() {
   fi
 
   local docker_ports=""
-  if [[ -z "${LINGER_INSTALL_BUSY_PORTS+set}" ]]; then
+  if [[ -z "${TALOS_INSTALL_BUSY_PORTS+set}" ]]; then
     local all_raw=""
     all_raw="$(docker ps --format '{{.Ports}}' 2>/dev/null || true)"
     if [[ -n "$all_raw" ]]; then
@@ -795,11 +795,11 @@ start_compose_server() {
     printf '  Created .env from .env.example.\n'
   fi
 
-  mkdir -p "$REPO_ROOT/.linger-runtime/postgres-logs/stack" 2>/dev/null || true
+  mkdir -p "$REPO_ROOT/.talos-runtime/postgres-logs/stack" 2>/dev/null || true
   ensure_compose_ports
 
-  printf '  Starting Linger with Docker Compose...\n'
-  (cd "$REPO_ROOT" && docker compose up --build --detach --wait) || die "Docker Compose failed to start Linger."
+  printf '  Starting Talos with Docker Compose...\n'
+  (cd "$REPO_ROOT" && docker compose up --build --detach --wait) || die "Docker Compose failed to start Talos."
 
   local env_origin=""
   env_origin="$(read_env_value "$REPO_ROOT/.env" "WEB_PUBLIC_ORIGIN" || true)"
@@ -813,24 +813,24 @@ start_compose_server() {
 
   local waited=0
   while (( waited < 15 )); do
-    if probe_linger_origin "$WEB_URL"; then
+    if probe_talos_origin "$WEB_URL"; then
       break
     fi
     sleep 1
     waited=$((waited + 1))
   done
 
-  if ! probe_linger_origin "$WEB_URL"; then
-    die "Linger did not respond at $WEB_URL after Docker Compose started."
+  if ! probe_talos_origin "$WEB_URL"; then
+    die "Talos did not respond at $WEB_URL after Docker Compose started."
   fi
-  printf '  Linger server is ready at %s\n' "$WEB_URL"
+  printf '  Talos server is ready at %s\n' "$WEB_URL"
 
   prompt_line "  Create the initial owner account now? [Y/n]: "
   local create_owner=""
   create_owner="$(lowercase "$PROMPT_VALUE")"
   if [[ -z "$create_owner" || "$create_owner" == "y" || "$create_owner" == "yes" ]]; then
-    local owner_email="owner@linger.local"
-    prompt_line "  Owner email [owner@linger.local]: "
+    local owner_email="owner@talos.local"
+    prompt_line "  Owner email [owner@talos.local]: "
     if [[ -n "$PROMPT_VALUE" ]]; then
       owner_email="$PROMPT_VALUE"
     fi
@@ -867,39 +867,39 @@ start_compose_server() {
 
 prompt_custom_url() {
   while :; do
-    prompt_line "  Enter Linger server URL (or 'skip' to install local models only): "
+    prompt_line "  Enter Talos server URL (or 'skip' to install local models only): "
     local raw="$PROMPT_VALUE"
     if [[ "$(lowercase "$raw")" == "skip" || -z "$raw" ]]; then
-      CONNECT_LINGER=0
+      CONNECT_TALOS=0
       printf '  Continuing with local models only.\n'
       return 0
     fi
     local normalized=""
     if ! normalized="$(normalize_origin "$raw")"; then
-      printf '  Invalid URL. Use an origin like http://localhost:3000 or https://linger.example.com.\n'
+      printf '  Invalid URL. Use an origin like http://localhost:3000 or https://talos.example.com.\n'
       continue
     fi
-    if probe_linger_origin "$normalized"; then
+    if probe_talos_origin "$normalized"; then
       WEB_URL="$normalized"
-      CONNECT_LINGER=1
-      printf '  Found Linger server at %s\n' "$WEB_URL"
+      CONNECT_TALOS=1
+      printf '  Found Talos server at %s\n' "$WEB_URL"
       return 0
     fi
-    printf '  Could not reach a Linger server at %s.\n' "$normalized"
+    printf '  Could not reach a Talos server at %s.\n' "$normalized"
     prompt_line "  Use this URL anyway? [y/N]: "
     local force=""
     force="$(lowercase "$PROMPT_VALUE")"
     if [[ "$force" == "y" || "$force" == "yes" ]]; then
       WEB_URL="$normalized"
-      CONNECT_LINGER=1
+      CONNECT_TALOS=1
       return 0
     fi
   done
 }
 
 resolve_computer_env() {
-  local bin_dir="${LINGER_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
-  local gateway_pi_dir="${LINGER_PI_AGENT_DIR:-$HOME/.local/share/localmodels/tools/gateway-home/.pi/agent}"
+  local bin_dir="${TALOS_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
+  local gateway_pi_dir="${TALOS_PI_AGENT_DIR:-$HOME/.local/share/localmodels/tools/gateway-home/.pi/agent}"
   local runtime_path="$bin_dir:$HOME/.local/bin:$PATH"
   COMPUTER_ENV=("PATH=$runtime_path")
   if [[ -f "$gateway_pi_dir/models.json" ]]; then
@@ -915,20 +915,20 @@ resolve_computer_env() {
 }
 
 run_connect_step() {
-  local downloader_file="$WORK_DIR/install-linger-computer.sh"
-  printf '  Downloading Linger Computer installer from %s...\n' "$WEB_URL"
-  curl -fsSL "$WEB_URL/install/linger-computer.sh" -o "$downloader_file" ||
-    die "Failed to download the Linger Computer installer from $WEB_URL."
-  grep -Fq '# linger-computer-launcher-v2' "$downloader_file" ||
-    die "$WEB_URL did not return a valid Linger Computer installer."
+  local downloader_file="$WORK_DIR/install-talos-computer.sh"
+  printf '  Downloading Talos Computer installer from %s...\n' "$WEB_URL"
+  curl -fsSL "$WEB_URL/install/talos-computer.sh" -o "$downloader_file" ||
+    die "Failed to download the Talos Computer installer from $WEB_URL."
+  grep -Fq '# talos-computer-launcher-v2' "$downloader_file" ||
+    die "$WEB_URL did not return a valid Talos Computer installer."
 
-  LINGER_WEB_URL="$WEB_URL" bash "$downloader_file" ||
-    die "Linger Computer installation failed."
+  TALOS_WEB_URL="$WEB_URL" bash "$downloader_file" ||
+    die "Talos Computer installation failed."
 
   local env_name
   env_name="$(computer_environment_name "$WEB_URL")"
-  local bin_dir="${LINGER_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
-  local computer_cli="$bin_dir/linger-computer-$env_name"
+  local bin_dir="${TALOS_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
+  local computer_cli="$bin_dir/talos-computer-$env_name"
   [[ -x "$computer_cli" ]] || die "Expected command was not installed: $computer_cli"
 
   resolve_computer_env
@@ -938,15 +938,15 @@ run_connect_step() {
   if printf '%s' "$auth_json" | grep -Eq '"authorized"[[:space:]]*:[[:space:]]*true'; then
     printf '  This computer is already linked to %s; restarting background daemon...\n' "$WEB_URL"
     env "${COMPUTER_ENV[@]+"${COMPUTER_ENV[@]}"}" "$computer_cli" daemon restart ||
-      die "Failed to restart linger-computer-$env_name."
+      die "Failed to restart talos-computer-$env_name."
   else
-    printf '  Sign in to link this computer to Linger (%s)...\n' "$WEB_URL"
+    printf '  Sign in to link this computer to Talos (%s)...\n' "$WEB_URL"
     if [[ -n "$RESOLVED_PI_BIN" ]]; then
       env "${COMPUTER_ENV[@]+"${COMPUTER_ENV[@]}"}" "$computer_cli" login --web-url "$WEB_URL" --pi-path "$RESOLVED_PI_BIN" ||
-        die "Could not sign in linger-computer-$env_name."
+        die "Could not sign in talos-computer-$env_name."
     else
       env "${COMPUTER_ENV[@]+"${COMPUTER_ENV[@]}"}" "$computer_cli" login --web-url "$WEB_URL" ||
-        die "Could not sign in linger-computer-$env_name."
+        die "Could not sign in talos-computer-$env_name."
     fi
   fi
 
@@ -962,40 +962,40 @@ run_connect_step() {
   fi
 
   printf '\nDone.\n'
-  printf '  Linger server: %s\n' "$WEB_URL"
-  printf '  Computer CLI:  linger-computer-%s\n' "$env_name"
+  printf '  Talos server: %s\n' "$WEB_URL"
+  printf '  Computer CLI:  talos-computer-%s\n' "$env_name"
   if [[ ":${PATH}:" != *":${bin_dir}:"* ]]; then
-    printf '  Note: add %s to PATH if you want to invoke linger-computer-%s directly.\n' "$bin_dir" "$env_name"
+    printf '  Note: add %s to PATH if you want to invoke talos-computer-%s directly.\n' "$bin_dir" "$env_name"
   fi
   printf '  Day-2 commands: %s --status | %s --up | %s --remove\n' "$SELF_CMD" "$SELF_CMD" "$SELF_CMD"
 }
 
 step_check_server() {
-  printf '\n[1/4] Checking Linger server\n'
+  printf '\n[1/4] Checking Talos server\n'
   WEB_URL="$(default_web_url)"
-  if probe_linger_origin "$WEB_URL"; then
-    CONNECT_LINGER=1
-    printf '  Found Linger server at %s\n' "$WEB_URL"
+  if probe_talos_origin "$WEB_URL"; then
+    CONNECT_TALOS=1
+    printf '  Found Talos server at %s\n' "$WEB_URL"
     return 0
   fi
 
-  printf '  Could not reach a Linger server at %s.\n' "$WEB_URL"
+  printf '  Could not reach a Talos server at %s.\n' "$WEB_URL"
   if compose_available; then
     printf '  Choose how to proceed:\n'
-    printf '    1) Start Linger on this computer with Docker Compose (recommended)\n'
-    printf '    2) Enter the URL of an existing Linger server\n'
-    printf '    3) Install local models only (connect to Linger later)\n'
+    printf '    1) Start Talos on this computer with Docker Compose (recommended)\n'
+    printf '    2) Enter the URL of an existing Talos server\n'
+    printf '    3) Install local models only (connect to Talos later)\n'
     prompt_line "  Choice [1-3] (default: 1): "
     case "${PROMPT_VALUE:-1}" in
       1)
         start_compose_server
-        CONNECT_LINGER=1
+        CONNECT_TALOS=1
         ;;
       2)
         prompt_custom_url
         ;;
       3)
-        CONNECT_LINGER=0
+        CONNECT_TALOS=0
         printf '  Continuing with local models only.\n'
         ;;
       *)
@@ -1004,15 +1004,15 @@ step_check_server() {
     esac
   else
     printf '  Choose how to proceed:\n'
-    printf '    1) Enter the URL of an existing Linger server\n'
-    printf '    2) Install local models only (connect to Linger later)\n'
+    printf '    1) Enter the URL of an existing Talos server\n'
+    printf '    2) Install local models only (connect to Talos later)\n'
     prompt_line "  Choice [1-2] (default: 1): "
     case "${PROMPT_VALUE:-1}" in
       1)
         prompt_custom_url
         ;;
       2)
-        CONNECT_LINGER=0
+        CONNECT_TALOS=0
         printf '  Continuing with local models only.\n'
         ;;
       *)
@@ -1364,10 +1364,10 @@ with open(meta_out, "w", encoding="utf-8") as fh:
   fi
 }
 
-step_connect_linger() {
-  printf '\n[4/4] Connecting this computer to Linger\n'
-  if (( CONNECT_LINGER == 0 )); then
-    printf '  Local model is ready. When your Linger server is running, connect with:\n'
+step_connect_talos() {
+  printf '\n[4/4] Connecting this computer to Talos\n'
+  if (( CONNECT_TALOS == 0 )); then
+    printf '  Local model is ready. When your Talos server is running, connect with:\n'
     printf '    %s --connect --web-url http://localhost:3000\n' "$SELF_CMD"
     return 0
   fi
@@ -1377,10 +1377,10 @@ step_connect_linger() {
 run_connect_mode() {
   check_supported_platform
   WEB_URL="$(default_web_url)"
-  if ! probe_linger_origin "$WEB_URL"; then
-    printf 'Could not reach a Linger server at %s.\n' "$WEB_URL"
+  if ! probe_talos_origin "$WEB_URL"; then
+    printf 'Could not reach a Talos server at %s.\n' "$WEB_URL"
     prompt_custom_url
-    if (( CONNECT_LINGER == 0 )); then
+    if (( CONNECT_TALOS == 0 )); then
       return 0
     fi
   fi
@@ -1401,15 +1401,15 @@ run_up_mode() {
   candidate_url="$(default_web_url)"
   local env_name
   env_name="$(computer_environment_name "$candidate_url")"
-  local bin_dir="${LINGER_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
-  local computer_cli="$bin_dir/linger-computer-$env_name"
+  local bin_dir="${TALOS_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
+  local computer_cli="$bin_dir/talos-computer-$env_name"
   if [[ -x "$computer_cli" ]]; then
     local auth_json=""
     auth_json="$("$computer_cli" auth status --json 2>/dev/null || true)"
     if printf '%s' "$auth_json" | grep -Eq '"authorized"[[:space:]]*:[[:space:]]*true'; then
       resolve_computer_env
       env "${COMPUTER_ENV[@]+"${COMPUTER_ENV[@]}"}" "$computer_cli" daemon restart ||
-        die "Failed to restart linger-computer-$env_name."
+        die "Failed to restart talos-computer-$env_name."
     fi
   fi
 }
@@ -1430,10 +1430,10 @@ run_status_mode() {
   candidate_url="$(default_web_url)"
   local env_name
   env_name="$(computer_environment_name "$candidate_url")"
-  local bin_dir="${LINGER_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
-  local computer_cli="$bin_dir/linger-computer-$env_name"
+  local bin_dir="${TALOS_COMPUTER_BIN_DIR:-$HOME/.local/bin}"
+  local computer_cli="$bin_dir/talos-computer-$env_name"
   if [[ -x "$computer_cli" ]]; then
-    printf '\nComputer (%s):\n' "linger-computer-$env_name"
+    printf '\nComputer (%s):\n' "talos-computer-$env_name"
     "$computer_cli" daemon status || true
   fi
   exit "$status_rc"
@@ -1545,6 +1545,6 @@ case "$MODE" in
     step_check_server
     step_check_hardware_and_options
     step_install_and_verify_model
-    step_connect_linger
+    step_connect_talos
     ;;
 esac

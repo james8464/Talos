@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Linger. This guide covers setting up a
+Thanks for helping improve Talos. This guide covers setting up a
 development checkout, the checks to run before a pull request, and how
 changes are reviewed. Repository-wide conventions live in
 [AGENTS.md](AGENTS.md); read the nearest `AGENTS.md` before changing an app.
@@ -63,8 +63,8 @@ you touched. None of these need a database or containers.
 
 Single tests:
 
-- Web: `pnpm --filter @linger/web test <test-file>`
-- Node services: `pnpm --filter @linger/node-services exec vitest run <test-file>`
+- Web: `pnpm --filter @talos/web test <test-file>`
+- Node services: `pnpm --filter @talos/node-services exec vitest run <test-file>`
 - TeamHub package: `cd apps/teamhub && go test ./internal/<pkg>`
 
 ### TeamHub integration tests

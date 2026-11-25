@@ -16,15 +16,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 func TestClaudeLiveLifecycle(t *testing.T) {
-	if os.Getenv("LINGER_LIVE_LOCAL_CLAUDE") != "1" {
+	if os.Getenv("TALOS_LIVE_LOCAL_CLAUDE") != "1" {
 		t.Skip("requires explicitly enabled authenticated Claude live acceptance")
 	}
-	executable := os.Getenv("LINGER_CLAUDE_PATH")
+	executable := os.Getenv("TALOS_CLAUDE_PATH")
 	if executable == "" {
 		var err error
 		executable, err = exec.LookPath("claude")

@@ -20,10 +20,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/process"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 // Model invocation bounds. A reply travels back in one Runner Gateway frame
@@ -159,7 +159,7 @@ type ModelInvokeResult struct {
 }
 
 // ModelInvoker runs one-shot model calls on the installed Runtime
-// in a fresh temporary directory. It never injects the Linger CLI credential
+// in a fresh temporary directory. It never injects the Talos CLI credential
 // and never loads the user's instructions, MCP servers, hooks or Skills.
 type ModelInvoker struct {
 	// TempBase holds the per-call temporary directories; empty uses the OS
@@ -419,7 +419,7 @@ func (m ModelInvoker) sessionInvoke(ctx context.Context, request ModelInvokeRequ
 
 func (m ModelInvoker) prepareTemp() (string, func(), error) {
 	if m.TempBase == "" {
-		root, err := os.MkdirTemp("", "linger-model-invoke-")
+		root, err := os.MkdirTemp("", "talos-model-invoke-")
 		if err != nil {
 			return "", nil, err
 		}
@@ -438,12 +438,12 @@ func (e modelInvokeUnavailableError) Error() string { return e.reason }
 
 // modelInvokeEnvironment copies the Runtime environment, points temporary
 // files at the call's own directory and drops anything that could carry a
-// Linger or TeamHub credential.
+// Talos or TeamHub credential.
 func modelInvokeEnvironment(source map[string]string, scratch string) map[string]string {
 	environment := make(map[string]string, len(source)+3)
 	for key, value := range source {
 		upper := strings.ToUpper(key)
-		if strings.HasPrefix(upper, "LINGER_") ||
+		if strings.HasPrefix(upper, "TALOS_") ||
 			strings.HasPrefix(upper, "TEAMHUB_") || strings.HasPrefix(upper, "RUNNER_GATEWAY_") {
 			continue
 		}

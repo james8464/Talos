@@ -1,4 +1,4 @@
-// Package computercli implements linger-computer, the control CLI that
+// Package computercli implements talos-computer, the control CLI that
 // authorizes this Computer, manages its Daemon, and diagnoses Runtimes.
 package computercli
 
@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/control"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
 
 const maxTokenBytes = 64 * 1024
@@ -100,7 +100,7 @@ func (c *cli) execute(ctx context.Context, parsed command) (int, error) {
 		c.out(usage(parsed.topic, c.command))
 		return 0, nil
 	case "version":
-		c.out("linger-computer " + transport.ReleaseVersion + "\n")
+		c.out("talos-computer " + transport.ReleaseVersion + "\n")
 		return 0, nil
 	case "login":
 		return c.executeLogin(ctx, parsed)
@@ -281,7 +281,7 @@ func (c *cli) executeAuthStatus(parsed command) (int, error) {
 		value := inspectComputerConfig(parsed.configPath, c.deps.environment, c.command)
 		inspection = &value
 	}
-	site := strings.TrimSpace(c.deps.environment["LINGER_WEB_URL"])
+	site := strings.TrimSpace(c.deps.environment["TALOS_WEB_URL"])
 	report := object{}.with("version", 1)
 	credentialOK := inspection != nil && inspection.credentialCheck.Status == "pass"
 	var identity *computerIdentity
@@ -484,7 +484,7 @@ func (c *cli) executeLogin(ctx context.Context, parsed command) (int, error) {
 		}
 		c.out("Connecting Local Computer...\n")
 	} else {
-		c.out("Opening Linger in your browser...\n")
+		c.out("Opening Talos in your browser...\n")
 	}
 	result, err := c.deps.setup(ctx, setupOptions{
 		configPath: parsed.configPath, stateDirectory: filepath.Join(filepath.Dir(parsed.configPath), "state"),
@@ -742,7 +742,7 @@ func (c *cli) connectionFailure(state string) (string, bool) {
 	case "identity-conflict":
 		return "This computer's identity is already bound to another Computer registration. Run " + c.command + " doctor --prune to reset local state.", true
 	case "upgrade-required":
-		return "The server requires a newer Linger Computer. Rerun the installer.", true
+		return "The server requires a newer Talos Computer. Rerun the installer.", true
 	}
 	return "", false
 }

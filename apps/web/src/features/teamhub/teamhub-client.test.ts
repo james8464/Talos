@@ -7,7 +7,7 @@ import {
   createHttpTeamHubClient,
   TeamHubTransportError,
 } from "./teamhub-client";
-import { requestUrlText } from "@linger/service-kit";
+import { requestUrlText } from "@talos/service-kit";
 
 describe("TeamHubClient", () => {
   it("changes the current Account password without treating a wrong password as logout", async () => {
@@ -189,7 +189,7 @@ describe("TeamHubClient", () => {
           workspace_grants: [
             {
               grant_id: "grant-workspace",
-              label: "Linger Workspace",
+              label: "Talos Workspace",
               mode: "workspace-write" as const,
             },
           ],

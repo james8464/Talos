@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	daemonEntry        = "linger-computer-daemon"
+	daemonEntry        = "talos-computer-daemon"
 	activeBundleFile   = "active-bundle"
 	appSHA256File      = "app-sha256"
 	webOriginFile      = "web-origin"
@@ -30,7 +30,7 @@ const (
 	// windowsReleaseIDFile is where the Windows installer records the release
 	// identity of the active bundle.
 	windowsReleaseIDFile = "installed-checksum"
-	serviceCommandEnv    = "LINGER_COMPUTER_SERVICE_COMMAND"
+	serviceCommandEnv    = "TALOS_COMPUTER_SERVICE_COMMAND"
 )
 
 var (
@@ -122,7 +122,7 @@ func windowsReleaseID(appSHA256, depsSHA256 string) string {
 	return hex.EncodeToString(digest[:])
 }
 
-// readWebOrigin returns the Linger Web origin the installer was configured
+// readWebOrigin returns the Talos Web origin the installer was configured
 // with. Upgrades are fetched from it over HTTPS or HTTP.
 func (l layout) readWebOrigin() (string, error) {
 	content, err := os.ReadFile(filepath.Join(l.root, webOriginFile))
@@ -296,7 +296,7 @@ func (l layout) writeFailed(appSHA256 string, failedAt time.Time) error {
 // the Daemon, so CLI-launched Runtime sessions keep it after the switch.
 func (l layout) serviceCommandFor(bundle, configPath string) (string, error) {
 	encoded, err := json.Marshal([]string{
-		filepath.Join(l.root, bundle, "cli", "linger-computer"),
+		filepath.Join(l.root, bundle, "cli", "talos-computer"),
 		"--config",
 		configPath,
 	})

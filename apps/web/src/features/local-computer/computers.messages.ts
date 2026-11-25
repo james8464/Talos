@@ -49,13 +49,13 @@ export const computersMessages = defineMessages("computers", {
   advanced: "Advanced",
   update: "Update",
   updateTo: "Update to {version}",
-  updateLingerComputer: "Update Linger Computer",
+  updateTalosComputer: "Update Talos Computer",
   updateInstructions:
     "Wait for running tasks to finish, then run this on {computer}. Your Agents stay connected.",
   checkAgain: "Check again",
   appVersion: "App {version}",
-  lingerTooOld: "This app version is too old to run Agents",
-  lingerRunning: "The Linger app is running",
+  talosTooOld: "This app version is too old to run Agents",
+  talosRunning: "The Talos app is running",
   connected: "Connected",
   agentsUseApp: "Agents use {app} here",
   appSignedOut: "{app} is installed but signed out",
@@ -241,7 +241,7 @@ export const computersMessages = defineMessages("computers", {
   connectingUpToMinute: "Connecting, up to 1 minute…",
   checkingBrowserStatus: "Checking browser status…",
   browserComputerOffline:
-    "This Computer is offline. Make sure it's on and running Linger Computer.",
+    "This Computer is offline. Make sure it's on and running Talos Computer.",
   browserUnavailableOffline: "Unavailable while this computer is offline.",
   agentsCanUseChrome: "Agents can use your Chrome",
   chromeOptional: "Optional · let Agents use your Chrome",
@@ -280,7 +280,7 @@ export const computersMessages = defineMessages("computers", {
   browserComputerNotFound:
     "Can't find this Computer. It may have been removed.",
   browserOutdated:
-    "Linger Computer on this Computer is out of date. Update it, then connect your browser.",
+    "Talos Computer on this Computer is out of date. Update it, then connect your browser.",
   browserTimeout:
     "Connection timed out. Make sure Chrome is open and the extension is enabled, then try again.",
   browserTokenRejected:

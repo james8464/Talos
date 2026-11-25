@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 func TestLocalRuntimeAuthenticationProjectsOfflineAgentWithoutChangingComputer(t *testing.T) {

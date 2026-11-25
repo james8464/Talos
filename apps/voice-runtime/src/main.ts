@@ -37,10 +37,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       apiKey: config.livekitApiKey,
       apiSecret: config.livekitApiSecret,
       agentName: recorder
-        ? "linger-voice-recorder"
+        ? "talos-voice-recorder"
         : live
-          ? "linger-live-runtime"
-          : "linger-voice-runtime",
+          ? "talos-live-runtime"
+          : "talos-voice-runtime",
       loadFunc: async (worker) =>
         calculateWorkerLoad(worker.activeJobs.length, maxSessions),
       loadThreshold: 1,

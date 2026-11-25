@@ -16,8 +16,8 @@ import {
   type PersonalKnowledgeGraphVisualizationRequest,
   type PersonalKnowledgeQueryRequest,
   type PublishedWikiGraphUpdateRequest,
-} from "@linger/wire-contracts/node-services-internal/client";
-import type { components as NodeServicesInternal } from "@linger/wire-contracts/node-services-internal/types";
+} from "@talos/wire-contracts/node-services-internal/client";
+import type { components as NodeServicesInternal } from "@talos/wire-contracts/node-services-internal/types";
 
 import {
   getPersonalKnowledgeGraphVisualization,

@@ -44,7 +44,7 @@ export function LibrarySidebar({
   const t = useT();
   const sidebarRef = useRef<HTMLElement>(null);
   const wikiOnly = active === "wiki" || holdsOpenFile === "wiki";
-  const scrollKey = `linger:${wikiOnly ? "wiki" : "library"}-sidebar-scroll:${tenantId}`;
+  const scrollKey = `talos:${wikiOnly ? "wiki" : "library"}-sidebar-scroll:${tenantId}`;
   const navigationWidth = useSecondaryNavigationWidth(tenantId);
   useLayoutEffect(() => {
     const stored = Number(window.sessionStorage.getItem(scrollKey));

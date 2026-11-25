@@ -1,7 +1,7 @@
 import {
   ENTITY_SECTIONS,
   SESSION_SECTIONS,
-} from "@linger/knowledge-format/sections";
+} from "@talos/knowledge-format/sections";
 import type { WikiNode } from "openwiki/dist/visualize/graph.js";
 
 /**

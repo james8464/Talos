@@ -3,7 +3,7 @@ import {
   type Catalog,
   type Message,
   type MessageArguments,
-} from "@linger/service-kit/messages";
+} from "@talos/service-kit/messages";
 
 import zhCN from "./locales/zh-CN.json" with { type: "json" };
 

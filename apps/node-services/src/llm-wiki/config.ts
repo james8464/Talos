@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
 import { mirrorHome } from "../paths.js";
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 
 export interface LlmWikiConfig {
   dataDirectory: string;

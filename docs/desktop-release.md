@@ -1,7 +1,7 @@
 # Desktop Release
 
-Linger desktop releases are published in the public
-[simplexai-labs/linger](https://github.com/simplexai-labs/linger) repository:
+Talos desktop releases are published in the public
+[simplexai-labs/talos](https://github.com/simplexai-labs/talos) repository:
 pushing a `desktop-v<version>` tag there runs GitHub Actions
 ([`.github/workflows/desktop-release.yml`](../.github/workflows/desktop-release.yml)),
 which builds the packages for Apple silicon, Linux x64 and Windows x64 and
@@ -14,7 +14,7 @@ This is the only release path.
 ## Downloads
 
 The newest stable packages are always at
-<https://github.com/simplexai-labs/linger/releases/latest>; a prerelease never
+<https://github.com/simplexai-labs/talos/releases/latest>; a prerelease never
 becomes the latest release. Link there, not to a version.
 
 ## Releasing
@@ -23,7 +23,7 @@ Stable releases use a two-stage Draft → Publish flow so release subscribers an
 auto-updating clients never see placeholder notes before the final release notes
 are attached.
 
-In a checkout of simplexai-labs/linger:
+In a checkout of simplexai-labs/talos:
 
 ```sh
 # 1. Tag and push to build all targets and create the draft GitHub Release
@@ -43,7 +43,7 @@ scripts/ci/desktop-release.sh publish desktop-v0.16.36 --notes-file notes.md
   matching `desktop-v<version>-rc.*` prereleases and tags.
 - Before publishing a stable release, upgrade the previous stable release to
   the candidate on each platform following the
-  [upgrade recipe](../.agents/skills/verify-linger/features/desktop-and-installer.md#upgrade-from-the-previous-release);
+  [upgrade recipe](../.agents/skills/verify-talos/features/desktop-and-installer.md#upgrade-from-the-previous-release);
   a fresh install does not catch state an earlier release left behind.
 - The version comes from the tag. The build writes it into
   `apps/desktop/package.json` for packaging and restores the file afterwards, so
@@ -55,7 +55,7 @@ scripts/ci/desktop-release.sh publish desktop-v0.16.36 --notes-file notes.md
 
 The workflow runs for `desktop-v*` tags and from Actions → Desktop release →
 Run workflow. `prepare` validates the version and stops before building when
-an official `simplexai-labs/linger` publish lacks the required macOS signing,
+an official `simplexai-labs/talos` publish lacks the required macOS signing,
 notarization, or update-manifest secrets. Its `build` (`darwin-arm64`,
 `linux-x64`) and `build-win32` (`win32-x64`) jobs run on `ubuntu-24.04` (the
 macOS and Windows runners have no Docker), pull the prebuilt `dmgtool` and
@@ -63,8 +63,8 @@ macOS and Windows runners have no Docker), pull the prebuilt `dmgtool` and
 [`.github/workflows/desktop-packaging-images.yml`](../.github/workflows/desktop-packaging-images.yml)
 whenever a packaging Dockerfile changes, with automatic fallback to local
 `docker build`), notarize and staple the macOS DMG in a single Apple submission
-(stapling the already-issued ticket onto `Linger.app` for the `.app.tar.gz`
-update archive; `Linger.app` inside the DMG is notarized by Apple with the DMG
+(stapling the already-issued ticket onto `Talos.app` for the `.app.tar.gz`
+update archive; `Talos.app` inside the DMG is notarized by Apple with the DMG
 submission but not separately stapled, so dragging it out of the DMG and
 launching it for the first time completely offline relies on online ticket
 lookup), and upload each release file once as an uncompressed workflow
@@ -73,15 +73,15 @@ artifact for 14 days (under its exact filename, such as the `.dmg`, the
 directly and `windows-smoke` / `release` consume the same artifact without
 duplicate uploads. `windows-smoke` depends only on `prepare` and `build-win32`,
 so it starts as soon as `win32-x64` finishes without waiting for `darwin-arm64`;
-it downloads `Linger-<version>-windows-x64-setup.exe` and `windows-setup.sha256`,
+it downloads `Talos-<version>-windows-x64-setup.exe` and `windows-setup.sha256`,
 verifies the Setup against `windows-setup.sha256`, and installs those bytes
 silently under a fresh standard user on `windows-2022`. It requests only
 packaged Pi preparation and checks the real Pi RPC handshake (`get_state`,
 `get_commands`) and the registered `mcp` command from the bundled managed MCP
-extension, with no `NODE_PATH` override. It starts no full Linger services,
+extension, with no `NODE_PATH` override. It starts no full Talos services,
 uses no model credentials, downloads no model weights, and does not verify the
 graphical installer, model inference, restart persistence, or uninstallation.
-`release` requires `windows-smoke` to pass, downloads every `Linger-<version>-*`
+`release` requires `windows-smoke` to pass, downloads every `Talos-<version>-*`
 artifact and `windows-setup.sha256`, checks the same digest before removing
 that file, writes `SHA256SUMS.txt`, and creates the GitHub Release (as a draft
 for stable tags or published prerelease for hyphenated tags; reruns upload
@@ -89,22 +89,22 @@ files to an existing release with `--clobber`). A manual run creates a release
 only with `publish` set, and a `publish=false` run still executes
 `windows-smoke`.
 
-The release goes to `RELEASE_REPO`, `simplexai-labs/linger` by default:
+The release goes to `RELEASE_REPO`, `simplexai-labs/talos` by default:
 
-- **In simplexai-labs/linger itself**, the workflow's `GITHUB_TOKEN`
+- **In simplexai-labs/talos itself**, the workflow's `GITHUB_TOKEN`
   publishes; no extra secret is needed. The tag is the one pushed, at the
   built commit.
 - **In another repository**, such as a private copy, it publishes
-  across repositories with the `LINGER_RELEASE_TOKEN` secret; `prepare` stops
+  across repositories with the `TALOS_RELEASE_TOKEN` secret; `prepare` stops
   at once when that secret is missing. A tag points at a commit of its own
   repository, so the release creates `desktop-v<version>` in
-  simplexai-labs/linger at that repository's default branch, and its notes
+  simplexai-labs/talos at that repository's default branch, and its notes
   name only the version.
 
-simplexai-labs/linger is public, and so are its workflow logs and release
+simplexai-labs/talos is public, and so are its workflow logs and release
 notes. The bundled archives come from the assets of the
-[`native-deps`](https://github.com/simplexai-labs/linger/releases/tag/native-deps)
-prerelease, which is public too; a `LINGER_NATIVE_DEPS_URL` secret or variable
+[`native-deps`](https://github.com/simplexai-labs/talos/releases/tag/native-deps)
+prerelease, which is public too; a `TALOS_NATIVE_DEPS_URL` secret or variable
 points the build at another folder, and a secret keeps that address masked in
 the log. Signing keys are written to files under the runner's temporary
 folder, read only by the signing tools and removed after the build.
@@ -114,26 +114,26 @@ that runs the workflow:
 
 | Name                            | Kind                 | Required                                  | Purpose                                                                                                                                                                                                                                           |
 | ------------------------------- | -------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LINGER_NATIVE_DEPS_URL`        | secret (or variable) | no                                        | Folder serving the archives `apps/desktop/distribution/*.json` pins; the `native-deps` prerelease when unset. Each download is checked against its pin.                                                                                           |
-| `LINGER_DIAGNOSTICS_UPLOAD_URL` | secret               | no                                        | https URL of the hosted diagnostics receiver ([diagnostics-upload.md](diagnostics-upload.md)) that the build carries. A secret, so the address stays masked in logs. Without it Send Diagnostics is hidden unless `config.json` names a receiver. |
-| `RELEASE_REPO`                  | variable             | no                                        | `owner/name` that receives the release; `simplexai-labs/linger` when unset.                                                                                                                                                                       |
-| `LINGER_RELEASE_TOKEN`          | secret               | when `RELEASE_REPO` is another repository | Fine-grained token for `RELEASE_REPO` only, with Contents: read and write. Not needed in simplexai-labs/linger itself.                                                                                                                            |
-| `MACOS_DEVELOPER_ID_P12_BASE64` | secret               | official publish                          | Base64 of the Developer ID `.p12`. Required when publishing to `simplexai-labs/linger`; optional on forks or `publish=false` runs (ad-hoc signed without it).                                                                                     |
+| `TALOS_NATIVE_DEPS_URL`        | secret (or variable) | no                                        | Folder serving the archives `apps/desktop/distribution/*.json` pins; the `native-deps` prerelease when unset. Each download is checked against its pin.                                                                                           |
+| `TALOS_DIAGNOSTICS_UPLOAD_URL` | secret               | no                                        | https URL of the hosted diagnostics receiver ([diagnostics-upload.md](diagnostics-upload.md)) that the build carries. A secret, so the address stays masked in logs. Without it Send Diagnostics is hidden unless `config.json` names a receiver. |
+| `RELEASE_REPO`                  | variable             | no                                        | `owner/name` that receives the release; `simplexai-labs/talos` when unset.                                                                                                                                                                       |
+| `TALOS_RELEASE_TOKEN`          | secret               | when `RELEASE_REPO` is another repository | Fine-grained token for `RELEASE_REPO` only, with Contents: read and write. Not needed in simplexai-labs/talos itself.                                                                                                                            |
+| `MACOS_DEVELOPER_ID_P12_BASE64` | secret               | official publish                          | Base64 of the Developer ID `.p12`. Required when publishing to `simplexai-labs/talos`; optional on forks or `publish=false` runs (ad-hoc signed without it).                                                                                     |
 | `MACOS_DEVELOPER_ID_PASSWORD`   | secret               | with the `.p12`                           | Password of that `.p12`.                                                                                                                                                                                                                          |
-| `MACOS_NOTARY_KEY_JSON`         | secret               | official publish                          | App Store Connect API key JSON; needs the Developer ID. Required when publishing to `simplexai-labs/linger`; optional on forks or `publish=false` runs.                                                                                           |
-| `DESKTOP_UPDATE_KEY_PEM`        | secret               | official publish                          | Ed25519 private key (PEM) that signs `manifest.json`. Required when publishing to `simplexai-labs/linger`; on forks without it the release has no manifest and installed apps are not offered it.                                                 |
+| `MACOS_NOTARY_KEY_JSON`         | secret               | official publish                          | App Store Connect API key JSON; needs the Developer ID. Required when publishing to `simplexai-labs/talos`; optional on forks or `publish=false` runs.                                                                                           |
+| `DESKTOP_UPDATE_KEY_PEM`        | secret               | official publish                          | Ed25519 private key (PEM) that signs `manifest.json`. Required when publishing to `simplexai-labs/talos`; on forks without it the release has no manifest and installed apps are not offered it.                                                 |
 | `WINDOWS_SIGNING_P12_BASE64`    | secret               | no                                        | Base64 of an Authenticode `.p12`. Without it the setup program is unsigned.                                                                                                                                                                       |
 | `WINDOWS_SIGNING_PASSWORD`      | secret               | with the `.p12`                           | Password of that `.p12`.                                                                                                                                                                                                                          |
 
 ### Bundled archives
 
-The `native-deps` prerelease in simplexai-labs/linger holds every archive that
+The `native-deps` prerelease in simplexai-labs/talos holds every archive that
 `apps/desktop/distribution/*.json` pins, under its file name; being a
 prerelease, it never becomes the latest release. When a pin changes, upload the
 new archive there before tagging:
 
 ```sh
-gh release upload native-deps <archive> --repo simplexai-labs/linger
+gh release upload native-deps <archive> --repo simplexai-labs/talos
 ```
 
 Apple inspects the archives inside a notarized app, so the macOS archives
@@ -167,10 +167,10 @@ scripts/ci/desktop-release.sh fetch-native darwin-arm64
 cd apps/desktop && python3 packaging/mac/sign_native_archives.py --developer-id DeveloperID.p12
 ```
 
-### First release in simplexai-labs/linger
+### First release in simplexai-labs/talos
 
 1. Check that the `native-deps` prerelease has every pinned archive.
-2. With the source in simplexai-labs/linger, push a prerelease tag first, then
+2. With the source in simplexai-labs/talos, push a prerelease tag first, then
    the release:
 
    ```sh
@@ -178,7 +178,7 @@ cd apps/desktop && python3 packaging/mac/sign_native_archives.py --developer-id 
    git tag desktop-v0.16.36 && git push origin desktop-v0.16.36
    ```
 
-   From another repository, also set `LINGER_RELEASE_TOKEN` there and push
+   From another repository, also set `TALOS_RELEASE_TOKEN` there and push
    the tags to that repository instead.
 
 3. Check the draft release page, download each file and compare it with
@@ -186,7 +186,7 @@ cd apps/desktop && python3 packaging/mac/sign_native_archives.py --developer-id 
    `scripts/ci/desktop-release.sh publish desktop-v0.16.36 --notes-file notes.md`
    (this also deletes matching `desktop-v0.16.36-rc.*` prereleases and tags; a
    standalone test prerelease can still be removed with
-   `gh release delete desktop-v0.16.36-rc.1 --repo simplexai-labs/linger --cleanup-tag`).
+   `gh release delete desktop-v0.16.36-rc.1 --repo simplexai-labs/talos --cleanup-tag`).
 
 ### Physical Windows acceptance
 
@@ -221,33 +221,33 @@ label Windows ARM and native Windows x64 evidence separately. Record build,
 transfer, setup, operator wait, Room terminal detection, reopen, and uninstall
 times separately to show where the next optimization belongs.
 
-For the Room helper, set `LINGER_ACCEPTANCE_BASE_URL` (loopback),
-`LINGER_ACCEPTANCE_OWNER_FILE` (private local owner JSON), and
-`LINGER_ACCEPTANCE_COMPUTER_ID`; use `LINGER_ACCEPTANCE_MODEL` to select a
-specific catalog entry and `LINGER_ACCEPTANCE_TIMEOUT_SECONDS` to override the
+For the Room helper, set `TALOS_ACCEPTANCE_BASE_URL` (loopback),
+`TALOS_ACCEPTANCE_OWNER_FILE` (private local owner JSON), and
+`TALOS_ACCEPTANCE_COMPUTER_ID`; use `TALOS_ACCEPTANCE_MODEL` to select a
+specific catalog entry and `TALOS_ACCEPTANCE_TIMEOUT_SECONDS` to override the
 180-second budget. For one-command verification on the isolated host, set
-`LINGER_ACCEPTANCE_CONTEXT_VIEWS` to the daemon's `context-views` directory and
-`LINGER_ACCEPTANCE_AGENT_LOG_ROOT` to the Agent Service's log directory
+`TALOS_ACCEPTANCE_CONTEXT_VIEWS` to the daemon's `context-views` directory and
+`TALOS_ACCEPTANCE_AGENT_LOG_ROOT` to the Agent Service's log directory
 containing `agents/`. Alternatively set an exact
-`LINGER_ACCEPTANCE_WORKSPACE` and `LINGER_ACCEPTANCE_AGENT_LOG`. Paths for
+`TALOS_ACCEPTANCE_WORKSPACE` and `TALOS_ACCEPTANCE_AGENT_LOG`. Paths for
 evidence are absolute. Invoke `node scripts/acceptance/room-journey.mjs`.
 Across hosts, `room_observed` means only the Run and persisted reply were
 linked; verify the file bytes and Agent logs separately with
 [`local-runner-message-evidence.mjs`](../scripts/local-runner-message-evidence.mjs)
 (`node scripts/local-runner-message-evidence.mjs --run-evidence` with
-`LINGER_ACCEPTANCE_FILE`, `LINGER_ACCEPTANCE_EXPECTED` or
-`LINGER_ACCEPTANCE_EXPECTED_SHA256`, `LINGER_ACCEPTANCE_AGENT_LOG`, and
-`LINGER_ACCEPTANCE_RUN_ID`).
+`TALOS_ACCEPTANCE_FILE`, `TALOS_ACCEPTANCE_EXPECTED` or
+`TALOS_ACCEPTANCE_EXPECTED_SHA256`, `TALOS_ACCEPTANCE_AGENT_LOG`, and
+`TALOS_ACCEPTANCE_RUN_ID`).
 
 ## Release Files
 
 | File                                        | Contents                                                        |
 | ------------------------------------------- | --------------------------------------------------------------- |
-| `Linger-<version>-macos-arm64.dmg`          | macOS 14.0 or later, Apple silicon                              |
-| `Linger-<version>-linux-x64.tar.gz`         | Linux x64 (glibc 2.35 or newer for the bundled Native services) |
-| `Linger-<version>-windows-x64-setup.exe`    | Windows x64 per-user installer                                  |
-| `Linger-<version>-windows-x64-portable.zip` | Windows x64 folder to run without installing                    |
-| `Linger-<version>-macos-arm64.app.tar.gz`   | macOS app the updater swaps in                                  |
+| `Talos-<version>-macos-arm64.dmg`          | macOS 14.0 or later, Apple silicon                              |
+| `Talos-<version>-linux-x64.tar.gz`         | Linux x64 (glibc 2.35 or newer for the bundled Native services) |
+| `Talos-<version>-windows-x64-setup.exe`    | Windows x64 per-user installer                                  |
+| `Talos-<version>-windows-x64-portable.zip` | Windows x64 folder to run without installing                    |
+| `Talos-<version>-macos-arm64.app.tar.gz`   | macOS app the updater swaps in                                  |
 | `manifest.json`, `manifest.json.sig`        | only with the update key: the [auto-update](#auto-update) feed  |
 | `SHA256SUMS.txt`                            | SHA-256 of every file above                                     |
 
@@ -260,7 +260,7 @@ the Native services as described in
 Installed apps update from the GitHub Releases themselves
 (`apps/desktop/src/main/updater.ts`). Shortly after start and then every
 hour, the app downloads
-`https://github.com/simplexai-labs/linger/releases/latest/download/manifest.json`
+`https://github.com/simplexai-labs/talos/releases/latest/download/manifest.json`
 and its `.sig`, checks the Ed25519 signature against `UPDATE_PUBLIC_KEY` in
 `update-manifest.ts` and compares the manifest's version with its own
 (semver; a prerelease is below its release). Only a newer version is offered,
@@ -276,17 +276,17 @@ with its size and SHA-256:
   "version": "0.16.36",
   "packages": {
     "darwin-arm64": {
-      "file": "Linger-0.16.36-macos-arm64.app.tar.gz",
+      "file": "Talos-0.16.36-macos-arm64.app.tar.gz",
       "sha256": "…",
       "size": 123
     },
     "linux-x64": {
-      "file": "Linger-0.16.36-linux-x64.tar.gz",
+      "file": "Talos-0.16.36-linux-x64.tar.gz",
       "sha256": "…",
       "size": 123
     },
     "win32-x64": {
-      "file": "Linger-0.16.36-windows-x64-setup.exe",
+      "file": "Talos-0.16.36-windows-x64-setup.exe",
       "sha256": "…",
       "size": 123
     }
@@ -296,22 +296,22 @@ with its size and SHA-256:
 
 The app downloads the package from `releases/download/desktop-v<version>/` and
 checks its size and SHA-256 while downloading. What happens next depends on
-how Linger was installed:
+how Talos was installed:
 
 | Install                 | Update                                                                                                                                                                                                                                                                 |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| macOS `Linger.app`      | The archive is unpacked beside the app. "Restart to Update" waits for running tasks, swaps the bundle and relaunches.                                                                                                                                                  |
+| macOS `Talos.app`      | The archive is unpacked beside the app. "Restart to Update" waits for running tasks, swaps the bundle and relaunches.                                                                                                                                                  |
 | Windows setup program   | The setup program is downloaded. "Restart to Update" waits for running tasks, checks the file again, starts it with `/update /relaunch` and quits; the installer stops the services, replaces the app in the folder it was installed to and starts it (details below). |
-| Windows portable folder | No download: the tray offers "Download Linger <version>…", which opens the release page.                                                                                                                                                                               |
+| Windows portable folder | No download: the tray offers "Download Talos <version>…", which opens the release page.                                                                                                                                                                               |
 | Linux                   | The same as the portable folder.                                                                                                                                                                                                                                       |
 
 On Windows, `/update` runs the setup program in passive mode: it shows only its
-progress page, titled "Updating Linger to <version>...", and needs no click.
+progress page, titled "Updating Talos to <version>...", and needs no click.
 It closes by itself when the files are in place, and `/relaunch` starts the new
-Linger. If a file stays locked, the same "Linger is running ... Retry" question
-as in a normal install appears, and Retry stops Linger's services again. After
-Cancel, or a file the setup could not write, the setup says Linger was not
-updated: if it had not replaced any file yet it starts the earlier Linger,
+Talos. If a file stays locked, the same "Talos is running ... Retry" question
+as in a normal install appears, and Retry stops Talos's services again. After
+Cancel, or a file the setup could not write, the setup says Talos was not
+updated: if it had not replaced any file yet it starts the earlier Talos,
 which offers the update again; otherwise it names the setup program to run
 again. The install stays per user without administrator rights. `/S` still
 installs with no window at all, for scripted installs.
@@ -319,7 +319,7 @@ installs with no window at all, for scripted installs.
 A system notification announces each new version once, and the tray shows the
 state; after a failure "Try Updating Again" checks at once. The account menu
 in the window (the avatar at the bottom left) shows the app's version and the
-same state through `window.lingerDesktop.update`: "Restart to Update",
+same state through `window.talosDesktop.update`: "Restart to Update",
 "Download Update" for the release page, and "Try Again" call the same updater,
 and a dot on the avatar marks an update that is ready or available. A browser
 shows none of this. The local
@@ -337,7 +337,7 @@ manifest must be signed by the same key.
 The `release` job signs `manifest.json` with `DESKTOP_UPDATE_KEY_PEM`
 (`desktop-release.sh manifest`) after all three packages are built, and
 refuses a key whose public half is not `UPDATE_PUBLIC_KEY`, since installed
-apps would reject its signature. Official `simplexai-labs/linger` publishes
+apps would reject its signature. Official `simplexai-labs/talos` publishes
 fail fast when the secret is missing; on forks without the secret, the job logs
 a warning and publishes the release without a manifest. Make a new pair only
 when the key is lost, and ship the new public key in a release first:
@@ -358,12 +358,12 @@ On Linux x64 with Docker, Node, pnpm, Go and Python 3:
 DESKTOP_VERSION=0.16.36-rc.1 RCODESIGN=/path/to/rcodesign \
   scripts/ci/desktop-release.sh build darwin-arm64
 DESKTOP_UPDATE_KEY=/path/to/ed25519.pem \
-  scripts/ci/desktop-release.sh manifest .linger-runtime/desktop-release/assets 0.16.36-rc.1
-scripts/ci/desktop-release.sh checksums .linger-runtime/desktop-release/assets 0.16.36-rc.1
+  scripts/ci/desktop-release.sh manifest .talos-runtime/desktop-release/assets 0.16.36-rc.1
+scripts/ci/desktop-release.sh checksums .talos-runtime/desktop-release/assets 0.16.36-rc.1
 ```
 
-With the archives already in `LINGER_NATIVE_POSTGRES_DIR` (default
-`~/.cache/linger-desktop`), `LINGER_NATIVE_DEPS_URL` is not needed.
+With the archives already in `TALOS_NATIVE_POSTGRES_DIR` (default
+`~/.cache/talos-desktop`), `TALOS_NATIVE_DEPS_URL` is not needed.
 `manifest` needs the macOS app archive, the Linux archive and the setup program
 of that version; `checksums` refuses a folder without the DMG, the Linux
 archive and the setup program.
@@ -377,33 +377,33 @@ repository root.
 
 ### Source Package
 
-Release builds set `LINGER_SOURCE_ARCHIVE_URL` (https) and
-`LINGER_SOURCE_ARCHIVE_SHA256` before `node build.mjs`. Produce them from the
+Release builds set `TALOS_SOURCE_ARCHIVE_URL` (https) and
+`TALOS_SOURCE_ARCHIVE_SHA256` before `node build.mjs`. Produce them from the
 release tag in the repository root:
 
 ```sh
 SOURCE_ARCHIVE_REF=v1.2.3 \
-SOURCE_ARCHIVE_URL_BASE=https://github.com/simplexai-labs/linger/releases/download/v1.2.3 \
+SOURCE_ARCHIVE_URL_BASE=https://github.com/simplexai-labs/talos/releases/download/v1.2.3 \
   make source-archive
 ```
 
-Upload `.linger-runtime/source-archive/linger-v1.2.3.tar.gz` to that release
+Upload `.talos-runtime/source-archive/talos-v1.2.3.tar.gz` to that release
 and take both values from `source-archive.json` next to it. One commit always
 gives the same digest. To ship the package inside the app instead (about
-45 MB more, no hosting needed), set `LINGER_SOURCE_ARCHIVE_FILE` to the
+45 MB more, no hosting needed), set `TALOS_SOURCE_ARCHIVE_FILE` to the
 archive; the build copies it beside the installer and pins its digest. Without
-either (and without `LINGER_CHECKOUT`) the build does not offer a
+either (and without `TALOS_CHECKOUT`) the build does not offer a
 local install.
 
 A downloaded source package can have a dependency store for each platform
 beside it, so the native install of its packages needs no registry. Build it
 from the same tag, on the platform it serves, and set
-`LINGER_SOURCE_DEPENDENCIES_URL` and `LINGER_SOURCE_DEPENDENCIES_SHA256` from
+`TALOS_SOURCE_DEPENDENCIES_URL` and `TALOS_SOURCE_DEPENDENCIES_SHA256` from
 `source-dependencies-<target>.json` for that platform's build:
 
 ```sh
 SOURCE_ARCHIVE_REF=v1.2.3 \
-SOURCE_ARCHIVE_URL_BASE=https://github.com/simplexai-labs/linger/releases/download/v1.2.3 \
+SOURCE_ARCHIVE_URL_BASE=https://github.com/simplexai-labs/talos/releases/download/v1.2.3 \
   make source-dependencies
 ```
 
@@ -412,11 +412,11 @@ SOURCE_ARCHIVE_URL_BASE=https://github.com/simplexai-labs/linger/releases/downlo
 scripts, so the install still compiles or downloads native modules such as
 better-sqlite3. The desktop downloads the store after the source package
 (resuming an interrupted download) and unpacks it into
-`.linger-runtime/pnpm-store` of the source; when that fails it logs
+`.talos-runtime/pnpm-store` of the source; when that fails it logs
 `local_server.dependencies_failed` and the installer downloads the packages
 itself.
 
-`LINGER_SOURCE_ARCHIVE_MIRRORS` and `LINGER_SOURCE_DEPENDENCIES_MIRRORS` list
+`TALOS_SOURCE_ARCHIVE_MIRRORS` and `TALOS_SOURCE_DEPENDENCIES_MIRRORS` list
 other https hosts serving the same files, separated by spaces. The desktop moves
 to the next one when a host fails or stalls, and the SHA-256 still decides.
 
@@ -425,11 +425,11 @@ PostgreSQL package for the target. They are pinned in
 `distribution/<target>.json`, in the shape `packages/local-installation/src/native-dependencies.ts` reads
 (`platform`, `arch`, `localmodelsTool`, `nativeSources`, `voiceTools`, each
 source with an optional `mirrors` list of https URLs for the same file). The build copies the
-file of its target (`LINGER_DESKTOP_DAEMON_TARGETS`, else this machine) beside
-the bundled installer, which reads it at start; `LINGER_DESKTOP_DISTRIBUTION`
+file of its target (`TALOS_DESKTOP_DAEMON_TARGETS`, else this machine) beside
+the bundled installer, which reads it at start; `TALOS_DESKTOP_DISTRIBUTION`
 names another file instead. A source with `file` (Windows) instead of `url`
 names an archive the app ships: the build copies it from
-`LINGER_NATIVE_POSTGRES_DIR` (default `~/.cache/linger-desktop`) to
+`TALOS_NATIVE_POSTGRES_DIR` (default `~/.cache/talos-desktop`) to
 `dist/installer/native/` after checking its size and sha256, and the installer
 checks them again before extracting it, as it does for a download. Where the
 file has no PostgreSQL for the computer, or the bundled archive is missing,
@@ -496,18 +496,18 @@ file and build. For one release:
    `STACK_RUNTIMES` and `STACK_RUNTIME_BASELINES` pins in
    `scripts/installs/stack.sh`, and the Computer Daemon's Go tests fail when
    one is below the Daemon's minimum.
-4. Build with `LINGER_DESKTOP_DAEMON_TARGETS` set to the target and the source package
-   (`LINGER_SOURCE_ARCHIVE_FILE`, or the URL and SHA256, plus the target's
-   `LINGER_SOURCE_DEPENDENCIES_URL` and SHA256) set, then package (`packaging/mac/package.py
+4. Build with `TALOS_DESKTOP_DAEMON_TARGETS` set to the target and the source package
+   (`TALOS_SOURCE_ARCHIVE_FILE`, or the URL and SHA256, plus the target's
+   `TALOS_SOURCE_DEPENDENCIES_URL` and SHA256) set, then package (`packaging/mac/package.py
 --arch arm64` for macOS, `packaging/linux/package.py` for Linux).
 5. Check the package on a clean computer: Quick Install with the default
-   source ends on "Linger is ready" and Open Linger shows the local server,
+   source ends on "Talos is ready" and Open Talos shows the local server,
    signed in, with this computer connected.
 
-Official releases come from the public simplexai-labs/linger repository: a
+Official releases come from the public simplexai-labs/talos repository: a
 `desktop-v<version>` tag pushed there runs steps 4 and the packaging for
 `darwin-arm64`, `linux-x64` and `win32-x64` in GitHub Actions and publishes a
-linger GitHub Release with `SHA256SUMS.txt`; see
+talos GitHub Release with `SHA256SUMS.txt`; see
 [How the workflow runs](#how-the-workflow-runs). The workflow
 fetches the bundled archives from the assets of the `native-deps` prerelease
 there, so upload a new pinned archive to it before tagging.
@@ -519,7 +519,7 @@ The Mac app needs macOS 14.0 or later: the bundled PostgreSQL and the
 older macOS refuses to open the app, and `MIN_MACOS` in
 `apps/desktop/src/main/local-server.ts` keeps the same value: LocalServer
 refuses to fetch Node.js or run the installer on an older macOS and says
-"Linger needs macOS 14.0 or later" instead. `prepare-native-postgres.mjs`
+"Talos needs macOS 14.0 or later" instead. `prepare-native-postgres.mjs`
 sets no `MACOSX_DEPLOYMENT_TARGET`, so PostgreSQL's minimum is the macOS of
 the host that built it. Check every Mach-O file of a new pinned binary
 (`otool -l`, `minos`) before raising or lowering the value in both places.
@@ -535,10 +535,10 @@ either way, so check such a change on a Developer ID build.
 Windows, Linux x64 and Apple silicon bundle PostgreSQL in the app instead
 (`file` in `distribution/<target>.json`; 35 MB on Windows, 10–12 MB
 elsewhere), so Native works without the CDN. Put the pinned archives in
-`LINGER_NATIVE_POSTGRES_DIR` before `node build.mjs`; the build fails without
+`TALOS_NATIVE_POSTGRES_DIR` before `node build.mjs`; the build fails without
 them. To download it instead, replace `file` with the HTTPS `url` once it is on
 the CDN. `postgres.exe` refuses a token with Administrators enabled, so an
-elevated Linger ("Run as administrator", the built-in Administrator) starts it
+elevated Talos ("Run as administrator", the built-in Administrator) starts it
 from a copy of its token with that group disabled, as `pg_ctl` does. Native
 PostgreSQL still refuses root elsewhere.
 
@@ -552,7 +552,7 @@ in the pinned Alpine image, Windows with MinGW-w64; Apple silicon: the
 pinned serversideup LGPL build, which links OpenSSL statically). Make them on
 Linux with `node scripts/prepare-native-voice-tools.mjs --target <target>
 --output DIR` (Docker; Go for Apple silicon), copy the archive to
-`LINGER_NATIVE_POSTGRES_DIR` and `voice-tools-<target>.json` from `DIR` into
+`TALOS_NATIVE_POSTGRES_DIR` and `voice-tools-<target>.json` from `DIR` into
 `voiceTools`. The build is reproducible except for the Go toolchain download,
 and it checks the versions, the ffmpeg components the voice workers use,
 static linking and the Mach-O signatures. Licenses ship in `licenses/` of the
@@ -577,7 +577,7 @@ cross-compiles `teamhub`, `migrate` and `account` from that package (`go` in
 PATH, `CGO_ENABLED=0`) into `dist/installer/native/teamhub-<target>/` with a
 `manifest.json` of their sha256, the package's sha256 and the commit
 `git archive` recorded in it; a downloaded package
-(`LINGER_SOURCE_ARCHIVE_URL`) is fetched for this. The package scripts
+(`TALOS_SOURCE_ARCHIVE_URL`) is fetched for this. The package scripts
 refuse binaries that do not match the manifest or the bundled package
 (`packaging/native_bundle.py`). The desktop copies them into the unpacked source
 (`.simplexai-runtime/prebuilt/`), the installer checks them again and then

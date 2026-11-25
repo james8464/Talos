@@ -1,5 +1,5 @@
 import { parse } from "yaml";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 export interface ParsedMemoryFile {
   metadata: Record<string, unknown>;

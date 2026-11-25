@@ -1,15 +1,15 @@
 # Shared source, embedded into both published entrypoints by the release builder.
-$LingerInstallerEmbedded = $true
-$LingerStartedAt = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-$LingerRelease = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('__LINGER_RELEASE_METADATA_BASE64__')) | ConvertFrom-Json
-$LingerHelperBase64 = '__LINGER_INSTALLER_HELPER_BASE64__'
-$LingerUtf8 = New-Object Text.UTF8Encoding($false)
+$TalosInstallerEmbedded = $true
+$TalosStartedAt = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$TalosRelease = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('__TALOS_RELEASE_METADATA_BASE64__')) | ConvertFrom-Json
+$TalosHelperBase64 = '__TALOS_INSTALLER_HELPER_BASE64__'
+$TalosUtf8 = New-Object Text.UTF8Encoding($false)
 # Managed tool runtime modules ship beside the CLI. Releases before they
 # existed verify without them, so presence decides the checksum entry list.
-$LingerManagedToolEntries = @(
+$TalosManagedToolEntries = @(
     'cli/managed-tools-runtime.mjs', 'cli/managed-tools-install.mjs', 'cli/managed-tools-launchers.mjs',
     'cli/managed-tools-archive.mjs', 'cli/managed-tools-lock.mjs', 'cli/local-computer-node-distributions.mjs')
-$LingerSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
+$TalosSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
 if ((New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     throw 'Run Local Computer installation or uninstallation in an ordinary PowerShell window, without Run as administrator.'
 }
@@ -23,20 +23,20 @@ if (-not [Environment]::Is64BitOperatingSystem) { throw 'Local Computer requires
 foreach ($module in @('Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Security', 'Microsoft.PowerShell.Utility')) {
     Import-Module (Join-Path $PSHOME ("Modules\$module\$module.psd1")) -Scope Local -ErrorAction Stop
 }
-$LingerArchitecture = $env:PROCESSOR_ARCHITEW6432
-if (-not $LingerArchitecture) { $LingerArchitecture = $env:PROCESSOR_ARCHITECTURE }
-switch ($LingerArchitecture.ToUpperInvariant()) {
-    'ARM64' { $LingerTarget = 'win32-arm64' }
-    'AMD64' { $LingerTarget = 'win32-x64' }
-    default { throw "Unsupported native Windows architecture: $LingerArchitecture" }
+$TalosArchitecture = $env:PROCESSOR_ARCHITEW6432
+if (-not $TalosArchitecture) { $TalosArchitecture = $env:PROCESSOR_ARCHITECTURE }
+switch ($TalosArchitecture.ToUpperInvariant()) {
+    'ARM64' { $TalosTarget = 'win32-arm64' }
+    'AMD64' { $TalosTarget = 'win32-x64' }
+    default { throw "Unsupported native Windows architecture: $TalosArchitecture" }
 }
 
-if (-not ('LingerInstallerFileIdentity' -as [type])) {
+if (-not ('TalosInstallerFileIdentity' -as [type])) {
     Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
-public static class LingerInstallerFileIdentity {
+public static class TalosInstallerFileIdentity {
     [StructLayout(LayoutKind.Sequential)] private struct SecurityAttributes {
         public int Length;
         public IntPtr Descriptor;
@@ -79,7 +79,7 @@ public static class LingerInstallerFileIdentity {
 # Bundled tool dependencies nest deeper than the 260-character path limit that
 # Win32 applies to ordinary paths. Address every installer path as an extended
 # path so the same code reaches short and deep files alike.
-function Get-LingerFullPath([string]$Path) {
+function Get-TalosFullPath([string]$Path) {
     if ($Path.StartsWith('\\?\')) { return $Path }
     $full = [IO.Path]::GetFullPath($Path)
     # Extended paths spell a share as \\?\UNC\server. Installer paths are local,
@@ -92,79 +92,79 @@ function Get-LingerFullPath([string]$Path) {
 # Unicode symbols. A console redraws the current line with a spinner and the
 # elapsed time; redirected output gets a heartbeat line at most every 10s. The
 # Node helper continues the open step on the same line.
-$LingerInteractive = -not [Console]::IsOutputRedirected
-$LingerStepTotal = 4
+$TalosInteractive = -not [Console]::IsOutputRedirected
+$TalosStepTotal = 4
 # Functions write the step through $script:, so the top level must use the
 # same variable even when the installer runs inside a script block.
-$script:LingerStep = $null
+$script:TalosStep = $null
 
-function Format-LingerDuration([long]$Milliseconds) {
+function Format-TalosDuration([long]$Milliseconds) {
     $seconds = [long][Math]::Max(0, [Math]::Round($Milliseconds / 1000))
     if ($seconds -lt 60) { return "${seconds}s" }
     return '{0}m {1}s' -f [Math]::Floor($seconds / 60), ($seconds % 60)
 }
 
-function Write-LingerStepLine([string]$Suffix, [bool]$Final) {
-    $line = '[{0}/{1}] {2}... {3}' -f $LingerStep.Number, $LingerStepTotal, $LingerStep.Label, $Suffix
-    [Console]::Write("`r" + $line + (' ' * [Math]::Max(0, $LingerStep.Drawn - $line.Length)))
-    if ($Final) { [Console]::WriteLine(); $LingerStep.Drawn = 0 } else { $LingerStep.Drawn = $line.Length }
+function Write-TalosStepLine([string]$Suffix, [bool]$Final) {
+    $line = '[{0}/{1}] {2}... {3}' -f $TalosStep.Number, $TalosStepTotal, $TalosStep.Label, $Suffix
+    [Console]::Write("`r" + $line + (' ' * [Math]::Max(0, $TalosStep.Drawn - $line.Length)))
+    if ($Final) { [Console]::WriteLine(); $TalosStep.Drawn = 0 } else { $TalosStep.Drawn = $line.Length }
 }
 
 # Long loops call this often; it redraws at most four times a second.
-function Update-LingerStep([string]$Detail = '', [switch]$Force) {
-    if (-not $LingerStep) { return }
+function Update-TalosStep([string]$Detail = '', [switch]$Force) {
+    if (-not $TalosStep) { return }
     $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
     $interval = 10000
-    if ($LingerInteractive) { $interval = 250 }
-    if (-not $Force -and $now - $LingerStep.LastDraw -lt $interval) { return }
-    $LingerStep.LastDraw = $now
-    $elapsed = Format-LingerDuration ($now - $LingerStep.StartedAt)
-    if ($LingerInteractive) {
-        $frame = '|/-\'[$LingerStep.Frame % 4]
-        $LingerStep.Frame += 1
+    if ($TalosInteractive) { $interval = 250 }
+    if (-not $Force -and $now - $TalosStep.LastDraw -lt $interval) { return }
+    $TalosStep.LastDraw = $now
+    $elapsed = Format-TalosDuration ($now - $TalosStep.StartedAt)
+    if ($TalosInteractive) {
+        $frame = '|/-\'[$TalosStep.Frame % 4]
+        $TalosStep.Frame += 1
         if ($Detail) { $Detail += ' ' }
-        Write-LingerStepLine ($Detail + $frame + ' ' + $elapsed) $false
+        Write-TalosStepLine ($Detail + $frame + ' ' + $elapsed) $false
     } elseif (-not $Force) {
         if (-not $Detail) { $Detail = 'still working' }
         [Console]::WriteLine(('      {0} ({1})' -f $Detail, $elapsed))
     }
 }
 
-function Stop-LingerStep([string]$Result = 'OK') {
-    if (-not $LingerStep) { return }
-    $elapsed = Format-LingerDuration ([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $LingerStep.StartedAt)
-    if ($LingerInteractive) { Write-LingerStepLine ($Result + ' (' + $elapsed + ')') $true }
-    else { [Console]::WriteLine(('[{0}/{1}] {2}... {3} ({4})' -f $LingerStep.Number, $LingerStepTotal, $LingerStep.Label, $Result, $elapsed)) }
-    $script:LingerStep = $null
+function Stop-TalosStep([string]$Result = 'OK') {
+    if (-not $TalosStep) { return }
+    $elapsed = Format-TalosDuration ([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $TalosStep.StartedAt)
+    if ($TalosInteractive) { Write-TalosStepLine ($Result + ' (' + $elapsed + ')') $true }
+    else { [Console]::WriteLine(('[{0}/{1}] {2}... {3} ({4})' -f $TalosStep.Number, $TalosStepTotal, $TalosStep.Label, $Result, $elapsed)) }
+    $script:TalosStep = $null
 }
 
-function Start-LingerStep([int]$Number, [string]$Label) {
-    Stop-LingerStep
+function Start-TalosStep([int]$Number, [string]$Label) {
+    Stop-TalosStep
     $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-    $script:LingerStep = @{ Number = $Number; Label = $Label; StartedAt = $now; LastDraw = $now; Drawn = 0; Frame = 0 }
-    if (-not $LingerInteractive) { [Console]::WriteLine(('[{0}/{1}] {2}...' -f $Number, $LingerStepTotal, $Label)) }
-    Update-LingerStep -Force
+    $script:TalosStep = @{ Number = $Number; Label = $Label; StartedAt = $now; LastDraw = $now; Drawn = 0; Frame = 0 }
+    if (-not $TalosInteractive) { [Console]::WriteLine(('[{0}/{1}] {2}...' -f $Number, $TalosStepTotal, $Label)) }
+    Update-TalosStep -Force
 }
 
-function Write-LingerNote([string]$Text) {
-    if ($LingerInteractive -and $LingerStep) {
-        [Console]::Write("`r" + (' ' * $LingerStep.Drawn) + "`r")
-        $LingerStep.Drawn = 0
+function Write-TalosNote([string]$Text) {
+    if ($TalosInteractive -and $TalosStep) {
+        [Console]::Write("`r" + (' ' * $TalosStep.Drawn) + "`r")
+        $TalosStep.Drawn = 0
     }
     [Console]::WriteLine($Text)
-    if ($LingerInteractive) { Update-LingerStep -Force }
+    if ($TalosInteractive) { Update-TalosStep -Force }
 }
 
 # Directories whose whole ancestor chain passed in this run. A bundle has dozens
 # of files under the same ancestors; walking each chain again per file took
 # seconds. Only a fully successful walk is remembered.
-$LingerTrustedDirectories = @{}
+$TalosTrustedDirectories = @{}
 
 # The Codex Windows sandbox grants its sandbox users group and the capability
 # SIDs recorded in its default home write access to its writable roots, which
-# can include AppData. Linger accepts that a sandboxed Codex command may replace
+# can include AppData. Talos accepts that a sandboxed Codex command may replace
 # such an ancestor; product paths themselves stay private to the user.
-function Get-LingerCodexSandboxSids {
+function Get-TalosCodexSandboxSids {
     $sids = @()
     try { $sids += (New-Object Security.Principal.NTAccount('CodexSandboxUsers')).Translate([Security.Principal.SecurityIdentifier]).Value } catch {}
     $capFile = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.codex\cap_sid'
@@ -185,19 +185,19 @@ function Get-LingerCodexSandboxSids {
     }
     return $sids
 }
-$LingerCodexSandboxSids = @(Get-LingerCodexSandboxSids)
+$TalosCodexSandboxSids = @(Get-TalosCodexSandboxSids)
 
-function Assert-LingerAncestors([string]$Path) {
-    $cursor = Get-LingerFullPath $Path
+function Assert-TalosAncestors([string]$Path) {
+    $cursor = Get-TalosFullPath $Path
     $walked = @()
     while ($cursor) {
-        if ($LingerTrustedDirectories.ContainsKey($cursor)) { break }
+        if ($TalosTrustedDirectories.ContainsKey($cursor)) { break }
         $ancestor = Get-Item -LiteralPath $cursor -Force -ErrorAction Stop
         if ($ancestor.PSIsContainer) { $walked += $cursor }
         if (($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Install path contains a reparse point: $cursor" }
         $ancestorAcl = Get-Acl -LiteralPath $cursor
-        [LingerInstallerFileIdentity]::CheckDacl($ancestorAcl.GetSecurityDescriptorBinaryForm())
-        $trustedOwners = @($LingerSid.Value, 'S-1-5-18', 'S-1-5-32-544', 'S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464')
+        [TalosInstallerFileIdentity]::CheckDacl($ancestorAcl.GetSecurityDescriptorBinaryForm())
+        $trustedOwners = @($TalosSid.Value, 'S-1-5-18', 'S-1-5-32-544', 'S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464')
         if ($ancestorAcl.GetOwner([Security.Principal.SecurityIdentifier]).Value -notin $trustedOwners) { throw "Install ancestor has an untrusted owner: $cursor" }
         foreach ($access in $ancestorAcl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
             # Creating a sibling under C:\ is harmless. Replacing a protected
@@ -208,7 +208,7 @@ function Assert-LingerAncestors([string]$Path) {
             # remain protected by the FILE_DELETE_CHILD and ACL-change checks.
             if ($cursor -eq [IO.Path]::GetPathRoot($cursor)) { $replaceRights = $replaceRights -band (-bnot 0x00010000) }
             if (-not $inheritOnly -and $access.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
-                $access.IdentityReference.Value -notin $trustedOwners -and $access.IdentityReference.Value -notin $LingerCodexSandboxSids -and
+                $access.IdentityReference.Value -notin $trustedOwners -and $access.IdentityReference.Value -notin $TalosCodexSandboxSids -and
                 ([int]$access.FileSystemRights -band $replaceRights) -ne 0) {
                 throw "Install ancestor can be replaced by another user ($($access.IdentityReference.Value)): $cursor"
             }
@@ -217,61 +217,61 @@ function Assert-LingerAncestors([string]$Path) {
         if ($parent -eq $cursor) { break }
         $cursor = $parent
     }
-    foreach ($directory in $walked) { $LingerTrustedDirectories[$directory] = $true }
+    foreach ($directory in $walked) { $TalosTrustedDirectories[$directory] = $true }
 }
 
-function Assert-LingerPath([string]$Path, [bool]$Directory) {
-    $full = Get-LingerFullPath $Path
+function Assert-TalosPath([string]$Path, [bool]$Directory) {
+    $full = Get-TalosFullPath $Path
     $item = Get-Item -LiteralPath $full -Force -ErrorAction Stop
     if ($item.PSIsContainer -ne $Directory) { throw "Install path has the wrong kind: $full" }
-    Assert-LingerAncestors $full
+    Assert-TalosAncestors $full
     $acl = Get-Acl -LiteralPath $full
-    if ($acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $LingerSid.Value) { throw "Install path has a different owner: $full" }
+    if ($acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $TalosSid.Value) { throw "Install path has a different owner: $full" }
     foreach ($rule in $acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
         if ($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
-            $rule.IdentityReference.Value -notin @($LingerSid.Value, 'S-1-5-18', 'S-1-5-32-544')) {
+            $rule.IdentityReference.Value -notin @($TalosSid.Value, 'S-1-5-18', 'S-1-5-32-544')) {
             throw "Install path is not private to the current user: $full"
         }
     }
     if (-not $Directory) {
         $stream = [IO.File]::Open($full, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
-        try { [LingerInstallerFileIdentity]::CheckSingleLink($stream.SafeFileHandle) }
+        try { [TalosInstallerFileIdentity]::CheckSingleLink($stream.SafeFileHandle) }
         finally { $stream.Dispose() }
     }
 }
 
-function New-LingerDirectory([string]$Path) {
-    $full = Get-LingerFullPath $Path
-    if (Test-Path -LiteralPath $full) { Assert-LingerPath $full $true; return }
+function New-TalosDirectory([string]$Path) {
+    $full = Get-TalosFullPath $Path
+    if (Test-Path -LiteralPath $full) { Assert-TalosPath $full $true; return }
     $parent = [IO.Path]::GetDirectoryName($full)
-    if (-not (Test-Path -LiteralPath $parent)) { New-LingerDirectory $parent }
-    Assert-LingerAncestors $parent
+    if (-not (Test-Path -LiteralPath $parent)) { New-TalosDirectory $parent }
+    Assert-TalosAncestors $parent
     # New product directories inherit no access from a potentially shared parent.
     $acl = New-Object Security.AccessControl.DirectorySecurity
-    $acl.SetOwner($LingerSid)
+    $acl.SetOwner($TalosSid)
     $acl.SetAccessRuleProtection($true, $false)
-    foreach ($sid in @($LingerSid, (New-Object Security.Principal.SecurityIdentifier('S-1-5-18')))) {
+    foreach ($sid in @($TalosSid, (New-Object Security.Principal.SecurityIdentifier('S-1-5-18')))) {
         $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
         $acl.AddAccessRule($rule)
     }
     # Apply the private DACL at creation, before another user can open the path.
-    [LingerInstallerFileIdentity]::CreatePrivateDirectory($full, $acl.GetSecurityDescriptorBinaryForm())
-    Assert-LingerPath $full $true
+    [TalosInstallerFileIdentity]::CreatePrivateDirectory($full, $acl.GetSecurityDescriptorBinaryForm())
+    Assert-TalosPath $full $true
 }
 
-function Get-LingerChecksum([string]$Path) {
-    Assert-LingerPath $Path $false
-    return (Get-FileHash -LiteralPath (Get-LingerFullPath $Path) -Algorithm SHA256).Hash.ToLowerInvariant()
+function Get-TalosChecksum([string]$Path) {
+    Assert-TalosPath $Path $false
+    return (Get-FileHash -LiteralPath (Get-TalosFullPath $Path) -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-function Read-LingerPrivateText([string]$Path) {
-    Assert-LingerPath $Path $false
-    return [IO.File]::ReadAllText((Get-LingerFullPath $Path), $LingerUtf8)
+function Read-TalosPrivateText([string]$Path) {
+    Assert-TalosPath $Path $false
+    return [IO.File]::ReadAllText((Get-TalosFullPath $Path), $TalosUtf8)
 }
 
-function Assert-LingerArchitecture([string]$Path) {
-    Assert-LingerPath $Path $false
-    $stream = [IO.File]::OpenRead((Get-LingerFullPath $Path))
+function Assert-TalosArchitecture([string]$Path) {
+    Assert-TalosPath $Path $false
+    $stream = [IO.File]::OpenRead((Get-TalosFullPath $Path))
     $reader = New-Object IO.BinaryReader($stream)
     try {
         if ($stream.Length -lt 64 -or $reader.ReadUInt16() -ne 0x5A4D) { throw 'Release executable has no valid PE header.' }
@@ -282,12 +282,12 @@ function Assert-LingerArchitecture([string]$Path) {
         if ($reader.ReadUInt32() -ne 0x00004550) { throw 'Release executable has no valid PE header.' }
         $machine = $reader.ReadUInt16()
         $expected = 0x8664
-        if ($LingerTarget -eq 'win32-arm64') { $expected = 0xAA64 }
+        if ($TalosTarget -eq 'win32-arm64') { $expected = 0xAA64 }
         if ($machine -ne $expected) { throw 'Release executable architecture does not match this Windows system.' }
     } finally { $reader.Dispose(); $stream.Dispose() }
 }
 
-function Assert-LingerSource([string]$Source) {
+function Assert-TalosSource([string]$Source) {
     if ([IO.Path]::IsPathRooted($Source) -and $Source -notmatch '^[A-Za-z]+://') { return }
     $uri = [Uri]$Source
     if (-not $uri.IsAbsoluteUri -or $uri.UserInfo -or $uri.Fragment) { throw 'Download URL is invalid.' }
@@ -300,8 +300,8 @@ function Assert-LingerSource([string]$Source) {
     }
 }
 
-function Receive-LingerFile([string]$Source, [string]$Destination) {
-    Assert-LingerSource $Source
+function Receive-TalosFile([string]$Source, [string]$Destination) {
+    Assert-TalosSource $Source
     if ([IO.Path]::IsPathRooted($Source) -and $Source -notmatch '^[A-Za-z]+://') {
         [IO.File]::Copy($Source, $Destination, $false)
         return
@@ -311,7 +311,7 @@ function Receive-LingerFile([string]$Source, [string]$Destination) {
     # Handle redirects ourselves so HTTPS cannot silently downgrade to HTTP.
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
     for ($redirects = 0; $redirects -le 5; $redirects++) {
-        Assert-LingerSource $uri.AbsoluteUri
+        Assert-TalosSource $uri.AbsoluteUri
         $request = [Net.HttpWebRequest]::Create($uri)
         $request.AllowAutoRedirect = $false
         $request.Timeout = 120000
@@ -339,9 +339,9 @@ function Receive-LingerFile([string]$Source, [string]$Destination) {
                         $redraw.Restart()
                         if ($length -gt 0) {
                             $filled = [int][Math]::Min(20, [Math]::Floor($total * 20 / $length))
-                            Update-LingerStep ([string]::Format($invariant, '[{0}{1}] {2}% {3:F1}/{4:F1} MB',
+                            Update-TalosStep ([string]::Format($invariant, '[{0}{1}] {2}% {3:F1}/{4:F1} MB',
                                 ('#' * $filled), ('-' * (20 - $filled)), [int][Math]::Floor($total * 100 / $length), ($total / 1MB), ($length / 1MB)))
-                        } else { Update-LingerStep ([string]::Format($invariant, '{0:F1} MB', ($total / 1MB))) }
+                        } else { Update-TalosStep ([string]::Format($invariant, '{0:F1} MB', ($total / 1MB))) }
                     }
                 }
             } finally { $output.Dispose(); $inputStream.Dispose() }
@@ -351,7 +351,7 @@ function Receive-LingerFile([string]$Source, [string]$Destination) {
     throw 'Download redirect limit exceeded.'
 }
 
-function Read-LingerExact($Stream, [byte[]]$Buffer, [int]$Count) {
+function Read-TalosExact($Stream, [byte[]]$Buffer, [int]$Count) {
     $offset = 0
     while ($offset -lt $Count) {
         $read = $Stream.Read($Buffer, $offset, $Count - $offset)
@@ -365,8 +365,8 @@ function Read-LingerExact($Stream, [byte[]]$Buffer, [int]$Count) {
 # only doubled the work. Every header is still validated.
 # The dependency and application archives unpack into one bundle; each call
 # writes only the named files the bootstrap needs from its archive.
-function Expand-LingerBootstrap([string]$Archive, [string]$Destination, [string[]]$Required) {
-    New-LingerDirectory $Destination
+function Expand-TalosBootstrap([string]$Archive, [string]$Destination, [string[]]$Required) {
+    New-TalosDirectory $Destination
     $required = $Required
     $found = @{}
     $sourceStream = [IO.File]::OpenRead($Archive)
@@ -377,7 +377,7 @@ function Expand-LingerBootstrap([string]$Archive, [string]$Destination, [string[
         $total = 0L
         $redraw = [Diagnostics.Stopwatch]::StartNew()
         while ($true) {
-            Read-LingerExact $gzip $header 512
+            Read-TalosExact $gzip $header 512
             $sum = 0
             foreach ($byte in $header) { $sum += $byte }
             if ($sum -eq 0) { break }
@@ -391,9 +391,9 @@ function Expand-LingerBootstrap([string]$Archive, [string]$Destination, [string[
                 if ($index -ge 148 -and $index -lt 156) { $headerChecksum += 32 }
                 else { $headerChecksum += $header[$index] }
             }
-            $cliAsset = $name -cmatch '^cli/(linger-computer\.exe|teamhub|teamhub\.cmd|teamhub\.exe|teamhub\.js|teamhub-assets\.json|teamhub-commands\.json|teamhub-chunks/[A-Za-z0-9_-]+\.js)$'
-            $toolAsset = $name.StartsWith('cli/computer-tools/') -and (Test-LingerToolPath $name)
-            if (($name -notin $required -and $name -notin $LingerManagedToolEntries -and -not $cliAsset -and -not $toolAsset) -or $found.ContainsKey($name) -or ($prefix -and -not $toolAsset) -or
+            $cliAsset = $name -cmatch '^cli/(talos-computer\.exe|teamhub|teamhub\.cmd|teamhub\.exe|teamhub\.js|teamhub-assets\.json|teamhub-commands\.json|teamhub-chunks/[A-Za-z0-9_-]+\.js)$'
+            $toolAsset = $name.StartsWith('cli/computer-tools/') -and (Test-TalosToolPath $name)
+            if (($name -notin $required -and $name -notin $TalosManagedToolEntries -and -not $cliAsset -and -not $toolAsset) -or $found.ContainsKey($name) -or ($prefix -and -not $toolAsset) -or
                 $header[156] -notin @(0, 48) -or $sizeText -notmatch '^[0-7]+$' -or
                 $checksumText -notmatch '^[0-7]+$' -or [Convert]::ToInt64($checksumText, 8) -ne $headerChecksum) {
                 throw 'Release archive contains an invalid or unexpected entry.'
@@ -404,23 +404,23 @@ function Expand-LingerBootstrap([string]$Archive, [string]$Destination, [string[
             $output = $null
             if ($name -in $required) {
                 $file = Join-Path $Destination $name
-                New-LingerDirectory ([IO.Path]::GetDirectoryName($file))
-                $output = [IO.File]::Open((Get-LingerFullPath $file), [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+                New-TalosDirectory ([IO.Path]::GetDirectoryName($file))
+                $output = [IO.File]::Open((Get-TalosFullPath $file), [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
             }
             try {
                 $remaining = $size
                 while ($remaining -gt 0) {
                     $count = [int][Math]::Min($remaining, $buffer.Length)
-                    Read-LingerExact $gzip $buffer $count
+                    Read-TalosExact $gzip $buffer $count
                     if ($output) { $output.Write($buffer, 0, $count) }
                     $remaining -= $count
                 }
             } finally { if ($output) { $output.Dispose() } }
             $padding = [int]((512 - ($size % 512)) % 512)
-            if ($padding -gt 0) { Read-LingerExact $gzip $buffer $padding }
-            if ($output) { Assert-LingerPath $file $false }
+            if ($padding -gt 0) { Read-TalosExact $gzip $buffer $padding }
+            if ($output) { Assert-TalosPath $file $false }
             $found[$name] = $true
-            if ($redraw.ElapsedMilliseconds -ge 250) { $redraw.Restart(); Update-LingerStep }
+            if ($redraw.ElapsedMilliseconds -ge 250) { $redraw.Restart(); Update-TalosStep }
         }
         foreach ($name in $required) { if (-not $found.ContainsKey($name)) { throw "Release archive is missing $name" } }
         while (($count = $gzip.Read($buffer, 0, $buffer.Length)) -gt 0) {
@@ -429,24 +429,24 @@ function Expand-LingerBootstrap([string]$Archive, [string]$Destination, [string[
     } finally { $gzip.Dispose(); $sourceStream.Dispose() }
 }
 
-function Test-LingerToolPath([string]$Name) {
+function Test-TalosToolPath([string]$Name) {
     if (-not $Name -or $Name -match '[\\:\x00-\x1f]') { return $false }
     foreach ($part in $Name.Split('/')) { if (-not $part -or $part -eq '.' -or $part -eq '..') { return $false } }
     return $true
 }
 
-function Get-LingerComputerToolEntries([string]$Bundle) {
+function Get-TalosComputerToolEntries([string]$Bundle) {
     $root = Join-Path $Bundle 'cli/computer-tools'
-    if (-not (Test-Path -LiteralPath (Get-LingerFullPath $root))) { return @() }
-    Assert-LingerPath $root $true
-    $manifest = (Read-LingerPrivateText (Join-Path $root 'manifest.json')) | ConvertFrom-Json
+    if (-not (Test-Path -LiteralPath (Get-TalosFullPath $root))) { return @() }
+    Assert-TalosPath $root $true
+    $manifest = (Read-TalosPrivateText (Join-Path $root 'manifest.json')) | ConvertFrom-Json
     if ($manifest.schema_version -ne 1 -or -not $manifest.assets -or
         $manifest.playwright_entry -cne 'node_modules/@playwright/mcp/cli.js' -or $manifest.pi_extension -cne 'extensions/pi-mcp.mjs' -or
         $manifest.cua_entry -cne 'cua/cua-driver.exe' -or $manifest.artifact_sha256 -cnotmatch '^[0-9a-f]{64}$') { throw 'Invalid Computer tool manifest.' }
     $seen = @{}
     $names = @('manifest.json')
     foreach ($asset in $manifest.assets) {
-        if ($asset.path -isnot [string] -or -not (Test-LingerToolPath $asset.path) -or $seen.ContainsKey($asset.path)) { throw 'Invalid Computer tool asset path.' }
+        if ($asset.path -isnot [string] -or -not (Test-TalosToolPath $asset.path) -or $seen.ContainsKey($asset.path)) { throw 'Invalid Computer tool asset path.' }
         $seen[$asset.path] = $true
         $names += $asset.path
     }
@@ -456,22 +456,22 @@ function Get-LingerComputerToolEntries([string]$Bundle) {
     return @($names | ForEach-Object { 'cli/computer-tools/' + $_ })
 }
 
-function Get-LingerBundleEntries([string]$Bundle) {
-    $entries = @('cli/linger-computer.exe', 'daemon/linger-computer-daemon.exe', 'runtime/bin/node.exe', 'runtime/LICENSE')
-    $tools = @(Get-LingerComputerToolEntries $Bundle)
+function Get-TalosBundleEntries([string]$Bundle) {
+    $entries = @('cli/talos-computer.exe', 'daemon/talos-computer-daemon.exe', 'runtime/bin/node.exe', 'runtime/LICENSE')
+    $tools = @(Get-TalosComputerToolEntries $Bundle)
     $manifestFile = Join-Path $Bundle 'cli/teamhub-assets.json'
-    if (-not (Test-Path -LiteralPath (Get-LingerFullPath $manifestFile))) { return @($entries) + @($tools) }
-    $entries += @($LingerManagedToolEntries | Where-Object { Test-Path -LiteralPath (Get-LingerFullPath (Join-Path $Bundle $_)) })
-    $manifest = (Read-LingerPrivateText $manifestFile) | ConvertFrom-Json
+    if (-not (Test-Path -LiteralPath (Get-TalosFullPath $manifestFile))) { return @($entries) + @($tools) }
+    $entries += @($TalosManagedToolEntries | Where-Object { Test-Path -LiteralPath (Get-TalosFullPath (Join-Path $Bundle $_)) })
+    $manifest = (Read-TalosPrivateText $manifestFile) | ConvertFrom-Json
     if ($manifest.schema_version -ne 1 -or $manifest.entrypoint -cne 'teamhub.js' -or
         -not $manifest.assets -or $manifest.artifact_sha256 -cnotmatch '^[0-9a-f]{64}$') {
         throw 'Release CLI asset manifest is invalid.'
     }
     $nativeEntry = 'cli/teamhub.exe'
-    if (-not (Test-Path -LiteralPath (Get-LingerFullPath (Join-Path $Bundle $nativeEntry)))) { $nativeEntry = 'cli/teamhub.cmd' }
+    if (-not (Test-Path -LiteralPath (Get-TalosFullPath (Join-Path $Bundle $nativeEntry)))) { $nativeEntry = 'cli/teamhub.cmd' }
     $entries += @('cli/teamhub', $nativeEntry, 'cli/teamhub-assets.json')
     # Bundles before Computer 0.30.11 lack the command manifest.
-    if (Test-Path -LiteralPath (Get-LingerFullPath (Join-Path $Bundle 'cli/teamhub-commands.json'))) { $entries += 'cli/teamhub-commands.json' }
+    if (Test-Path -LiteralPath (Get-TalosFullPath (Join-Path $Bundle 'cli/teamhub-commands.json'))) { $entries += 'cli/teamhub-commands.json' }
     $seen = @{}
     $hasEntry = $false
     $hasChunk = $false
@@ -486,27 +486,27 @@ function Get-LingerBundleEntries([string]$Bundle) {
     return @($entries) + @($tools)
 }
 
-function Get-LingerInstalledBundle([string]$Root, [string]$RecoveryBundle = '', [string]$RecoveryChecksum = '') {
+function Get-TalosInstalledBundle([string]$Root, [string]$RecoveryBundle = '', [string]$RecoveryChecksum = '') {
     $bundle = $RecoveryBundle
     if (-not $bundle) {
         $pointer = Join-Path $Root 'active-bundle'
         if (-not (Test-Path -LiteralPath $pointer)) { return $null }
-        $name = (Read-LingerPrivateText $pointer).Trim()
+        $name = (Read-TalosPrivateText $pointer).Trim()
         if ($name -notmatch '^lib-[0-9a-f]{16}-[0-9a-f-]+$') { throw 'Installed bundle pointer is invalid.' }
         $bundle = Join-Path $Root $name
     }
-    Assert-LingerPath $bundle $true
+    Assert-TalosPath $bundle $true
     $sha = [Security.Cryptography.SHA256]::Create()
     $buffer = New-Object byte[] 65536
     $redraw = [Diagnostics.Stopwatch]::StartNew()
     try {
-        foreach ($entry in (Get-LingerBundleEntries $bundle)) {
-            if ($redraw.ElapsedMilliseconds -ge 250) { $redraw.Restart(); Update-LingerStep }
+        foreach ($entry in (Get-TalosBundleEntries $bundle)) {
+            if ($redraw.ElapsedMilliseconds -ge 250) { $redraw.Restart(); Update-TalosStep }
             $file = Join-Path $bundle $entry
-            if (-not $entry.StartsWith('cli/computer-tools/')) { Assert-LingerPath $file $false }
-            $prefix = $LingerUtf8.GetBytes($entry + [char]0)
+            if (-not $entry.StartsWith('cli/computer-tools/')) { Assert-TalosPath $file $false }
+            $prefix = $TalosUtf8.GetBytes($entry + [char]0)
             $null = $sha.TransformBlock($prefix, 0, $prefix.Length, $prefix, 0)
-            $stream = [IO.File]::OpenRead((Get-LingerFullPath $file))
+            $stream = [IO.File]::OpenRead((Get-TalosFullPath $file))
             try {
                 while (($count = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) { $null = $sha.TransformBlock($buffer, 0, $count, $buffer, 0) }
             } finally { $stream.Dispose() }
@@ -515,15 +515,15 @@ function Get-LingerInstalledBundle([string]$Root, [string]$RecoveryBundle = '', 
         $actual = ([BitConverter]::ToString($sha.Hash)).Replace('-', '').ToLowerInvariant()
     } finally { $sha.Dispose() }
     $expected = $RecoveryChecksum
-    if (-not $expected) { $expected = (Read-LingerPrivateText (Join-Path $Root 'installed-bundle-checksum')).Trim() }
+    if (-not $expected) { $expected = (Read-TalosPrivateText (Join-Path $Root 'installed-bundle-checksum')).Trim() }
     if ($expected -notmatch '^[0-9a-f]{64}$' -or $actual -cne $expected) { throw 'Installed bundle integrity verification failed.' }
     return $bundle
 }
 
-# The name a Web origin installs under, derived as install-linger-computer.sh
-# does: the host's first label without "-linger", "local" for loopback,
+# The name a Web origin installs under, derived as install-talos-computer.sh
+# does: the host's first label without "-talos", "local" for loopback,
 # or the dashed address for an IP, plus any non-default port.
-function Get-LingerEnvironmentName([string]$Origin) {
+function Get-TalosEnvironmentName([string]$Origin) {
     $uri = [Uri]$Origin
     $hostName = $uri.Host.ToLowerInvariant()
     if ($hostName -in @('localhost', '127.0.0.1', '[::1]') -or $hostName.EndsWith('.localhost')) { $name = 'local' }
@@ -531,164 +531,164 @@ function Get-LingerEnvironmentName([string]$Origin) {
     elseif ($hostName -match '^[0-9.]+$') { $name = 'ip-' + ($hostName -replace '\.', '-') }
     else {
         $name = $hostName.Split('.')[0]
-        if ($name -ne 'linger' -and $name.EndsWith('-linger')) { $name = $name.Substring(0, $name.Length - '-linger'.Length) }
+        if ($name -ne 'talos' -and $name.EndsWith('-talos')) { $name = $name.Substring(0, $name.Length - '-talos'.Length) }
     }
     if (-not $uri.IsDefaultPort) { $name = $name + '-' + $uri.Port }
     return $name
 }
 
-$LingerDownloadBase = $env:LINGER_COMPUTER_DOWNLOAD_BASE_URL
-if (-not $LingerDownloadBase) { $LingerDownloadBase = $LingerRelease.downloadBaseUrl }
-$LingerWebOrigin = $env:LINGER_WEB_URL
-if (-not $LingerWebOrigin) { $LingerWebOrigin = $LingerRelease.webOrigin }
+$TalosDownloadBase = $env:TALOS_COMPUTER_DOWNLOAD_BASE_URL
+if (-not $TalosDownloadBase) { $TalosDownloadBase = $TalosRelease.downloadBaseUrl }
+$TalosWebOrigin = $env:TALOS_WEB_URL
+if (-not $TalosWebOrigin) { $TalosWebOrigin = $TalosRelease.webOrigin }
 # Each Web origin is its own environment with its own install root and its own
-# command, linger-computer-<environment>, so Computers of several deployments
-# can share one Windows account. linger-computer runs the environment when it
+# command, talos-computer-<environment>, so Computers of several deployments
+# can share one Windows account. talos-computer runs the environment when it
 # is the only one installed and lists them otherwise.
-$LingerCommandName = 'linger-computer-' + (Get-LingerEnvironmentName $LingerWebOrigin)
-if (-not $env:LOCALAPPDATA -and (-not $env:LINGER_COMPUTER_DATA_DIR -or -not $env:LINGER_COMPUTER_BIN_DIR)) { throw 'LOCALAPPDATA is required.' }
-$LingerBinDirectory = $env:LINGER_COMPUTER_BIN_DIR
-if (-not $LingerBinDirectory) { $LingerBinDirectory = Join-Path $env:LOCALAPPDATA 'Linger\bin' }
-if (-not [IO.Path]::IsPathRooted($LingerBinDirectory) -or $LingerBinDirectory.StartsWith('\\')) { throw 'Install bin directory must be an absolute local path.' }
-$LingerBinDirectory = [IO.Path]::GetFullPath($LingerBinDirectory)
-$LingerDataRoot = $env:LINGER_COMPUTER_DATA_DIR
+$TalosCommandName = 'talos-computer-' + (Get-TalosEnvironmentName $TalosWebOrigin)
+if (-not $env:LOCALAPPDATA -and (-not $env:TALOS_COMPUTER_DATA_DIR -or -not $env:TALOS_COMPUTER_BIN_DIR)) { throw 'LOCALAPPDATA is required.' }
+$TalosBinDirectory = $env:TALOS_COMPUTER_BIN_DIR
+if (-not $TalosBinDirectory) { $TalosBinDirectory = Join-Path $env:LOCALAPPDATA 'Talos\bin' }
+if (-not [IO.Path]::IsPathRooted($TalosBinDirectory) -or $TalosBinDirectory.StartsWith('\\')) { throw 'Install bin directory must be an absolute local path.' }
+$TalosBinDirectory = [IO.Path]::GetFullPath($TalosBinDirectory)
+$TalosDataRoot = $env:TALOS_COMPUTER_DATA_DIR
 # Reinstalling an environment upgrades it where its launcher points.
-$LingerLauncherConfig = Join-Path $LingerBinDirectory ($LingerCommandName + '.launcher.json')
-if (-not $LingerDataRoot -and (Test-Path -LiteralPath $LingerLauncherConfig -PathType Leaf)) {
-    $LingerDataRoot = ([IO.File]::ReadAllText($LingerLauncherConfig) | ConvertFrom-Json).dataRoot
+$TalosLauncherConfig = Join-Path $TalosBinDirectory ($TalosCommandName + '.launcher.json')
+if (-not $TalosDataRoot -and (Test-Path -LiteralPath $TalosLauncherConfig -PathType Leaf)) {
+    $TalosDataRoot = ([IO.File]::ReadAllText($TalosLauncherConfig) | ConvertFrom-Json).dataRoot
 }
-if (-not $LingerDataRoot) { $LingerDataRoot = Join-Path $env:LOCALAPPDATA ('Linger\Computers\' + (Get-LingerEnvironmentName $LingerWebOrigin)) }
-if (-not [IO.Path]::IsPathRooted($LingerDataRoot) -or $LingerDataRoot.StartsWith('\\')) { throw 'Install root must be an absolute local path.' }
-$LingerDataRoot = [IO.Path]::GetFullPath($LingerDataRoot)
-if ($LingerDataRoot -eq [IO.Path]::GetPathRoot($LingerDataRoot) -or $LingerDataRoot -eq $env:USERPROFILE) { throw 'Install destination is unsafe.' }
-$LingerTargetRelease = $LingerRelease.targets.$LingerTarget
-if (-not $LingerTargetRelease) { throw "This deployment ships no Local Computer for $LingerTarget." }
+if (-not $TalosDataRoot) { $TalosDataRoot = Join-Path $env:LOCALAPPDATA ('Talos\Computers\' + (Get-TalosEnvironmentName $TalosWebOrigin)) }
+if (-not [IO.Path]::IsPathRooted($TalosDataRoot) -or $TalosDataRoot.StartsWith('\\')) { throw 'Install root must be an absolute local path.' }
+$TalosDataRoot = [IO.Path]::GetFullPath($TalosDataRoot)
+if ($TalosDataRoot -eq [IO.Path]::GetPathRoot($TalosDataRoot) -or $TalosDataRoot -eq $env:USERPROFILE) { throw 'Install destination is unsafe.' }
+$TalosTargetRelease = $TalosRelease.targets.$TalosTarget
+if (-not $TalosTargetRelease) { throw "This deployment ships no Local Computer for $TalosTarget." }
 foreach ($kind in @('deps', 'app')) {
-    $archive = $LingerTargetRelease.$kind
-    if (-not $archive -or $archive.sha256 -cnotmatch '^[0-9a-f]{64}$' -or $archive.file -cne ($kind + '-' + $LingerTarget + '-' + $archive.sha256 + '.tar.gz')) {
+    $archive = $TalosTargetRelease.$kind
+    if (-not $archive -or $archive.sha256 -cnotmatch '^[0-9a-f]{64}$' -or $archive.file -cne ($kind + '-' + $TalosTarget + '-' + $archive.sha256 + '.tar.gz')) {
         throw 'Installer release metadata is invalid.'
     }
 }
-New-LingerDirectory $LingerDataRoot
-New-LingerDirectory $LingerBinDirectory
-$LingerLockPath = Join-Path $LingerDataRoot '.install.lock'
-if (Test-Path -LiteralPath $LingerLockPath) { Assert-LingerPath $LingerLockPath $false }
-try { $LingerLock = [IO.File]::Open($LingerLockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
+New-TalosDirectory $TalosDataRoot
+New-TalosDirectory $TalosBinDirectory
+$TalosLockPath = Join-Path $TalosDataRoot '.install.lock'
+if (Test-Path -LiteralPath $TalosLockPath) { Assert-TalosPath $TalosLockPath $false }
+try { $TalosLock = [IO.File]::Open($TalosLockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
 catch { throw 'Another Local Computer installation or uninstallation is active.' }
-$LingerTemporary = Join-Path $LingerDataRoot ('.bootstrap-' + [Guid]::NewGuid().ToString())
-$LingerProcess = $null
-if ($LingerOperation -eq 'uninstall') { $LingerStepTotal = 3 }
+$TalosTemporary = Join-Path $TalosDataRoot ('.bootstrap-' + [Guid]::NewGuid().ToString())
+$TalosProcess = $null
+if ($TalosOperation -eq 'uninstall') { $TalosStepTotal = 3 }
 try {
-    Start-LingerStep 1 'Checking the installed version'
-    New-LingerDirectory $LingerTemporary
-    $LingerBootstrapRoot = $null
-    $LingerBootstrapFailure = $null
-    try { $LingerBootstrapRoot = Get-LingerInstalledBundle $LingerDataRoot }
-    catch { $LingerBootstrapFailure = $_ }
-    $journalFile = Join-Path $LingerDataRoot '.uninstall-transaction.json'
-    if (-not $LingerBootstrapRoot -and (Test-Path -LiteralPath $journalFile)) {
-        $journal = (Read-LingerPrivateText $journalFile) | ConvertFrom-Json
+    Start-TalosStep 1 'Checking the installed version'
+    New-TalosDirectory $TalosTemporary
+    $TalosBootstrapRoot = $null
+    $TalosBootstrapFailure = $null
+    try { $TalosBootstrapRoot = Get-TalosInstalledBundle $TalosDataRoot }
+    catch { $TalosBootstrapFailure = $_ }
+    $journalFile = Join-Path $TalosDataRoot '.uninstall-transaction.json'
+    if (-not $TalosBootstrapRoot -and (Test-Path -LiteralPath $journalFile)) {
+        $journal = (Read-TalosPrivateText $journalFile) | ConvertFrom-Json
         $record = $journal.bundles | Select-Object -First 1
         if ($journal.schemaVersion -ne 1 -or $journal.snapshot -notmatch '^\.uninstall-[0-9a-f-]+$' -or
             -not $record -or $record.name -notmatch '^lib-[0-9a-f]{16}-[0-9a-f-]+$' -or $record.checksum -notmatch '^[0-9a-f]{64}$') { throw 'Uninstall recovery metadata is invalid.' }
-        $recoveryBundle = Join-Path (Join-Path $LingerDataRoot $journal.snapshot) $record.name
-        $LingerBootstrapRoot = Get-LingerInstalledBundle $LingerDataRoot $recoveryBundle $record.checksum
+        $recoveryBundle = Join-Path (Join-Path $TalosDataRoot $journal.snapshot) $record.name
+        $TalosBootstrapRoot = Get-TalosInstalledBundle $TalosDataRoot $recoveryBundle $record.checksum
     }
-    if (-not $LingerBootstrapRoot -and $LingerBootstrapFailure) {
-        if ($LingerOperation -eq 'uninstall') { throw $LingerBootstrapFailure }
-        Write-LingerNote 'Installed program failed integrity verification; downloading a verified package.'
+    if (-not $TalosBootstrapRoot -and $TalosBootstrapFailure) {
+        if ($TalosOperation -eq 'uninstall') { throw $TalosBootstrapFailure }
+        Write-TalosNote 'Installed program failed integrity verification; downloading a verified package.'
     }
-    $LingerBootstrapArchives = $null
-    if ($LingerBootstrapRoot) {
+    $TalosBootstrapArchives = $null
+    if ($TalosBootstrapRoot) {
         # The helper must not execute a Node/daemon that uninstall will delete.
         # It runs only these two programs from this copy.
-        $verified = $LingerBootstrapRoot
-        $LingerBootstrapRoot = Join-Path $LingerTemporary 'bundle'
-        New-LingerDirectory $LingerBootstrapRoot
-        foreach ($entry in @('runtime/bin/node.exe', 'daemon/linger-computer-daemon.exe')) {
+        $verified = $TalosBootstrapRoot
+        $TalosBootstrapRoot = Join-Path $TalosTemporary 'bundle'
+        New-TalosDirectory $TalosBootstrapRoot
+        foreach ($entry in @('runtime/bin/node.exe', 'daemon/talos-computer-daemon.exe')) {
             $original = Join-Path $verified $entry
-            $copy = Join-Path $LingerBootstrapRoot $entry
-            New-LingerDirectory ([IO.Path]::GetDirectoryName($copy))
-            [IO.File]::Copy((Get-LingerFullPath $original), (Get-LingerFullPath $copy), $false)
-            if ((Get-LingerChecksum $copy) -cne (Get-LingerChecksum $original)) { throw 'Bootstrap copy integrity verification failed.' }
+            $copy = Join-Path $TalosBootstrapRoot $entry
+            New-TalosDirectory ([IO.Path]::GetDirectoryName($copy))
+            [IO.File]::Copy((Get-TalosFullPath $original), (Get-TalosFullPath $copy), $false)
+            if ((Get-TalosChecksum $copy) -cne (Get-TalosChecksum $original)) { throw 'Bootstrap copy integrity verification failed.' }
         }
     }
-    if (-not $LingerBootstrapRoot) {
-        if ($LingerOperation -eq 'uninstall') {
-            if ((Test-Path -LiteralPath (Join-Path $LingerBinDirectory ($LingerCommandName + '.exe'))) -or
-                (Get-ChildItem -LiteralPath $LingerDataRoot -Force | Where-Object { $_.Name -match '^lib-' })) { throw 'Installed program is missing; files were preserved.' }
-            if (-not $LingerPurge) { Stop-LingerStep 'not installed'; Write-LingerNote 'Local Computer is not installed.'; return }
+    if (-not $TalosBootstrapRoot) {
+        if ($TalosOperation -eq 'uninstall') {
+            if ((Test-Path -LiteralPath (Join-Path $TalosBinDirectory ($TalosCommandName + '.exe'))) -or
+                (Get-ChildItem -LiteralPath $TalosDataRoot -Force | Where-Object { $_.Name -match '^lib-' })) { throw 'Installed program is missing; files were preserved.' }
+            if (-not $TalosPurge) { Stop-TalosStep 'not installed'; Write-TalosNote 'Local Computer is not installed.'; return }
         }
         # Uninstall downloads only the runtime it needs to stop owned processes.
-        if ($LingerOperation -eq 'install') {
-            if ($LingerBootstrapFailure) { Stop-LingerStep 'needs repair' } else { Stop-LingerStep 'not installed' }
-            Start-LingerStep 2 'Downloading the package'
+        if ($TalosOperation -eq 'install') {
+            if ($TalosBootstrapFailure) { Stop-TalosStep 'needs repair' } else { Stop-TalosStep 'not installed' }
+            Start-TalosStep 2 'Downloading the package'
         }
-        $LingerBootstrapArchives = @{}
+        $TalosBootstrapArchives = @{}
         foreach ($kind in @('deps', 'app')) {
-            $archive = Join-Path $LingerTemporary $LingerTargetRelease.$kind.file
-            Receive-LingerFile ($LingerDownloadBase.TrimEnd('/') + '/files/' + $LingerTargetRelease.$kind.file) $archive
-            $LingerBootstrapArchives[$kind] = $archive
+            $archive = Join-Path $TalosTemporary $TalosTargetRelease.$kind.file
+            Receive-TalosFile ($TalosDownloadBase.TrimEnd('/') + '/files/' + $TalosTargetRelease.$kind.file) $archive
+            $TalosBootstrapArchives[$kind] = $archive
         }
-        if ($LingerOperation -eq 'install') { Start-LingerStep 3 'Verifying the package' }
+        if ($TalosOperation -eq 'install') { Start-TalosStep 3 'Verifying the package' }
         foreach ($kind in @('deps', 'app')) {
-            if ((Get-LingerChecksum $LingerBootstrapArchives[$kind]) -cne $LingerTargetRelease.$kind.sha256) { throw 'Installer runtime bootstrap checksum verification failed.' }
+            if ((Get-TalosChecksum $TalosBootstrapArchives[$kind]) -cne $TalosTargetRelease.$kind.sha256) { throw 'Installer runtime bootstrap checksum verification failed.' }
         }
-        $LingerBootstrapRoot = Join-Path $LingerTemporary 'bundle'
-        Expand-LingerBootstrap $LingerBootstrapArchives['deps'] $LingerBootstrapRoot @('runtime/bin/node.exe', 'runtime/LICENSE')
-        Expand-LingerBootstrap $LingerBootstrapArchives['app'] $LingerBootstrapRoot @('daemon/linger-computer-daemon.exe')
+        $TalosBootstrapRoot = Join-Path $TalosTemporary 'bundle'
+        Expand-TalosBootstrap $TalosBootstrapArchives['deps'] $TalosBootstrapRoot @('runtime/bin/node.exe', 'runtime/LICENSE')
+        Expand-TalosBootstrap $TalosBootstrapArchives['app'] $TalosBootstrapRoot @('daemon/talos-computer-daemon.exe')
     }
-    $LingerNode = Join-Path $LingerBootstrapRoot 'runtime\bin\node.exe'
-    Assert-LingerArchitecture $LingerNode
-    Assert-LingerArchitecture (Join-Path $LingerBootstrapRoot 'daemon\linger-computer-daemon.exe')
-    $LingerNodeVersion = & $LingerNode --version
-    if ($LASTEXITCODE -ne 0 -or $LingerNodeVersion -cne 'v26.5.0') { throw 'Bundled Node version is invalid.' }
-    $helperFile = Join-Path $LingerTemporary 'installer.mjs'
-    [IO.File]::WriteAllBytes($helperFile, [Convert]::FromBase64String($LingerHelperBase64))
-    Assert-LingerPath $helperFile $false
+    $TalosNode = Join-Path $TalosBootstrapRoot 'runtime\bin\node.exe'
+    Assert-TalosArchitecture $TalosNode
+    Assert-TalosArchitecture (Join-Path $TalosBootstrapRoot 'daemon\talos-computer-daemon.exe')
+    $TalosNodeVersion = & $TalosNode --version
+    if ($LASTEXITCODE -ne 0 -or $TalosNodeVersion -cne 'v26.5.0') { throw 'Bundled Node version is invalid.' }
+    $helperFile = Join-Path $TalosTemporary 'installer.mjs'
+    [IO.File]::WriteAllBytes($helperFile, [Convert]::FromBase64String($TalosHelperBase64))
+    Assert-TalosPath $helperFile $false
     $settings = @{
-        operation = $LingerOperation; purge = $LingerPurge; target = $LingerTarget
-        dataRoot = $LingerDataRoot; binDirectory = $LingerBinDirectory; commandName = $LingerCommandName; configFile = $env:LINGER_COMPUTER_CONFIG
-        downloadBaseUrl = $LingerDownloadBase; webOrigin = $LingerWebOrigin; release = $LingerTargetRelease
-        bootstrapRoot = $LingerBootstrapRoot; bootstrapArchives = $LingerBootstrapArchives
-        progress = @{ startedAt = $LingerStartedAt; step = $script:LingerStep.Number; label = $script:LingerStep.Label; stepStartedAt = $script:LingerStep.StartedAt }
+        operation = $TalosOperation; purge = $TalosPurge; target = $TalosTarget
+        dataRoot = $TalosDataRoot; binDirectory = $TalosBinDirectory; commandName = $TalosCommandName; configFile = $env:TALOS_COMPUTER_CONFIG
+        downloadBaseUrl = $TalosDownloadBase; webOrigin = $TalosWebOrigin; release = $TalosTargetRelease
+        bootstrapRoot = $TalosBootstrapRoot; bootstrapArchives = $TalosBootstrapArchives
+        progress = @{ startedAt = $TalosStartedAt; step = $script:TalosStep.Number; label = $script:TalosStep.Label; stepStartedAt = $script:TalosStep.StartedAt }
     }
     # The helper continues the open step and reports its own result.
-    $script:LingerStep = $null
+    $script:TalosStep = $null
     $startInfo = New-Object Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $LingerNode
+    $startInfo.FileName = $TalosNode
     $startInfo.Arguments = '"' + $helperFile + '"'
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardInput = $true
-    $LingerProcess = [Diagnostics.Process]::Start($startInfo)
-    $inputBytes = $LingerUtf8.GetBytes(($settings | ConvertTo-Json -Depth 10 -Compress))
-    $LingerProcess.StandardInput.BaseStream.Write($inputBytes, 0, $inputBytes.Length)
-    $LingerProcess.StandardInput.Close()
-    $LingerProcess.WaitForExit()
-    if ($LingerProcess.ExitCode -ne 0) { throw 'Local Computer installation action failed. See the diagnostic above.' }
-    if ($LingerOperation -eq 'install') {
-        $LingerLauncher = Join-Path $LingerBinDirectory ($LingerCommandName + '.exe')
-        $LingerCommand = $LingerCommandName
+    $TalosProcess = [Diagnostics.Process]::Start($startInfo)
+    $inputBytes = $TalosUtf8.GetBytes(($settings | ConvertTo-Json -Depth 10 -Compress))
+    $TalosProcess.StandardInput.BaseStream.Write($inputBytes, 0, $inputBytes.Length)
+    $TalosProcess.StandardInput.Close()
+    $TalosProcess.WaitForExit()
+    if ($TalosProcess.ExitCode -ne 0) { throw 'Local Computer installation action failed. See the diagnostic above.' }
+    if ($TalosOperation -eq 'install') {
+        $TalosLauncher = Join-Path $TalosBinDirectory ($TalosCommandName + '.exe')
+        $TalosCommand = $TalosCommandName
         $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-        if (($userPath -split ';') -notcontains $LingerBinDirectory) {
-            [Environment]::SetEnvironmentVariable('Path', ($LingerBinDirectory + ';' + $userPath).TrimEnd(';'), 'User')
+        if (($userPath -split ';') -notcontains $TalosBinDirectory) {
+            [Environment]::SetEnvironmentVariable('Path', ($TalosBinDirectory + ';' + $userPath).TrimEnd(';'), 'User')
         }
-        if (($env:Path -split ';') -notcontains $LingerBinDirectory) { $env:Path = $LingerBinDirectory + ';' + $env:Path }
+        if (($env:Path -split ';') -notcontains $TalosBinDirectory) { $env:Path = $TalosBinDirectory + ';' + $env:Path }
         # Running the launcher surfaces an application control block before the user meets it.
-        try { & $LingerLauncher version | Out-Null; $launchFailed = $LASTEXITCODE -ne 0 }
+        try { & $TalosLauncher version | Out-Null; $launchFailed = $LASTEXITCODE -ne 0 }
         catch { Write-Host $_.Exception.Message; $launchFailed = $true }
         if ($launchFailed) {
-            Write-Warning "$LingerCommandName.exe could not start. If Windows reported an application control policy, Smart App Control or an App Control policy blocked this unsigned build."
+            Write-Warning "$TalosCommandName.exe could not start. If Windows reported an application control policy, Smart App Control or an App Control policy blocked this unsigned build."
         }
-        $configFile = $env:LINGER_COMPUTER_CONFIG
-        if (-not $configFile) { $configFile = Join-Path $LingerDataRoot 'config.json' }
+        $configFile = $env:TALOS_COMPUTER_CONFIG
+        if (-not $configFile) { $configFile = Join-Path $TalosDataRoot 'config.json' }
         # The next step follows the real state: log in, start, or inspect.
         $nextCommand = 'login'
         if (-not $launchFailed -and (Test-Path -LiteralPath $configFile)) {
             $nextCommand = 'daemon status'
             try {
                 # Windows PowerShell 5.1 turns redirected native stderr into errors under Stop.
-                $output = & { $ErrorActionPreference = 'Continue'; & $LingerLauncher daemon status --json 2>$null }
+                $output = & { $ErrorActionPreference = 'Continue'; & $TalosLauncher daemon status --json 2>$null }
                 $report = ($output | Out-String) | ConvertFrom-Json
                 if ($report.config.configured -eq $false) { $nextCommand = 'login' }
                 elseif ($report.daemon.state -and $report.daemon.state -ne 'running') { $nextCommand = 'daemon start' }
@@ -696,39 +696,39 @@ try {
         }
         Write-Host ''
         Write-Host 'Next:'
-        Write-Host "  $LingerCommand $nextCommand"
+        Write-Host "  $TalosCommand $nextCommand"
         Write-Host ''
         Write-Host 'Help:'
-        Write-Host "  $LingerCommand --help"
-        $environments = @(Get-ChildItem -LiteralPath $LingerBinDirectory -Filter 'linger-computer-*.launcher.json' | ForEach-Object {
+        Write-Host "  $TalosCommand --help"
+        $environments = @(Get-ChildItem -LiteralPath $TalosBinDirectory -Filter 'talos-computer-*.launcher.json' | ForEach-Object {
                 $command = $_.Name.Substring(0, $_.Name.Length - '.launcher.json'.Length)
                 $origin = ''
                 try { $origin = ([IO.File]::ReadAllText((Join-Path ([IO.File]::ReadAllText($_.FullName) | ConvertFrom-Json).dataRoot 'web-origin'))).Trim() } catch { }
                 [pscustomobject]@{ Command = $command; Origin = $origin }
             })
-        $dispatcherManaged = Test-Path -LiteralPath (Join-Path $LingerBinDirectory 'linger-computer.exe')
+        $dispatcherManaged = Test-Path -LiteralPath (Join-Path $TalosBinDirectory 'talos-computer.exe')
         Write-Host ''
         if ($environments.Count -gt 1) {
-            Write-Host "This computer has Linger Computer for $($environments.Count) environments, each with its own command:"
+            Write-Host "This computer has Talos Computer for $($environments.Count) environments, each with its own command:"
             foreach ($environment in $environments) {
                 $note = ''
-                if ($environment.Command -eq $LingerCommandName) { $note = '  (this installation)' }
+                if ($environment.Command -eq $TalosCommandName) { $note = '  (this installation)' }
                 Write-Host ('  {0,-34} {1}{2}' -f $environment.Command, $environment.Origin, $note)
             }
-            if ($dispatcherManaged) { Write-Host 'linger-computer alone lists them instead of choosing one.' }
+            if ($dispatcherManaged) { Write-Host 'talos-computer alone lists them instead of choosing one.' }
         } elseif ($dispatcherManaged) {
-            Write-Host 'While this is the only environment on this computer, linger-computer runs it too.'
+            Write-Host 'While this is the only environment on this computer, talos-computer runs it too.'
         }
     }
 } catch {
-    Stop-LingerStep 'FAILED'
+    Stop-TalosStep 'FAILED'
     throw
 } finally {
     # Do not release the installer lock while its child is still mutating files.
-    if ($LingerProcess) {
-        if (-not $LingerProcess.HasExited) { $LingerProcess.WaitForExit() }
-        $LingerProcess.Dispose()
+    if ($TalosProcess) {
+        if (-not $TalosProcess.HasExited) { $TalosProcess.WaitForExit() }
+        $TalosProcess.Dispose()
     }
-    if (Test-Path -LiteralPath (Get-LingerFullPath $LingerTemporary)) { Remove-Item -LiteralPath (Get-LingerFullPath $LingerTemporary) -Recurse -Force }
-    $LingerLock.Dispose()
+    if (Test-Path -LiteralPath (Get-TalosFullPath $TalosTemporary)) { Remove-Item -LiteralPath (Get-TalosFullPath $TalosTemporary) -Recurse -Force }
+    $TalosLock.Dispose()
 }

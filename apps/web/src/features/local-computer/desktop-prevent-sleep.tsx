@@ -7,7 +7,7 @@ import { useT } from "@/i18n/use-translation";
 import { RowMark } from "./computer-row";
 import { computersMessages } from "./computers.messages";
 
-// The desktop app's settings bridge (`window.lingerDesktop.settings`); absent
+// The desktop app's settings bridge (`window.talosDesktop.settings`); absent
 // in a browser and missing `preventSleep` in desktop builds that predate it.
 interface DesktopSettingsSnapshot {
   readonly preventSleep?: boolean;
@@ -22,8 +22,8 @@ interface DesktopSettingsApi {
 function desktopSettingsApi(): DesktopSettingsApi | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { settings?: DesktopSettingsApi } })
-        .lingerDesktop?.settings;
+    : (window as { talosDesktop?: { settings?: DesktopSettingsApi } })
+        .talosDesktop?.settings;
 }
 
 /**

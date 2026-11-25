@@ -1,4 +1,4 @@
-import { resolveMessage, type Message } from "@linger/service-kit/messages";
+import { resolveMessage, type Message } from "@talos/service-kit/messages";
 
 import { catalogFor, type Language } from "./language.js";
 
@@ -43,6 +43,6 @@ export function localizePage(
     .replace(
       SCRIPT,
       (_match, script: string) =>
-        `<script type="application/json" id="linger-messages">${data}</script>\n    <script>${lookup}${script}</script>`,
+        `<script type="application/json" id="talos-messages">${data}</script>\n    <script>${lookup}${script}</script>`,
     );
 }

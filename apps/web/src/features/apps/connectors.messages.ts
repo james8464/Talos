@@ -97,7 +97,7 @@ export const connectorMessages = defineMessages("connectors", {
   disconnectTitle: "Disconnect account?",
   disconnectBody:
     "Agents lose access to this account. Content already imported is kept.",
-  accessStopped: "App access stopped in Linger.",
+  accessStopped: "App access stopped in Talos.",
   providerAuthorizationRevoked: "Provider authorization: revoked",
   providerAuthorizationRetrying: "Provider authorization: retrying",
   providerAuthorizationPending: "Provider authorization: pending",
@@ -122,9 +122,9 @@ export const connectorMessages = defineMessages("connectors", {
   connectThroughComposio:
     "Connect {app} securely through Composio. Add your API key once to enable your connectors.",
   updateServerKey:
-    "Update <code>COMPOSIO_API_KEY</code> where the server reads it. When Linger is installed on this computer, that is <code>user.env</code>; reopen the Linger app afterwards.",
+    "Update <code>COMPOSIO_API_KEY</code> where the server reads it. When Talos is installed on this computer, that is <code>user.env</code>; reopen the Talos app afterwards.",
   notConfigured:
-    "Connecting Gmail, GitHub, Slack, Notion and other apps needs a Composio API key. When Linger is installed on this computer, set <code>COMPOSIO_API_KEY</code> in <code>user.env</code>, then reopen the Linger app. On a server you run yourself, set it there, or set <code>TEAMHUB_SECRET_ENCRYPTION_KEY</code> to save the key here.",
+    "Connecting Gmail, GitHub, Slack, Notion and other apps needs a Composio API key. When Talos is installed on this computer, set <code>COMPOSIO_API_KEY</code> in <code>user.env</code>, then reopen the Talos app. On a server you run yourself, set it there, or set <code>TEAMHUB_SECRET_ENCRYPTION_KEY</code> to save the key here.",
 
   // API key guide and form. Read All and Write All are labels in Composio.
   getYourApiKey: "Get your API key",
@@ -170,11 +170,11 @@ export const connectorMessages = defineMessages("connectors", {
   feishuComputerOfflineTitle:
     "The Computer that runs your Another Me is offline",
   feishuComputerOfflineStepOpen:
-    "On that Computer, open Linger and make sure you are signed in.",
+    "On that Computer, open Talos and make sure you are signed in.",
   feishuComputerUnavailableTitle:
     "The Computer that runs your Another Me could not check lark-cli",
   feishuComputerUnavailableStepCheck:
-    "Make sure Linger on that Computer is online and up to date.",
+    "Make sure Talos on that Computer is online and up to date.",
 
   feishuCheckAgain: "Check again",
 

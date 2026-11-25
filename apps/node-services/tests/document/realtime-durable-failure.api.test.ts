@@ -12,7 +12,7 @@ import { join } from "node:path";
 import {
   fingerprintRoomDocumentState,
   readRoomDocumentBlocks,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import { describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 

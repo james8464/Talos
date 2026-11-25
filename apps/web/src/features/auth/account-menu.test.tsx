@@ -6,11 +6,11 @@ import type { DesktopUpdateState } from "@/features/auth/desktop-update";
 import type { TeamHubCurrentIdentity } from "@/features/teamhub/teamhub-types";
 
 const identity = {
-  account: { id: "account-1", email: "owner@linger.local" },
+  account: { id: "account-1", email: "owner@talos.local" },
   actors: [{ id: "actor-1", tenant_id: "tenant-1", display_name: "owner" }],
 } as unknown as TeamHubCurrentIdentity;
 
-const desktop = window as { lingerDesktop?: unknown };
+const desktop = window as { talosDesktop?: unknown };
 
 function installDesktop(state: DesktopUpdateState) {
   let listener: ((next: DesktopUpdateState) => void) | undefined;
@@ -26,7 +26,7 @@ function installDesktop(state: DesktopUpdateState) {
     install: vi.fn(async () => {}),
     check: vi.fn(async () => {}),
   };
-  desktop.lingerDesktop = { version: "0.1.3", update };
+  desktop.talosDesktop = { version: "0.1.3", update };
   return {
     update,
     off,
@@ -53,7 +53,7 @@ async function openMenu() {
 }
 
 afterEach(() => {
-  delete desktop.lingerDesktop;
+  delete desktop.talosDesktop;
 });
 
 describe("AccountMenu desktop update", () => {
@@ -86,7 +86,7 @@ describe("AccountMenu desktop update", () => {
     renderMenu();
     const menu = await openMenu();
     await vi.waitFor(() =>
-      expect(menu).toHaveTextContent("Downloading Linger 0.1.4…"),
+      expect(menu).toHaveTextContent("Downloading Talos 0.1.4…"),
     );
     expect(screen.queryByRole("menuitem", { name: "Restart to Update" })).toBe(
       null,
@@ -94,7 +94,7 @@ describe("AccountMenu desktop update", () => {
     expect(screen.queryByTestId("account-update-dot")).toBeNull();
 
     push({ kind: "ready", version: "0.1.4" });
-    expect(menu).toHaveTextContent("Linger 0.1.4 is ready to install");
+    expect(menu).toHaveTextContent("Talos 0.1.4 is ready to install");
     expect(screen.getByTestId("account-update-dot")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("menuitem", { name: "Restart to Update" }),
@@ -108,7 +108,7 @@ describe("AccountMenu desktop update", () => {
     renderMenu();
     const menu = await openMenu();
     await vi.waitFor(() =>
-      expect(menu).toHaveTextContent("Linger 0.1.4 is available"),
+      expect(menu).toHaveTextContent("Talos 0.1.4 is available"),
     );
     expect(screen.getByTestId("account-update-dot")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("menuitem", { name: "Download Update" }));
@@ -134,7 +134,7 @@ describe("AccountMenu desktop update", () => {
   });
 
   it("shows the version of a desktop build without the update bridge", async () => {
-    desktop.lingerDesktop = { version: "0.1.2" };
+    desktop.talosDesktop = { version: "0.1.2" };
     renderMenu();
     const menu = await openMenu();
     expect(menu).toHaveTextContent("Version 0.1.2");

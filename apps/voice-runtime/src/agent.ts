@@ -1,5 +1,5 @@
 import { defineAgent, log } from "@livekit/agents";
-import { TeamHubVoiceRuntimeClient } from "@linger/wire-contracts/teamhub-internal/client";
+import { TeamHubVoiceRuntimeClient } from "@talos/wire-contracts/teamhub-internal/client";
 
 import {
   loadConfig,

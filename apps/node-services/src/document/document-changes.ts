@@ -1,8 +1,8 @@
 import {
   ROOM_DOCUMENT_SCHEMA_VERSION,
   ROOM_DOCUMENT_STATE_HASH_VERSION,
-} from "@linger/document-model";
-import { sha256Hex } from "@linger/service-kit/node";
+} from "@talos/document-model";
+import { sha256Hex } from "@talos/service-kit/node";
 import * as Y from "yjs";
 
 import type { DocumentBodyStore } from "./bodies.js";

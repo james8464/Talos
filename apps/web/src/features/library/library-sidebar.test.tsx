@@ -9,7 +9,7 @@ describe("LibrarySidebar", () => {
   beforeEach(() => window.sessionStorage.clear());
 
   it("shares the Message list width and persists pointer and keyboard resizing", () => {
-    const key = "linger:chat-navigation-width:tenant-northstar";
+    const key = "talos:chat-navigation-width:tenant-northstar";
     window.localStorage.removeItem(key);
     const { unmount } = renderSidebar();
     const sidebar = screen.getByRole("complementary", {
@@ -52,7 +52,7 @@ describe("LibrarySidebar", () => {
 
   it("keeps the tree visible without a collapse control, including older saved preferences", () => {
     window.sessionStorage.setItem(
-      "linger:library-sidebar-collapsed:tenant-northstar",
+      "talos:library-sidebar-collapsed:tenant-northstar",
       "true",
     );
     renderSidebar();

@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 func TestUnifiedWikiCandidateRoutesOnlyTheFrozenOperation(t *testing.T) {

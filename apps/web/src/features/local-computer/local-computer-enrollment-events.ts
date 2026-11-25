@@ -1,4 +1,4 @@
-const CHANNEL_NAME = "linger.local-computer-enrollment.v1";
+const CHANNEL_NAME = "talos.local-computer-enrollment.v1";
 
 export interface LocalComputerEnrollmentCreated {
   readonly computerId: string;

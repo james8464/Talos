@@ -60,7 +60,7 @@ func configureClaudeCredentials(configRoot string, environment map[string]string
 // has not changed, keep Claude's newer native refresh.
 func adoptClaudeCredential(configRoot string, source []byte, retireResident func() error) error {
 	destination := filepath.Join(configRoot, ".credentials.json")
-	marker := filepath.Join(configRoot, ".linger-auth-source.sha256")
+	marker := filepath.Join(configRoot, ".talos-auth-source.sha256")
 	fingerprint := sha256.Sum256(source)
 	generation := hex.EncodeToString(fingerprint[:])
 	previous, err := os.ReadFile(marker)
@@ -158,7 +158,7 @@ func ClaudeProbeEnvironment(environment map[string]string) (map[string]string, f
 	for name, value := range environment {
 		prepared[name] = value
 	}
-	root, err := os.MkdirTemp("", "linger-claude-probe-")
+	root, err := os.MkdirTemp("", "talos-claude-probe-")
 	if err != nil {
 		return nil, nil, err
 	}

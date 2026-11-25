@@ -35,7 +35,7 @@ export function localRunnerGatewayUrl(port: number): string {
   return `ws://127.0.0.1:${port}/v1/runner-gateway`;
 }
 
-// A Native installation of one Linger source checkout: the desktop client's
+// A Native installation of one Talos source checkout: the desktop client's
 // unpacked source package, or a developer's clone.
 export interface SourceInstallOptions {
   setupChoice?: SetupChoice;
@@ -90,13 +90,13 @@ export async function validateSourceRepository(
     const manifest = JSON.parse(
       await readFile(path.join(repo, "package.json"), "utf8"),
     ) as { name?: string };
-    if (manifest.name !== "linger") throw new Error("Wrong repository");
+    if (manifest.name !== "talos") throw new Error("Wrong repository");
     const info = await lstat(path.join(repo, "scripts/source-native.mjs"));
     if (!info.isFile() || info.isSymbolicLink())
       throw new Error("Invalid native source script");
   } catch (cause) {
     throw new Error(
-      "Source checkout must be a Linger checkout with scripts/source-native.mjs.",
+      "Source checkout must be a Talos checkout with scripts/source-native.mjs.",
       { cause },
     );
   }
@@ -284,7 +284,7 @@ export async function prepareSourceConfiguration(
         ) + "\n",
       );
       warnings.push(
-        `Port ${port} is in use by another program; Linger's ${owner} uses port ${next} instead.\n`,
+        `Port ${port} is in use by another program; Talos's ${owner} uses port ${next} instead.\n`,
       );
     }
     const envFile = path.join(instance.root, "native.env");
@@ -345,9 +345,9 @@ export async function prepareSourceConfiguration(
       AGENT_RUNNER_PUBLIC_GATEWAY_URL: localRunnerGatewayUrl(
         ports.nodeServices,
       ),
-      LINGER_SECRET_SEED: secrets.LINGER_SECRET_SEED!,
+      TALOS_SECRET_SEED: secrets.TALOS_SECRET_SEED!,
       TEAMHUB_SECRET_ENCRYPTION_KEY: secrets.TEAMHUB_SECRET_ENCRYPTION_KEY!,
-      TEAMHUB_DATABASE_URL: `postgres://simplexai:${encodeURIComponent(secrets.LINGER_POSTGRES_PASSWORD!)}@127.0.0.1:${ports.postgres}/simplexai?sslmode=disable`,
+      TEAMHUB_DATABASE_URL: `postgres://simplexai:${encodeURIComponent(secrets.TALOS_POSTGRES_PASSWORD!)}@127.0.0.1:${ports.postgres}/simplexai?sslmode=disable`,
       TEAMHUB_HTTP_ADDRESS: `127.0.0.1:${ports.teamhub}`,
       TEAMHUB_BASE_URL: `http://127.0.0.1:${ports.teamhub}`,
       TEAMHUB_CLI_BASE_URL: `http://127.0.0.1:${ports.teamhub}`,

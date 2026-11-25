@@ -61,7 +61,7 @@ it("stages each target's tools and links this machine's for the source daemon", 
     validate,
   });
   expect(staged).toEqual(["linux-x64", "linux-arm64"]);
-  // dist/computer/<target>/linger-computer-daemon finds them two folders up.
+  // dist/computer/<target>/talos-computer-daemon finds them two folders up.
   expect(realpathSync(path.join(root, "computer/cli/computer-tools"))).toBe(
     realpathSync(
       path.join(

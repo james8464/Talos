@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/livekit/protocol/auth"
 	"github.com/livekit/protocol/livekit"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -47,7 +47,7 @@ func TestLiveKitDictationCommitUsesReliableServerData(t *testing.T) {
 	if err := provider.CommitDictationTurn(t.Context(), providerSession{RoomName: "voice-chat", Purpose: PurposeChatDictation}, "commit-1"); err != nil {
 		t.Fatal(err)
 	}
-	if sent.Room != "voice-chat" || sent.Kind != livekit.DataPacket_RELIABLE || sent.GetTopic() != "linger.voice.dictation.commit" || string(sent.Data) != `{"request_id":"commit-1"}` {
+	if sent.Room != "voice-chat" || sent.Kind != livekit.DataPacket_RELIABLE || sent.GetTopic() != "talos.voice.dictation.commit" || string(sent.Data) != `{"request_id":"commit-1"}` {
 		t.Fatalf("unexpected dictation control packet: %+v", &sent)
 	}
 	var metadata map[string]string
@@ -92,7 +92,7 @@ func TestLiveKitPublisherGrantIsShortLivedAndPublishOnly(t *testing.T) {
 		claims.Video.GetCanSubscribe() || claims.Video.GetCanPublishData() {
 		t.Fatalf("publisher grant is over- or under-privileged: %+v", claims)
 	}
-	if claims.Attributes["linger.voice_generation"] != "7" {
+	if claims.Attributes["talos.voice_generation"] != "7" {
 		t.Fatal("publisher generation is not bound to the signed grant")
 	}
 }
@@ -118,15 +118,15 @@ func TestInputReadinessRequiresCurrentTrustedAgentAndPublisher(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				items := []*livekit.ParticipantInfo{{Identity: "consumer", Kind: test.kind, State: livekit.ParticipantInfo_ACTIVE, Attributes: map[string]string{
-					"linger.voice_ready_generation": test.generation,
-					"linger.voice_ready_track":      test.track,
-					"linger.voice_ready_at":         strconv.FormatInt(time.Now().UnixMilli(), 10),
+					"talos.voice_ready_generation": test.generation,
+					"talos.voice_ready_track":      test.track,
+					"talos.voice_ready_at":         strconv.FormatInt(time.Now().UnixMilli(), 10),
 				}}}
 				if test.publisher {
 					items = append(items, &livekit.ParticipantInfo{
 						Identity:   "publisher",
 						State:      livekit.ParticipantInfo_ACTIVE,
-						Attributes: map[string]string{"linger.voice_generation": test.publisherGeneration},
+						Attributes: map[string]string{"talos.voice_generation": test.publisherGeneration},
 						Tracks:     []*livekit.TrackInfo{{Sid: "current-track", Source: livekit.TrackSource_MICROPHONE}},
 					})
 				}
@@ -164,13 +164,13 @@ func TestVoiceReadinessRejectsExpiredAndDisconnectedAgent(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				body, _ := proto.Marshal(&livekit.ListParticipantsResponse{Participants: []*livekit.ParticipantInfo{
 					{Identity: "publisher", State: livekit.ParticipantInfo_ACTIVE,
-						Attributes: map[string]string{"linger.voice_generation": "2"},
+						Attributes: map[string]string{"talos.voice_generation": "2"},
 						Tracks:     []*livekit.TrackInfo{{Sid: "microphone", Source: livekit.TrackSource_MICROPHONE}}},
 					{Identity: "consumer", State: test.state, Kind: livekit.ParticipantInfo_AGENT,
 						Attributes: map[string]string{
-							"linger.voice_ready_generation": "2",
-							"linger.voice_ready_track":      "microphone",
-							"linger.voice_ready_at":         strconv.FormatInt(now.Add(-test.age).UnixMilli(), 10),
+							"talos.voice_ready_generation": "2",
+							"talos.voice_ready_track":      "microphone",
+							"talos.voice_ready_at":         strconv.FormatInt(now.Add(-test.age).UnixMilli(), 10),
 						}},
 				}})
 				w.Header().Set("Content-Type", "application/protobuf")

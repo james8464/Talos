@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func TestValidAgentMemoryPendingSource(t *testing.T) {

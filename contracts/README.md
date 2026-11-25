@@ -26,7 +26,7 @@ fixtures/
   service-credentials/      # shared TypeScript and Go derivation vectors
 generated/
   typescript/
-    package.json            # @linger/wire-contracts
+    package.json            # @talos/wire-contracts
     src/
       generated/<id>/       # written by generation only
       generated/runner-gateway/

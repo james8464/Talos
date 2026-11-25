@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/demodata"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/demodata"
 )
 
 // e2eIdentityMain runs the e2e-identity subcommand: it creates the explicit

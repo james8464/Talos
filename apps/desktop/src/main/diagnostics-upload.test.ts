@@ -75,7 +75,7 @@ describe("diagnosticsUploadUrl in config.json", () => {
 describe("hosted receiver from the build", () => {
   const hosted = "https://diagnostics.example.com/v1/reports";
 
-  it("is none without LINGER_DIAGNOSTICS_UPLOAD_URL", () => {
+  it("is none without TALOS_DIAGNOSTICS_UPLOAD_URL", () => {
     expect(hostedDiagnosticsUploadUrl(undefined)).toBeNull();
     expect(hostedDiagnosticsUploadUrl("")).toBeNull();
     expect(hostedDiagnosticsUploadUrl("  ")).toBeNull();
@@ -92,7 +92,7 @@ describe("hosted receiver from the build", () => {
     "not a url",
   ])("fails the build for %s without repeating it", (value) => {
     expect(() => hostedDiagnosticsUploadUrl(value)).toThrow(
-      /^LINGER_DIAGNOSTICS_UPLOAD_URL must be an https URL/,
+      /^TALOS_DIAGNOSTICS_UPLOAD_URL must be an https URL/,
     );
     try {
       hostedDiagnosticsUploadUrl(value);
@@ -202,7 +202,7 @@ afterEach(async () => {
 });
 
 const zipFile = (bytes = 200_000): { file: string; data: Buffer } => {
-  const file = path.join(tempDirectory(), "linger-diagnostics.zip");
+  const file = path.join(tempDirectory(), "talos-diagnostics.zip");
   const data = Buffer.alloc(bytes, 7);
   writeFileSync(file, data);
   return { file, data };
@@ -227,7 +227,7 @@ describe("uploadDiagnostics", () => {
       schema: DIAGNOSTICS_UPLOAD_SCHEMA,
       size: data.length,
       sha256: createHash("sha256").update(data).digest("hex"),
-      client: { name: "linger-desktop", ...client },
+      client: { name: "talos-desktop", ...client },
     });
     expect(received.put!.body.equals(data)).toBe(true);
     expect(received.put!.headers["content-type"]).toBe("application/zip");

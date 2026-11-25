@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
 )
 
 var ErrGmailHistoryExpired = errors.New("Gmail history checkpoint expired")

@@ -7,7 +7,7 @@ import { readLocalLogin } from "./account.js";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   latestLegacyBackup,
-  preLingerSchema,
+  preTalosSchema,
   setAsideLegacyData,
   TEAMHUB_BASELINE_VERSION,
 } from "./legacy-database.js";
@@ -20,7 +20,7 @@ afterEach(async () => {
 });
 
 async function temporary(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), "linger-legacy-db-"));
+  const root = await mkdtemp(path.join(tmpdir(), "talos-legacy-db-"));
   roots.push(root);
   return root;
 }
@@ -45,35 +45,35 @@ function database(tables: string[], versions: number[] = []) {
   return { query, asked };
 }
 
-describe("preLingerSchema", () => {
+describe("preTalosSchema", () => {
   it("leaves a new, empty database to the migrations", async () => {
     const { query, asked } = database([]);
-    expect(await preLingerSchema(query)).toBe(false);
+    expect(await preTalosSchema(query)).toBe(false);
     expect(asked).toHaveLength(1);
   });
 
-  it("leaves a database that Linger migrated before", async () => {
+  it("leaves a database that Talos migrated before", async () => {
     const { query } = database(
       ["accounts", "goose_db_version"],
       [0, TEAMHUB_BASELINE_VERSION, 853],
     );
-    expect(await preLingerSchema(query)).toBe(false);
+    expect(await preTalosSchema(query)).toBe(false);
   });
 
   // A migration killed inside the baseline rolls back with it, leaving
   // only the version table; the next run applies the baseline again.
   it("leaves a database whose baseline has not run yet", async () => {
     const { query } = database(["goose_db_version"], [0]);
-    expect(await preLingerSchema(query)).toBe(false);
+    expect(await preTalosSchema(query)).toBe(false);
   });
 
   it("finds a TeamHub schema that the baseline did not make", async () => {
     expect(
-      await preLingerSchema(
+      await preTalosSchema(
         database(["accounts", "goose_db_version"], [0, 851]).query,
       ),
     ).toBe(true);
-    expect(await preLingerSchema(database(["accounts"]).query)).toBe(true);
+    expect(await preTalosSchema(database(["accounts"]).query)).toBe(true);
   });
 
   it("names the version of the baseline migration that guards it", () => {
@@ -95,7 +95,7 @@ describe("setAsideLegacyData", () => {
     await put(path.join(root, "data/agent/agent_1/state.json"), "{}");
     await put(path.join(root, "computer-enrollment.token"), "token\n");
     const account = {
-      email: "owner@linger.local",
+      email: "owner@talos.local",
       password: "a-private-password",
       provisioned: true,
     };
@@ -144,7 +144,7 @@ describe("setAsideLegacyData", () => {
     await put(path.join(root, "data/agent/agent_1/state.json"), "{}");
     await put(path.join(root, "data/artifacts/a.txt"), "a");
     const account = {
-      email: "owner@linger.local",
+      email: "owner@talos.local",
       password: "a-private-password",
       provisioned: true,
     };

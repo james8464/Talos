@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 func TestLocalDiagnosticsPreserveTurnIngressCorrelationFields(t *testing.T) {
@@ -122,7 +122,7 @@ func TestLocalDiagnosticsDoNotWriteLinkedFiles(t *testing.T) {
 	for _, hard := range []bool{false, true} {
 		directory := t.TempDir()
 		target := filepath.Join(directory, "retained")
-		fixture := os.Getenv("LINGER_TEST_PROVIDER_LINK_ROOT")
+		fixture := os.Getenv("TALOS_TEST_PROVIDER_LINK_ROOT")
 		if runtime.GOOS == "windows" && !hard && fixture != "" {
 			target = filepath.Join(fixture, "diagnostic", "retained")
 			prepared := filepath.Join(fixture, "diagnostic", "runner-diagnostics.log")

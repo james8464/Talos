@@ -27,16 +27,16 @@ const manifest = JSON.parse(
   await readFile(path.join(root, "package.json"), "utf8"),
 );
 const executable = process.platform === "win32" ? ".exe" : "";
-const daemonName = `daemon/linger-computer-daemon${executable}`;
-const cliName = `cli/linger-computer${executable}`;
+const daemonName = `daemon/talos-computer-daemon${executable}`;
+const cliName = `cli/talos-computer${executable}`;
 await rm(output, { recursive: true, force: true });
 await mkdir(path.join(output, "cli"), { recursive: true });
 await stageManagedToolsRuntime(path.join(output, "cli"));
 await stageComputerTools(output);
 await mkdir(path.join(output, "daemon"), { recursive: true });
 for (const [name, command] of [
-  [daemonName, "./cmd/linger-computer-daemon"],
-  [cliName, "./cmd/linger-computer"],
+  [daemonName, "./cmd/talos-computer-daemon"],
+  [cliName, "./cmd/talos-computer"],
 ]) {
   const compiled = spawnSync(
     "go",
@@ -44,7 +44,7 @@ for (const [name, command] of [
       "build",
       "-trimpath",
       "-ldflags",
-      `-X github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport.ReleaseVersion=${manifest.version}`,
+      `-X github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport.ReleaseVersion=${manifest.version}`,
       "-o",
       path.join(output, name),
       command,
@@ -112,7 +112,7 @@ entries.push(
 );
 
 if (process.argv.includes("--archive")) {
-  const archive = path.join(root, "dist/linger-computer.tar.gz");
+  const archive = path.join(root, "dist/talos-computer.tar.gz");
   const pack = tar.pack();
   const writing = pipeline(pack, createGzip(), createWriteStream(archive));
   for (const name of entries) {
@@ -132,5 +132,5 @@ if (process.argv.includes("--archive")) {
   const checksum = createHash("sha256")
     .update(await readFile(archive))
     .digest("hex");
-  await writeFile(`${archive}.sha256`, `${checksum}  linger-computer.tar.gz\n`);
+  await writeFile(`${archive}.sha256`, `${checksum}  talos-computer.tar.gz\n`);
 }

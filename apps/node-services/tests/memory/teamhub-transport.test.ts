@@ -10,7 +10,7 @@ it("sets memory UA and propagates valid task trace without adding sensitive head
   const trace = "00-11111111111111111111111111111111-2222222222222222-01";
   const fetcher = vi.fn<typeof fetch>(async (_input, init) => {
     const headers = new Headers(init?.headers);
-    expect(headers.get("user-agent")).toMatch(/^linger-memory\//u);
+    expect(headers.get("user-agent")).toMatch(/^talos-memory\//u);
     expect(headers.get("traceparent")).toBe(trace);
     expect(headers.has("baggage")).toBe(false);
     expect(headers.has("cookie")).toBe(false);

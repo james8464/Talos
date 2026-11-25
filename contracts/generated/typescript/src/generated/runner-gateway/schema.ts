@@ -2015,7 +2015,7 @@ export const runnerGatewayEnvelopeSchema = {
             required: ["subject", "permissions"],
             properties: {
               subject: {
-                enum: ["linger", "computer_use"],
+                enum: ["talos", "computer_use"],
               },
               permissions: {
                 type: "array",
@@ -2064,7 +2064,7 @@ export const runnerGatewayEnvelopeSchema = {
             },
             subject: {
               description: "Required for every action except status.",
-              enum: ["linger", "computer_use"],
+              enum: ["talos", "computer_use"],
             },
             permission: {
               description: "Required for prompt and open_settings.",

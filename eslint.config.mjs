@@ -17,7 +17,7 @@ export default [
       "dist/**",
       "**/dist/**",
       ".worktrees/**",
-      ".linger-runtime/**",
+      ".talos-runtime/**",
       "playwright-report/**",
       "skills/builtin/*/*/**",
       "test-results/**",

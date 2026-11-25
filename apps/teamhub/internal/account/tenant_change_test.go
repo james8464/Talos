@@ -3,7 +3,7 @@ package account
 import (
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
 )
 
 func TestTenantChangesMapToTenantHints(t *testing.T) {

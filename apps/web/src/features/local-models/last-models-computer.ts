@@ -4,7 +4,7 @@
  * tolerates missing or blocked storage.
  */
 
-const STORAGE_PREFIX = "linger.models.lastComputer:";
+const STORAGE_PREFIX = "talos.models.lastComputer:";
 
 export function lastModelsComputerStorageKey(tenantId: string): string {
   return `${STORAGE_PREFIX}${tenantId}`;

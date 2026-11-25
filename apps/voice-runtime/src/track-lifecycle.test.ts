@@ -7,7 +7,7 @@ import {
   TeamHubVoiceRuntimeError,
   type TeamHubVoiceRuntimeClient,
   type VoiceObservation,
-} from "@linger/wire-contracts/teamhub-internal/client";
+} from "@talos/wire-contracts/teamhub-internal/client";
 import { VoiceTrackWorker } from "./livekit-worker.js";
 import { ASREventQueue } from "./event-queue.js";
 
@@ -350,7 +350,7 @@ describe("Voice publisher track lifecycle", () => {
           { source: TrackSource.SOURCE_MICROPHONE },
           {
             identity: "publisher-voice_session_drain",
-            attributes: { "linger.voice_generation": "7" },
+            attributes: { "talos.voice_generation": "7" },
           },
         );
         // No frame arrives on this track; the consumer waits at most 500ms
@@ -358,10 +358,10 @@ describe("Voice publisher track lifecycle", () => {
         await vi.advanceTimersByTimeAsync(501);
         expect(open).toHaveBeenCalledOnce();
         expect(room.localParticipant.setAttributes).toHaveBeenCalledWith({
-          "linger.voice_purpose": "hardware_control",
-          "linger.voice_ready_generation": "7",
-          "linger.voice_ready_track": "current-microphone-track",
-          "linger.voice_ready_at": expect.any(String),
+          "talos.voice_purpose": "hardware_control",
+          "talos.voice_ready_generation": "7",
+          "talos.voice_ready_track": "current-microphone-track",
+          "talos.voice_ready_at": expect.any(String),
         });
         expect(
           room.localParticipant.setAttributes.mock.invocationCallOrder[0],
@@ -372,9 +372,9 @@ describe("Voice publisher track lifecycle", () => {
         );
         await vi.advanceTimersByTimeAsync(7_000);
         expect(room.localParticipant.setAttributes).toHaveBeenLastCalledWith({
-          "linger.voice_ready_generation": "0",
-          "linger.voice_ready_track": "",
-          "linger.voice_ready_at": "0",
+          "talos.voice_ready_generation": "0",
+          "talos.voice_ready_track": "",
+          "talos.voice_ready_at": "0",
         });
         if (failFinish) {
           expect(await result).toBe(unconfirmed);
@@ -625,7 +625,7 @@ describe("Voice publisher input retention and absence evidence", () => {
   const publisher = (identity: string, generation?: string) => ({
     identity,
     attributes: generation
-      ? { "linger.voice_generation": generation }
+      ? { "talos.voice_generation": generation }
       : undefined,
   });
   const microphoneTrack = (sid: string) =>

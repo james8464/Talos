@@ -1,4 +1,4 @@
-import { PERSONAL_KNOWLEDGE_EVIDENCE_ID_PATTERN } from "@linger/wire-contracts/node-services-internal/client";
+import { PERSONAL_KNOWLEDGE_EVIDENCE_ID_PATTERN } from "@talos/wire-contracts/node-services-internal/client";
 import { z } from "zod";
 
 export const personalKnowledgeQueryInputSchema = z

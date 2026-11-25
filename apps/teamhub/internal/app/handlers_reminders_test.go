@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 )
 
 // A template copy whose Agent is not active and an app listener say why they

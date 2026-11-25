@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	documentfixture "github.com/simplexai-labs/linger/apps/teamhub/tests/integration/documents/fixture"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	documentfixture "github.com/simplexai-labs/talos/apps/teamhub/tests/integration/documents/fixture"
 )
 
 // The sweep deletes the snapshots a later History point covers, and keeps every

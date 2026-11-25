@@ -3,7 +3,7 @@ package voicemedia
 import (
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 const recoverySpeakerOverlapMS int64 = 2000

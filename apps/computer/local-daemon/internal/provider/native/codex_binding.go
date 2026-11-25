@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 var (
@@ -317,7 +317,7 @@ func (op *codexOperation) recordResume(ctx context.Context, sent time.Time, succ
 func (op *codexOperation) namePreparedThread(ctx context.Context, threadID string) error {
 	name := strings.TrimSpace(op.spec.Title)
 	if name == "" {
-		name = "Linger session"
+		name = "Talos session"
 	}
 	if err := op.titleThread(ctx, threadID, name, false); err != nil {
 		return fmt.Errorf("persist empty Codex session: %w", err)

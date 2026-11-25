@@ -4,12 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/migrations"
+	"github.com/simplexai-labs/talos/apps/teamhub/migrations"
 )
 
 func TestDefaultAnotherMeNameMigrationPreservesCustomNamesAndSessions(t *testing.T) {
 	allowParallelIntegrationTest(t)
-	data, err := migrations.Files.ReadFile("00880_name_default_delegate_linger.sql")
+	data, err := migrations.Files.ReadFile("00880_name_default_delegate_talos.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestDefaultAnotherMeNameMigrationPreservesCustomNamesAndSessions(t *testing
 				if err := env.pool.QueryRow(t.Context(), `SELECT display_name || '''s Another Me' FROM actors WHERE id='actor_acme_alice'`).Scan(&name); err != nil {
 					t.Fatal(err)
 				}
-				wantName, revisionDelta = "Linger", 1
+				wantName, revisionDelta = "Talos", 1
 			}
 			if _, err := env.pool.Exec(t.Context(), `UPDATE actors SET display_name=$2 WHERE id=$1`, actorID, name); err != nil {
 				t.Fatal(err)

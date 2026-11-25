@@ -13,7 +13,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 	"golang.org/x/sys/windows"
 )
 

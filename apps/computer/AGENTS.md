@@ -6,8 +6,8 @@
   CLI, outbound Runner Gateway transport, workspace grants, provider process
   supervision, and Runtime execution.
 - The Go implementation under `local-daemon/` is the only Local Computer
-  Daemon and Runtime execution implementation, and `local-daemon/cmd/linger-computer`
-  is the control CLI the release bundle ships as `cli/linger-computer`. The bundled Node runs only the `teamhub` CLI and the managed
+  Daemon and Runtime execution implementation, and `local-daemon/cmd/talos-computer`
+  is the control CLI the release bundle ships as `cli/talos-computer`. The bundled Node runs only the `teamhub` CLI and the managed
   Computer tools.
 - The Desktop app (`apps/desktop`) ships the same Daemon and runs it as its
   child. A `desktop` config section selects Desktop mode: no
@@ -27,13 +27,13 @@
 
 - `local-daemon/` is a Go module. Its `internal/daemon` owns the daemon
   lifecycle; `internal/process`, `internal/provider`, and `internal/workspace`
-  contain local execution mechanics; `internal/linger` contains Linger
+  contain local execution mechanics; `internal/talos` contains Talos
   transport, identity, process-instance lease, Registration, Context, Local MCP
   Relay, and Local Skill adapters.
 - `internal/computercli` implements the control commands over
   `internal/computerconfig` (the config parser and process environment shared
   with the Daemon), `internal/platform/privatefs`, `internal/provider`
-  discovery, and `internal/linger/control` (control client and the Daemon
+  discovery, and `internal/talos/control` (control client and the Daemon
   owner record). It never re-implements a Daemon mechanism.
 - `runtime login <type>` opens an installed Runtime on the caller's terminal so
   the user can sign in to it. It reuses the Daemon's discovery, Runtime
@@ -48,8 +48,8 @@
   package project (`pyproject.toml` for uv, `package.json` for npm) are
   missing and never replaces one the Agent changed.
 
-- `cmd/linger-computer-launcher` is the stable Windows command: as
-  `linger-computer-<environment>.exe` it runs the active bundle's CLI, and as
+- `cmd/talos-computer-launcher` is the stable Windows command: as
+  `talos-computer-<environment>.exe` it runs the active bundle's CLI, and as
   `cli/teamhub.exe` the bundled Node TeamHub CLI. The Daemon's Windows-only
   `platform` subcommand serves the Windows installer helper (owner-only files,
   process identity, owned-process cleanup); nothing else calls it.
@@ -134,7 +134,7 @@
 
 ## Verification
 
-- During iteration, run the focused `@linger/computer` test. Before
+- During iteration, run the focused `@talos/computer` test. Before
   delivery, run `make check BASE=<target-branch>` from the repository root; it
   includes `check-computer`. Also run `make check-computer-release` for bundle
   source, package, shared Runtime, or generated Runner Gateway changes. Run `make check-scripts-heavy` only for installer,
@@ -143,7 +143,7 @@
   do not require the full installer lifecycle gate. CI runs
   `make check-computer-go` (the daemon's Go unit tests) when `local-daemon/`
   changes, and `check (computer-go-windows)` builds every daemon package for
-  Windows and tests only `cmd/linger-computer-launcher`, `internal/computercli`,
+  Windows and tests only `cmd/talos-computer-launcher`, `internal/computercli`,
   `internal/computerconfig`, `internal/localmodels`, and `internal/process`
   there; other packages (`internal/uiruntime`, `internal/provider/native`, and
   so on) are not tested on Windows in CI. The rest of `check-computer` stays

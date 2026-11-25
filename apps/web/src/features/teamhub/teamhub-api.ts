@@ -5,7 +5,7 @@ import createClient, {
   type Client,
   type Middleware,
 } from "openapi-fetch";
-import type { paths } from "@linger/wire-contracts/teamhub-public/types";
+import type { paths } from "@talos/wire-contracts/teamhub-public/types";
 
 import type { TeamHubAuthenticationReason } from "./teamhub-authentication";
 import { readTeamHubError, TeamHubTransportError } from "./teamhub-error";

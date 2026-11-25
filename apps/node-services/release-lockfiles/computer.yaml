@@ -41,13 +41,13 @@ importers:
         version: 3.4.0
   apps/teamhub-cli:
     dependencies:
-      "@linger/document-files":
+      "@talos/document-files":
         specifier: workspace:*
         version: link:../../packages/document-files
-      "@linger/service-kit":
+      "@talos/service-kit":
         specifier: workspace:*
         version: link:../../packages/service-kit
-      "@linger/wire-contracts":
+      "@talos/wire-contracts":
         specifier: workspace:*
         version: link:../../contracts/generated/typescript
     devDependencies:

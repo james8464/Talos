@@ -7,9 +7,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voice"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicelive"
-	teamhubinternal "github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voice"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
+	teamhubinternal "github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 func (a *App) getVoiceLiveContext(c *gin.Context) {

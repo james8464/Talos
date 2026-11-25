@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 
 import { computerReleaseRoot, contextHostRoot, mirrorHome } from "../paths.js";
 import { teamHubBaseUrl } from "../teamhub-base-url.js";
@@ -81,7 +81,7 @@ export function readAgentServiceConfig(
 
 function requiredSecret(value: string | undefined): string {
   if (!value || value.trim().length === 0) {
-    throw new TypeError("LINGER_SECRET_SEED must be set in .env");
+    throw new TypeError("TALOS_SECRET_SEED must be set in .env");
   }
   return value;
 }

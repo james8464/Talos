@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 // A directory an Agent sends in a message becomes one publication Group of

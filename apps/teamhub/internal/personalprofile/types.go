@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
 )
 
 const (

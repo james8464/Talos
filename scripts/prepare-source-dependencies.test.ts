@@ -77,11 +77,11 @@ describe("source dependencies", () => {
         "--output",
         output,
         "--url-base",
-        "https://cdn.example/linger/v1.0.0",
+        "https://cdn.example/talos/v1.0.0",
       ],
       { cwd: f.root, pnpm: f.pnpm },
     );
-    const fileName = `linger-v1.0.0-dependencies-${target}.tar.gz`;
+    const fileName = `talos-v1.0.0-dependencies-${target}.tar.gz`;
     expect(path.basename(result.archive)).toBe(fileName);
     expect(result.sha256).toBe(
       createHash("sha256").update(readFileSync(result.archive)).digest("hex"),
@@ -96,9 +96,9 @@ describe("source dependencies", () => {
     expect(args.slice(0, 5)).toEqual([
       "install",
       "--filter",
-      "@linger/node-services...",
+      "@talos/node-services...",
       "--filter",
-      "@linger/web...",
+      "@talos/web...",
     ]);
     expect(args).toContain("--frozen-lockfile");
     // Another platform's packages, without running their install scripts.
@@ -108,8 +108,8 @@ describe("source dependencies", () => {
       `supportedArchitectures:\n  os: [${platform}]\n  cpu: [${cpu}]\n`,
     );
     expect(await sourceDependenciesEnvironment(output, target)).toEqual({
-      LINGER_SOURCE_DEPENDENCIES_URL: `https://cdn.example/linger/v1.0.0/${fileName}`,
-      LINGER_SOURCE_DEPENDENCIES_SHA256: result.sha256,
+      TALOS_SOURCE_DEPENDENCIES_URL: `https://cdn.example/talos/v1.0.0/${fileName}`,
+      TALOS_SOURCE_DEPENDENCIES_SHA256: result.sha256,
     });
   });
 

@@ -4,12 +4,12 @@ React Router Data Mode and TanStack Query power the active Room-first UI.
 
 ## Common Commands
 
-- `pnpm --filter @linger/web test <test-file>`: run one test. Use the script, not `exec vitest`: it disables Node's experimental Web Storage, which hides jsdom's `localStorage`.
-- `pnpm --filter @linger/web typecheck`: typecheck Web.
-- `pnpm --filter @linger/web test:build`: run real Vite build configuration tests (`*.build.test.ts`, also run by `make check-web-build`).
+- `pnpm --filter @talos/web test <test-file>`: run one test. Use the script, not `exec vitest`: it disables Node's experimental Web Storage, which hides jsdom's `localStorage`.
+- `pnpm --filter @talos/web typecheck`: typecheck Web.
+- `pnpm --filter @talos/web test:build`: run real Vite build configuration tests (`*.build.test.ts`, also run by `make check-web-build`).
 - `make check-web`: run Web types, tests, and React diagnostics. Run this
   before opening a pull request. If the change adds a static import on the
-  Room or app initial graph, also run `pnpm --filter @linger/web run
+  Room or app initial graph, also run `pnpm --filter @talos/web run
 build:assets` to check the initial JS budget.
   CI runs it as `make check-web-static` plus `make check-web-tests` in two
   shards (`SHARD=1/2` and `SHARD=2/2`).
@@ -54,7 +54,7 @@ build:assets` to check the initial JS budget.
   `Use for Agents` on a loaded row, highlights Thinking Machines' Inkling 2
   Mini in a featured spotlight frame (`featured-model-spotlight.tsx`) wrapping
   its grouped `ModelRow` so status, sibling quantizations and actions stay in
-  one place (matched via `@linger/service-kit/featured-models`, preferring a
+  one place (matched via `@talos/service-kit/featured-models`, preferring a
   hardware-fitting `DRIVER_UPDATE_REQUIRED` variant over a
   `MEMORY_INSUFFICIENT` one, moving below `Available to download` when
   unavailable while other models fit, and degrading to a partner highlight with
@@ -62,7 +62,7 @@ build:assets` to check the initial JS budget.
   NVIDIA drivers via `UpdateDriverDialog` (`local-model-driver-dialog.tsx`)
   with engine-scoped driver guidance, signed one-click Windows installation
   with live progress and post-reboot resume banners
-  (`window.lingerDesktop.driverUpdate`), desktop NVIDIA App launch, copyable
+  (`window.talosDesktop.driverUpdate`), desktop NVIDIA App launch, copyable
   Linux commands, and focus-triggered rechecks, groups sibling quantizations of
   the same logical model (via structured `source_url`) into a single card with
   a clean base title and right-aligned quantization pill (interactive pill
@@ -120,7 +120,7 @@ build:assets` to check the initial JS budget.
   pill, and reads no local model library state itself.
 - `src/i18n`: the interface languages (English and Simplified Chinese).
   `messages.ts` re-exports the React-free core from
-  `@linger/service-kit/messages`, which the desktop shell shares,
+  `@talos/service-kit/messages`, which the desktop shell shares,
   `language.ts` holds the language on screen and the stored choice,
   `desktop-language.ts` reports a stored choice to the desktop app so its
   menus and pages follow, `use-translation.tsx` is the React side, and
@@ -133,8 +133,8 @@ build:assets` to check the initial JS budget.
 ## Important Conventions
 
 - The first-visit Agent introduction uses its display name from TeamHub,
-  including the default `Linger` name and any name the Human chooses.
-- The login page keeps Linger's headline and day timeline on the left,
+  including the default `Talos` name and any name the Human chooses.
+- The login page keeps Talos's headline and day timeline on the left,
   and the sign-in form on the right. A faint white grid fades gently into the
   form's white background without a dark panel, colored glow, or blur. The
   timeline speaks in the first person and uses dark and muted text on white;
@@ -143,10 +143,10 @@ build:assets` to check the initial JS budget.
 - Login body copy uses the Room font and chat body typography tokens. Times,
   dividers, and the footer use the chat metadata tokens. Its titles keep their
   own scale, with desktop content inset toward the middle on both sides and
-  the left copy and timeline inset by two additional 40px grid cells. Linger
+  the left copy and timeline inset by two additional 40px grid cells. Talos
   uses the red panda portrait on its warm brown tile.
-- The login header uses the transparent horizontal Linger wordmark in
-  `public/linger-wordmark.svg`, with the proportions of `assets/logo-horizontal.svg`.
+- The login header uses the transparent horizontal Talos wordmark in
+  `public/talos-wordmark.svg`, with the proportions of `assets/logo-horizontal.svg`.
 - The Another Me Chat opens with a danger banner while TeamHub's Another Me
   carries `background_failure` (three or more failed background model calls
   in a row), worded from its reason code (an unknown code reads as unknown).
@@ -165,7 +165,7 @@ build:assets` to check the initial JS budget.
   app. Picture-in-picture keeps the browser title bar. The desktop app floats
   them in its own always-on-top window, which stays up while the main window
   is minimized or closed to the tray: when the preload offers
-  `window.lingerDesktop.voiceWindow`, `voice-pip.ts` opens it with
+  `window.talosDesktop.voiceWindow`, `voice-pip.ts` opens it with
   `window.open("")` (the desktop main process allows only that call) and is
   the only place that knows which kind of window it got. A desktop app without that field keeps voice windows
   in the page with no float button. In the page on macOS they stay out of the
@@ -260,7 +260,7 @@ build:assets` to check the initial JS budget.
   `TEAMHUB_BASE_URL`, so a Computer needs only the Web origin.
   Never bundle installers or CLI releases into Web. The desktop app's own local
   server runs with its built-in Computer and ships no `/install/` release, so
-  when `window.lingerDesktop.localServer.owned()` (falling back to
+  when `window.talosDesktop.localServer.owned()` (falling back to
   `localAccount.available()` on older desktop builds) reports true
   (`useCliInstallAvailable`), Web hides standalone CLI daemon download, update,
   and terminal troubleshooting entry points across Computers, LocalComputerGate,
@@ -375,7 +375,7 @@ build:assets` to check the initial JS budget.
   - Add a language: add it to `LANGUAGES` and `catalogLoaders` in
     `src/i18n/language.ts` and add `src/i18n/locales/<tag>.json`. Catalogs
     load on demand, so English users download none.
-  - The choice is stored on the device (`localStorage["linger.language"]`);
+  - The choice is stored on the device (`localStorage["talos.language"]`);
     an absent value means no explicit choice, which is English today. Tests
     start in English: `src/test/setup.ts` resets the language after each test,
     and a test of translated text reads the expected string from the catalog

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
 )
 
 func TestParseRoomCursors(t *testing.T) {

@@ -9,9 +9,9 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 
-	agentapi "github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	agentapi "github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 func TestQuietHoursAreTenAtNightToEightInTheMorningBeijing(t *testing.T) {

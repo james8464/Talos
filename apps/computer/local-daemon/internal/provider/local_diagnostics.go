@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/redact"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
 )
 
 type localDiagnosticHandler struct {

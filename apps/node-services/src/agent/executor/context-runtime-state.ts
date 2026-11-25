@@ -30,7 +30,7 @@ import {
   type TeamHubRuntimeStateClient,
   isTeamHubNotFound,
 } from "./teamhub-runtime-state-client.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 export type RuntimeStateAwaitable<T> = T | PromiseLike<T>;
 

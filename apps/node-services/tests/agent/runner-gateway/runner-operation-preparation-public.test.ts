@@ -9,8 +9,8 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   AgentToDaemonEnvelope,
   OperationStart,
-} from "@linger/wire-contracts/runner-gateway/types";
-import { parseDaemonToAgentEnvelope } from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/types";
+import { parseDaemonToAgentEnvelope } from "@talos/wire-contracts/runner-gateway/validator";
 import { LocalMcpRelay } from "../../../src/agent/runner-gateway/local-mcp-relay.js";
 import { createTestRunnerGateway } from "../test-support/runner-gateway.js";
 
@@ -85,8 +85,8 @@ describe("RunnerGateway", () => {
           headers: {
             authorization: `Bearer ${descriptor.relay_token}`,
             "content-type": "application/json",
-            "x-linger-operation-id": start.operation_id,
-            "x-linger-execution-lease-id": start.execution_lease_id,
+            "x-talos-operation-id": start.operation_id,
+            "x-talos-execution-lease-id": start.execution_lease_id,
           },
           body: JSON.stringify({
             jsonrpc: "2.0",
@@ -375,7 +375,7 @@ describe("RunnerGateway", () => {
   // The default Agent CI image has no Go toolchain. Match the existing real
   // daemon test opt-in; the ordinary retirement regressions above always run.
   it
-    .skipIf(process.env.LINGER_GO_LOCAL_DAEMON_TEST !== "1")
+    .skipIf(process.env.TALOS_GO_LOCAL_DAEMON_TEST !== "1")
     .each(["operation.completed", "operation.failed", "operation.cancelled"])(
     "authenticates late prepare after %s retirement and deduplicates Go wire replays",
     async (terminalType) => {
@@ -423,7 +423,7 @@ describe("RunnerGateway", () => {
           "go",
           [
             "test",
-            "./internal/linger/transport",
+            "./internal/talos/transport",
             "-run",
             "^TestOperationEventForwardsPrepareResumeMeasurement$",
             "-count=1",
@@ -434,8 +434,8 @@ describe("RunnerGateway", () => {
             ),
             env: {
               ...process.env,
-              LINGER_PREPARE_RESUME_WIRE_IDENTITY: JSON.stringify(prepare),
-              LINGER_PREPARE_RESUME_WIRE_FIXTURE: fixtureFile,
+              TALOS_PREPARE_RESUME_WIRE_IDENTITY: JSON.stringify(prepare),
+              TALOS_PREPARE_RESUME_WIRE_FIXTURE: fixtureFile,
             },
             timeout: 120_000,
           },

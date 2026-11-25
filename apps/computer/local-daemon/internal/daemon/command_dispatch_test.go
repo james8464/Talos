@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
-	lingercontext "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/context"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/registration"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // dispatchStream is a Gateway stream fed by the test. Sent events are recorded
@@ -120,15 +120,15 @@ func newGatedDownloads(t *testing.T) *gatedDownloads {
 func (g *gatedDownloads) release() { g.once.Do(func() { close(g.releaseAll) }) }
 
 // fileMapping maps one held file whose content is path.
-func fileMapping(gate *gatedDownloads, path, name string) lingercontext.Mapping {
+func fileMapping(gate *gatedDownloads, path, name string) taloscontext.Mapping {
 	return gate.content.mapping(name, path)
 }
 
 // missingFileMapping maps a file the content route does not have.
-func missingFileMapping(name string) lingercontext.Mapping {
-	return lingercontext.Mapping{
+func missingFileMapping(name string) taloscontext.Mapping {
+	return taloscontext.Mapping{
 		Kind: "memory", TargetPath: "memory", Access: "read_only",
-		Files: []lingercontext.FileInput{{RelativePath: name, MediaType: "text/plain", SizeBytes: 1, SHA256: strings.Repeat("c", 64)}},
+		Files: []taloscontext.FileInput{{RelativePath: name, MediaType: "text/plain", SizeBytes: 1, SHA256: strings.Repeat("c", 64)}},
 	}
 }
 
@@ -161,7 +161,7 @@ type dispatchFixture struct {
 	device  transport.Identity
 	daemon  *Daemon
 	stream  *dispatchStream
-	views   *lingercontext.ViewStore
+	views   *taloscontext.ViewStore
 	gate    *gatedDownloads
 	backend native.Runtime
 	// exited closes when runConnection returns; exitErr is valid after that.
@@ -187,7 +187,7 @@ func newDispatchFixture(t *testing.T, gate *gatedDownloads, limit int) *dispatch
 			return nil
 		})
 	})
-	views, err := lingercontext.OpenViewStore(filepath.Join(root, "context.sqlite"), filepath.Join(root, "views"), nil)
+	views, err := taloscontext.OpenViewStore(filepath.Join(root, "context.sqlite"), filepath.Join(root, "views"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,7 +314,7 @@ func eventOf(eventType, commandID string) func(protocol.Event) bool {
 }
 
 // startWithView is a start whose View maps the given files.
-func (fx *dispatchFixture) startWithView(operationID, key, agentID string, mappings ...lingercontext.Mapping) protocol.Command {
+func (fx *dispatchFixture) startWithView(operationID, key, agentID string, mappings ...taloscontext.Mapping) protocol.Command {
 	start := dispatchStartCommand(operationID, key, agentID)
 	start.ContextViewRef = fx.gate.content.publish(fx.t, start, mappings...)
 	return start

@@ -13,8 +13,8 @@ into a folder of its own.
         [--password-file FILE] [--distribution distribution/darwin-arm64.json]
         [--dir DIR] [--rcodesign PATH]
 
-It reads each `file` source of the distribution from DIR (LINGER_NATIVE_POSTGRES_DIR,
-default ~/.cache/linger-desktop), checks it against its pin, signs every
+It reads each `file` source of the distribution from DIR (TALOS_NATIVE_POSTGRES_DIR,
+default ~/.cache/talos-desktop), checks it against its pin, signs every
 Mach-O member in place of the old bytes, writes the archive to DIR under the
 name with the new sha256 and updates the pin. Archives already signed are left
 as they are. Without --password-file it asks for the .p12 password once. The
@@ -59,8 +59,8 @@ def main():
     parser.add_argument("--developer-id", required=True, help="Developer ID Application certificate and key (.p12)")
     parser.add_argument("--password-file", help="file holding the .p12 password; asked for when absent")
     parser.add_argument("--distribution", default=os.path.join(DESKTOP, "distribution", "darwin-arm64.json"))
-    parser.add_argument("--dir", default=os.environ.get("LINGER_NATIVE_POSTGRES_DIR")
-                        or os.path.expanduser("~/.cache/linger-desktop"))
+    parser.add_argument("--dir", default=os.environ.get("TALOS_NATIVE_POSTGRES_DIR")
+                        or os.path.expanduser("~/.cache/talos-desktop"))
     parser.add_argument("--rcodesign", default=shutil.which("rcodesign") or "rcodesign")
     args = parser.parse_args()
     with open(args.distribution) as source:

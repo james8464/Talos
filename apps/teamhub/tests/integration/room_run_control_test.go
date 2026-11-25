@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 func TestRoomRunControlAuthorizationAndExactTarget(t *testing.T) {

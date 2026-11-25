@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 // Identity and resource membership are read in the same database snapshot. No

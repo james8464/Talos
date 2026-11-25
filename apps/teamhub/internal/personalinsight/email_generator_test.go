@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 const testSubjectID = "subject:synthetic"
@@ -347,9 +347,9 @@ func configuredLiveGenerator(t *testing.T) *HTTPGenerator {
 	if os.Getenv("REPLAY_EMAIL_INSIGHT") != "1" {
 		t.Skip("set REPLAY_EMAIL_INSIGHT=1 to call the Agent Service model calls on the only Another Me Runtime")
 	}
-	seed := strings.TrimSpace(os.Getenv("LINGER_SECRET_SEED"))
+	seed := strings.TrimSpace(os.Getenv("TALOS_SECRET_SEED"))
 	if seed == "" {
-		t.Fatal("missing LINGER_SECRET_SEED for the Agent Service model calls")
+		t.Fatal("missing TALOS_SECRET_SEED for the Agent Service model calls")
 	}
 	models, err := roomagent.NewModelCallClient(cmp.Or(strings.TrimSpace(os.Getenv("TEAMHUB_NODE_SERVICES_URL")), "http://localhost:4319"), config.ServiceCredential(seed, "node-services-internal"))
 	if err != nil {

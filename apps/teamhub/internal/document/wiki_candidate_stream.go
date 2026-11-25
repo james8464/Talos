@@ -9,7 +9,7 @@ import (
 	"io"
 	"slices"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // Match the existing receiver limit. Admission counts the encoded envelope,

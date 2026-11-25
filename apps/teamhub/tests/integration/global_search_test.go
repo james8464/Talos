@@ -18,11 +18,11 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/documenttext"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/documenttext"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 type messageSearchPage struct {

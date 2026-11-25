@@ -16,7 +16,7 @@ const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 
 /**
  * Verifies a token TeamHub signed as base64url(JSON) "." base64url(HMAC-SHA256)
- * with the key both derive from LINGER_SECRET_SEED, and returns its claims.
+ * with the key both derive from TALOS_SECRET_SEED, and returns its claims.
  * A bad signature, malformed claims or a past expiry refuses the connection.
  */
 export function verifyConnectionToken(

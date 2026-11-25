@@ -110,7 +110,7 @@ func newProber(s settings) *Prober {
 	}
 }
 
-// Probe reads the framing rules of the page at rawURL for a Linger page
+// Probe reads the framing rules of the page at rawURL for a Talos page
 // served over pageScheme ("http" or "https"; empty when unknown). It fails
 // only for an invalid URL; a page it did not read is Unknown.
 func (p *Prober) Probe(ctx context.Context, rawURL, pageScheme string) (Framing, error) {

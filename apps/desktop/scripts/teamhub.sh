@@ -1,10 +1,10 @@
 #!/bin/sh
-# Runs the bundled teamhub CLI with the Node built into Linger.
+# Runs the bundled teamhub CLI with the Node built into Talos.
 dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-app="$dir/../../../../MacOS/Linger"
-[ -x "$app" ] || app="$dir/../../../../Linger.exe"
-[ -x "$app" ] || app="$dir/../../../../linger"
-[ -x "$app" ] || app="${LINGER_NODE:-node}"
+app="$dir/../../../../MacOS/Talos"
+[ -x "$app" ] || app="$dir/../../../../Talos.exe"
+[ -x "$app" ] || app="$dir/../../../../talos"
+[ -x "$app" ] || app="${TALOS_NODE:-node}"
 script="$dir/teamhub.js"
 case "$app" in
   *.exe)

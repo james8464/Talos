@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/demodata"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/demodata"
 )
 
 func TestDevelopmentHumanIdentitySeedCreatesOneHumanWithoutAgents(t *testing.T) {

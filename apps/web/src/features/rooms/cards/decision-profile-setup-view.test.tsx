@@ -174,7 +174,7 @@ describe("AnotherMe apps setup card", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     // The Human's active Gmail connection shows its account label.
-    expect(await within(list).findByText("jenny@linger.test")).toBeVisible();
+    expect(await within(list).findByText("jenny@talos.test")).toBeVisible();
     expect(within(list).queryByText("GitHub")).not.toBeInTheDocument();
 
     fireEvent.click(within(list).getByRole("button", { name: /More/ }));

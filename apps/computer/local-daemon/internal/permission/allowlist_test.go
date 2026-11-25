@@ -21,7 +21,7 @@ func TestLocalWriteToolJudgesEveryNonReadOnlyLocalAction(t *testing.T) {
 		{"mcp__computer__click", `{"x":1,"y":2}`, true},
 		{"mcp__computer__type_text", `{"text":"hi"}`, true},
 		{"mcp__computer__scroll", `{}`, false},
-		{"mcp__linger__send_message", `{}`, false},
+		{"mcp__talos__send_message", `{}`, false},
 		{"Bash", `{"command":"ls"}`, false},
 	}
 	for _, testCase := range cases {

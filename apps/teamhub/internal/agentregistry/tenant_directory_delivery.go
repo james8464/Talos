@@ -3,8 +3,8 @@ package agentregistry
 import (
 	"context"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // createTenantDirectoryDeliveries tells the Tenant's browsers that its

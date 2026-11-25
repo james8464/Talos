@@ -1,7 +1,7 @@
 import {
   inspectRoomDocumentState,
   ROOM_DOCUMENT_SESSION_LIMITS,
-} from "@linger/document-model";
+} from "@talos/document-model";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 

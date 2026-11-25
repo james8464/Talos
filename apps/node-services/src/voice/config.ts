@@ -1,10 +1,10 @@
-import type { Region } from "@linger/service-kit";
-import { serviceCredential } from "@linger/service-kit/node";
+import type { Region } from "@talos/service-kit";
+import { serviceCredential } from "@talos/service-kit/node";
 import { teamHubBaseUrl } from "../teamhub-base-url.js";
 
 export interface VoiceConfig {
   readonly teamHubBaseUrl: string;
-  /** Reads provider keys from TeamHub; undefined without LINGER_SECRET_SEED. */
+  /** Reads provider keys from TeamHub; undefined without TALOS_SECRET_SEED. */
   readonly teamHubCredential: string | undefined;
   /** Authenticates TeamHub's reconcile notifications. */
   readonly managementCredential: string | undefined;

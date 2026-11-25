@@ -142,7 +142,7 @@ it("honors cancellation before upstream installation", async () => {
   expect(localmodels).not.toHaveBeenCalled();
 });
 
-it("keeps runtime plans under private Linger state regardless of the system temp directory", async () => {
+it("keeps runtime plans under private Talos state regardless of the system temp directory", async () => {
   const options = await fixture();
   const parent = await realpath(options.home);
   const target = path.join(parent, "temp-target");

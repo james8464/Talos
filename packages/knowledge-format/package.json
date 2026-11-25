@@ -1,5 +1,5 @@
 {
-  "name": "@linger/knowledge-format",
+  "name": "@talos/knowledge-format",
   "version": "0.0.0",
   "description": "Knowledge Format: shared knowledge document format helpers.",
   "private": true,
@@ -10,12 +10,12 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "linger-production": "./dist/index.js",
+      "talos-production": "./dist/index.js",
       "default": "./src/index.ts"
     },
     "./sections": {
       "types": "./src/sections.ts",
-      "linger-production": "./dist/sections.js",
+      "talos-production": "./dist/sections.js",
       "default": "./src/sections.ts"
     }
   },
@@ -30,7 +30,7 @@
     "node": ">=26.5.0 <27"
   },
   "dependencies": {
-    "@linger/service-kit": "workspace:*",
+    "@talos/service-kit": "workspace:*",
     "yaml": "2.9.0"
   },
   "devDependencies": {

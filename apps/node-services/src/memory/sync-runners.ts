@@ -58,7 +58,7 @@ import {
   weeklyReportSchema,
   type WeeklyReportOutput,
 } from "./weekly-report.js";
-import { isNodeError } from "@linger/service-kit";
+import { isNodeError } from "@talos/service-kit";
 import { syncWeeklyMemory } from "./user-memory-sync.js";
 import { writeMemoryLog } from "./run-telemetry.js";
 import { updateDailyTrackingItems } from "./tracking-items.js";

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const seedAccountAuth = `{"auth_mode":"chatgpt","tokens":{"account_id":"acct-A"}}`

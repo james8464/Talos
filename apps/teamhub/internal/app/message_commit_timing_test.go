@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentsendmessage"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentsendmessage"
 )
 
 func TestRecordMessageCommitTiming(t *testing.T) {
@@ -21,12 +21,12 @@ func TestRecordMessageCommitTiming(t *testing.T) {
 		response := httptest.NewRecorder()
 		context, _ := gin.CreateTestContext(response)
 		context.Request = httptest.NewRequest(http.MethodPost, "/v0/rooms/room-latency/messages", nil)
-		context.Request.Header.Set("X-Linger-Latency-ID", "latency-warm-1-12345678")
+		context.Request.Header.Set("X-Talos-Latency-ID", "latency-warm-1-12345678")
 		context.Params = gin.Params{{Key: "roomId", Value: "room-latency"}}
 
 		a.recordMessageCommitTiming(context)
 
-		committedAt := response.Header().Get("X-Linger-Message-Commit-Unix-Ms")
+		committedAt := response.Header().Get("X-Talos-Message-Commit-Unix-Ms")
 		if _, err := strconv.ParseInt(committedAt, 10, 64); err != nil {
 			t.Fatalf("commit timestamp %q is not an integer: %v", committedAt, err)
 		}
@@ -45,11 +45,11 @@ func TestRecordMessageCommitTiming(t *testing.T) {
 		response := httptest.NewRecorder()
 		context, _ := gin.CreateTestContext(response)
 		context.Request = httptest.NewRequest(http.MethodPost, "/v0/rooms/room-latency/messages", nil)
-		context.Request.Header.Set("X-Linger-Latency-ID", "invalid value with spaces")
+		context.Request.Header.Set("X-Talos-Latency-ID", "invalid value with spaces")
 
 		(&App{}).recordMessageCommitTiming(context)
 
-		if got := response.Header().Get("X-Linger-Message-Commit-Unix-Ms"); got != "" {
+		if got := response.Header().Get("X-Talos-Message-Commit-Unix-Ms"); got != "" {
 			t.Fatalf("unexpected commit timestamp %q", got)
 		}
 	})

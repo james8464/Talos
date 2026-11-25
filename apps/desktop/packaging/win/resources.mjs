@@ -1,4 +1,4 @@
-// Writes the icon and version information into Linger.exe (Electron ships
+// Writes the icon and version information into Talos.exe (Electron ships
 // its own). Run in the wintool image: node resources.mjs EXE ICO VERSION.
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -31,11 +31,11 @@ info.setProductVersion(major, minor, patch, 0, 1033);
 info.setStringValues(
   { lang: 1033, codepage: 1200 },
   {
-    CompanyName: "Linger",
-    FileDescription: "Linger",
-    InternalName: "Linger",
-    OriginalFilename: "Linger.exe",
-    ProductName: "Linger",
+    CompanyName: "Talos",
+    FileDescription: "Talos",
+    InternalName: "Talos",
+    OriginalFilename: "Talos.exe",
+    ProductName: "Talos",
     FileVersion: version,
     ProductVersion: version,
   },

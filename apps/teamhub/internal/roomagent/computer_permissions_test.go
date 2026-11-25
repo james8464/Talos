@@ -10,7 +10,7 @@ import (
 )
 
 const computerPermissionStatusBody = `{"platform":"darwin","host":"desktop","subjects":[
-{"subject":"linger","permissions":[{"id":"screen_recording","state":"granted","prompt":"available","relaunch_required":false},
+{"subject":"talos","permissions":[{"id":"screen_recording","state":"granted","prompt":"available","relaunch_required":false},
 {"id":"accessibility","state":"denied","prompt":"available","relaunch_required":false}]},
 {"subject":"computer_use","permissions":[{"id":"screen_recording","state":"not_determined","prompt":"available","relaunch_required":false}]}]}`
 
@@ -24,7 +24,7 @@ func TestHTTPGatewayActsOnOwnedComputerPermissions(t *testing.T) {
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Fatal(err)
 			}
-			if len(body) != 3 || body["action"] != "prompt" || body["subject"] != "linger" || body["permission"] != "accessibility" {
+			if len(body) != 3 || body["action"] != "prompt" || body["subject"] != "talos" || body["permission"] != "accessibility" {
 				t.Fatalf("body=%v", body)
 			}
 		} else if r.Method != http.MethodGet {
@@ -40,7 +40,7 @@ func TestHTTPGatewayActsOnOwnedComputerPermissions(t *testing.T) {
 	}
 	for _, command := range []LocalComputerPermissionCommand{
 		{Action: LocalComputerPermissionStatusAction},
-		{Action: LocalComputerPermissionPrompt, Subject: "linger", Permission: "accessibility"},
+		{Action: LocalComputerPermissionPrompt, Subject: "talos", Permission: "accessibility"},
 	} {
 		command.TenantID, command.OwnerActorID, command.ComputerID = "tenant_1", "actor_owner", "computer_1"
 		status, err := gateway.LocalComputerPermissions(context.Background(), command)
@@ -48,12 +48,12 @@ func TestHTTPGatewayActsOnOwnedComputerPermissions(t *testing.T) {
 			status.Subjects[0].Permissions[1].State != "denied" {
 			t.Fatalf("action=%s status=%+v err=%v", command.Action, status, err)
 		}
-		if !status.Granted("linger", []string{"screen_recording"}) || status.Granted("linger", []string{"screen_recording", "accessibility"}) ||
+		if !status.Granted("talos", []string{"screen_recording"}) || status.Granted("talos", []string{"screen_recording", "accessibility"}) ||
 			status.Granted("computer_use", []string{"screen_recording"}) || status.Granted("computer_use", []string{"accessibility"}) {
 			t.Fatalf("granted read wrong for %+v", status)
 		}
 	}
-	if !(LocalComputerPermissionStatus{Platform: "linux"}).Granted("linger", []string{"screen_recording"}) {
+	if !(LocalComputerPermissionStatus{Platform: "linux"}).Granted("talos", []string{"screen_recording"}) {
 		t.Fatal("a Computer that is not a Mac needs no macOS permission")
 	}
 }
@@ -80,7 +80,7 @@ func TestHTTPGatewayMapsComputerPermissionFailures(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err = gateway.LocalComputerPermissions(context.Background(), LocalComputerPermissionCommand{
-			TenantID: "tenant_1", OwnerActorID: "actor_owner", ComputerID: "computer_1", Action: LocalComputerPermissionRelaunch, Subject: "linger",
+			TenantID: "tenant_1", OwnerActorID: "actor_owner", ComputerID: "computer_1", Action: LocalComputerPermissionRelaunch, Subject: "talos",
 		})
 		server.Close()
 		var typed *LocalComputerPermissionError

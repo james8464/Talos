@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	api "github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	api "github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 // LocalComputerTools calls the owner's registered Computer without a model turn.

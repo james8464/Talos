@@ -1,7 +1,7 @@
 import type { JobContext } from "@livekit/agents";
 import { AutoSubscribe, defineAgent, log } from "@livekit/agents";
 import { RemoteAudioTrack, RoomEvent, TrackSource } from "@livekit/rtc-node";
-import { TeamHubVoiceRuntimeClient } from "@linger/wire-contracts/teamhub-internal/client";
+import { TeamHubVoiceRuntimeClient } from "@talos/wire-contracts/teamhub-internal/client";
 
 import { CaptureRecorder } from "./capture-recorder.js";
 import { loadConfig } from "./config.js";

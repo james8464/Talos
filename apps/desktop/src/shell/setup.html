@@ -913,7 +913,7 @@
       .cb-input::placeholder {
         font-style: italic;
       }
-      /* Grey: the default Linger fills in, which is still sent. */
+      /* Grey: the default Talos fills in, which is still sent. */
       .cb[data-default="true"] .cb-input {
         color: var(--filled);
       }
@@ -2008,7 +2008,7 @@
   <body data-platform="darwin">
     <div class="scene" aria-hidden="true"></div>
     <header class="topbar">
-      <img class="brand" src="logo.png" alt="Linger" />
+      <img class="brand" src="logo.png" alt="Talos" />
       <span id="step-label"></span>
     </header>
 
@@ -2576,7 +2576,7 @@
         <p class="legacy-note" id="legacy-note" hidden></p>
         <div class="start">
           <button class="primary large" id="open" type="button">
-            <span data-t="openLinger"></span
+            <span data-t="openTalos"></span
             ><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
           </button>
         </div>
@@ -2593,7 +2593,7 @@
             inputmode="url"
             autocomplete="url"
             spellcheck="false"
-            placeholder="https://linger.example.com"
+            placeholder="https://talos.example.com"
           />
           <p class="hint" data-t="serverHint"></p>
           <p class="error" id="server-error" role="alert"></p>
@@ -2823,7 +2823,7 @@
     </main>
 
     <script>
-      const setup = window.lingerSetup;
+      const setup = window.talosSetup;
       const $ = (id) => document.getElementById(id);
       // The steps of connecting to a team server.
       const ORDER = ["server", "signin", "connect", "permissions"];
@@ -2921,7 +2921,7 @@
         return drive &&
           local.refusal?.code === "WINDOWS_PRIVATE_PATH_UNSAFE" &&
           local.refusal.reason === "UNSAFE_PARENT_ACCESS"
-          ? t("locationHint", { folder: drive + "Linger" })
+          ? t("locationHint", { folder: drive + "Talos" })
           : "";
       };
       // Why the installation stopped: in the page's words when the main
@@ -3867,7 +3867,7 @@
           case "cuda-driver-update-required": {
             const has = reason.detectedCudaVersion;
             const needs = reason.requiredCudaVersion;
-            const driver = window.lingerSetup.minDriverForCuda?.(needs);
+            const driver = window.talosSetup.minDriverForCuda?.(needs);
             if (has && needs)
               return driver
                 ? t("reasonCudaUpdateDriver", {
@@ -4347,7 +4347,7 @@
           failed
             ? "installStopped"
             : starting
-              ? "startingLinger"
+              ? "startingTalos"
               : "installingTitle",
         );
         $("installing-plan").textContent = failed
@@ -4953,7 +4953,7 @@
           void run(
             {
               op: "external.open",
-              url: window.lingerSetup.nvidiaDriverDownloadUrl,
+              url: window.talosSetup.nvidiaDriverDownloadUrl,
             },
             "local-error",
           );
@@ -4963,7 +4963,7 @@
         run(
           {
             op: "external.open",
-            url: window.lingerSetup.nvidiaDriverGuideUrl,
+            url: window.talosSetup.nvidiaDriverGuideUrl,
           },
           "local-error",
         ),
@@ -4972,7 +4972,7 @@
         run(
           {
             op: "external.open",
-            url: window.lingerSetup.featuredAnnouncementUrl,
+            url: window.talosSetup.featuredAnnouncementUrl,
           },
           "local-error",
         );

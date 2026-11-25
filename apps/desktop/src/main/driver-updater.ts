@@ -11,7 +11,7 @@ import {
   type DesktopDriverInstallRequest,
   type DesktopDriverInstallState,
   type DesktopNvidiaAppKind,
-} from "@linger/service-kit/nvidia-driver";
+} from "@talos/service-kit/nvidia-driver";
 import { randomBytes } from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { mkdir, rename, rm } from "node:fs/promises";

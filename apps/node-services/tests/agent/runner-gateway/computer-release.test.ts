@@ -42,7 +42,7 @@ describe("loadComputerRelease", () => {
     });
     const loaded = await loadComputerRelease(root);
     expect(loaded!.installerTemplate).toContain(
-      'web_origin="${LINGER_WEB_URL:-http://localhost:3000}"',
+      'web_origin="${TALOS_WEB_URL:-http://localhost:3000}"',
     );
     expect(loaded!.installerTemplate).not.toContain("\r");
   });

@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 	"golang.org/x/sys/windows"
 )
 
 func TestProcessFixture(t *testing.T) {
-	if os.Getenv("LINGER_WINPROCESS_FIXTURE") != "1" {
+	if os.Getenv("TALOS_WINPROCESS_FIXTURE") != "1" {
 		return
 	}
 	for {
@@ -31,7 +31,7 @@ func TestInspectDoesNotAdoptSystemProcess(t *testing.T) {
 
 func TestOpenMatchingChecksGenerationBeforeTerminationPermission(t *testing.T) {
 	child := exec.Command(os.Args[0], "-test.run=^TestProcessFixture$")
-	child.Env = append(os.Environ(), "LINGER_WINPROCESS_FIXTURE=1")
+	child.Env = append(os.Environ(), "TALOS_WINPROCESS_FIXTURE=1")
 	if err := child.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestOpenMatchingChecksGenerationBeforeTerminationPermission(t *testing.T) {
 }
 func TestTerminationRejectsGenerationMismatchAndPreservesOtherProcess(t *testing.T) {
 	child := exec.Command(os.Args[0], "-test.run=^TestProcessFixture$")
-	child.Env = append(os.Environ(), "LINGER_WINPROCESS_FIXTURE=1")
+	child.Env = append(os.Environ(), "TALOS_WINPROCESS_FIXTURE=1")
 	if err := child.Start(); err != nil {
 		t.Fatal(err)
 	}

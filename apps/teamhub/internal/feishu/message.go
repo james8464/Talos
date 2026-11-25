@@ -281,5 +281,5 @@ func quotedPrintable(text string) []byte {
 func newMessageID() string {
 	raw := make([]byte, 16)
 	_, _ = rand.Read(raw)
-	return "<" + hex.EncodeToString(raw) + "@linger.mail>"
+	return "<" + hex.EncodeToString(raw) + "@talos.mail>"
 }

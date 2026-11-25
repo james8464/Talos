@@ -13,7 +13,7 @@ import {
   type ConcurrencyRange,
   type ModelSignal,
 } from "./adaptive-limit.js";
-import type { LocalModelsSnapshot } from "@linger/wire-contracts/runner-gateway/types";
+import type { LocalModelsSnapshot } from "@talos/wire-contracts/runner-gateway/types";
 import type {
   LocalComputerModel,
   LocalRuntimeType,

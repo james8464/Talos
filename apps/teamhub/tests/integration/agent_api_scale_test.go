@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/document"
 )
 
 // The resolver-based query is an independent authorization oracle: it lists

@@ -19,9 +19,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
 )
 
 // Gmail web drops base64 images inside HTML, so images travel as inline
@@ -369,5 +369,5 @@ func CompactInlineImage(image InlineImage) InlineImage {
 func NewInlineContentID(assetID string) string {
 	suffix := make([]byte, 4)
 	_, _ = rand.Read(suffix)
-	return assetID + "." + hex.EncodeToString(suffix) + "@linger"
+	return assetID + "." + hex.EncodeToString(suffix) + "@talos"
 }

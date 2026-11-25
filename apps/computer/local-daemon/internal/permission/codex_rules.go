@@ -10,7 +10,7 @@ import (
 )
 
 // CodexRulesFile is the execpolicy file the Daemon owns in a Context's CODEX_HOME.
-const CodexRulesFile = "linger-managed.rules"
+const CodexRulesFile = "talos-managed.rules"
 
 // CodexRules renders the execpolicy allow rules: the commands that only read
 // whatever their arguments, git status, and the TeamHub CLI commands that run
@@ -18,7 +18,7 @@ const CodexRulesFile = "linger-managed.rules"
 // itself, so `cat a > b` or `ls && rm x` still asks.
 func CodexRules(teamhubCommands []TeamHubCommand) string {
 	var rules strings.Builder
-	rules.WriteString("# Written by the Linger Computer Daemon on every Run; edits are replaced.\n")
+	rules.WriteString("# Written by the Talos Computer Daemon on every Run; edits are replaced.\n")
 	readOnly := readOnlyNames
 	if runtime.GOOS == "linux" {
 		readOnly = append(slices.Clip(readOnly), linuxReadOnlyNames...)

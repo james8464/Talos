@@ -4,7 +4,7 @@ import type {
   ModelInvoked,
   OperationStart,
   RunnerHello,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import { createRuntimeModelCall } from "../../../src/runtime-model-call.js";
 import { runtimeModelGateway } from "../../../src/agent/runner-gateway/runtime-model-gateway.js";
 import { describe, expect, it, vi } from "vitest";

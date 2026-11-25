@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // A connection card names only its app or Computer; an Agent can never bind
@@ -37,7 +37,7 @@ func TestConnectionDecisionsDraftTheirOwnCards(t *testing.T) {
 	if err != nil || draft.kind != DecisionKindBrowserConnection || draft.lifetime != 0 || !draft.connection {
 		t.Fatalf("browser_connection draft=%+v err=%v", draft, err)
 	}
-	draft, err = DecisionCommand{ComputerPermission: &ComputerPermissionDecision{ComputerID: "computer-1", Subject: "linger",
+	draft, err = DecisionCommand{ComputerPermission: &ComputerPermissionDecision{ComputerID: "computer-1", Subject: "talos",
 		Permissions: []string{"screen_recording", "accessibility"}, Reason: " Take a screenshot "}}.draft()
 	if err != nil || draft.kind != DecisionKindComputerPermission || draft.lifetime != connectionAuthorizationTTL || !draft.connection || draft.text != computerPermissionTitle {
 		t.Fatalf("computer_permission draft=%+v err=%v", draft, err)
@@ -49,12 +49,12 @@ func TestConnectionDecisionsDraftTheirOwnCards(t *testing.T) {
 		"no app":             {ConnectionAuth: &ConnectionAuthDecision{Prompt: "Connect"}},
 		"key without prompt": {ProviderKey: &ProviderKeyDecision{AppKey: "notion"}},
 		"key and app":        {ProviderKey: &ProviderKeyDecision{Prompt: "a", AppKey: "notion"}, ConnectionAuth: &ConnectionAuthDecision{Prompt: "b", AppKey: "notion"}},
-		"no permission":      {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "linger"}},
-		"bad permission":     {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "linger", Permissions: []string{"camera"}}},
-		"permission twice":   {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "linger", Permissions: []string{"accessibility", "accessibility"}}},
+		"no permission":      {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "talos"}},
+		"bad permission":     {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "talos", Permissions: []string{"camera"}}},
+		"permission twice":   {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "talos", Permissions: []string{"accessibility", "accessibility"}}},
 		"bad subject":        {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "cua", Permissions: []string{"accessibility"}}},
-		"long reason":        {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "linger", Permissions: []string{"accessibility"}, Reason: strings.Repeat("x", 201)}},
-		"permission + chrome": {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "linger", Permissions: []string{"accessibility"}},
+		"long reason":        {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "talos", Permissions: []string{"accessibility"}, Reason: strings.Repeat("x", 201)}},
+		"permission + chrome": {ComputerPermission: &ComputerPermissionDecision{ComputerID: "c", Subject: "talos", Permissions: []string{"accessibility"}},
 			BrowserConnection: &BrowserConnectionDecision{Prompt: "b", ComputerID: "c"}},
 		"no prompt":           {ConnectionAuth: &ConnectionAuthDecision{AppKey: "notion"}},
 		"bad computer":        {BrowserConnection: &BrowserConnectionDecision{Prompt: "Connect", ComputerID: "../computer"}},
@@ -115,7 +115,7 @@ func TestConnectionNoticesTellRoomAgentsAndAlterEgos(t *testing.T) {
 	view, _ := json.Marshal(connectionView{Prompt: "Connect Notion", AppKey: "notion"})
 	anyApp, _ := json.Marshal(connectionView{Prompt: "Add a key"})
 	chrome, _ := json.Marshal(connectionView{Prompt: "Connect Chrome", ComputerID: "computer-1"})
-	permission, _ := json.Marshal(computerPermissionView{ComputerID: "computer-1", Subject: "linger", Permissions: []string{"screen_recording"}})
+	permission, _ := json.Marshal(computerPermissionView{ComputerID: "computer-1", Subject: "talos", Permissions: []string{"screen_recording"}})
 	task := pgtype.Text{String: "task_1", Valid: true}
 	for _, test := range []struct {
 		kind, status, answer string
@@ -142,9 +142,9 @@ func TestConnectionNoticesTellRoomAgentsAndAlterEgos(t *testing.T) {
 		{DecisionKindBrowserConnection, "denied", `{"decision":"deny"}`, chrome, pgtype.Text{}, "declined to connect their everyday Chrome"},
 		{DecisionKindBrowserConnection, "answered", `{"decision":"connected"}`, chrome, task, ""},
 		{DecisionKindComputerPermission, "answered", `{"decision":"granted"}`, permission, pgtype.Text{},
-			"Human interaction decision_1 resolved: the user granted screen_recording for Linger. Continue the task now."},
-		{DecisionKindComputerPermission, "answered", `{"decision":"granted"}`, permission, task, "the user granted screen_recording for Linger"},
-		{DecisionKindComputerPermission, "denied", `{"decision":"deny"}`, permission, pgtype.Text{}, "declined to grant screen_recording for Linger"},
+			"Human interaction decision_1 resolved: the user granted screen_recording for Talos. Continue the task now."},
+		{DecisionKindComputerPermission, "answered", `{"decision":"granted"}`, permission, task, "the user granted screen_recording for Talos"},
+		{DecisionKindComputerPermission, "denied", `{"decision":"deny"}`, permission, pgtype.Text{}, "declined to grant screen_recording for Talos"},
 		{DecisionKindComputerPermission, "expired", "", permission, task, "was not granted"},
 	} {
 		decision := decisionRecord{Kind: test.kind, Status: test.status, View: test.view, AlterEgoTaskID: test.alterEgo}
@@ -167,7 +167,7 @@ func TestEncodeDecisionCardShowsConnectionAndRoomViews(t *testing.T) {
 	decided := pgtype.Timestamptz{Time: time.Date(2026, 11, 4, 9, 0, 0, 0, time.UTC), Valid: true}
 	connection, _ := json.Marshal(connectionView{Prompt: "Connect Notion", AppKey: "notion"})
 	room, _ := json.Marshal(roomCreationProposal{OriginRoomID: "room_origin", Name: "Audit", MemberIDs: []string{"actor_alice"}})
-	permission, _ := json.Marshal(computerPermissionView{ComputerID: "computer-1", Subject: "linger", Permissions: []string{"screen_recording"}})
+	permission, _ := json.Marshal(computerPermissionView{ComputerID: "computer-1", Subject: "talos", Permissions: []string{"screen_recording"}})
 	for _, test := range []struct {
 		decision  decisionRecord
 		decidedBy *store.Actor
@@ -195,7 +195,7 @@ func TestEncodeDecisionCardShowsConnectionAndRoomViews(t *testing.T) {
 			Answer: []byte(`{"decision":"granted"}`), DecidedAt: decided}, &decider,
 			func(card map[string]any) bool {
 				view := card["computer_permission"].(map[string]any)
-				return card["title"] == computerPermissionTitle && view["computer_id"] == "computer-1" && view["subject"] == "linger" &&
+				return card["title"] == computerPermissionTitle && view["computer_id"] == "computer-1" && view["subject"] == "talos" &&
 					card["answer"].(map[string]any)["decision"] == "granted"
 			}},
 	} {

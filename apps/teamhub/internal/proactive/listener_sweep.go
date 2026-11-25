@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // SweepListeners gives each listenable connection a Human granted to their

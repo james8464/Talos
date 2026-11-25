@@ -14,7 +14,7 @@ afterEach(async () => {
     await rm(root, { recursive: true, force: true });
 });
 async function fixture() {
-  const home = await mkdtemp(path.join(os.tmpdir(), "linger-gateway-"));
+  const home = await mkdtemp(path.join(os.tmpdir(), "talos-gateway-"));
   roots.push(home);
   const instance = await initializeInstance({
     home,

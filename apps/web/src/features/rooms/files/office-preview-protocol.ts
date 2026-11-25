@@ -1,5 +1,5 @@
-import { isRecord } from "@linger/service-kit";
-export const officePreviewProtocol = "linger-office-preview-v1";
+import { isRecord } from "@talos/service-kit";
+export const officePreviewProtocol = "talos-office-preview-v1";
 
 export type OfficePreviewErrorCode =
   | "encrypted-file"

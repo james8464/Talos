@@ -98,10 +98,10 @@ runs:
     - uses: actions/cache@v6
       with:
         path: |
-          ~/.cache/linger-desktop
-          ~/.cache/linger-computer-tools
-          ${{ env.LINGER_NATIVE_POSTGRES_DIR }}
-          .linger-runtime/node-distributions
+          ~/.cache/talos-desktop
+          ~/.cache/talos-computer-tools
+          ${{ env.TALOS_NATIVE_POSTGRES_DIR }}
+          .talos-runtime/node-distributions
         key: desktop-downloads-${{ inputs.target }}-${{ env.APPLE_CODESIGN_VERSION }}-${{ hashFiles('apps/desktop/package.json', 'apps/desktop/distribution/*.json', 'scripts/local-computer-node-distributions.mjs', 'apps/computer/scripts/bundle-computer-tools.mjs') }}
         restore-keys: |
           desktop-downloads-${{ inputs.target }}-${{ env.APPLE_CODESIGN_VERSION }}-
@@ -135,7 +135,7 @@ runs:
       run: |
         set -euo pipefail
         name="apple-codesign-$APPLE_CODESIGN_VERSION-x86_64-unknown-linux-musl"
-        cached="$HOME/.cache/linger-desktop/tools/$name.tar.gz"
+        cached="$HOME/.cache/talos-desktop/tools/$name.tar.gz"
         mkdir -p "$(dirname "$cached")"
         if [ ! -f "$cached" ] || ! echo "$APPLE_CODESIGN_SHA256  $cached" | sha256sum -c - >/dev/null 2>&1; then
           curl -fsSL --retry 3 -o "$cached.part" \
@@ -194,7 +194,7 @@ runs:
       env:
         # The hosted diagnostics receiver this build carries; a secret so
         # the address stays masked. Without it Send Diagnostics is hidden.
-        LINGER_DIAGNOSTICS_UPLOAD_URL: ${{ inputs.diagnostics-upload-url }}
+        TALOS_DIAGNOSTICS_UPLOAD_URL: ${{ inputs.diagnostics-upload-url }}
         DESKTOP_REQUIRE_MACOS_SIGNING: ${{ inputs.require-macos-signing }}
       run: scripts/ci/desktop-release.sh build ${{ inputs.target }}
     - name: Prune unused Go build cache entries
@@ -214,7 +214,7 @@ runs:
       shell: bash
       run: |
         cd "$RELEASE_OUT/assets"
-        sha256sum "Linger-$DESKTOP_VERSION-windows-x64-setup.exe" > windows-setup.sha256
+        sha256sum "Talos-$DESKTOP_VERSION-windows-x64-setup.exe" > windows-setup.sha256
     - name: Remove signing files
       if: always()
       shell: bash
@@ -225,35 +225,35 @@ runs:
     - uses: actions/upload-artifact@v7
       if: inputs.target == 'darwin-arm64'
       with:
-        path: ${{ env.RELEASE_OUT }}/assets/Linger-${{ env.DESKTOP_VERSION }}-macos-arm64.dmg
+        path: ${{ env.RELEASE_OUT }}/assets/Talos-${{ env.DESKTOP_VERSION }}-macos-arm64.dmg
         archive: false
         if-no-files-found: error
         retention-days: 14
     - uses: actions/upload-artifact@v7
       if: inputs.target == 'darwin-arm64'
       with:
-        path: ${{ env.RELEASE_OUT }}/assets/Linger-${{ env.DESKTOP_VERSION }}-macos-arm64.app.tar.gz
+        path: ${{ env.RELEASE_OUT }}/assets/Talos-${{ env.DESKTOP_VERSION }}-macos-arm64.app.tar.gz
         archive: false
         if-no-files-found: error
         retention-days: 14
     - uses: actions/upload-artifact@v7
       if: inputs.target == 'linux-x64'
       with:
-        path: ${{ env.RELEASE_OUT }}/assets/Linger-${{ env.DESKTOP_VERSION }}-linux-x64.tar.gz
+        path: ${{ env.RELEASE_OUT }}/assets/Talos-${{ env.DESKTOP_VERSION }}-linux-x64.tar.gz
         archive: false
         if-no-files-found: error
         retention-days: 14
     - uses: actions/upload-artifact@v7
       if: inputs.target == 'win32-x64'
       with:
-        path: ${{ env.RELEASE_OUT }}/assets/Linger-${{ env.DESKTOP_VERSION }}-windows-x64-setup.exe
+        path: ${{ env.RELEASE_OUT }}/assets/Talos-${{ env.DESKTOP_VERSION }}-windows-x64-setup.exe
         archive: false
         if-no-files-found: error
         retention-days: 14
     - uses: actions/upload-artifact@v7
       if: inputs.target == 'win32-x64'
       with:
-        path: ${{ env.RELEASE_OUT }}/assets/Linger-${{ env.DESKTOP_VERSION }}-windows-x64-portable.zip
+        path: ${{ env.RELEASE_OUT }}/assets/Talos-${{ env.DESKTOP_VERSION }}-windows-x64-portable.zip
         archive: false
         if-no-files-found: error
         retention-days: 14

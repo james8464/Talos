@@ -11,7 +11,7 @@ patchedDependencies:
   '@hocuspocus/server@4.3.0': c6b938c4b952964ade14a2e8099774cb3f489c06a7522ed2264f158b14387b70
   '@livekit/agents@1.7.1': 385866550b874ed2031bc8c42dee77e0640e895900484da8c2ee94b0a4f24332
   deepagents@1.12.0: 7a922549743b0a521c959c1d7400ddb6cad1ca8c43c7692e2dc8847bd3f2ea25
-  playwright-core@1.64.0-alpha-1790635538000: 78d5eb47c9c7095d8c87a9f21aba2d7f240636ea9a759299d3f99d7f7f9bcd5e
+  playwright-core@1.64.0-alpha-1790635538000: c4d012ebe8fe42dfe02194d8a9785e3c71d4635cfa6a9b41557a7564a4444c66
 
 importers:
 
@@ -32,15 +32,15 @@ importers:
       '@iarna/toml':
         specifier: 2.2.5
         version: 2.2.5
-      '@linger/wire-contracts':
-        specifier: workspace:*
-        version: link:contracts/generated/typescript
       '@playwright/test':
         specifier: 1.61.1
         version: 1.61.1
       '@redocly/cli':
         specifier: 2.39.0
         version: 2.39.0
+      '@talos/wire-contracts':
+        specifier: workspace:*
+        version: link:contracts/generated/typescript
       '@testing-library/dom':
         specifier: 10.4.1
         version: 10.4.1
@@ -144,13 +144,13 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@linger/local-installation':
+      '@talos/local-installation':
         specifier: workspace:*
         version: link:../../packages/local-installation
-      '@linger/service-kit':
+      '@talos/service-kit':
         specifier: workspace:*
         version: link:../../packages/service-kit
-      '@linger/wire-contracts':
+      '@talos/wire-contracts':
         specifier: workspace:*
         version: link:../../contracts/generated/typescript
       yazl:
@@ -185,52 +185,6 @@ importers:
         specifier: 4.1.9
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(tsx@4.22.4)(yaml@2.9.0)
 
-  apps/linger-installer:
-    dependencies:
-      '@linger/local-installation':
-        specifier: workspace:*
-        version: link:../../packages/local-installation
-      '@linger/service-kit':
-        specifier: workspace:*
-        version: link:../../packages/service-kit
-      '@linger/wire-contracts':
-        specifier: workspace:*
-        version: link:../../contracts/generated/typescript
-      react:
-        specifier: 19.2.7
-        version: 19.2.7
-      react-dom:
-        specifier: 19.2.7
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@testing-library/dom':
-        specifier: 10.4.1
-        version: 10.4.1
-      '@testing-library/react':
-        specifier: 16.3.2
-        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@types/react':
-        specifier: 19.2.17
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.17)
-      '@vitejs/plugin-react':
-        specifier: 6.0.3
-        version: 6.0.3(vite@8.1.5(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
-      esbuild:
-        specifier: 0.28.1
-        version: 0.28.1
-      jsdom:
-        specifier: 29.1.1
-        version: 29.1.1(@noble/hashes@2.2.0)
-      vite:
-        specifier: 8.1.5
-        version: 8.1.5(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
-      vitest:
-        specifier: 4.1.9
-        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(tsx@4.22.4)(yaml@2.9.0)
-
   apps/node-services:
     dependencies:
       '@hocuspocus/server':
@@ -239,22 +193,22 @@ importers:
       '@hono/node-server':
         specifier: ^1.19.14
         version: 1.19.15(hono@4.12.32)
-      '@linger/document-files':
+      '@talos/document-files':
         specifier: workspace:*
         version: link:../../packages/document-files
-      '@linger/document-model':
+      '@talos/document-model':
         specifier: workspace:*
         version: link:../../packages/document-model
-      '@linger/knowledge-format':
+      '@talos/knowledge-format':
         specifier: workspace:*
         version: link:../../packages/knowledge-format
-      '@linger/service-kit':
+      '@talos/service-kit':
         specifier: workspace:*
         version: link:../../packages/service-kit
-      '@linger/voice-runtime':
+      '@talos/voice-runtime':
         specifier: workspace:*
         version: link:../voice-runtime
-      '@linger/wire-contracts':
+      '@talos/wire-contracts':
         specifier: workspace:*
         version: link:../../contracts/generated/typescript
       ajv:
@@ -309,12 +263,12 @@ importers:
       '@hocuspocus/provider':
         specifier: ^4.3.0
         version: 4.3.0(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31)
-      '@linger/teamhub-cli':
-        specifier: workspace:*
-        version: link:../teamhub-cli
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.30.0(@cfworker/json-schema@4.1.1)
+      '@talos/teamhub-cli':
+        specifier: workspace:*
+        version: link:../teamhub-cli
       '@types/jsdom':
         specifier: ^21.1.7
         version: 21.1.7
@@ -352,15 +306,61 @@ importers:
         specifier: 3.3.1
         version: 3.3.1
 
-  apps/teamhub-cli:
+  apps/talos-installer:
     dependencies:
-      '@linger/document-files':
+      '@talos/local-installation':
         specifier: workspace:*
-        version: link:../../packages/document-files
-      '@linger/service-kit':
+        version: link:../../packages/local-installation
+      '@talos/service-kit':
         specifier: workspace:*
         version: link:../../packages/service-kit
-      '@linger/wire-contracts':
+      '@talos/wire-contracts':
+        specifier: workspace:*
+        version: link:../../contracts/generated/typescript
+      react:
+        specifier: 19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: 19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@testing-library/dom':
+        specifier: 10.4.1
+        version: 10.4.1
+      '@testing-library/react':
+        specifier: 16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/react':
+        specifier: 19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: 6.0.3
+        version: 6.0.3(vite@8.1.5(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
+      esbuild:
+        specifier: 0.28.1
+        version: 0.28.1
+      jsdom:
+        specifier: 29.1.1
+        version: 29.1.1(@noble/hashes@2.2.0)
+      vite:
+        specifier: 8.1.5
+        version: 8.1.5(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
+      vitest:
+        specifier: 4.1.9
+        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(tsx@4.22.4)(yaml@2.9.0)
+
+  apps/teamhub-cli:
+    dependencies:
+      '@talos/document-files':
+        specifier: workspace:*
+        version: link:../../packages/document-files
+      '@talos/service-kit':
+        specifier: workspace:*
+        version: link:../../packages/service-kit
+      '@talos/wire-contracts':
         specifier: workspace:*
         version: link:../../contracts/generated/typescript
     devDependencies:
@@ -427,12 +427,6 @@ importers:
 
   apps/voice-runtime:
     dependencies:
-      '@linger/service-kit':
-        specifier: workspace:*
-        version: link:../../packages/service-kit
-      '@linger/wire-contracts':
-        specifier: workspace:*
-        version: link:../../contracts/generated/typescript
       '@livekit/agents':
         specifier: 1.7.1
         version: 1.7.1(patch_hash=385866550b874ed2031bc8c42dee77e0640e895900484da8c2ee94b0a4f24332)(@aws-sdk/credential-provider-node@3.972.85)(@livekit/rtc-node@0.13.34)(@smithy/signature-v4@5.7.4)(@types/node@26.0.1)(typescript@6.0.3)(zod@4.4.3)
@@ -442,6 +436,12 @@ importers:
       '@livekit/rtc-node':
         specifier: 0.13.34
         version: 0.13.34
+      '@talos/service-kit':
+        specifier: workspace:*
+        version: link:../../packages/service-kit
+      '@talos/wire-contracts':
+        specifier: workspace:*
+        version: link:../../contracts/generated/typescript
       ws:
         specifier: 8.18.3
         version: 8.18.3
@@ -503,21 +503,6 @@ importers:
       '@hugeicons/react':
         specifier: ^1.1.10
         version: 1.1.10(react@19.2.7)
-      '@linger/document-files':
-        specifier: workspace:*
-        version: link:../../packages/document-files
-      '@linger/document-model':
-        specifier: workspace:*
-        version: link:../../packages/document-model
-      '@linger/knowledge-format':
-        specifier: workspace:*
-        version: link:../../packages/knowledge-format
-      '@linger/service-kit':
-        specifier: workspace:*
-        version: link:../../packages/service-kit
-      '@linger/wire-contracts':
-        specifier: workspace:*
-        version: link:../../contracts/generated/typescript
       '@mantine/core':
         specifier: 9.4.1
         version: 9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -533,6 +518,21 @@ importers:
       '@tailwindcss/postcss':
         specifier: 4.3.1
         version: 4.3.1
+      '@talos/document-files':
+        specifier: workspace:*
+        version: link:../../packages/document-files
+      '@talos/document-model':
+        specifier: workspace:*
+        version: link:../../packages/document-model
+      '@talos/knowledge-format':
+        specifier: workspace:*
+        version: link:../../packages/knowledge-format
+      '@talos/service-kit':
+        specifier: workspace:*
+        version: link:../../packages/service-kit
+      '@talos/wire-contracts':
+        specifier: workspace:*
+        version: link:../../contracts/generated/typescript
       '@tanstack/react-query':
         specifier: 5.101.3
         version: 5.101.3(react@19.2.7)
@@ -710,12 +710,12 @@ importers:
       '@blocknote/core':
         specifier: ^0.51.4
         version: 0.51.4(@types/hast@3.0.4)
-      '@linger/service-kit':
-        specifier: workspace:*
-        version: link:../service-kit
       '@noble/hashes':
         specifier: 2.2.0
         version: 2.2.0
+      '@talos/service-kit':
+        specifier: workspace:*
+        version: link:../service-kit
       yjs:
         specifier: 13.6.31
         version: 13.6.31
@@ -729,7 +729,7 @@ importers:
 
   packages/knowledge-format:
     dependencies:
-      '@linger/service-kit':
+      '@talos/service-kit':
         specifier: workspace:*
         version: link:../service-kit
       yaml:
@@ -748,7 +748,7 @@ importers:
 
   packages/local-installation:
     dependencies:
-      '@linger/service-kit':
+      '@talos/service-kit':
         specifier: workspace:*
         version: link:../service-kit
       tar:
@@ -9807,7 +9807,7 @@ snapshots:
   '@playwright/mcp@0.0.83':
     dependencies:
       playwright: 1.64.0-alpha-1790635538000
-      playwright-core: 1.64.0-alpha-1790635538000(patch_hash=78d5eb47c9c7095d8c87a9f21aba2d7f240636ea9a759299d3f99d7f7f9bcd5e)
+      playwright-core: 1.64.0-alpha-1790635538000(patch_hash=c4d012ebe8fe42dfe02194d8a9785e3c71d4635cfa6a9b41557a7564a4444c66)
 
   '@playwright/test@1.61.1':
     dependencies:
@@ -14173,7 +14173,7 @@ snapshots:
 
   playwright-core@1.61.1: {}
 
-  playwright-core@1.64.0-alpha-1790635538000(patch_hash=78d5eb47c9c7095d8c87a9f21aba2d7f240636ea9a759299d3f99d7f7f9bcd5e): {}
+  playwright-core@1.64.0-alpha-1790635538000(patch_hash=c4d012ebe8fe42dfe02194d8a9785e3c71d4635cfa6a9b41557a7564a4444c66): {}
 
   playwright@1.61.1:
     dependencies:
@@ -14183,7 +14183,7 @@ snapshots:
 
   playwright@1.64.0-alpha-1790635538000:
     dependencies:
-      playwright-core: 1.64.0-alpha-1790635538000(patch_hash=78d5eb47c9c7095d8c87a9f21aba2d7f240636ea9a759299d3f99d7f7f9bcd5e)
+      playwright-core: 1.64.0-alpha-1790635538000(patch_hash=c4d012ebe8fe42dfe02194d8a9785e3c71d4635cfa6a9b41557a7564a4444c66)
 
   pluralize@8.0.0: {}
 

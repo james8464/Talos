@@ -30,7 +30,7 @@ it.each([
         { computer_id: "c1", platform: "win32", daemon_version: version },
         desktop,
       ),
-    ).toBe(`linger-computer-local-3000 runtime login ${runtimeType}`);
+    ).toBe(`talos-computer-local-3000 runtime login ${runtimeType}`);
   },
 );
 
@@ -63,7 +63,7 @@ it("signs in through the CLI from a browser, where there is no Desktop", () => {
       platform: "win32",
       daemon_version: "0.59.0",
     }),
-  ).toBe("linger-computer-local-3000 runtime login pi");
+  ).toBe("talos-computer-local-3000 runtime login pi");
 });
 
 it("keeps the native command inside Desktop until it reports its Computer", () => {

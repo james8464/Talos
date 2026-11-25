@@ -473,7 +473,7 @@ func (e ComputerPermissionStatusPlatform) Valid() bool {
 // Defines values for ComputerPermissionSubject.
 const (
 	ComputerPermissionSubjectComputerUse ComputerPermissionSubject = "computer_use"
-	ComputerPermissionSubjectLinger      ComputerPermissionSubject = "linger"
+	ComputerPermissionSubjectTalos      ComputerPermissionSubject = "talos"
 )
 
 // Valid indicates whether the value is a known member of the ComputerPermissionSubject enum.
@@ -481,7 +481,7 @@ func (e ComputerPermissionSubject) Valid() bool {
 	switch e {
 	case ComputerPermissionSubjectComputerUse:
 		return true
-	case ComputerPermissionSubjectLinger:
+	case ComputerPermissionSubjectTalos:
 		return true
 	default:
 		return false
@@ -1671,14 +1671,14 @@ type ComputedDocumentState struct {
 	Warnings           []string           `json:"warnings"`
 }
 
-// ComputerPermissionAction One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Linger desktop app so a new grant takes effect.
+// ComputerPermissionAction One step the owner takes on their own Mac. prompt raises the macOS prompt, open_settings opens the System Settings pane, and relaunch restarts the Talos desktop app so a new grant takes effect.
 type ComputerPermissionAction struct {
 	Action ComputerPermissionActionAction `json:"action"`
 
 	// Permission A macOS privacy permission an Agent can ask its Computer owner to grant.
 	Permission *ComputerPermissionId `json:"permission,omitempty"`
 
-	// Subject The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+	// Subject The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
 	Subject ComputerPermissionSubject `json:"subject"`
 }
 
@@ -1709,26 +1709,26 @@ type ComputerPermissionState string
 
 // ComputerPermissionStatus The macOS privacy permissions of one Local Computer. Other platforms have no such permissions and report no subjects.
 type ComputerPermissionStatus struct {
-	// Host desktop when the Linger desktop app runs the Computer; standalone otherwise.
+	// Host desktop when the Talos desktop app runs the Computer; standalone otherwise.
 	Host     ComputerPermissionStatusHost      `json:"host"`
 	Platform ComputerPermissionStatusPlatform  `json:"platform"`
 	Subjects []ComputerPermissionSubjectStatus `json:"subjects"`
 }
 
-// ComputerPermissionStatusHost desktop when the Linger desktop app runs the Computer; standalone otherwise.
+// ComputerPermissionStatusHost desktop when the Talos desktop app runs the Computer; standalone otherwise.
 type ComputerPermissionStatusHost string
 
 // ComputerPermissionStatusPlatform defines model for ComputerPermissionStatus.Platform.
 type ComputerPermissionStatusPlatform string
 
-// ComputerPermissionSubject The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+// ComputerPermissionSubject The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
 type ComputerPermissionSubject string
 
 // ComputerPermissionSubjectStatus defines model for ComputerPermissionSubjectStatus.
 type ComputerPermissionSubjectStatus struct {
 	Permissions []ComputerPermissionEntry `json:"permissions"`
 
-	// Subject The app macOS grants the permission to. linger is the Linger desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
+	// Subject The app macOS grants the permission to. talos is the Talos desktop app, which owns shell commands such as screencapture; computer_use is CuaDriver, which owns the computer-use tools.
 	Subject ComputerPermissionSubject `json:"subject"`
 }
 

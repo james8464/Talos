@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/platform/agenttemplates"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/platform/agenttemplates"
 )
 
 // newAnotherMeEnv starts an app whose Human has no Another Me and no Computer
@@ -120,8 +120,8 @@ func TestComputerComingOnlineCreatesAnotherMeOnce(t *testing.T) {
 	if err := env.pool.QueryRow(t.Context(), `SELECT display_name FROM actors WHERE id=$1`, actorID).Scan(&displayName); err != nil {
 		t.Fatal(err)
 	}
-	if displayName != "Linger" {
-		t.Fatalf("default Another Me name=%q want=Linger", displayName)
+	if displayName != "Talos" {
+		t.Fatalf("default Another Me name=%q want=Talos", displayName)
 	}
 	var model, effort, computerID, runtimeType, grantID, createdBy string
 	var receivesAll bool
@@ -153,7 +153,7 @@ func TestComputerComingOnlineCreatesAnotherMeOnce(t *testing.T) {
 	`, roomID, actorID).Scan(&greeting); err != nil {
 		t.Fatal(err)
 	}
-	if greeting != "Hi alice, I'm Linger — your personal AI." {
+	if greeting != "Hi alice, I'm Talos — your personal AI." {
 		t.Fatalf("Another Me greeting=%q", greeting)
 	}
 	assertAnotherMeChat(t, env, roomID)

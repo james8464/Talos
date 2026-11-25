@@ -7,11 +7,11 @@ import { writeCliConfig } from "./test-support/cli-config.js";
 
 it.runIf(
   process.platform === "win32" &&
-    !!process.env.LINGER_TEST_WINDOWS_SYMLINK_FIXTURE,
+    !!process.env.TALOS_TEST_WINDOWS_SYMLINK_FIXTURE,
 )(
   "refuses a precreated file symlink before sending an attachment",
   async () => {
-    const root = process.env.LINGER_TEST_WINDOWS_SYMLINK_FIXTURE!;
+    const root = process.env.TALOS_TEST_WINDOWS_SYMLINK_FIXTURE!;
     const target = path.join(root, "target.json");
     expect(
       (await lstat(path.join(root, "config-link.json"))).isSymbolicLink(),

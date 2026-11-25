@@ -340,7 +340,7 @@ async function assertPlaywrightPatched(root, packages) {
       path.join(root, relative, "lib/coreBundle.js"),
       "utf8",
     );
-    if (!bundle.includes("// Linger: keep focus emulation on every CDP"))
+    if (!bundle.includes("// Talos: keep focus emulation on every CDP"))
       throw new Error(
         `${relative}/lib/coreBundle.js lacks the focus emulation patch`,
       );
@@ -364,7 +364,7 @@ export async function stageComputerTools(
   bundle,
   {
     target = `${process.platform}-${process.arch}`,
-    cacheDirectory = path.join(os.homedir(), ".cache/linger-computer-tools"),
+    cacheDirectory = path.join(os.homedir(), ".cache/talos-computer-tools"),
   } = {},
 ) {
   const root = path.join(bundle, "cli/computer-tools");

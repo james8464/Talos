@@ -12,8 +12,8 @@ test-results/
 .env.local
 *.log
 .DS_Store
-.linger-runtime/
-.linger-contexts/
+.talos-runtime/
+.talos-contexts/
 .local/
 .llm-wiki/
 .llm-wiki-external-sync/
@@ -42,6 +42,6 @@ __pycache__/
 /tmp/
 
 # Local go build output of the Daemon package
-/apps/computer/local-daemon/cmd/linger-computer-daemon/linger-computer-daemon
+/apps/computer/local-daemon/cmd/talos-computer-daemon/talos-computer-daemon
 
 .idea/

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-// The desktop app's updater (`window.lingerDesktop.update`), in the states
+// The desktop app's updater (`window.talosDesktop.update`), in the states
 // its tray shows.
 export type DesktopUpdateState =
   | { readonly kind: "idle" }
@@ -43,7 +43,7 @@ export interface DesktopUpdate {
 function desktopShellApi(): DesktopShellApi | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: DesktopShellApi }).lingerDesktop;
+    : (window as { talosDesktop?: DesktopShellApi }).talosDesktop;
 }
 
 /**

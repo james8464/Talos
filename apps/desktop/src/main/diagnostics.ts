@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 
-import { redact } from "@linger/local-installation/redaction";
+import { redact } from "@talos/local-installation/redaction";
 import { ZipFile } from "yazl";
 
 import {
@@ -304,7 +304,7 @@ export const desktopFiles = async (
 
 export interface DiagnosticsOptions {
   readonly userData: string;
-  // Installation homes: the default LINGER_HOME and, when elsewhere, the
+  // Installation homes: the default TALOS_HOME and, when elsewhere, the
   // folder the installation went into.
   readonly homes: readonly string[];
   // The folder the zip is saved in.
@@ -316,7 +316,7 @@ export interface DiagnosticsOptions {
   readonly userHome?: string;
 }
 
-// Writes linger-diagnostics-<time>.zip with every text redacted and
+// Writes talos-diagnostics-<time>.zip with every text redacted and
 // returns its path, entries and size.
 export const collectDiagnostics = async (
   options: DiagnosticsOptions,
@@ -345,7 +345,7 @@ export const collectDiagnostics = async (
   };
   const files = [...(await desktopFiles(options.userData))];
   for (const [index, home] of homes.entries()) {
-    const prefix = index === 0 ? "linger-home" : `linger-home-${index + 1}`;
+    const prefix = index === 0 ? "talos-home" : `talos-home-${index + 1}`;
     files.push(...(await installationFiles(home, prefix)));
   }
   addText(
@@ -374,7 +374,7 @@ export const collectDiagnostics = async (
     .replace(/\..*$/, "")
     .replaceAll(/[-:]/g, "")
     .replace("T", "-");
-  const target = path.join(options.output, `linger-diagnostics-${stamp}.zip`);
+  const target = path.join(options.output, `talos-diagnostics-${stamp}.zip`);
   const partial = `${target}.partial`;
   try {
     await pipeline(
@@ -395,7 +395,7 @@ export const collectDiagnostics = async (
 export interface DiagnosticsModuleOptions {
   readonly userData: string;
   readonly logs: string;
-  // The default LINGER_HOME.
+  // The default TALOS_HOME.
   readonly home: string;
   readonly version: string;
   // Where saved bundles go, normally Downloads.

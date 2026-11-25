@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/demodata"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/demodata"
 )
 
 // demoPassword is the password SeedIdentities gives alice@example.com.

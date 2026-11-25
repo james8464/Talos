@@ -49,10 +49,10 @@ export async function localmodelsComputerTool(
 // How the installer's InstanceRuntime environment names the tool for an
 // external Computer such as the Desktop's.
 const ENVIRONMENT = {
-  python: "LINGER_LOCALMODELS_PYTHON",
-  moduleDirectory: "LINGER_LOCALMODELS_MODULE_DIR",
-  stateDirectory: "LINGER_LOCALMODELS_STATE",
-  baseDirectory: "LINGER_LOCALMODELS_BASE_DIR",
+  python: "TALOS_LOCALMODELS_PYTHON",
+  moduleDirectory: "TALOS_LOCALMODELS_MODULE_DIR",
+  stateDirectory: "TALOS_LOCALMODELS_STATE",
+  baseDirectory: "TALOS_LOCALMODELS_BASE_DIR",
 } as const satisfies Record<keyof LocalmodelsComputerTool, string>;
 
 export const LOCALMODELS_TOOL_ENVIRONMENT: readonly string[] =
@@ -98,7 +98,7 @@ export function localModelsConfig(tool: LocalmodelsComputerTool) {
   };
 }
 
-/** The `linger-computer login` options that write the same section. */
+/** The `talos-computer login` options that write the same section. */
 export function localModelsLoginArguments(
   tool: LocalmodelsComputerTool | undefined,
 ): string[] {

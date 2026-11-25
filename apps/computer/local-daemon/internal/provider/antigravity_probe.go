@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 // probeAntigravityAuthentication opens an empty ACP session: Antigravity

@@ -231,14 +231,14 @@ describe("EditAgentRuntimeDialog", () => {
     expect(screen.getByRole("button", { name: "Save Runtime" })).toBeDisabled();
   });
 
-  it("reports a Linger Computer upgrade instead of an AI app update when upgrade_required is set", async () => {
+  it("reports a Talos Computer upgrade instead of an AI app update when upgrade_required is set", async () => {
     const computer = localComputer("computer-old", "Old Mac", "online", {
       platform: "darwin",
       upgrade_required: true,
     });
     renderDialog({ computersOverride: { items: [computer] }, onSave: vi.fn() });
     expect(
-      await screen.findByText("Old Mac needs a Linger update."),
+      await screen.findByText("Old Mac needs a Talos update."),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Save Runtime" })).toBeDisabled();
   });
@@ -769,7 +769,7 @@ describe("EditAgentRuntimeDialog", () => {
     });
 
     expect(
-      await screen.findByText("Linger Computer update required"),
+      await screen.findByText("Talos Computer update required"),
     ).toBeVisible();
     expect(
       screen.getByRole("link", { name: "Settings › Computers" }),

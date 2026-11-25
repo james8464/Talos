@@ -8,8 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 var documentInputFailedTerminal = json.RawMessage(`{"type":"failed","error":"document_input_failed"}`)

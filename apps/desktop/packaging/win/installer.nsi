@@ -1,4 +1,4 @@
-; Per-user installer for Linger on Windows. package.py passes VERSION,
+; Per-user installer for Talos on Windows. package.py passes VERSION,
 ; NUMERIC_VERSION (VERSION without a prerelease suffix, for the X.X.X.X field),
 ; STAGE (the app folder) and OUTPUT. No administrator rights are needed. There is
 ; no folder page: the uninstaller removes all of the folder. An install goes where
@@ -7,16 +7,16 @@ Unicode true
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 
-Name "Linger"
+Name "Talos"
 OutFile "${OUTPUT}"
-!define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Linger"
-InstallDir "$LOCALAPPDATA\Programs\Linger"
+!define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Talos"
+InstallDir "$LOCALAPPDATA\Programs\Talos"
 InstallDirRegKey HKCU "${UNINSTALL_KEY}" "InstallLocation"
 ; Where installs from before the rename put the app, and the app id they
 ; named "Open at login" after. Only the upgrade below reads them.
 !define LEGACY_INSTDIR "$LOCALAPPDATA\Programs\Simplex"
 !define LEGACY_APP_ID "ai.simplex.desktop.preview"
-!define APP_ID "com.simplexai.linger.desktop.preview"
+!define APP_ID "com.simplexai.talos.desktop.preview"
 !define RUN_KEY "Software\Microsoft\Windows\CurrentVersion\Run"
 RequestExecutionLevel user
 ; Use zlib without datablock deduplication: single-threaded LZMA spends
@@ -26,25 +26,25 @@ SetCompressor zlib
 SetDatablockOptimize off
 
 VIProductVersion "${NUMERIC_VERSION}.0"
-VIAddVersionKey "ProductName" "Linger"
-VIAddVersionKey "FileDescription" "Linger Setup"
+VIAddVersionKey "ProductName" "Talos"
+VIAddVersionKey "FileDescription" "Talos Setup"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "ProductVersion" "${VERSION}"
-VIAddVersionKey "CompanyName" "Linger"
-VIAddVersionKey "LegalCopyright" "Linger"
+VIAddVersionKey "CompanyName" "Talos"
+VIAddVersionKey "LegalCopyright" "Talos"
 
-!define MUI_ICON "${STAGE}\resources\linger.ico"
-!define MUI_UNICON "${STAGE}\resources\linger.ico"
+!define MUI_ICON "${STAGE}\resources\talos.ico"
+!define MUI_UNICON "${STAGE}\resources\talos.ico"
 ; The app's self-update runs this setup with /update /relaunch after it quit
 ; (updater.ts): the progress page alone, which closes when done (the finish
-; page's MUI sets SetAutoClose true), then Linger starts. Unlike /S, the
+; page's MUI sets SetAutoClose true), then Talos starts. Unlike /S, the
 ; questions below stay visible. /S still installs without any window.
 Var Updating
 Var Relaunch
 ; Set once the install starts replacing files: the earlier app can no longer
 ; start after a failure.
 Var Replacing
-!define MUI_FINISHPAGE_RUN "$INSTDIR\Linger.exe"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\Talos.exe"
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW ShowProgress
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
@@ -68,7 +68,7 @@ FunctionEnd
 
 Function ShowProgress
   StrCmp $Updating 1 0 done
-  !insertmacro MUI_HEADER_TEXT "Updating Linger" "Updating Linger to ${VERSION}..."
+  !insertmacro MUI_HEADER_TEXT "Updating Talos" "Updating Talos to ${VERSION}..."
   done:
 FunctionEnd
 
@@ -77,25 +77,25 @@ Function SkipWhenUpdating
   Abort
 FunctionEnd
 
-; A running Linger holds its files open. Its services, run on Linger.exe, are
+; A running Talos holds its files open. Its services, run on Talos.exe, are
 ; stopped again on Retry, in case it started them before it quit.
-!macro CLOSE_LINGER UN
-Function ${UN}CloseLinger
+!macro CLOSE_TALOS UN
+Function ${UN}CloseTalos
   retry:
   ClearErrors
-  IfFileExists "$INSTDIR\Linger.exe" 0 done
-  Delete "$INSTDIR\Linger.exe"
+  IfFileExists "$INSTDIR\Talos.exe" 0 done
+  Delete "$INSTDIR\Talos.exe"
   IfErrors 0 done
-  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Linger is running. Quit it from its icon in the notification area, then select Retry." IDRETRY again
+  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Talos is running. Quit it from its icon in the notification area, then select Retry." IDRETRY again
   Abort
   again:
-  Call ${UN}StopLinger
+  Call ${UN}StopTalos
   Goto retry
   done:
 FunctionEnd
 !macroend
-!insertmacro CLOSE_LINGER ""
-!insertmacro CLOSE_LINGER "un."
+!insertmacro CLOSE_TALOS ""
+!insertmacro CLOSE_TALOS "un."
 
 ; An install from before the rename lives in another folder: close it and
 ; remove that folder (the app's data is elsewhere), and carry "Open at login"
@@ -103,65 +103,65 @@ FunctionEnd
 Function RemoveLegacyInstall
   retry:
   ClearErrors
-  IfFileExists "${LEGACY_INSTDIR}\Linger.exe" 0 removed
-  Delete "${LEGACY_INSTDIR}\Linger.exe"
+  IfFileExists "${LEGACY_INSTDIR}\Talos.exe" 0 removed
+  Delete "${LEGACY_INSTDIR}\Talos.exe"
   IfErrors 0 removed
-  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Linger is running. Quit it from its icon in the notification area, then select Retry." IDRETRY retry
+  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Talos is running. Quit it from its icon in the notification area, then select Retry." IDRETRY retry
   Abort
   removed:
   RMDir /r "${LEGACY_INSTDIR}"
   ClearErrors
   ReadRegStr $0 HKCU "${RUN_KEY}" "${LEGACY_APP_ID}"
   IfErrors done
-  WriteRegStr HKCU "${RUN_KEY}" "${APP_ID}" '"$INSTDIR\Linger.exe" --background'
+  WriteRegStr HKCU "${RUN_KEY}" "${APP_ID}" '"$INSTDIR\Talos.exe" --background'
   DeleteRegValue HKCU "${RUN_KEY}" "${LEGACY_APP_ID}"
   done:
 FunctionEnd
 
-; Uninstalling, and installing over an earlier release, stops what Linger
+; Uninstalling, and installing over an earlier release, stops what Talos
 ; runs, so nothing keeps running or holds a file (the services run on
-; Linger.exe as their Node): a running Linger quits (index.ts), then an
+; Talos.exe as their Node): a running Talos quits (index.ts), then an
 ; installer script, run by the app's own Node, stops the installation manager
 ; and the services of the local installation (TeamHub, web, node-services,
 ; LiveKit, PostgreSQL). The script ends on its own after a time limit. An
-; install goes on whatever it reports, and Linger starts the services again.
+; install goes on whatever it reports, and Talos starts the services again.
 ; An uninstall that cannot stop them asks to retry; cancelled (or silent), it
 ; fails with exit code 1 and removes nothing, so it can be run again. Data
 ; stays either way.
 !define INSTALLER_SCRIPT "$INSTDIR\resources\app\dist\installer\installer.js"
-; Written by every install since --quit and --stop: an earlier Linger.exe
+; Written by every install since --quit and --stop: an earlier Talos.exe
 ; starts on --quit instead of quitting, and its script has no --stop.
 !define STOP_MARKER "$INSTDIR\resources\stops-services"
 ; $R0 is the installer script that stops the services.
-!macro STOP_LINGER UN
-Function ${UN}StopLinger
-  IfFileExists "$INSTDIR\Linger.exe" 0 done
+!macro STOP_TALOS UN
+Function ${UN}StopTalos
+  IfFileExists "$INSTDIR\Talos.exe" 0 done
   IfFileExists "${STOP_MARKER}" 0 stop
-  ; Without a running Linger this exits at once.
-  ExecWait '"$INSTDIR\Linger.exe" --quit'
+  ; Without a running Talos this exits at once.
+  ExecWait '"$INSTDIR\Talos.exe" --quit'
   stop:
   IfFileExists "$R0" 0 stopped
-  DetailPrint "Stopping Linger on this computer..."
+  DetailPrint "Stopping Talos on this computer..."
   System::Call 'Kernel32::SetEnvironmentVariable(t "ELECTRON_RUN_AS_NODE", t "1")'
-  nsExec::ExecToLog '"$INSTDIR\Linger.exe" "$R0" --instance desktop --stop'
+  nsExec::ExecToLog '"$INSTDIR\Talos.exe" "$R0" --instance desktop --stop'
   Pop $0
   System::Call 'Kernel32::SetEnvironmentVariable(t "ELECTRON_RUN_AS_NODE", n)'
   StrCmp $0 "0" stopped
-  DetailPrint "Some of Linger's services may still be running."
+  DetailPrint "Some of Talos's services may still be running."
 !if "${UN}" == "un."
-  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Linger couldn't stop all of its services. Close Linger and try again." /SD IDCANCEL IDRETRY stop
+  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Talos couldn't stop all of its services. Close Talos and try again." /SD IDCANCEL IDRETRY stop
   SetErrorLevel 1
   Abort
 !endif
   stopped:
   ; Only a release that was asked to quit is waited for; a running earlier
-  ; one never exits on its own and CloseLinger asks at once.
+  ; one never exits on its own and CloseTalos asks at once.
   IfFileExists "${STOP_MARKER}" 0 done
-  ; The app takes a moment to quit; CloseLinger asks after that.
+  ; The app takes a moment to quit; CloseTalos asks after that.
   StrCpy $1 0
   wait:
   ClearErrors
-  Delete "$INSTDIR\Linger.exe"
+  Delete "$INSTDIR\Talos.exe"
   IfErrors 0 done
   IntOp $1 $1 + 1
   IntCmp $1 20 done
@@ -170,16 +170,16 @@ Function ${UN}StopLinger
   done:
 FunctionEnd
 !macroend
-!insertmacro STOP_LINGER ""
-!insertmacro STOP_LINGER "un."
+!insertmacro STOP_TALOS ""
+!insertmacro STOP_TALOS "un."
 
 ; An earlier release's services are stopped by this release's script, run
-; by that release's Linger.exe: an earlier script may not stop them (one
+; by that release's Talos.exe: an earlier script may not stop them (one
 ; before --stop has none; 0.1.2's left TeamHub, web and node-services
 ; running). A running app of a release without the marker is left to
-; CloseLinger.
-Function StopEarlierLinger
-  IfFileExists "$INSTDIR\Linger.exe" 0 done
+; CloseTalos.
+Function StopEarlierTalos
+  IfFileExists "$INSTDIR\Talos.exe" 0 done
   InitPluginsDir
   File "/oname=$PLUGINSDIR\stop.mjs" "${STAGE}\resources\app\dist\installer\installer.js"
   ; The temporary script reads distribution.json beside itself. Use the
@@ -187,14 +187,14 @@ Function StopEarlierLinger
   IfFileExists "$INSTDIR\resources\app\dist\installer\distribution.json" 0 +2
   CopyFiles /SILENT "$INSTDIR\resources\app\dist\installer\distribution.json" "$PLUGINSDIR"
   StrCpy $R0 "$PLUGINSDIR\stop.mjs"
-  Call StopLinger
+  Call StopTalos
   done:
 FunctionEnd
 
-Section "Linger"
+Section "Talos"
   SetOutPath "$INSTDIR"
-  Call StopEarlierLinger
-  Call CloseLinger
+  Call StopEarlierTalos
+  Call CloseTalos
   Call RemoveLegacyInstall
   ; An update replaces the whole app folder.
   StrCpy $Replacing 1
@@ -202,51 +202,51 @@ Section "Linger"
   File /r "${STAGE}\*"
   FileOpen $0 "${STOP_MARKER}" w
   FileClose $0
-  WriteUninstaller "$INSTDIR\Uninstall Linger.exe"
+  WriteUninstaller "$INSTDIR\Uninstall Talos.exe"
   ; The app writes its notification id into this shortcut (index.ts).
-  CreateShortcut "$SMPROGRAMS\Linger.lnk" "$INSTDIR\Linger.exe"
-  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayName" "Linger"
+  CreateShortcut "$SMPROGRAMS\Talos.lnk" "$INSTDIR\Talos.exe"
+  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayName" "Talos"
   WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayVersion" "${VERSION}"
-  WriteRegStr HKCU "${UNINSTALL_KEY}" "Publisher" "Linger"
-  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayIcon" "$INSTDIR\Linger.exe"
+  WriteRegStr HKCU "${UNINSTALL_KEY}" "Publisher" "Talos"
+  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayIcon" "$INSTDIR\Talos.exe"
   WriteRegStr HKCU "${UNINSTALL_KEY}" "InstallLocation" "$INSTDIR"
-  WriteRegStr HKCU "${UNINSTALL_KEY}" "UninstallString" '"$INSTDIR\Uninstall Linger.exe"'
+  WriteRegStr HKCU "${UNINSTALL_KEY}" "UninstallString" '"$INSTDIR\Uninstall Talos.exe"'
   WriteRegDWORD HKCU "${UNINSTALL_KEY}" "NoModify" 1
   WriteRegDWORD HKCU "${UNINSTALL_KEY}" "NoRepair" 1
 SectionEnd
 
 ; Neither a silent install nor an update shows the finish page to start
-; Linger from.
+; Talos from.
 Function .onInstSuccess
   StrCmp $Relaunch 1 0 done
-  Exec '"$INSTDIR\Linger.exe"'
+  Exec '"$INSTDIR\Talos.exe"'
   done:
 FunctionEnd
 
 ; Runs after Cancel on a question, or Abort on a file that could not be
 ; written, once the person closes the window. An update that stopped before
 ; replacing files starts the earlier app again, which offers the update again;
-; otherwise only this setup can bring Linger back.
+; otherwise only this setup can bring Talos back.
 Function .onInstFailed
   StrCmp $Updating 1 0 done
   StrCmp $Replacing 1 rerun
-  IfFileExists "$INSTDIR\Linger.exe" 0 rerun
-  MessageBox MB_OK|MB_ICONEXCLAMATION "Linger was not updated. It will start again and offer the update again." /SD IDOK
+  IfFileExists "$INSTDIR\Talos.exe" 0 rerun
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Talos was not updated. It will start again and offer the update again." /SD IDOK
   StrCmp $Relaunch 1 0 done
-  Exec '"$INSTDIR\Linger.exe"'
+  Exec '"$INSTDIR\Talos.exe"'
   Goto done
   rerun:
-  MessageBox MB_OK|MB_ICONEXCLAMATION "Linger was not updated and cannot start until it is. Run this setup again to finish the update:$\r$\n$EXEPATH" /SD IDOK
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Talos was not updated and cannot start until it is. Run this setup again to finish the update:$\r$\n$EXEPATH" /SD IDOK
   done:
 FunctionEnd
 
 Section "Uninstall"
-  ; Settings, sign-in and logs stay in %APPDATA%\Linger, and the local
+  ; Settings, sign-in and logs stay in %APPDATA%\Talos, and the local
   ; installation (%USERPROFILE%\.simplexai) with its data.
   StrCpy $R0 "${INSTALLER_SCRIPT}"
-  Call un.StopLinger
-  Call un.CloseLinger
-  Delete "$SMPROGRAMS\Linger.lnk"
+  Call un.StopTalos
+  Call un.CloseTalos
+  Delete "$SMPROGRAMS\Talos.lnk"
   RMDir /r "$INSTDIR"
   DeleteRegKey HKCU "${UNINSTALL_KEY}"
   ; "Open at login", named after the app id (index.ts).

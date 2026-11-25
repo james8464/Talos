@@ -8,9 +8,9 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/documenttext"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/externalsource"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/documenttext"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/externalsource"
 )
 
 // fileAdmission checks the exact selected Version, including normalization failures.

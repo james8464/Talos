@@ -1,4 +1,4 @@
-module github.com/simplexai-labs/linger/skills
+module github.com/simplexai-labs/talos/skills
 
 go 1.26.0
 

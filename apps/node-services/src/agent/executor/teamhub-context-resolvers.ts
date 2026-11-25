@@ -5,12 +5,12 @@ import {
   TEAMHUB_AGENT_SERVICE_AUDIENCE,
   TeamHubMcpInternalClientError,
   type TeamHubMcpInternalFetch,
-} from "@linger/wire-contracts/teamhub-internal/client";
+} from "@talos/wire-contracts/teamhub-internal/client";
 import {
   parseExecutionResources,
   type ExecutionResources,
 } from "./context-runtime-state.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import { createHash } from "node:crypto";
 import type { ExecutionContextRef } from "./context-ref.js";
 

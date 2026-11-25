@@ -68,7 +68,7 @@ try {
       const response = await fetch(input, init);
       assert.match(
         new Headers(init?.headers).get("user-agent") ?? "",
-        /^linger-memory\/budget-test$/u,
+        /^talos-memory\/budget-test$/u,
       );
       if (response.status === 200 || response.status === 304)
         pollCounts[String(response.status) as "200" | "304"]++;

@@ -1,4 +1,4 @@
-import { materializeRoomDocument } from "@linger/document-model";
+import { materializeRoomDocument } from "@talos/document-model";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { createDocumentRuntimeApp } from "../../src/document/app.js";

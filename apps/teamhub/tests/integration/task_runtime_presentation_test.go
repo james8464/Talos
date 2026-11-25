@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 func TestTaskRuntimePresentationHistoryAndPrivacy(t *testing.T) {

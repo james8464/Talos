@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func TestAgentRuntimeInboxTerminalRunReloadsByInvocationMessage(t *testing.T) {

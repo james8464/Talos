@@ -270,8 +270,8 @@ describe("VoiceFocusSurface", () => {
   });
 
   it("points the Mac desktop app to System Settings for a blocked microphone", async () => {
-    const desktop = window as { lingerDesktop?: unknown };
-    desktop.lingerDesktop = { platform: "darwin" };
+    const desktop = window as { talosDesktop?: unknown };
+    desktop.talosDesktop = { platform: "darwin" };
     try {
       render(
         <VoiceControlContext.Provider
@@ -291,10 +291,10 @@ describe("VoiceFocusSurface", () => {
         await screen.findByRole("heading", { name: "Recording did not start" }),
       ).toBeVisible();
       expect(screen.getByRole("alert")).toHaveTextContent(
-        "Linger can't use the microphone. Allow Linger in System Settings › Privacy & Security › Microphone, then try again.",
+        "Talos can't use the microphone. Allow Talos in System Settings › Privacy & Security › Microphone, then try again.",
       );
     } finally {
-      delete desktop.lingerDesktop;
+      delete desktop.talosDesktop;
     }
   });
 

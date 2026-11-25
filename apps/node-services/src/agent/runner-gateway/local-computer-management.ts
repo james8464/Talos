@@ -10,7 +10,7 @@ import type {
   ByokTestResult,
   ComputerPermissionStatus,
   ModelSourceStatus,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 export type LocalRuntimeType = "claude" | "codex" | "pi" | "antigravity";
 
@@ -253,7 +253,7 @@ export interface LocalComputerPermissionCommand {
   readonly ownerActorId: string;
   readonly computerId: string;
   readonly action: "status" | "prompt" | "open_settings" | "relaunch";
-  readonly subject?: "linger" | "computer_use";
+  readonly subject?: "talos" | "computer_use";
   readonly permission?: "screen_recording" | "accessibility";
   readonly signal?: AbortSignal;
 }
@@ -747,7 +747,7 @@ const isProtocolId = (value: unknown): value is string =>
 import type {
   RunnerHello,
   RuntimeConfig,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import type { RunnerOperationTarget } from "./runner-operation.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";

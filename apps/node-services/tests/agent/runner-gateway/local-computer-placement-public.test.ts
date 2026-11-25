@@ -1,6 +1,6 @@
 import { testComputerRelease } from "../test-support/runner-gateway.js";
 import { describe, expect, it, vi } from "vitest";
-import type { RunnerHello } from "@linger/wire-contracts/runner-gateway/types";
+import type { RunnerHello } from "@talos/wire-contracts/runner-gateway/types";
 import {
   DEFAULT_LOCAL_RUNTIME_MODELS,
   LocalComputerOfflineError,
@@ -87,7 +87,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-owner",
             tenant_id: "tenant-acme",
-            label: "Linger managed workspace",
+            label: "Talos managed workspace",
             mode: "workspace-write",
             scope: "owner",
           },
@@ -165,7 +165,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-repo",
             tenant_id: "tenant-acme",
-            label: "Linger workspace",
+            label: "Talos workspace",
             mode: "workspace-write",
             scope: "owner",
           },
@@ -265,7 +265,7 @@ describe("RunnerGateway", () => {
         {
           grant_id: "grant-repo",
           tenant_id: "tenant-acme",
-          label: "Linger workspace",
+          label: "Talos workspace",
           mode: "workspace-write",
           scope: "owner",
         },
@@ -351,7 +351,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-owner",
             tenant_id: "tenant-acme",
-            label: "Linger workspace",
+            label: "Talos workspace",
             mode: "workspace-write",
             scope: "owner",
           },
@@ -816,7 +816,7 @@ describe("RunnerGateway", () => {
             {
               grant_id: "grant-owner",
               tenant_id: "tenant-acme",
-              label: "Linger workspace",
+              label: "Talos workspace",
               mode: "workspace-write",
               scope: "owner",
             },
@@ -962,7 +962,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-owner",
             tenant_id: "tenant-acme",
-            label: "Linger workspace",
+            label: "Talos workspace",
             mode: "workspace-write",
             scope: "owner",
           },
@@ -1087,7 +1087,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-owner",
             tenant_id: "tenant-acme",
-            label: "Linger workspace",
+            label: "Talos workspace",
             mode: "workspace-write",
             scope: "owner",
           },
@@ -1158,7 +1158,7 @@ describe("RunnerGateway", () => {
           {
             grant_id: "grant-owner",
             tenant_id: "tenant-acme",
-            label: "Linger workspace",
+            label: "Talos workspace",
             mode: "workspace-write",
             scope: "owner",
           },

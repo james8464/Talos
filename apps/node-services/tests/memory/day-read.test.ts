@@ -212,7 +212,7 @@ describe("runDayRead", () => {
     const memoryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "day-read-"));
     const { store, saved } = memoryStore();
     const profile = {
-      text: "Works at Linger.",
+      text: "Works at Talos.",
       date: "2026-09-02",
     };
     let synced = false;

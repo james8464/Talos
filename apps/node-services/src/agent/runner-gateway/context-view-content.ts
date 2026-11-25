@@ -3,8 +3,8 @@ import { constants, type BigIntStats } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
 
-import { mediaTypeForExtension } from "@linger/document-files/media-type";
-import { sha256Hex } from "@linger/service-kit/node";
+import { mediaTypeForExtension } from "@talos/document-files/media-type";
+import { sha256Hex } from "@talos/service-kit/node";
 
 import type { RuntimeViewPlan } from "../executor/workspace.js";
 import {

@@ -31,7 +31,7 @@ import {
   observeAudioLevel,
   sessionReadinessFailure,
 } from "./voice-media-room";
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 import { VoiceModeDisconnectedError } from "./voice-mode-errors";
 import { translate } from "@/i18n/language";
 import { voiceSessionMessages as m } from "./voice-session.messages";
@@ -163,14 +163,14 @@ export async function openVoiceMode(input: {
             };
             const generation = String(credential.generation);
             const readyForCurrentTrack =
-              currentAttributes["linger.voice_ready_generation"] ===
+              currentAttributes["talos.voice_ready_generation"] ===
                 generation &&
               (!expectedTrackSid ||
-                currentAttributes["linger.voice_ready_track"] ===
+                currentAttributes["talos.voice_ready_track"] ===
                   expectedTrackSid);
             const failureForCurrentGeneration =
-              Boolean(currentAttributes["linger.voice_dictation_failure"]) &&
-              currentAttributes["linger.voice_dictation_failure_generation"] ===
+              Boolean(currentAttributes["talos.voice_dictation_failure"]) &&
+              currentAttributes["talos.voice_dictation_failure_generation"] ===
                 generation;
             // A Runtime failure can happen before it publishes readiness. Learn
             // the trusted Agent identity from the generation-scoped signal so the
@@ -182,7 +182,7 @@ export async function openVoiceMode(input: {
               readinessFailure = new Error(
                 translate(
                   runtimeFailureMessage(
-                    currentAttributes["linger.voice_dictation_failure_code"],
+                    currentAttributes["talos.voice_dictation_failure_code"],
                   ),
                 ),
               );
@@ -303,9 +303,9 @@ export async function openVoiceMode(input: {
         for (const participant of media.room.remoteParticipants.values())
           if (
             participant.isAgent &&
-            participant.attributes["linger.voice_ready_generation"] ===
+            participant.attributes["talos.voice_ready_generation"] ===
               String(credential.generation) &&
-            participant.attributes["linger.voice_ready_track"] ===
+            participant.attributes["talos.voice_ready_track"] ===
               publication.trackSid
           )
             runtimeIdentity = participant.identity;

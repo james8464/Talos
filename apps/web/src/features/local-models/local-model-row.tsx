@@ -13,7 +13,7 @@ import {
   MistralIcon,
   QwenIcon,
 } from "@hugeicons/core-free-icons";
-import { isInkling2MiniModelId } from "@linger/service-kit/featured-models";
+import { isInkling2MiniModelId } from "@talos/service-kit/featured-models";
 import { useId, type MouseEvent } from "react";
 import { Link } from "react-router";
 

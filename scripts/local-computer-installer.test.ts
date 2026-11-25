@@ -82,14 +82,14 @@ const terminateFixtureProcess = async (
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
 const installer = path.join(
   repositoryRoot,
-  "scripts/install-linger-computer.sh",
+  "scripts/install-talos-computer.sh",
 );
 const uninstaller = path.join(
   repositoryRoot,
-  "scripts/uninstall-linger-computer.sh",
+  "scripts/uninstall-talos-computer.sh",
 );
 const installerProfileFile =
-  process.env.LINGER_INSTALLER_TEST_PROFILE_FILE?.trim();
+  process.env.TALOS_INSTALLER_TEST_PROFILE_FILE?.trim();
 const temporaryRoots: string[] = [];
 const installerProfile = {
   artifact: { calls: 0, totalMs: 0 },
@@ -129,7 +129,7 @@ const sharedArtifacts = new Map<SharedArtifactVersion, Release>();
 
 beforeAll(async () => {
   sharedArtifactRoot = await mkdtemp(
-    path.join(os.tmpdir(), "linger-installer-shared-"),
+    path.join(os.tmpdir(), "talos-installer-shared-"),
   );
   sharedDeps = await writeDeps(sharedArtifactRoot);
   for (const version of ["1.2.3", "1.2.4"] as const) {
@@ -203,10 +203,10 @@ afterAll(async () => {
 // Web client's side of these.
 describe("Computer environment names", () => {
   it.for([
-    ["https://ci-linger.example.org", "ci"],
-    ["https://staging-linger.example.net", "staging"],
+    ["https://ci-talos.example.org", "ci"],
+    ["https://staging-talos.example.net", "staging"],
     ["https://dev-local.example.net", "dev-local"],
-    ["https://linger.example.com", "linger"],
+    ["https://talos.example.com", "talos"],
     ["http://localhost:3000", "local-3000"],
     ["http://127.0.0.1:23300", "local-23300"],
     ["http://[::1]:8080", "local-8080"],
@@ -232,7 +232,7 @@ describe("Computer environment names", () => {
   );
 });
 
-describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
+describe.concurrent("talos-computer installer", { timeout: 30_000 }, () => {
   it("shows progress only for interactive package downloads", async ({
     expect,
   }) => {
@@ -260,7 +260,7 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
   }) => {
     const lines = (await readFile(installer, "utf8")).split("\n");
     for (const line of [
-      'web_origin="${LINGER_WEB_URL:-http://localhost:3000}"',
+      'web_origin="${TALOS_WEB_URL:-http://localhost:3000}"',
       'release_darwin_arm64=""',
       'release_darwin_x64=""',
       'release_linux_arm64=""',
@@ -282,13 +282,13 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     await expect(
       stat(
         path.join(
           fixture.installRoot,
           await activeBundleName(fixture.installRoot),
-          "cli/linger-computer",
+          "cli/talos-computer",
         ),
       ),
     ).resolves.toBeDefined();
@@ -301,7 +301,7 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
     await expect(stat(privateNode)).resolves.toBeDefined();
     await expect(
       readFile(
-        fixture.environment.LINGER_INSTALL_TEST_NODE_INVOCATIONS!,
+        fixture.environment.TALOS_INSTALL_TEST_NODE_INVOCATIONS!,
         "utf8",
       ),
     ).resolves.toContain(privateNode);
@@ -344,9 +344,9 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
     ).resolves.toBe(`../../${depsName}/computer-tools`);
     expect(
       (await readdir(path.dirname(fixture.launcher))).filter((entry) =>
-        entry.startsWith("linger-computer"),
+        entry.startsWith("talos-computer"),
       ),
-    ).toEqual(["linger-computer", "linger-computer-local-3000"]);
+    ).toEqual(["talos-computer", "talos-computer-local-3000"]);
   }, 30_000);
 
   it("installs when started from a directory that no longer exists", async ({
@@ -378,7 +378,7 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   }, 30_000);
 
   it("installs without running setup and prints the explicit next command", async ({
@@ -390,7 +390,7 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
 
     await expect(readFile(fixture.invocations, "utf8")).rejects.toThrow();
     expect(result.stdout).toMatch(
-      /Next:\n {2}\S*linger-computer-local-3000 login\n\nHelp:\n {2}\S*linger-computer-local-3000 --help\n/u,
+      /Next:\n {2}\S*talos-computer-local-3000 login\n\nHelp:\n {2}\S*talos-computer-local-3000 --help\n/u,
     );
 
     await execFileAsync(fixture.launcher, ["login"], {
@@ -414,7 +414,7 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
 
     expect(result.stdout).toContain(`Next:\n  ${fixture.launcher} login\n`);
     expect(result.stdout).toContain(
-      "To run linger-computer-local-3000 by name, run:",
+      "To run talos-computer-local-3000 by name, run:",
     );
     expect(result.stdout).toContain(
       `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile`,
@@ -427,7 +427,7 @@ describe.concurrent("linger-computer installer", { timeout: 30_000 }, () => {
         "-c",
         `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile
 export PATH="$HOME/.local/bin:$PATH"
-linger-computer login`,
+talos-computer login`,
       ],
       { env: environment },
     );
@@ -453,14 +453,14 @@ linger-computer login`,
     const result = await runInstaller({ ...fixture, environment });
 
     expect(result.stdout).toContain(
-      "To run linger-computer-local-3000 by name, open a new terminal or run:",
+      "To run talos-computer-local-3000 by name, open a new terminal or run:",
     );
     expect(result.stdout).not.toContain(
       `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile`,
     );
     expect(result.stdout).toContain('export PATH="$HOME/.local/bin:$PATH"');
     expect(result.stdout).toMatch(
-      /Next:\n {2}\S*linger-computer-local-3000 login\n\nHelp:\n {2}\S*linger-computer-local-3000 --help\n/u,
+      /Next:\n {2}\S*talos-computer-local-3000 login\n\nHelp:\n {2}\S*talos-computer-local-3000 --help\n/u,
     );
   });
 
@@ -477,20 +477,20 @@ linger-computer login`,
 
     expect(result.stdout).not.toContain("by name");
     expect(result.stdout).toContain(
-      "Next:\n  linger-computer-local-3000 login\n",
+      "Next:\n  talos-computer-local-3000 login\n",
     );
     expect(result.stdout).toContain(
-      "While this is the only environment on this computer, linger-computer runs it too.",
+      "While this is the only environment on this computer, talos-computer runs it too.",
     );
     await expect(
-      execFileAsync("linger-computer", ["login"], { env: environment }),
+      execFileAsync("talos-computer", ["login"], { env: environment }),
     ).resolves.toBeDefined();
   });
 
   it("persists a plain HTTP enrollment origin", async ({ expect }) => {
     const fixture = await installerFixture("1.2.3");
     const origin = "http://10.0.0.5:31037";
-    const environment = { ...fixture.environment, LINGER_WEB_URL: origin };
+    const environment = { ...fixture.environment, TALOS_WEB_URL: origin };
     const installed = environmentOf(fixture, "ip-10-0-0-5-31037");
 
     await runInstaller({ ...fixture, environment });
@@ -512,7 +512,7 @@ linger-computer login`,
     const fixture = await installerFixture("1.2.3");
     const dataDirectory = path.join(fixture.root, "isolated-data");
     const binDirectory = path.join(fixture.root, "isolated-bin");
-    const launcher = path.join(binDirectory, "linger-computer-local-3000");
+    const launcher = path.join(binDirectory, "talos-computer-local-3000");
     await mkdir(dataDirectory, { recursive: true, mode: 0o700 });
     await mkdir(binDirectory, { recursive: true, mode: 0o700 });
     const enrolledConfig = `${JSON.stringify({
@@ -529,8 +529,8 @@ linger-computer login`,
       ...fixture,
       environment: {
         ...fixture.environment,
-        LINGER_COMPUTER_DATA_DIR: dataDirectory,
-        LINGER_COMPUTER_BIN_DIR: binDirectory,
+        TALOS_COMPUTER_DATA_DIR: dataDirectory,
+        TALOS_COMPUTER_BIN_DIR: binDirectory,
       },
     });
 
@@ -538,7 +538,7 @@ linger-computer login`,
       "Existing Computer configuration found; installing the managed package in place.",
     );
     expect(result.stdout).toMatch(
-      /Next:\n {2}\S*linger-computer-local-3000 daemon status\n/u,
+      /Next:\n {2}\S*talos-computer-local-3000 daemon status\n/u,
     );
     expect(result.stdout).not.toMatch(/ login\n/u);
     expect(await readFile(fixture.invocations, "utf8")).toContain("stop\n");
@@ -551,10 +551,10 @@ linger-computer login`,
     ).resolves.toBe("1");
     const launcherSource = await readFile(launcher, "utf8");
     expect(launcherSource).toContain(
-      `data_root="\${LINGER_COMPUTER_DATA_DIR:-${dataDirectory}}"`,
+      `data_root="\${TALOS_COMPUTER_DATA_DIR:-${dataDirectory}}"`,
     );
     expect(launcherSource).toContain(
-      'LINGER_COMPUTER_CONFIG="$data_root/config.json"',
+      'TALOS_COMPUTER_CONFIG="$data_root/config.json"',
     );
   }, 30_000);
 
@@ -563,7 +563,7 @@ linger-computer login`,
   }) => {
     const fixture = await installerFixture("1.2.3");
     const developmentOrigin = "http://10.0.0.5:31037";
-    const productionOrigin = "https://app-linger.example.test";
+    const productionOrigin = "https://app-talos.example.test";
     const development = environmentOf(fixture, "ip-10-0-0-5-31037");
     const production = environmentOf(fixture, "app");
     const environment = {
@@ -572,17 +572,17 @@ linger-computer login`,
     };
     await runInstaller({
       ...fixture,
-      environment: { ...environment, LINGER_WEB_URL: developmentOrigin },
+      environment: { ...environment, TALOS_WEB_URL: developmentOrigin },
     });
 
     const result = await runInstaller({
       ...fixture,
-      environment: { ...environment, LINGER_WEB_URL: productionOrigin },
+      environment: { ...environment, TALOS_WEB_URL: productionOrigin },
     });
 
-    expect(result.stdout).toContain("Next:\n  linger-computer-app login\n");
+    expect(result.stdout).toContain("Next:\n  talos-computer-app login\n");
     expect(result.stdout).toMatch(
-      /This computer has Linger Computer for 2 environments, each with its own command:\n {2}linger-computer-app +https:\/\/app-linger\.example\.test {2}\(this installation\)\n {2}linger-computer-ip-10-0-0-5-31037 +http:\/\/10\.0\.0\.5:31037\nlinger-computer alone lists them instead of choosing one\.\n/u,
+      /This computer has Talos Computer for 2 environments, each with its own command:\n {2}talos-computer-app +https:\/\/app-talos\.example\.test {2}\(this installation\)\n {2}talos-computer-ip-10-0-0-5-31037 +http:\/\/10\.0\.0\.5:31037\ntalos-computer alone lists them instead of choosing one\.\n/u,
     );
     for (const [installed, origin] of [
       [development, developmentOrigin],
@@ -603,7 +603,7 @@ linger-computer login`,
     ).rejects.toMatchObject({
       code: 2,
       stderr: expect.stringContaining(
-        "Linger Computer is installed for 2 environments on this computer. Run the command of the environment you mean:\n  linger-computer-app                https://app-linger.example.test\n  linger-computer-ip-10-0-0-5-31037  http://10.0.0.5:31037\n",
+        "Talos Computer is installed for 2 environments on this computer. Run the command of the environment you mean:\n  talos-computer-app                https://app-talos.example.test\n  talos-computer-ip-10-0-0-5-31037  http://10.0.0.5:31037\n",
       ),
     });
   });
@@ -619,7 +619,7 @@ linger-computer login`,
 
     await expect(
       execFileAsync(fixture.launcher, ["version"], { env: environment }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   });
 
   it("ignores an incompatible host Node instead of upgrading or using it", async ({
@@ -647,7 +647,7 @@ linger-computer login`,
     await expect(readFile(hostNodeInvocations, "utf8")).rejects.toThrow();
     await expect(
       execFileAsync(fixture.launcher, ["version"], { env: environment }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   });
 
   it("does not reinstall an already current artifact", async ({ expect }) => {
@@ -657,7 +657,7 @@ linger-computer login`,
     await runInstaller(fixture);
     const installedBundle = await activeBundleName(fixture.installRoot);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
     await rm(fixture.artifact!.app);
@@ -667,7 +667,7 @@ linger-computer login`,
       ...fixture,
       environment: {
         ...fixture.environment,
-        LINGER_INSTALL_TEST_UNCONFIGURED: "1",
+        TALOS_INSTALL_TEST_UNCONFIGURED: "1",
       },
     });
 
@@ -676,7 +676,7 @@ linger-computer login`,
       installedBundle,
     );
     await expect(
-      readFile(fixture.environment.LINGER_INSTALL_TEST_RUNNING!, "utf8"),
+      readFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "utf8"),
     ).resolves.toBe("running");
     await expect(readFile(fixture.invocations, "utf8")).rejects.toThrow();
   });
@@ -690,7 +690,7 @@ linger-computer login`,
       fixture.launcher,
       `#!/bin/sh
 case "$1" in
-  version) printf '%s\\n' 'linger-computer 1.2.3' ;;
+  version) printf '%s\\n' 'talos-computer 1.2.3' ;;
   status) printf '%s\\n' '{"version":1,"daemon":{"state":"stopped","active_operations":0}}' ;;
   *) exit 12 ;;
 esac
@@ -705,7 +705,7 @@ esac
       execFileAsync(fixture.launcher, ["--help"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer usage\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer usage\n" });
   });
 
   it("upgrades when the artifact checksum changes without a version change", async ({
@@ -722,7 +722,7 @@ esac
 
     expect(result.stdout).toContain("Upgrade available: 1.2.3 -> 1.2.3");
     expect(result.stdout).toContain(
-      "Linger Computer upgraded from 1.2.3 to 1.2.3 in ",
+      "Talos Computer upgraded from 1.2.3 to 1.2.3 in ",
     );
     expect(await activeBundleName(fixture.installRoot)).not.toBe(
       installedBundle,
@@ -731,7 +731,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   }, 30_000);
 
   it("points Next at daemon start when a logged-in daemon is stopped", async ({
@@ -765,12 +765,12 @@ esac
       artifact: sharedArtifact("1.2.4"),
       environment: {
         ...fixture.environment,
-        LINGER_INSTALL_TEST_UNCONFIGURED: "1",
+        TALOS_INSTALL_TEST_UNCONFIGURED: "1",
       },
     });
 
     expect(result.stdout).toContain(
-      "Linger Computer upgraded from 1.2.3 to 1.2.4 in ",
+      "Talos Computer upgraded from 1.2.3 to 1.2.4 in ",
     );
     expect(result.stdout).toMatch(/Next:\n {2}\S+ login\n/);
     expect(await activeBundleName(fixture.installRoot)).not.toBe(
@@ -797,7 +797,7 @@ esac
         artifact: sharedArtifact("1.2.4"),
         environment: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_MALFORMED_CONFIG: "1",
+          TALOS_INSTALL_TEST_MALFORMED_CONFIG: "1",
         },
       }),
     ).rejects.toMatchObject({
@@ -842,7 +842,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   });
 
   it("repairs a missing launcher through the active bundle lifecycle CLI", async ({
@@ -852,7 +852,7 @@ esac
     await runInstaller(fixture);
     const installedBundle = await activeBundleName(fixture.installRoot);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
     await rm(fixture.launcher);
@@ -865,7 +865,7 @@ esac
     expect(await readFile(fixture.invocations, "utf8")).toContain("stop\n");
     expect(await readFile(fixture.invocations, "utf8")).toContain("start\n");
     await expect(
-      readFile(fixture.environment.LINGER_INSTALL_TEST_RUNNING!, "utf8"),
+      readFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "utf8"),
     ).resolves.toBe("1");
     await expect(stat(fixture.launcher)).resolves.toBeDefined();
   });
@@ -879,10 +879,10 @@ esac
     const cliEntry = path.join(
       fixture.installRoot,
       installedBundle,
-      "cli/linger-computer",
+      "cli/talos-computer",
     );
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
     await writeFile(cliEntry, "corrupted\n");
@@ -898,7 +898,7 @@ esac
     );
     await expect(readFile(cliEntry, "utf8")).resolves.toBe("corrupted\n");
     await expect(
-      readFile(fixture.environment.LINGER_INSTALL_TEST_RUNNING!, "utf8"),
+      readFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "utf8"),
     ).resolves.toBe("running");
   });
 
@@ -923,8 +923,8 @@ esac
   );
 
   it.for([
-    "cli/linger-computer",
-    "daemon/linger-computer-daemon",
+    "cli/talos-computer",
+    "daemon/talos-computer-daemon",
     "runtime/bin/node",
   ])(
     "rejects a symlinked installed bundle entry %s",
@@ -957,12 +957,12 @@ esac
           ...fixture,
           environment: {
             ...fixture.environment,
-            LINGER_WEB_URL: origin,
+            TALOS_WEB_URL: origin,
           },
         }),
       ).rejects.toMatchObject({
         stderr: expect.stringContaining(
-          "Linger Web origin must be an HTTPS or HTTP origin without a path.",
+          "Talos Web origin must be an HTTPS or HTTP origin without a path.",
         ),
       });
       await expect(stat(fixture.installRoot)).rejects.toThrow();
@@ -998,7 +998,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   });
 
   it("returns the signal exit code when installation is terminated", async ({
@@ -1014,8 +1014,8 @@ esac
       env: {
         ...fixture.environment,
         ...releaseEnvironment(fixture.artifact!),
-        LINGER_INSTALL_TEST_BLOCKING_VERSION: blockingMarker,
-        LINGER_INSTALL_TEST_CLEANUP_INVOCATIONS: cleanupInvocations,
+        TALOS_INSTALL_TEST_BLOCKING_VERSION: blockingMarker,
+        TALOS_INSTALL_TEST_CLEANUP_INVOCATIONS: cleanupInvocations,
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -1063,7 +1063,7 @@ esac
 
     await expect(runInstaller(fixture)).rejects.toMatchObject({
       stderr: expect.stringContaining(
-        "Existing linger-computer-local-3000 launcher is not owned by this installation",
+        "Existing talos-computer-local-3000 launcher is not owned by this installation",
       ),
     });
     await expect(readFile(fixture.launcher, "utf8")).resolves.toBe(unrelated);
@@ -1084,7 +1084,7 @@ esac
       runInstaller({ ...fixture, artifact: sharedArtifact("1.2.4") }),
     ).rejects.toMatchObject({
       stderr: expect.stringContaining(
-        `The previous Local Computer installation is incomplete, so the installer cannot stop its daemon. Stop any running linger-computer-daemon process, remove the orphan launcher at ${fixture.launcher}, and run the installer again.`,
+        `The previous Local Computer installation is incomplete, so the installer cannot stop its daemon. Stop any running talos-computer-daemon process, remove the orphan launcher at ${fixture.launcher}, and run the installer again.`,
       ),
     });
     await expect(readFile(fixture.launcher, "utf8")).resolves.toBe(launcher);
@@ -1128,7 +1128,7 @@ esac
           artifact: sharedArtifact("1.2.4"),
           environment: {
             ...fixture.environment,
-            LINGER_INSTALL_TEST_UNCONFIGURED: "1",
+            TALOS_INSTALL_TEST_UNCONFIGURED: "1",
           },
         }).then(
           (result) => ({ code: 0, ...result }),
@@ -1213,7 +1213,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   });
 
   it.for(["running", "stopped"])(
@@ -1253,7 +1253,7 @@ esac
       await writeFile(configPath, configSource, { mode: 0o600 });
       if (daemonState === "running") {
         await writeFile(
-          fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+          fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
           "running",
         );
       }
@@ -1276,7 +1276,7 @@ esac
           "stop\nstop-args:--if-idle\n",
         );
         await expect(
-          readFile(fixture.environment.LINGER_INSTALL_TEST_RUNNING!, "utf8"),
+          readFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "utf8"),
         ).resolves.toBe("1");
       } else {
         await expect(readFile(fixture.invocations, "utf8")).rejects.toThrow();
@@ -1286,11 +1286,11 @@ esac
 
   it.for([
     {
-      environment: { LINGER_INSTALL_TEST_GATEWAY_STATE: "upgrade-required" },
+      environment: { TALOS_INSTALL_TEST_GATEWAY_STATE: "upgrade-required" },
       missing: "gateway=upgrade-required",
     },
     {
-      environment: { LINGER_INSTALL_TEST_RECONCILED: "0" },
+      environment: { TALOS_INSTALL_TEST_RECONCILED: "0" },
       missing: "reconciliation=not-confirmed",
     },
   ])(
@@ -1301,7 +1301,7 @@ esac
       await runInstaller(fixture);
       const previous = await activeBundleName(fixture.installRoot);
       await writeFile(
-        fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+        fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
         "running",
       );
       await expect(
@@ -1318,13 +1318,13 @@ esac
       });
       expect(await activeBundleName(fixture.installRoot)).toBe(previous);
       await expect(
-        readFile(fixture.environment.LINGER_INSTALL_TEST_RUNNING!, "utf8"),
+        readFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "utf8"),
       ).resolves.toBe("1");
       await expect(
         execFileAsync(fixture.launcher, ["version"], {
           env: fixture.environment,
         }),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     },
   );
 
@@ -1346,7 +1346,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   });
 
   it("rolls back the bundle and daemon state when post-install smoke fails", async ({
@@ -1370,7 +1370,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     await expect(readFile(runningMarker, "utf8")).resolves.toBe("1");
   }, 30_000);
 
@@ -1393,8 +1393,8 @@ esac
         artifact: upgrade,
         environment: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE: "web-origin",
-          LINGER_WEB_URL: "http://127.0.0.1:3000",
+          TALOS_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE: "web-origin",
+          TALOS_WEB_URL: "http://127.0.0.1:3000",
         },
       }),
     ).rejects.toBeDefined();
@@ -1403,7 +1403,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     await expect(
       Promise.all(
         metadataFiles.map((file) =>
@@ -1429,7 +1429,7 @@ esac
         artifact: brokenUpgrade,
         environment: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_FAIL_ACTIVE_RESTORE: "1",
+          TALOS_INSTALL_TEST_FAIL_ACTIVE_RESTORE: "1",
         },
       }),
     ).rejects.toBeDefined();
@@ -1461,10 +1461,10 @@ esac
 
     expect(result.stdout).toContain("Upgrade available: 1.2.3 -> 1.2.4");
     expect(result.stdout).toContain(
-      "Linger Computer upgraded from 1.2.3 to 1.2.4 in ",
+      "Talos Computer upgraded from 1.2.3 to 1.2.4 in ",
     );
     expect(result.stdout).toMatch(
-      /Next:\n {2}\S*linger-computer-local-3000 daemon status\n/u,
+      /Next:\n {2}\S*talos-computer-local-3000 daemon status\n/u,
     );
     expect(result.stdout).not.toMatch(/ login\n/u);
     expect(await readFile(fixture.invocations, "utf8")).toContain("stop\n");
@@ -1491,9 +1491,9 @@ esac
     );
     const runningMarker = path.join(fixture.root, "running");
     await writeFile(runningMarker, "running");
-    // Bundles from before the Go CLI ship no cli/linger-computer.
+    // Bundles from before the Go CLI ship no cli/talos-computer.
     await rm(
-      path.join(fixture.installRoot, installedBundle, "cli/linger-computer"),
+      path.join(fixture.installRoot, installedBundle, "cli/talos-computer"),
     );
 
     const result = await runInstaller({
@@ -1502,7 +1502,7 @@ esac
     });
 
     expect(result.stdout).toMatch(
-      /Linger Computer upgraded from .* to 1\.2\.4 in /u,
+      /Talos Computer upgraded from .* to 1\.2\.4 in /u,
     );
     expect(await readFile(fixture.invocations, "utf8")).toContain("stop\n");
     await expect(readFile(runningMarker, "utf8")).resolves.toBe("1");
@@ -1513,7 +1513,7 @@ esac
   }) => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    const runningMarker = fixture.environment.LINGER_INSTALL_TEST_RUNNING!;
+    const runningMarker = fixture.environment.TALOS_INSTALL_TEST_RUNNING!;
     await writeFile(runningMarker, "running");
     const upgraded = sharedArtifact("1.2.4");
 
@@ -1523,7 +1523,7 @@ esac
         artifact: upgraded,
         environment: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_ACTIVE_OPERATIONS: "1",
+          TALOS_INSTALL_TEST_ACTIVE_OPERATIONS: "1",
         },
       }),
     ).rejects.toMatchObject({
@@ -1540,7 +1540,7 @@ esac
   }) => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    const runningMarker = fixture.environment.LINGER_INSTALL_TEST_RUNNING!;
+    const runningMarker = fixture.environment.TALOS_INSTALL_TEST_RUNNING!;
     await writeFile(runningMarker, "running");
     const upgraded = sharedArtifact("1.2.4");
 
@@ -1550,7 +1550,7 @@ esac
         artifact: upgraded,
         environment: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_ACTIVE_OPERATIONS_ON_STOP: "1",
+          TALOS_INSTALL_TEST_ACTIVE_OPERATIONS_ON_STOP: "1",
         },
       }),
     ).rejects.toMatchObject({
@@ -1562,7 +1562,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     expect(await readFile(runningMarker, "utf8")).toBe("running");
   });
 
@@ -1570,7 +1570,7 @@ esac
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
     await runInstaller({
@@ -1578,8 +1578,8 @@ esac
       artifact: sharedArtifact("1.2.4"),
       environment: {
         ...fixture.environment,
-        LINGER_WEB_URL: "http://127.0.0.1:3001",
-        LINGER_INSTALL_TEST_EXPECT_START_WEB_ORIGIN: "http://127.0.0.1:3001",
+        TALOS_WEB_URL: "http://127.0.0.1:3001",
+        TALOS_INSTALL_TEST_EXPECT_START_WEB_ORIGIN: "http://127.0.0.1:3001",
       },
     });
   });
@@ -1590,7 +1590,7 @@ esac
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
     await expect(
@@ -1599,8 +1599,8 @@ esac
         artifact: sharedArtifact("1.2.4"),
         environment: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_OBSERVE_START_VERSION: "1",
-          LINGER_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE: "web-origin",
+          TALOS_INSTALL_TEST_OBSERVE_START_VERSION: "1",
+          TALOS_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE: "web-origin",
         },
       }),
     ).rejects.toBeDefined();
@@ -1616,7 +1616,7 @@ esac
       await runInstaller(fixture);
       const previousBundle = await activeBundleName(fixture.installRoot);
       await writeFile(
-        fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+        fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
         "running",
       );
       const artifact = sharedArtifact("1.2.4");
@@ -1626,15 +1626,15 @@ esac
           artifact,
           environment: {
             ...fixture.environment,
-            LINGER_INSTALL_TEST_GATEWAY_STATE: "authentication-failed",
+            TALOS_INSTALL_TEST_GATEWAY_STATE: "authentication-failed",
             ...(mode === "busy"
               ? {
-                  LINGER_INSTALL_TEST_ACTIVE_FILE: path.join(
+                  TALOS_INSTALL_TEST_ACTIVE_FILE: path.join(
                     fixture.root,
                     "active-operation",
                   ),
                 }
-              : { LINGER_INSTALL_TEST_NEW_IDLE_UNKNOWN: "1" }),
+              : { TALOS_INSTALL_TEST_NEW_IDLE_UNKNOWN: "1" }),
           },
         }),
       ).rejects.toMatchObject({
@@ -1650,7 +1650,7 @@ esac
       ).resolves.toBeDefined();
       expect(
         await readFile(
-          fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+          fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
           "utf8",
         ),
       ).toBe("1");
@@ -1667,7 +1667,7 @@ esac
         execFileAsync(fixture.launcher, ["version"], {
           env: fixture.environment,
         }),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.4\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.4\n" });
     },
   );
 
@@ -1676,7 +1676,7 @@ esac
   }) => {
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
-    const runningMarker = fixture.environment.LINGER_INSTALL_TEST_RUNNING!;
+    const runningMarker = fixture.environment.TALOS_INSTALL_TEST_RUNNING!;
     await writeFile(runningMarker, "running");
     const upgraded = sharedArtifact("1.2.4");
 
@@ -1686,7 +1686,7 @@ esac
         artifact: upgraded,
         environment: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_STOP_MODE: "fail",
+          TALOS_INSTALL_TEST_STOP_MODE: "fail",
         },
       }),
     ).rejects.toMatchObject({
@@ -1700,7 +1700,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     await expect(readFile(runningMarker, "utf8")).resolves.toBe("running");
   });
 
@@ -1719,7 +1719,7 @@ esac
         environment: {
           ...fixture.environment,
           PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
-          LINGER_WEB_URL: server.origin,
+          TALOS_WEB_URL: server.origin,
         },
       });
 
@@ -1732,7 +1732,7 @@ esac
             env: fixture.environment,
           },
         ),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     } finally {
       await server.close();
     }
@@ -1762,17 +1762,17 @@ esac
     try {
       await runInstaller({
         ...fixture,
-        environment: { ...fixture.environment, LINGER_WEB_URL: server.origin },
+        environment: { ...fixture.environment, TALOS_WEB_URL: server.origin },
       });
       await runInstaller({
         ...fixture,
         artifact: undefined,
         environment: {
           ...fixture.environment,
-          LINGER_WEB_URL: server.origin,
-          LINGER_COMPUTER_APP_SHA256: upgrade.appSha256,
-          LINGER_COMPUTER_DEPS_SHA256: upgrade.depsSha256,
-          LINGER_COMPUTER_DEPS_SIZE: String(upgrade.depsSize),
+          TALOS_WEB_URL: server.origin,
+          TALOS_COMPUTER_APP_SHA256: upgrade.appSha256,
+          TALOS_COMPUTER_DEPS_SHA256: upgrade.depsSha256,
+          TALOS_COMPUTER_DEPS_SIZE: String(upgrade.depsSize),
         },
       });
 
@@ -1785,7 +1785,7 @@ esac
             env: fixture.environment,
           },
         ),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.4\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.4\n" });
     } finally {
       await server.close();
     }
@@ -1839,11 +1839,11 @@ esac
         artifact: undefined,
         environment: {
           ...fixture.environment,
-          LINGER_WEB_URL: server.origin,
-          LINGER_COMPUTER_APP_ARCHIVE: release.app,
-          LINGER_COMPUTER_APP_SHA256: release.appSha256,
-          LINGER_COMPUTER_DEPS_SHA256: release.depsSha256,
-          LINGER_COMPUTER_DEPS_SIZE: String(release.depsSize),
+          TALOS_WEB_URL: server.origin,
+          TALOS_COMPUTER_APP_ARCHIVE: release.app,
+          TALOS_COMPUTER_APP_SHA256: release.appSha256,
+          TALOS_COMPUTER_DEPS_SHA256: release.depsSha256,
+          TALOS_COMPUTER_DEPS_SIZE: String(release.depsSize),
         },
       }).then(
         () => undefined,
@@ -1908,7 +1908,7 @@ esac
       execFileAsync(fixture.launcher, ["version"], {
         env: fixture.environment,
       }),
-    ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+    ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
   });
 
   it("keeps only the new and previous bundles and the dependencies they link", async ({
@@ -1955,7 +1955,7 @@ esac
         ...fixture,
         artifact: undefined,
         installerPath: await renderInstaller(fixture.root, fixture.artifact!),
-        environment: { ...fixture.environment, LINGER_WEB_URL: server.origin },
+        environment: { ...fixture.environment, TALOS_WEB_URL: server.origin },
       });
 
       expect(server.requests).toEqual({ app: 2, deps: 2 });
@@ -1967,7 +1967,7 @@ esac
             env: fixture.environment,
           },
         ),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     } finally {
       await server.close();
     }
@@ -1987,7 +1987,7 @@ esac
     try {
       await runInstaller({
         ...fixture,
-        environment: { ...fixture.environment, LINGER_WEB_URL: server.origin },
+        environment: { ...fixture.environment, TALOS_WEB_URL: server.origin },
       });
       await expect(
         runInstaller({
@@ -1996,7 +1996,7 @@ esac
           installerPath: await renderInstaller(fixture.root, upgrade),
           environment: {
             ...fixture.environment,
-            LINGER_WEB_URL: server.origin,
+            TALOS_WEB_URL: server.origin,
           },
         }),
       ).rejects.toMatchObject({
@@ -2015,7 +2015,7 @@ esac
             env: fixture.environment,
           },
         ),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     } finally {
       await server.close();
     }
@@ -2025,20 +2025,20 @@ esac
     expect,
   }) => {
     const fixture = await installerFixture("1.2.3");
-    const otherOrigin = "https://other-linger.example.test";
+    const otherOrigin = "https://other-talos.example.test";
     const other = environmentOf(fixture, "other");
     await runInstaller(fixture);
     await runInstaller({
       ...fixture,
-      environment: { ...fixture.environment, LINGER_WEB_URL: otherOrigin },
+      environment: { ...fixture.environment, TALOS_WEB_URL: otherOrigin },
     });
 
     const result = await execFileAsync("bash", [uninstaller], {
-      env: { ...fixture.environment, LINGER_WEB_URL: otherOrigin },
+      env: { ...fixture.environment, TALOS_WEB_URL: otherOrigin },
     });
 
     expect(result.stdout).toContain(
-      `Uninstalled linger-computer-other (${otherOrigin}).`,
+      `Uninstalled talos-computer-other (${otherOrigin}).`,
     );
     await expect(stat(other.launcher)).rejects.toThrow();
     await expect(
@@ -2047,7 +2047,7 @@ esac
     for (const command of [fixture.launcher, fixture.dispatcher]) {
       await expect(
         execFileAsync(command, ["version"], { env: fixture.environment }),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
     }
   });
 
@@ -2168,7 +2168,7 @@ esac
       execFileAsync("bash", [uninstaller], {
         env: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_NODE_PRELOAD: preload,
+          TALOS_INSTALL_TEST_NODE_PRELOAD: preload,
         },
       }),
     ).rejects.toMatchObject({
@@ -2218,7 +2218,7 @@ esac
     await execFileAsync("bash", [uninstaller, "--purge"], {
       env: {
         ...fixture.environment,
-        LINGER_INSTALL_TEST_UNCONFIGURED: "1",
+        TALOS_INSTALL_TEST_UNCONFIGURED: "1",
       },
     });
 
@@ -2233,7 +2233,7 @@ esac
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
 
@@ -2266,7 +2266,7 @@ esac
     const ownerToken = createHash("sha256")
       .update(await realpath(stateDirectory))
       .digest("hex");
-    const ownerArgument = `--linger-computer-owner=${ownerToken}`;
+    const ownerArgument = `--talos-computer-owner=${ownerToken}`;
     const runner = await spawnOwnedFixtureProcess(ownerArgument);
     try {
       await writeFile(
@@ -2330,7 +2330,7 @@ esac
       .update(await realpath(stateDirectory))
       .digest("hex");
     const runner = await spawnOwnedFixtureProcess(
-      `--linger-computer-owner=${ownerToken}`,
+      `--talos-computer-owner=${ownerToken}`,
     );
     try {
       await writeFile(
@@ -2351,7 +2351,7 @@ esac
       await execFileAsync("bash", [uninstaller, "--purge"], {
         env: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_UNCONFIGURED: "1",
+          TALOS_INSTALL_TEST_UNCONFIGURED: "1",
         },
       });
 
@@ -2452,7 +2452,7 @@ esac
       execFileAsync("bash", [uninstaller, "--purge"], {
         env: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_STOP_MODE: "fail",
+          TALOS_INSTALL_TEST_STOP_MODE: "fail",
         },
       }),
     ).rejects.toThrow();
@@ -2470,7 +2470,7 @@ esac
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
     const stateFile = path.join(fixture.installRoot, "state.json");
@@ -2480,7 +2480,7 @@ esac
       execFileAsync("bash", [uninstaller, "--purge"], {
         env: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_STOP_MODE: "fail",
+          TALOS_INSTALL_TEST_STOP_MODE: "fail",
         },
       }),
     ).rejects.toThrow();
@@ -2498,7 +2498,7 @@ esac
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "running",
     );
     await chmod(fixture.launcher, 0o600);
@@ -2514,7 +2514,7 @@ esac
       stat(path.join(fixture.installRoot, "active-bundle")),
     ).resolves.toBeDefined();
     await expect(
-      readFile(fixture.environment.LINGER_INSTALL_TEST_RUNNING!, "utf8"),
+      readFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "utf8"),
     ).resolves.toBe("running");
     await expect(readFile(fixture.invocations, "utf8")).rejects.toThrow();
   });
@@ -2525,7 +2525,7 @@ esac
     const fixture = await installerFixture("1.2.3");
     await runInstaller(fixture);
     await writeFile(
-      fixture.environment.LINGER_INSTALL_TEST_RUNNING!,
+      fixture.environment.TALOS_INSTALL_TEST_RUNNING!,
       "draining",
     );
     const stateFile = path.join(fixture.installRoot, "state.json");
@@ -2535,7 +2535,7 @@ esac
       execFileAsync("bash", [uninstaller, "--purge"], {
         env: {
           ...fixture.environment,
-          LINGER_INSTALL_TEST_STOP_MODE: "noop",
+          TALOS_INSTALL_TEST_STOP_MODE: "noop",
         },
       }),
     ).rejects.toMatchObject({
@@ -2687,21 +2687,21 @@ const stageEnvironment = (
   mode: string,
   options: { readonly archive?: boolean } = {},
 ) => ({
-  LINGER_COMPUTER_INSTALL_STAGE_ONLY: mode,
-  LINGER_COMPUTER_APP_SHA256: release.appSha256,
+  TALOS_COMPUTER_INSTALL_STAGE_ONLY: mode,
+  TALOS_COMPUTER_APP_SHA256: release.appSha256,
   ...(mode === "activate"
     ? {}
     : {
         ...(options.archive === false
           ? {}
-          : { LINGER_COMPUTER_APP_ARCHIVE: release.app }),
-        LINGER_COMPUTER_DEPS_SHA256: release.depsSha256,
-        LINGER_COMPUTER_DEPS_SIZE: String(release.depsSize),
+          : { TALOS_COMPUTER_APP_ARCHIVE: release.app }),
+        TALOS_COMPUTER_DEPS_SHA256: release.depsSha256,
+        TALOS_COMPUTER_DEPS_SIZE: String(release.depsSize),
       }),
 });
 
 describe.concurrent(
-  "linger-computer installer stage-only self-update",
+  "talos-computer installer stage-only self-update",
   { timeout: 30_000 },
   () => {
     const installed = async () => {
@@ -2709,10 +2709,10 @@ describe.concurrent(
       await runInstaller(fixture);
       const previousBundle = await activeBundleName(fixture.installRoot);
       // A busy Computer refuses an ordinary upgrade; staging never stops it.
-      await writeFile(fixture.environment.LINGER_INSTALL_TEST_RUNNING!, "1");
+      await writeFile(fixture.environment.TALOS_INSTALL_TEST_RUNNING!, "1");
       const environment = {
         ...fixture.environment,
-        LINGER_INSTALL_TEST_ACTIVE_OPERATIONS: "1",
+        TALOS_INSTALL_TEST_ACTIVE_OPERATIONS: "1",
       };
       const stage = (
         release: Release,
@@ -2746,18 +2746,18 @@ describe.concurrent(
       const root = path.join(fixture.root, "isolated data");
       const bin = path.join(fixture.root, "isolated bin");
       const launcher = path.join(bin, path.basename(fixture.launcher));
-      await rm(fixture.environment.LINGER_INSTALL_TEST_RUNNING!);
+      await rm(fixture.environment.TALOS_INSTALL_TEST_RUNNING!);
       await runInstaller({
         ...fixture,
         environment: {
           ...fixture.environment,
-          LINGER_COMPUTER_DATA_DIR: root,
-          LINGER_COMPUTER_BIN_DIR: bin,
+          TALOS_COMPUTER_DATA_DIR: root,
+          TALOS_COMPUTER_BIN_DIR: bin,
         },
       });
       const upgrade = sharedArtifact("1.2.4");
       for (const mode of ["prepare", "activate"]) {
-        await fixture.stage(upgrade, mode, { LINGER_COMPUTER_DATA_DIR: root });
+        await fixture.stage(upgrade, mode, { TALOS_COMPUTER_DATA_DIR: root });
       }
       for (const [command, version] of [
         [fixture.launcher, "1.2.3"],
@@ -2765,7 +2765,7 @@ describe.concurrent(
       ] as const) {
         await expect(
           execFileAsync(command, ["version"], { env: fixture.environment }),
-        ).resolves.toMatchObject({ stdout: `linger-computer ${version}\n` });
+        ).resolves.toMatchObject({ stdout: `talos-computer ${version}\n` });
       }
     });
 
@@ -2800,7 +2800,7 @@ describe.concurrent(
         execFileAsync(fixture.launcher, ["version"], {
           env: fixture.environment,
         }),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.4\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.4\n" });
     });
 
     it("prepares a staged bundle without changing the installation and reuses it", async ({
@@ -2836,7 +2836,7 @@ describe.concurrent(
         execFileAsync(fixture.launcher, ["version"], {
           env: fixture.environment,
         }),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.3\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.3\n" });
 
       // A prepared build is reused without reading the archive again.
       await rm(upgrade.app);
@@ -2859,8 +2859,8 @@ describe.concurrent(
       await fixture.stage(upgrade, "activate", {
         // Nothing may be fetched: an unreachable origin would fail a download.
         // The Daemon names its install root, as it does for every self-update.
-        LINGER_WEB_URL: "https://unreachable.invalid",
-        LINGER_COMPUTER_DATA_DIR: fixture.installRoot,
+        TALOS_WEB_URL: "https://unreachable.invalid",
+        TALOS_COMPUTER_DATA_DIR: fixture.installRoot,
       });
 
       expect(await activeBundleName(fixture.installRoot)).not.toBe(
@@ -2878,7 +2878,7 @@ describe.concurrent(
         execFileAsync(fixture.launcher, ["version"], {
           env: fixture.environment,
         }),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.4\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.4\n" });
     });
 
     it.for(["missing", "another build", "broken links"] as const)(
@@ -2922,7 +2922,7 @@ describe.concurrent(
 
       await expect(
         fixture.stage(upgrade, "activate", {
-          LINGER_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE: "web-origin",
+          TALOS_INSTALL_TEST_FAIL_AFTER_METADATA_WRITE: "web-origin",
         }),
       ).rejects.toBeDefined();
 
@@ -2950,7 +2950,7 @@ describe.concurrent(
         deps: otherDeps,
       });
       await fixture.stage(upgrade, "1", {
-        LINGER_COMPUTER_DEPS_ARCHIVE: otherDeps.deps,
+        TALOS_COMPUTER_DEPS_ARCHIVE: otherDeps.deps,
       });
       // The Daemon's rollback: active-bundle back to previous_bundle, marker gone.
       const marker = await readMarker(fixture.installRoot);
@@ -2981,7 +2981,7 @@ describe.concurrent(
         execFileAsync(fixture.launcher, ["version"], {
           env: fixture.environment,
         }),
-      ).resolves.toMatchObject({ stdout: "linger-computer 1.2.4\n" });
+      ).resolves.toMatchObject({ stdout: "talos-computer 1.2.4\n" });
     });
 
     it("refuses to stage over an installation it cannot roll back to", async ({
@@ -3006,21 +3006,21 @@ describe.concurrent(
 
     it.for([
       [
-        { LINGER_COMPUTER_INSTALL_STAGE_ONLY: "prepare" },
-        "requires LINGER_COMPUTER_APP_SHA256",
+        { TALOS_COMPUTER_INSTALL_STAGE_ONLY: "prepare" },
+        "requires TALOS_COMPUTER_APP_SHA256",
       ],
       [
-        { LINGER_COMPUTER_INSTALL_STAGE_ONLY: "activate" },
-        "requires LINGER_COMPUTER_APP_SHA256",
+        { TALOS_COMPUTER_INSTALL_STAGE_ONLY: "activate" },
+        "requires TALOS_COMPUTER_APP_SHA256",
       ],
       [
-        { LINGER_COMPUTER_INSTALL_STAGE_ONLY: "2" },
+        { TALOS_COMPUTER_INSTALL_STAGE_ONLY: "2" },
         "must be 0, 1, prepare, or activate",
       ],
       [
         {
-          LINGER_COMPUTER_APP_ARCHIVE: "relative/app.tar.gz",
-          LINGER_COMPUTER_APP_SHA256: "a".repeat(64),
+          TALOS_COMPUTER_APP_ARCHIVE: "relative/app.tar.gz",
+          TALOS_COMPUTER_APP_SHA256: "a".repeat(64),
         },
         "must be absolute paths given with their SHA256",
       ],
@@ -3051,8 +3051,8 @@ const sharedArtifact = (version: SharedArtifactVersion): Release => {
 
 /** The install root and command the installer gives an environment. */
 const environmentOf = (fixture: { readonly home: string }, name: string) => ({
-  installRoot: path.join(fixture.home, ".local/share/linger/computers", name),
-  launcher: path.join(fixture.home, ".local/bin", `linger-computer-${name}`),
+  installRoot: path.join(fixture.home, ".local/share/talos/computers", name),
+  launcher: path.join(fixture.home, ".local/bin", `talos-computer-${name}`),
 });
 
 /** The environment of a test release server's loopback origin. */
@@ -3068,7 +3068,7 @@ const installerFixture = async (
   const startedAt = performance.now();
   try {
     const root = await mkdtemp(
-      path.join(os.tmpdir(), "linger-installer-test-"),
+      path.join(os.tmpdir(), "talos-installer-test-"),
     );
     temporaryRoots.push(root);
     const home = path.join(root, "home");
@@ -3082,19 +3082,19 @@ const installerFixture = async (
       artifact,
       invocations,
       // The default origin, http://localhost:3000, is the local-3000 environment.
-      installRoot: path.join(home, ".local/share/linger/computers/local-3000"),
-      launcher: path.join(home, ".local/bin/linger-computer-local-3000"),
-      dispatcher: path.join(home, ".local/bin/linger-computer"),
+      installRoot: path.join(home, ".local/share/talos/computers/local-3000"),
+      launcher: path.join(home, ".local/bin/talos-computer-local-3000"),
+      dispatcher: path.join(home, ".local/bin/talos-computer"),
       environment: {
         ...process.env,
         HOME: home,
-        LINGER_INSTALL_TEST_HOST_NODE: process.execPath,
-        LINGER_INSTALL_TEST_INVOCATIONS: invocations,
-        LINGER_INSTALL_TEST_NODE_INVOCATIONS: path.join(
+        TALOS_INSTALL_TEST_HOST_NODE: process.execPath,
+        TALOS_INSTALL_TEST_INVOCATIONS: invocations,
+        TALOS_INSTALL_TEST_NODE_INVOCATIONS: path.join(
           root,
           "node-invocations",
         ),
-        LINGER_INSTALL_TEST_RUNNING: path.join(root, "running"),
+        TALOS_INSTALL_TEST_RUNNING: path.join(root, "running"),
       } as NodeJS.ProcessEnv,
     };
   } finally {
@@ -3135,17 +3135,17 @@ const writeDeps = async (
   await writeFile(
     path.join(staged, "runtime/bin/node"),
     `#!/bin/sh
-printf '%s\\n' "$0" >> "$LINGER_INSTALL_TEST_NODE_INVOCATIONS"
+printf '%s\\n' "$0" >> "$TALOS_INSTALL_TEST_NODE_INVOCATIONS"
 ${
   options.runtimeLoaderError
     ? `printf '%s\\n' ${JSON.stringify(options.runtimeLoaderError)} >&2
 exit 127`
     : ""
 }
-if [ -n "\${LINGER_INSTALL_TEST_NODE_PRELOAD:-}" ]; then
-  exec "$LINGER_INSTALL_TEST_HOST_NODE" --require "$LINGER_INSTALL_TEST_NODE_PRELOAD" "$@"
+if [ -n "\${TALOS_INSTALL_TEST_NODE_PRELOAD:-}" ]; then
+  exec "$TALOS_INSTALL_TEST_HOST_NODE" --require "$TALOS_INSTALL_TEST_NODE_PRELOAD" "$@"
 fi
-exec "$LINGER_INSTALL_TEST_HOST_NODE" "$@"
+exec "$TALOS_INSTALL_TEST_HOST_NODE" "$@"
 `,
     { mode: 0o755 },
   );
@@ -3181,7 +3181,7 @@ const writeArtifact = async (
     await mkdir(path.join(staged, "cli"), { recursive: true });
     await mkdir(path.join(staged, "daemon"), { recursive: true });
     await mkdir(path.join(staged, "installer"), { recursive: true });
-    await mkdir(path.join(staged, "licenses", "linger"), {
+    await mkdir(path.join(staged, "licenses", "talos"), {
       recursive: true,
     });
     const source =
@@ -3195,55 +3195,55 @@ if (process.argv[2] === "daemon") {
   process.argv.splice(2, 1);
 } else if (["status", "stop", "start"].includes(process.argv[2])) { process.stderr.write("Unknown command: " + process.argv.slice(2).join(" ") + "\\n"); process.exit(2); }
 const command = process.argv[2] ?? "help";
-const log = process.env.LINGER_INSTALL_TEST_INVOCATIONS;
-const marker = process.env.LINGER_INSTALL_TEST_RUNNING;
+const log = process.env.TALOS_INSTALL_TEST_INVOCATIONS;
+const marker = process.env.TALOS_INSTALL_TEST_RUNNING;
 if (command === "version") {
-  const blockingVersion = process.env.LINGER_INSTALL_TEST_BLOCKING_VERSION;
+  const blockingVersion = process.env.TALOS_INSTALL_TEST_BLOCKING_VERSION;
   if (blockingVersion && import.meta.url.includes("/.bundle.")) {
     writeFileSync(blockingVersion, "ready");
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60_000);
   }
   ${options.failAfterInstall ? 'if (import.meta.url.includes("/lib-")) process.exit(1);' : ""}
-  process.stdout.write("linger-computer ${version}\\n");
+  process.stdout.write("talos-computer ${version}\\n");
 }
-else if (command === "status" && process.argv.includes("--json")) { ${options.brokenCommand === "status" ? "process.exit(13);" : 'if (process.env.LINGER_INSTALL_TEST_UNCONFIGURED === "1" || process.env.LINGER_INSTALL_TEST_MALFORMED_CONFIG === "1") { process.stdout.write(JSON.stringify({ version: 1, config: { configured: process.env.LINGER_INSTALL_TEST_UNCONFIGURED !== "1", path: "/unused/config.json" }, daemon: { state: "error" }, runtimes: [], runners: [], error: { category: "configuration", message: "Local Computer configuration is unavailable" } }) + "\\n"); process.exitCode = 10; } else { const recordedState = marker && existsSync(marker) ? readFileSync(marker, "utf8").trim() : "stopped"; process.stdout.write(JSON.stringify({ version: 1, daemon: { state: recordedState === "1" ? "running" : recordedState || "running", gateway_state: process.env.LINGER_INSTALL_TEST_GATEWAY_STATE || "connected", reconciled: process.env.LINGER_INSTALL_TEST_RECONCILED !== "0", active_operations: Number(process.env.LINGER_INSTALL_TEST_ACTIVE_OPERATIONS || 0) } }) + "\\n"); }'} }
-else if (command === "help" || command === "--help") { ${options.brokenCommand === "help" ? "process.exit(12);" : 'process.stdout.write("linger-computer usage\\n");'} }
+else if (command === "status" && process.argv.includes("--json")) { ${options.brokenCommand === "status" ? "process.exit(13);" : 'if (process.env.TALOS_INSTALL_TEST_UNCONFIGURED === "1" || process.env.TALOS_INSTALL_TEST_MALFORMED_CONFIG === "1") { process.stdout.write(JSON.stringify({ version: 1, config: { configured: process.env.TALOS_INSTALL_TEST_UNCONFIGURED !== "1", path: "/unused/config.json" }, daemon: { state: "error" }, runtimes: [], runners: [], error: { category: "configuration", message: "Local Computer configuration is unavailable" } }) + "\\n"); process.exitCode = 10; } else { const recordedState = marker && existsSync(marker) ? readFileSync(marker, "utf8").trim() : "stopped"; process.stdout.write(JSON.stringify({ version: 1, daemon: { state: recordedState === "1" ? "running" : recordedState || "running", gateway_state: process.env.TALOS_INSTALL_TEST_GATEWAY_STATE || "connected", reconciled: process.env.TALOS_INSTALL_TEST_RECONCILED !== "0", active_operations: Number(process.env.TALOS_INSTALL_TEST_ACTIVE_OPERATIONS || 0) } }) + "\\n"); }'} }
+else if (command === "help" || command === "--help") { ${options.brokenCommand === "help" ? "process.exit(12);" : 'process.stdout.write("talos-computer usage\\n");'} }
 else if (command === "stop") {
   const stopArgs = process.argv.slice(3);
   if (log) appendFileSync(log, "stop\\nstop-args:" + stopArgs.join(" ") + "\\n");
-  const activeFile = process.env.LINGER_INSTALL_TEST_ACTIVE_FILE;
-  const activeOnStop = Number(process.env.LINGER_INSTALL_TEST_ACTIVE_OPERATIONS_ON_STOP || (activeFile && existsSync(activeFile) ? "1" : "0"));
-  if (stopArgs.includes("--if-idle") && process.env.LINGER_INSTALL_TEST_NEW_IDLE_UNKNOWN === "1" && "${version}" === "1.2.4") { process.stderr.write("Idle state is unknown\\n"); process.exit(15); }
+  const activeFile = process.env.TALOS_INSTALL_TEST_ACTIVE_FILE;
+  const activeOnStop = Number(process.env.TALOS_INSTALL_TEST_ACTIVE_OPERATIONS_ON_STOP || (activeFile && existsSync(activeFile) ? "1" : "0"));
+  if (stopArgs.includes("--if-idle") && process.env.TALOS_INSTALL_TEST_NEW_IDLE_UNKNOWN === "1" && "${version}" === "1.2.4") { process.stderr.write("Idle state is unknown\\n"); process.exit(15); }
   if (stopArgs.includes("--if-idle") && activeOnStop > 0) { process.stderr.write("Cannot stop while " + activeOnStop + " Agent Operation is active\\n"); process.exit(5); }
   if (!stopArgs.includes("--if-idle") && activeOnStop > 0 && log) appendFileSync(log, "unsafe-active-stop\\n");
-  if (process.env.LINGER_INSTALL_TEST_STOP_MODE === "fail") { process.stderr.write("simulated daemon stop failure\\n"); process.exit(1); }
-  if (marker && process.env.LINGER_INSTALL_TEST_STOP_MODE !== "noop") rmSync(marker, { force: true });
+  if (process.env.TALOS_INSTALL_TEST_STOP_MODE === "fail") { process.stderr.write("simulated daemon stop failure\\n"); process.exit(1); }
+  if (marker && process.env.TALOS_INSTALL_TEST_STOP_MODE !== "noop") rmSync(marker, { force: true });
 }
 else if (command === "start") {
-  if (log) appendFileSync(log, "start\\n" + (process.env.LINGER_INSTALL_TEST_OBSERVE_START_VERSION === "1" ? "start-version:${version}\\n" : ""));
-  if ("${version}" === "1.2.4" && process.env.LINGER_INSTALL_TEST_EXPECT_START_WEB_ORIGIN && readFileSync(new URL("../../web-origin", import.meta.url), "utf8").trim() !== process.env.LINGER_INSTALL_TEST_EXPECT_START_WEB_ORIGIN) { process.stderr.write("New Daemon saw incomplete install metadata\\n"); process.exit(18); }
+  if (log) appendFileSync(log, "start\\n" + (process.env.TALOS_INSTALL_TEST_OBSERVE_START_VERSION === "1" ? "start-version:${version}\\n" : ""));
+  if ("${version}" === "1.2.4" && process.env.TALOS_INSTALL_TEST_EXPECT_START_WEB_ORIGIN && readFileSync(new URL("../../web-origin", import.meta.url), "utf8").trim() !== process.env.TALOS_INSTALL_TEST_EXPECT_START_WEB_ORIGIN) { process.stderr.write("New Daemon saw incomplete install metadata\\n"); process.exit(18); }
   if (marker) writeFileSync(marker, "1");
-  if ("${version}" === "1.2.4" && process.env.LINGER_INSTALL_TEST_ACTIVE_FILE) writeFileSync(process.env.LINGER_INSTALL_TEST_ACTIVE_FILE, "1");
+  if ("${version}" === "1.2.4" && process.env.TALOS_INSTALL_TEST_ACTIVE_FILE) writeFileSync(process.env.TALOS_INSTALL_TEST_ACTIVE_FILE, "1");
 }
-else if (command === "login") { if (log) appendFileSync(log, "login:" + (process.env.LINGER_WEB_URL ?? "") + "\\n"); }
+else if (command === "login") { if (log) appendFileSync(log, "login:" + (process.env.TALOS_WEB_URL ?? "") + "\\n"); }
 else process.exitCode = 1;
 `;
     // The fixture CLI is a Node script behind the executable the installer
     // runs directly, as it runs the Go CLI.
-    await writeFile(path.join(staged, "cli/linger-computer.mjs"), source);
+    await writeFile(path.join(staged, "cli/talos-computer.mjs"), source);
     await writeFile(
-      path.join(staged, "cli/linger-computer"),
-      '#!/bin/sh\nexec "$LINGER_INSTALL_TEST_HOST_NODE" "$(dirname "$0")/linger-computer.mjs" "$@"\n',
+      path.join(staged, "cli/talos-computer"),
+      '#!/bin/sh\nexec "$TALOS_INSTALL_TEST_HOST_NODE" "$(dirname "$0")/talos-computer.mjs" "$@"\n',
       { mode: 0o755 },
     );
     await writeFile(
-      path.join(staged, "daemon/linger-computer-daemon"),
+      path.join(staged, "daemon/talos-computer-daemon"),
       "#!/bin/sh\nexit 0\n",
       { mode: 0o755 },
     );
     await copyFile(
       installer,
-      path.join(staged, "installer/linger-computer.sh"),
+      path.join(staged, "installer/talos-computer.sh"),
     );
     if (options.extraFileContent) {
       await writeFile(
@@ -3264,11 +3264,11 @@ else process.exitCode = 1;
 
 // releaseEnvironment hands the installer local archives and their digests.
 const releaseEnvironment = (release: Release) => ({
-  LINGER_COMPUTER_APP_ARCHIVE: release.app,
-  LINGER_COMPUTER_APP_SHA256: release.appSha256,
-  LINGER_COMPUTER_DEPS_ARCHIVE: release.deps,
-  LINGER_COMPUTER_DEPS_SHA256: release.depsSha256,
-  LINGER_COMPUTER_DEPS_SIZE: String(release.depsSize),
+  TALOS_COMPUTER_APP_ARCHIVE: release.app,
+  TALOS_COMPUTER_APP_SHA256: release.appSha256,
+  TALOS_COMPUTER_DEPS_ARCHIVE: release.deps,
+  TALOS_COMPUTER_DEPS_SHA256: release.depsSha256,
+  TALOS_COMPUTER_DEPS_SIZE: String(release.depsSize),
 });
 
 const runInstaller = async (fixture: {

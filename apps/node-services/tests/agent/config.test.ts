@@ -1,12 +1,12 @@
 import path from "node:path";
 
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 import { describe, expect, it } from "vitest";
 
 import { readAgentServiceConfig } from "../../src/agent/config.js";
 
 const seed = {
-  LINGER_SECRET_SEED: "test-seed-0123456789abcdef0123456789",
+  TALOS_SECRET_SEED: "test-seed-0123456789abcdef0123456789",
   AGENT_HOME: "/var/lib/agent-home",
 };
 
@@ -40,7 +40,7 @@ describe("readAgentServiceConfig", () => {
 
   it("requires the secret seed", () => {
     expect(() => readAgentServiceConfig({})).toThrow(
-      "LINGER_SECRET_SEED must be set in .env",
+      "TALOS_SECRET_SEED must be set in .env",
     );
   });
 

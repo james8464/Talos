@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 )
 
 // recordingAgentManagement records the registration changes TeamHub wakes
@@ -422,7 +422,7 @@ func TestTenantHumanRegistersOwnerBoundLocalAgentPlacement(t *testing.T) {
 	}
 	env, alice := newAgentRegistrationEnv(t, agentManagement)
 	if _, err := env.pool.Exec(t.Context(), `insert into local_computers(computer_id,display_name,status,owner_tenant_id,owner_actor_id,last_seen_at,runtime_diagnostics,workspace_grants)
- values('computer_owner_mac','Owner Mac','online','tenant_acme','actor_acme_alice',clock_timestamp(),'[{"type":"claude","status":"authentication_required","version":"2.1.227","error":{"code":"RUNTIME_AUTHENTICATION_REQUIRED","message":"Claude Code authentication is required"}}]','[{"grant_id":"grant_linger","mode":"workspace-write"}]')
+ values('computer_owner_mac','Owner Mac','online','tenant_acme','actor_acme_alice',clock_timestamp(),'[{"type":"claude","status":"authentication_required","version":"2.1.227","error":{"code":"RUNTIME_AUTHENTICATION_REQUIRED","message":"Claude Code authentication is required"}}]','[{"grant_id":"grant_talos","mode":"workspace-write"}]')
  on conflict(computer_id) do update set status=excluded.status,last_seen_at=excluded.last_seen_at,runtime_diagnostics=excluded.runtime_diagnostics,workspace_grants=excluded.workspace_grants`); err != nil {
 		t.Fatal(err)
 	}
@@ -433,7 +433,7 @@ func TestTenantHumanRegistersOwnerBoundLocalAgentPlacement(t *testing.T) {
 			"model": "claude-sonnet", "reasoning_effort": "high",
 			"placement": map[string]any{
 				"type": "local", "computer_id": "computer_owner_mac",
-				"runtime_type": "claude", "workspace_grant_id": "grant_linger",
+				"runtime_type": "claude", "workspace_grant_id": "grant_talos",
 			},
 		},
 	}
@@ -458,7 +458,7 @@ func TestTenantHumanRegistersOwnerBoundLocalAgentPlacement(t *testing.T) {
 	decode(t, body, &registered)
 	if registered.Runtime.Model != "claude-sonnet" || registered.Runtime.Placement.Type != "local" ||
 		registered.Runtime.Placement.ComputerID != "computer_owner_mac" || registered.Runtime.Placement.RuntimeType != "claude" ||
-		registered.Runtime.Placement.WorkspaceGrantID != "grant_linger" {
+		registered.Runtime.Placement.WorkspaceGrantID != "grant_talos" {
 		t.Fatalf("unexpected Local Agent response: %+v", registered)
 	}
 	if !containsJSONText(body, `"reasoning_effort":"high"`) {
@@ -511,7 +511,7 @@ func TestTenantHumanRegistersOwnerBoundLocalAgentPlacement(t *testing.T) {
 	}
 	if listed.Runtime.Model != "claude-sonnet" || listed.Runtime.Placement.Type != "local" ||
 		listed.Runtime.Placement.ComputerID != "computer_owner_mac" || listed.Runtime.Placement.RuntimeType != "claude" ||
-		listed.Runtime.Placement.WorkspaceGrantID != "grant_linger" {
+		listed.Runtime.Placement.WorkspaceGrantID != "grant_talos" {
 		t.Fatalf("unexpected listed Local Agent runtime: %+v", listed.Runtime)
 	}
 	if listed.LocalRuntimeStatus.Status != "" {
@@ -881,7 +881,7 @@ func TestTenantHumanRegistersAgentWithInitialSkillBindings(t *testing.T) {
 	status, _, invalidBody := env.request(alice, http.MethodPost, "/v0/tenants/"+acmeTenant+"/agents", map[string]any{
 		"name": invalidName, "instructions": "Request a retired MCP selection.", "runtime": fixtureRuntime("gpt-5"),
 		"mcp_bindings": []map[string]any{{
-			"name": "retired", "mcp_id": "linger_retired", "manifest_version": "1.0.0", "allowed_tools": []string{"search"},
+			"name": "retired", "mcp_id": "talos_retired", "manifest_version": "1.0.0", "allowed_tools": []string{"search"},
 		}},
 	}, "register-retired-mcp-"+suffix)
 	if status != http.StatusBadRequest || !containsJSONText(invalidBody, "INVALID_REQUEST") {

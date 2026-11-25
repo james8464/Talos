@@ -1,7 +1,7 @@
 import { getLanguage, storedLanguage, subscribeToLanguage } from "./language";
 
 // The desktop app's side of the language choice
-// (`window.lingerDesktop.language`); absent in a browser and in desktop
+// (`window.talosDesktop.language`); absent in a browser and in desktop
 // builds whose own menus and windows are English only.
 interface DesktopLanguage {
   set(language: string): Promise<void>;
@@ -10,8 +10,8 @@ interface DesktopLanguage {
 function desktopLanguage(): DesktopLanguage | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { language?: DesktopLanguage } })
-        .lingerDesktop?.language;
+    : (window as { talosDesktop?: { language?: DesktopLanguage } })
+        .talosDesktop?.language;
 }
 
 /**

@@ -11,7 +11,7 @@ afterEach(async () => {
   );
 });
 async function fixture() {
-  const home = await mkdtemp(path.join(tmpdir(), "linger-online-"));
+  const home = await mkdtemp(path.join(tmpdir(), "talos-online-"));
   roots.push(home);
   return {
     home,

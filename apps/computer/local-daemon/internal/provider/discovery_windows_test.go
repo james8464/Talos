@@ -16,18 +16,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 func TestMain(m *testing.M) {
-	if os.Getenv("LINGER_DISCOVERY_FIXTURE") == "1" {
+	if os.Getenv("TALOS_DISCOVERY_FIXTURE") == "1" {
 		runWindowsDiscoveryFixture()
 		os.Exit(0)
 	}
 	os.Exit(m.Run())
 }
 func runWindowsDiscoveryFixture() {
-	if os.Getenv("LINGER_DIAGNOSTIC_SECRET") != "" || os.Getenv("FIXTURE_ENV") != "isolated" {
+	if os.Getenv("TALOS_DIAGNOSTIC_SECRET") != "" || os.Getenv("FIXTURE_ENV") != "isolated" {
 		os.Exit(11)
 	}
 	kind := strings.ToLower(strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe"))
@@ -65,8 +65,8 @@ func runWindowsDiscoveryFixture() {
 			return
 		}
 		if kind == "claude" {
-			if request["request_id"] == "linger-catalog" {
-				fmt.Println(`{"type":"control_response","response":{"subtype":"success","request_id":"linger-catalog","response":{"models":[{"value":"fixture-model","displayName":"Fixture"}]}}}`)
+			if request["request_id"] == "talos-catalog" {
+				fmt.Println(`{"type":"control_response","response":{"subtype":"success","request_id":"talos-catalog","response":{"models":[{"value":"fixture-model","displayName":"Fixture"}]}}}`)
 				return
 			}
 			if delay := os.Getenv("FIXTURE_PROTOCOL_DELAY"); delay != "" {
@@ -77,7 +77,7 @@ func runWindowsDiscoveryFixture() {
 				}
 				time.Sleep(duration)
 			}
-			fmt.Println(`{"type":"control_response","response":{"subtype":"success","request_id":"linger-computer-doctor"}}`)
+			fmt.Println(`{"type":"control_response","response":{"subtype":"success","request_id":"talos-computer-doctor"}}`)
 			return
 		}
 		if request["method"] == "initialize" {
@@ -111,7 +111,7 @@ func TestWindowsRefreshAuthenticationAllowsColdCLIAndKeepsCallerDeadline(t *test
 	}
 	environment := map[string]string{
 		"HOME": root, "USERPROFILE": root, "SystemRoot": os.Getenv("SystemRoot"),
-		"LINGER_DISCOVERY_FIXTURE": "1", "FIXTURE_ENV": "isolated",
+		"TALOS_DISCOVERY_FIXTURE": "1", "FIXTURE_ENV": "isolated",
 		"FIXTURE_AUTH_SLOW": "1", "ANTHROPIC_API_KEY": "fixture-only",
 	}
 	current := DiscoveryResult{Diagnostics: []RuntimeDiagnostic{{
@@ -163,7 +163,7 @@ func TestWindowsDiscoverDeadlineRequiresFullProtocolRecovery(t *testing.T) {
 	}
 	environment := map[string]string{
 		"HOME": root, "USERPROFILE": root, "SystemRoot": os.Getenv("SystemRoot"), "PATH": root,
-		"LINGER_DISCOVERY_FIXTURE": "1", "FIXTURE_ENV": "isolated",
+		"TALOS_DISCOVERY_FIXTURE": "1", "FIXTURE_ENV": "isolated",
 		"FIXTURE_AUTH_SLOW": "1", "FIXTURE_PROTOCOL_DELAY": "6s", "ANTHROPIC_API_KEY": "fixture-only",
 	}
 	options := DiscoveryOptions{ConfiguredPaths: map[string]string{"claude": executable}, Environment: environment}
@@ -222,10 +222,10 @@ func TestWindowsDiscoverDeadlineRequiresFullProtocolRecovery(t *testing.T) {
 func TestWindowsDiscoverNativeProtocolsAndAuthenticationWithSanitizedEnvironment(t *testing.T) {
 	// This fixture tests protocol and authentication behavior, not probe latency.
 	timeout := 3 * time.Second
-	if value := os.Getenv("LINGER_TEST_WINDOWS_TIMEOUT_SCALE"); value != "" {
+	if value := os.Getenv("TALOS_TEST_WINDOWS_TIMEOUT_SCALE"); value != "" {
 		multiplier, err := strconv.Atoi(value)
 		if err != nil || multiplier < 1 || multiplier > 20 {
-			t.Fatal("LINGER_TEST_WINDOWS_TIMEOUT_SCALE must be an integer from 1 to 20")
+			t.Fatal("TALOS_TEST_WINDOWS_TIMEOUT_SCALE must be an integer from 1 to 20")
 		}
 		timeout *= time.Duration(multiplier)
 	}
@@ -254,8 +254,8 @@ func TestWindowsDiscoverNativeProtocolsAndAuthenticationWithSanitizedEnvironment
 		file.Close()
 		paths[kind] = target
 	}
-	environment := map[string]string{"Path": root, "SystemRoot": os.Getenv("SystemRoot"), "USERPROFILE": root, "LINGER_DISCOVERY_FIXTURE": "1", "FIXTURE_ENV": "isolated", "ANTHROPIC_API_KEY": "fixture-only"}
-	t.Setenv("LINGER_DIAGNOSTIC_SECRET", "must-not-inherit")
+	environment := map[string]string{"Path": root, "SystemRoot": os.Getenv("SystemRoot"), "USERPROFILE": root, "TALOS_DISCOVERY_FIXTURE": "1", "FIXTURE_ENV": "isolated", "ANTHROPIC_API_KEY": "fixture-only"}
+	t.Setenv("TALOS_DIAGNOSTIC_SECRET", "must-not-inherit")
 	// Prepare freshly copied fixture executables before concurrent discovery.
 	// First execution can include serialized antivirus scanning, especially
 	// under CPU emulation. This is fixture setup, not a retry of discovery or

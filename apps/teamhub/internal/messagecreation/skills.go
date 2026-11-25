@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // ValidateSkills checks the skill segments of a Message: each names a skill

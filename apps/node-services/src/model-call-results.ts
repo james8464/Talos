@@ -1,4 +1,4 @@
-import type { ModelInvokeFile } from "@linger/wire-contracts/runner-gateway/types";
+import type { ModelInvokeFile } from "@talos/wire-contracts/runner-gateway/types";
 
 /** A finished call's answer, as the caller receives it. */
 export interface ModelCallAnswer {

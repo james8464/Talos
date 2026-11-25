@@ -1,7 +1,7 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-Guided Linger and local model installer for Windows 10/11 (x64).
+Guided Talos and local model installer for Windows 10/11 (x64).
 #>
 
 Set-StrictMode -Version Latest
@@ -18,7 +18,7 @@ try {
 } catch {
 }
 
-if (-not ('LingerProcessRunner' -as [type])) {
+if (-not ('TalosProcessRunner' -as [type])) {
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections;
@@ -27,19 +27,19 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 
-public sealed class LingerProcessResult {
+public sealed class TalosProcessResult {
     public int ExitCode;
     public string StdOut;
     public string StdErr;
 }
 
-public sealed class LingerStreamChunk {
+public sealed class TalosStreamChunk {
     public bool IsErr;
     public string Line;
 }
 
-public static class LingerProcessRunner {
-    public static LingerProcessResult Run(
+public static class TalosProcessRunner {
+    public static TalosProcessResult Run(
         string fileName,
         string arguments,
         string workingDirectory,
@@ -49,13 +49,13 @@ public static class LingerProcessRunner {
         return RunWithPump(fileName, arguments, workingDirectory, envOverrides, stdInText, null);
     }
 
-    public static LingerProcessResult RunWithPump(
+    public static TalosProcessResult RunWithPump(
         string fileName,
         string arguments,
         string workingDirectory,
         Dictionary<string, string> envOverrides,
         string stdInText,
-        Action<LingerStreamChunk[]> onBatch
+        Action<TalosStreamChunk[]> onBatch
     ) {
         var psi = new ProcessStartInfo();
         psi.FileName = fileName;
@@ -98,7 +98,7 @@ public static class LingerProcessRunner {
                     lock (outLines) { outLines.Add(line); }
                     if (onBatch != null) {
                         lock (liveQueue) {
-                            liveQueue.Enqueue(new LingerStreamChunk { IsErr = false, Line = line });
+                            liveQueue.Enqueue(new TalosStreamChunk { IsErr = false, Line = line });
                         }
                     }
                 }
@@ -110,7 +110,7 @@ public static class LingerProcessRunner {
                     lock (errLines) { errLines.Add(line); }
                     if (onBatch != null) {
                         lock (liveQueue) {
-                            liveQueue.Enqueue(new LingerStreamChunk { IsErr = true, Line = line });
+                            liveQueue.Enqueue(new TalosStreamChunk { IsErr = true, Line = line });
                         }
                     }
                 }
@@ -134,7 +134,7 @@ public static class LingerProcessRunner {
                 errThread.Join();
             }
 
-            var res = new LingerProcessResult();
+            var res = new TalosProcessResult();
             res.ExitCode = proc.ExitCode;
             res.StdOut = string.Join("\n", outLines.ToArray());
             res.StdErr = string.Join("\n", errLines.ToArray());
@@ -142,13 +142,13 @@ public static class LingerProcessRunner {
         }
     }
 
-    private static void FlushQueue(Queue liveQueue, Action<LingerStreamChunk[]> onBatch) {
-        LingerStreamChunk[] batch = null;
+    private static void FlushQueue(Queue liveQueue, Action<TalosStreamChunk[]> onBatch) {
+        TalosStreamChunk[] batch = null;
         lock (liveQueue) {
             if (liveQueue.Count > 0) {
-                batch = new LingerStreamChunk[liveQueue.Count];
+                batch = new TalosStreamChunk[liveQueue.Count];
                 for (int i = 0; i < batch.Length; i++) {
-                    batch[i] = (LingerStreamChunk)liveQueue.Dequeue();
+                    batch[i] = (TalosStreamChunk)liveQueue.Dequeue();
                 }
             }
         }
@@ -329,12 +329,12 @@ function Show-Usage {
     $lines = @(
         "Usage: $cmd [OPTIONS]"
         ""
-        "Guided setup for Linger and a local model runtime on Windows."
+        "Guided setup for Talos and a local model runtime on Windows."
         ""
         "Options:"
-        "  --web-url <url>     Linger server URL (default: http://localhost:3000)"
+        "  --web-url <url>     Talos server URL (default: http://localhost:3000)"
         "  --update            Replan and update an already configured local model setup"
-        "  --connect           Connect this computer to Linger without changing models"
+        "  --connect           Connect this computer to Talos without changing models"
         "  --up                Start already configured local models"
         "  --status            Show local model and computer connection status"
         "  --remove            Stop and remove local model services (keeps downloads)"
@@ -388,8 +388,8 @@ function Get-ComputerEnvironmentName([string]$Origin) {
         $name = 'ip-' + ($hostName.Replace('.', '-'))
     } else {
         $firstLabel = $hostName.Split('.')[0]
-        if ($firstLabel -cne 'linger') {
-            $firstLabel = $firstLabel -replace '-linger$', ''
+        if ($firstLabel -cne 'talos') {
+            $firstLabel = $firstLabel -replace '-talos$', ''
         }
         $name = $firstLabel
     }
@@ -411,7 +411,7 @@ function Get-LocalAppDataRoot {
 }
 
 function Test-IsElevated {
-    $override = $env:LINGER_INSTALL_TEST_ELEVATED
+    $override = $env:TALOS_INSTALL_TEST_ELEVATED
     if ($override -eq '1') { return $true }
     if ($override -eq '0') { return $false }
     try {
@@ -722,11 +722,11 @@ function Download-PinnedStackScript([string]$DestinationPath, [string]$TempDir) 
 }
 
 function Resolve-StackScript {
-    if ($env:LINGER_STACK_SCRIPT) {
-        if (-not (Test-Path -LiteralPath $env:LINGER_STACK_SCRIPT -PathType Leaf)) {
-            Exit-Fail "Configured local model runtime script was not found: $($env:LINGER_STACK_SCRIPT)"
+    if ($env:TALOS_STACK_SCRIPT) {
+        if (-not (Test-Path -LiteralPath $env:TALOS_STACK_SCRIPT -PathType Leaf)) {
+            Exit-Fail "Configured local model runtime script was not found: $($env:TALOS_STACK_SCRIPT)"
         }
-        $script:StackScriptPath = $env:LINGER_STACK_SCRIPT
+        $script:StackScriptPath = $env:TALOS_STACK_SCRIPT
         return
     }
     if ($script:InRepo -and $script:RepoRoot) {
@@ -736,13 +736,13 @@ function Resolve-StackScript {
             return
         }
     }
-    $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("linger-stack-" + [Guid]::NewGuid().ToString('N'))
+    $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("talos-stack-" + [Guid]::NewGuid().ToString('N'))
     Set-PrivateWindowsDirectoryAcl $tempRoot
     $script:TempDirsToClean.Add($tempRoot)
     $dest = Join-Path $tempRoot 'stack.ps1'
-    if ($env:LINGER_STACK_URL) {
+    if ($env:TALOS_STACK_URL) {
         try {
-            Invoke-WebRequest -UseBasicParsing -Uri $env:LINGER_STACK_URL -OutFile $dest -TimeoutSec 30
+            Invoke-WebRequest -UseBasicParsing -Uri $env:TALOS_STACK_URL -OutFile $dest -TimeoutSec 30
         } catch {
             Exit-Fail "Could not download the local model runtime helper: $($_.Exception.Message)"
         }
@@ -755,7 +755,7 @@ function Resolve-StackScript {
 function Invoke-StackBootstrapProbe([string]$CandidateKitHome) {
     $envOverrides = @{ 'LOCALMODELS_KIT_HOME' = $CandidateKitHome }
     $cmdArgs = Join-CommandArgs @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script:StackScriptPath, '--bootstrap-json')
-    return [LingerProcessRunner]::Run($script:PowerShellExe, $cmdArgs, '', (ConvertTo-EnvDict $envOverrides), $null)
+    return [TalosProcessRunner]::Run($script:PowerShellExe, $cmdArgs, '', (ConvertTo-EnvDict $envOverrides), $null)
 }
 
 function Ensure-KitHome {
@@ -767,11 +767,11 @@ function Ensure-KitHome {
     } else {
         $localApp = Get-LocalAppDataRoot
         $userHome = Get-UserHome
-        $tempKitDir = Join-Path ([IO.Path]::GetTempPath()) ("linger-kit." + [Guid]::NewGuid().ToString('N'))
+        $tempKitDir = Join-Path ([IO.Path]::GetTempPath()) ("talos-kit." + [Guid]::NewGuid().ToString('N'))
 
         $candidates = @(
             (Join-Path $localApp 'simplex-localmodels\kits'),
-            (Join-Path $userHome '.linger\localmodels\kits'),
+            (Join-Path $userHome '.talos\localmodels\kits'),
             $tempKitDir
         )
 
@@ -785,7 +785,7 @@ function Ensure-KitHome {
             try {
                 $parentDir = Split-Path -Parent $candidate
                 $grandParent = if ($parentDir) { Split-Path -Parent $parentDir } else { '' }
-                if ($candidate -like '*\.linger\localmodels\kits') {
+                if ($candidate -like '*\.talos\localmodels\kits') {
                     Set-PrivateWindowsDirectoryAcl $grandParent
                     Set-PrivateWindowsDirectoryAcl $parentDir
                     Set-PrivateWindowsDirectoryAcl $candidate
@@ -822,7 +822,7 @@ function Ensure-KitHome {
     $script:KitHomeResolved = $true
 }
 
-$script:SanitizedBatchPrinter = [Action[LingerStreamChunk[]]]{
+$script:SanitizedBatchPrinter = [Action[TalosStreamChunk[]]]{
     param($batch)
     foreach ($chunk in $batch) {
         $san = Format-SanitizedLine $chunk.Line
@@ -834,7 +834,7 @@ $script:SanitizedBatchPrinter = [Action[LingerStreamChunk[]]]{
     }
 }
 
-$script:RawBatchPrinter = [Action[LingerStreamChunk[]]]{
+$script:RawBatchPrinter = [Action[TalosStreamChunk[]]]{
     param($batch)
     foreach ($chunk in $batch) {
         if ($chunk.IsErr) {
@@ -888,7 +888,7 @@ function Invoke-Stack([string[]]$StackArgs, [bool]$StreamOutput = $false) {
         'PATH' = (Get-StackInvokePath)
     }
     $onBatch = if ($StreamOutput) { $script:SanitizedBatchPrinter } else { $null }
-    return [LingerProcessRunner]::RunWithPump($script:PowerShellExe, $cmdLine, '', $envDict, $null, $onBatch)
+    return [TalosProcessRunner]::RunWithPump($script:PowerShellExe, $cmdLine, '', $envDict, $null, $onBatch)
 }
 
 function Invoke-HttpGetText([string]$Url, [int]$TimeoutSec = 5) {
@@ -908,12 +908,12 @@ function Invoke-HttpGetText([string]$Url, [int]$TimeoutSec = 5) {
     return $res
 }
 
-function Test-LingerServer([string]$Origin) {
+function Test-TalosServer([string]$Origin) {
     if (-not $Origin) { return $false }
-    $url = "$Origin/install/linger-computer.ps1"
+    $url = "$Origin/install/talos-computer.ps1"
     $r = Invoke-HttpGetText $url 5
     if (-not $r.Ok) { return $false }
-    return ($r.Content -match 'LingerInstallerEmbedded' -or $r.Content -match 'linger-computer-launcher-v2')
+    return ($r.Content -match 'TalosInstallerEmbedded' -or $r.Content -match 'talos-computer-launcher-v2')
 }
 
 function Read-DotEnvFile([string]$Path) {
@@ -960,8 +960,8 @@ function Set-DotEnvKey([string]$Path, [string]$Key, [string]$Value) {
 
 function Get-HostListeningPorts {
     $ports = New-Object 'System.Collections.Generic.HashSet[int]'
-    if ($null -ne $env:LINGER_INSTALL_BUSY_PORTS) {
-        foreach ($tok in $env:LINGER_INSTALL_BUSY_PORTS.Split(',')) {
+    if ($null -ne $env:TALOS_INSTALL_BUSY_PORTS) {
+        foreach ($tok in $env:TALOS_INSTALL_BUSY_PORTS.Split(',')) {
             $trimmed = $tok.Trim()
             $p = 0
             if ($trimmed -and [int]::TryParse($trimmed, [ref]$p)) {
@@ -1002,7 +1002,7 @@ function Invoke-ExternalCommand(
         }
     }
     if (-not $resolvedPath) {
-        $missing = New-Object LingerProcessResult
+        $missing = New-Object TalosProcessResult
         $missing.ExitCode = 127
         $missing.StdOut = ''
         $missing.StdErr = "Command not found: $CommandName"
@@ -1016,10 +1016,10 @@ function Invoke-ExternalCommand(
     if ($resolvedPath -imatch '\.(cmd|bat)$') {
         $inner = Join-CommandArgs (@($resolvedPath) + $Arguments)
         $cmdArgs = '/d /s /c "' + $inner + '"'
-        return [LingerProcessRunner]::RunWithPump('cmd.exe', $cmdArgs, $WorkingDirectory, $envDict, $StdInText, $onBatch)
+        return [TalosProcessRunner]::RunWithPump('cmd.exe', $cmdArgs, $WorkingDirectory, $envDict, $StdInText, $onBatch)
     }
     $argStr = Join-CommandArgs $Arguments
-    return [LingerProcessRunner]::RunWithPump($resolvedPath, $argStr, $WorkingDirectory, $envDict, $StdInText, $onBatch)
+    return [TalosProcessRunner]::RunWithPump($resolvedPath, $argStr, $WorkingDirectory, $envDict, $StdInText, $onBatch)
 }
 
 function Get-OwnComposePorts {
@@ -1220,8 +1220,8 @@ function Prompt-OwnerCreation([bool]$AssumeYes) {
     if (-not (Read-YesNoPrompt "  Create the initial owner account now? [Y/n]: " $true $AssumeYes)) {
         return
     }
-    $email = Read-PromptLine "  Owner email (default: owner@linger.local): "
-    if (-not $email) { $email = 'owner@linger.local' }
+    $email = Read-PromptLine "  Owner email (default: owner@talos.local): "
+    if (-not $email) { $email = 'owner@talos.local' }
 
     $password = ''
     while ($true) {
@@ -1253,7 +1253,7 @@ function Prompt-OwnerCreation([bool]$AssumeYes) {
 function Start-ComposeServer([bool]$AssumeYes) {
     $verRes = Invoke-ExternalCommand 'docker' @('compose', 'version') $script:RepoRoot
     if ($verRes.ExitCode -ne 0) {
-        Exit-Fail "Docker Compose v2 is required to start Linger locally. Start Docker Desktop and try again."
+        Exit-Fail "Docker Compose v2 is required to start Talos locally. Start Docker Desktop and try again."
     }
 
     $envPath = Join-Path $script:RepoRoot '.env'
@@ -1267,10 +1267,10 @@ function Start-ComposeServer([bool]$AssumeYes) {
 
     Ensure-ComposePorts $envPath $AssumeYes
 
-    Write-OutLine "  Starting Linger with Docker Compose..."
+    Write-OutLine "  Starting Talos with Docker Compose..."
     $upRes = Invoke-ExternalCommand 'docker' @('compose', 'up', '--build', '--detach', '--wait') $script:RepoRoot $null $null $true
     if ($upRes.ExitCode -ne 0) {
-        Exit-Fail "Docker Compose failed to start Linger."
+        Exit-Fail "Docker Compose failed to start Talos."
     }
 
     $finalEnv = Read-DotEnvFile $envPath
@@ -1280,11 +1280,11 @@ function Start-ComposeServer([bool]$AssumeYes) {
         $composeOrigin = "http://localhost:$port"
     }
 
-    if (-not (Test-LingerServer $composeOrigin)) {
-        Exit-Fail "Linger server did not become reachable at $composeOrigin."
+    if (-not (Test-TalosServer $composeOrigin)) {
+        Exit-Fail "Talos server did not become reachable at $composeOrigin."
     }
 
-    Write-OutLine "  Linger server is ready at $composeOrigin."
+    Write-OutLine "  Talos server is ready at $composeOrigin."
     Prompt-OwnerCreation $AssumeYes
     return $composeOrigin
 }
@@ -1292,7 +1292,7 @@ function Start-ComposeServer([bool]$AssumeYes) {
 function Prompt-CustomUrl([string]$DefaultOrigin, [bool]$AllowSkip = $true) {
     while ($true) {
         $hint = if ($AllowSkip) { " (or type 'skip' to continue with local models only)" } else { '' }
-        $raw = Read-PromptLine ("  Enter Linger server URL" + $hint + ": ")
+        $raw = Read-PromptLine ("  Enter Talos server URL" + $hint + ": ")
         if ($null -eq $raw) {
             Exit-Fail "No server URL provided."
         }
@@ -1304,11 +1304,11 @@ function Prompt-CustomUrl([string]$DefaultOrigin, [bool]$AllowSkip = $true) {
             Write-OutLine "  Invalid URL. Please enter an origin like http://localhost:3000."
             continue
         }
-        if (Test-LingerServer $normalized) {
-            Write-OutLine "  Found Linger server at $normalized."
+        if (Test-TalosServer $normalized) {
+            Write-OutLine "  Found Talos server at $normalized."
             return $normalized
         }
-        if (Read-YesNoPrompt "  Could not reach a Linger server at $normalized. Use it anyway? [y/N]: " $false $false) {
+        if (Read-YesNoPrompt "  Could not reach a Talos server at $normalized. Use it anyway? [y/N]: " $false $false) {
             return $normalized
         }
     }
@@ -1318,10 +1318,10 @@ function Resolve-InitialOrigin([string]$ExplicitOrigin) {
     if ($ExplicitOrigin) {
         return $ExplicitOrigin
     }
-    if ($env:LINGER_WEB_URL) {
-        $fromEnv = Normalize-Origin $env:LINGER_WEB_URL
+    if ($env:TALOS_WEB_URL) {
+        $fromEnv = Normalize-Origin $env:TALOS_WEB_URL
         if (-not $fromEnv) {
-            Exit-Fail "Invalid LINGER_WEB_URL: $($env:LINGER_WEB_URL)"
+            Exit-Fail "Invalid TALOS_WEB_URL: $($env:TALOS_WEB_URL)"
         }
         return $fromEnv
     }
@@ -1338,18 +1338,18 @@ function Resolve-InitialOrigin([string]$ExplicitOrigin) {
 
 function Invoke-StepCheckServer([string]$Origin, [bool]$AssumeYes) {
     Write-OutLine ""
-    Write-OutLine "[1/4] Checking Linger server"
-    if (Test-LingerServer $Origin) {
-        Write-OutLine "  Found Linger server at $Origin."
+    Write-OutLine "[1/4] Checking Talos server"
+    if (Test-TalosServer $Origin) {
+        Write-OutLine "  Found Talos server at $Origin."
         return @{ Origin = $Origin; LocalOnly = $false }
     }
 
-    Write-OutLine "  Could not reach a Linger server at $Origin."
+    Write-OutLine "  Could not reach a Talos server at $Origin."
     if ($script:HasCompose) {
         Write-OutLine "  Choose how to proceed:"
-        Write-OutLine "    1) Start Linger on this computer with Docker Compose (recommended)"
-        Write-OutLine "    2) Enter the URL of an existing Linger server"
-        Write-OutLine "    3) Install local models only (connect to Linger later)"
+        Write-OutLine "    1) Start Talos on this computer with Docker Compose (recommended)"
+        Write-OutLine "    2) Enter the URL of an existing Talos server"
+        Write-OutLine "    3) Install local models only (connect to Talos later)"
         $choice = if ($AssumeYes) { '1' } else { Read-PromptLine "  Choice [1-3] (default: 1): " }
         if (-not $choice) { $choice = '1' }
         switch ($choice) {
@@ -1375,8 +1375,8 @@ function Invoke-StepCheckServer([string]$Origin, [bool]$AssumeYes) {
         }
     } else {
         Write-OutLine "  Choose how to proceed:"
-        Write-OutLine "    1) Enter the URL of an existing Linger server"
-        Write-OutLine "    2) Install local models only (connect to Linger later)"
+        Write-OutLine "    1) Enter the URL of an existing Talos server"
+        Write-OutLine "    2) Install local models only (connect to Talos later)"
         $choice = if ($AssumeYes) { '2' } else { Read-PromptLine "  Choice [1-2] (default: 2): " }
         if (-not $choice) { $choice = '2' }
         switch ($choice) {
@@ -1577,7 +1577,7 @@ function Invoke-StepHardwareAndPlan([bool]$UpdateMode, [bool]$AssumeYes) {
     Write-OutLine "[3/4] Installing and verifying the local model"
     Write-OutLine "  Preparing installation plan..."
 
-    $planDir = Join-Path ([IO.Path]::GetTempPath()) ("linger-plan-" + [Guid]::NewGuid().ToString('N'))
+    $planDir = Join-Path ([IO.Path]::GetTempPath()) ("talos-plan-" + [Guid]::NewGuid().ToString('N'))
     Set-PrivateWindowsDirectoryAcl $planDir
     $script:TempDirsToClean.Add($planDir)
     $planFile = Join-Path $planDir 'plan.json'
@@ -1727,12 +1727,12 @@ function Invoke-StepHardwareAndPlan([bool]$UpdateMode, [bool]$AssumeYes) {
 
 function Resolve-ComputerLauncher([string]$Origin) {
     $envName = Get-ComputerEnvironmentName $Origin
-    $binDir = if ($env:LINGER_COMPUTER_BIN_DIR) { $env:LINGER_COMPUTER_BIN_DIR } else { Join-Path (Get-LocalAppDataRoot) 'Linger\bin' }
-    $exePath = Join-Path $binDir ("linger-computer-$envName.exe")
+    $binDir = if ($env:TALOS_COMPUTER_BIN_DIR) { $env:TALOS_COMPUTER_BIN_DIR } else { Join-Path (Get-LocalAppDataRoot) 'Talos\bin' }
+    $exePath = Join-Path $binDir ("talos-computer-$envName.exe")
     if (Test-Path -LiteralPath $exePath -PathType Leaf) {
         return @{ Path = $exePath; BinDir = $binDir; EnvName = $envName }
     }
-    $cmdPath = Join-Path $binDir ("linger-computer-$envName.cmd")
+    $cmdPath = Join-Path $binDir ("talos-computer-$envName.cmd")
     if (Test-Path -LiteralPath $cmdPath -PathType Leaf) {
         return @{ Path = $cmdPath; BinDir = $binDir; EnvName = $envName }
     }
@@ -1782,40 +1782,40 @@ function Invoke-ComputerCommand([string]$LauncherPath, [string[]]$CompArgs, [has
 
 function Invoke-ConnectStep([string]$Origin) {
     Write-OutLine ""
-    Write-OutLine "[4/4] Connecting this computer to Linger"
+    Write-OutLine "[4/4] Connecting this computer to Talos"
 
     if (Test-IsElevated) {
         Exit-Fail "Cannot connect this computer from an elevated Administrator PowerShell window. Open an ordinary non-elevated PowerShell window and run: $($script:DisplayCmd) --connect --web-url $Origin"
     }
 
-    $tmpDir = Join-Path ([IO.Path]::GetTempPath()) ("linger-comp-" + [Guid]::NewGuid().ToString('N'))
+    $tmpDir = Join-Path ([IO.Path]::GetTempPath()) ("talos-comp-" + [Guid]::NewGuid().ToString('N'))
     Set-PrivateWindowsDirectoryAcl $tmpDir
     $script:TempDirsToClean.Add($tmpDir)
-    $installerPs1 = Join-Path $tmpDir 'linger-computer.ps1'
+    $installerPs1 = Join-Path $tmpDir 'talos-computer.ps1'
 
-    $resp = Invoke-HttpGetText "$Origin/install/linger-computer.ps1" 30
-    if (-not $resp.Ok -or (-not ($resp.Content -match 'LingerInstallerEmbedded' -or $resp.Content -match 'linger-computer-launcher-v2'))) {
-        Exit-Fail "Could not download the Linger Computer installer from $Origin."
+    $resp = Invoke-HttpGetText "$Origin/install/talos-computer.ps1" 30
+    if (-not $resp.Ok -or (-not ($resp.Content -match 'TalosInstallerEmbedded' -or $resp.Content -match 'talos-computer-launcher-v2'))) {
+        Exit-Fail "Could not download the Talos Computer installer from $Origin."
     }
     [IO.File]::WriteAllText($installerPs1, $resp.Content, $script:Utf8NoBom)
 
     $bootEnv = @{
-        'LINGER_WEB_URL' = $Origin
+        'TALOS_WEB_URL' = $Origin
     }
-    if ($env:LINGER_COMPUTER_BIN_DIR) { $bootEnv['LINGER_COMPUTER_BIN_DIR'] = $env:LINGER_COMPUTER_BIN_DIR }
-    if ($env:LINGER_COMPUTER_DATA_DIR) { $bootEnv['LINGER_COMPUTER_DATA_DIR'] = $env:LINGER_COMPUTER_DATA_DIR }
-    if ($env:LINGER_COMPUTER_CONFIG) { $bootEnv['LINGER_COMPUTER_CONFIG'] = $env:LINGER_COMPUTER_CONFIG }
+    if ($env:TALOS_COMPUTER_BIN_DIR) { $bootEnv['TALOS_COMPUTER_BIN_DIR'] = $env:TALOS_COMPUTER_BIN_DIR }
+    if ($env:TALOS_COMPUTER_DATA_DIR) { $bootEnv['TALOS_COMPUTER_DATA_DIR'] = $env:TALOS_COMPUTER_DATA_DIR }
+    if ($env:TALOS_COMPUTER_CONFIG) { $bootEnv['TALOS_COMPUTER_CONFIG'] = $env:TALOS_COMPUTER_CONFIG }
 
     $bootArgs = Join-CommandArgs @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $installerPs1)
-    $bootRes = [LingerProcessRunner]::RunWithPump($script:PowerShellExe, $bootArgs, '', (ConvertTo-EnvDict $bootEnv), $null, $script:RawBatchPrinter)
+    $bootRes = [TalosProcessRunner]::RunWithPump($script:PowerShellExe, $bootArgs, '', (ConvertTo-EnvDict $bootEnv), $null, $script:RawBatchPrinter)
     if ($bootRes.ExitCode -ne 0) {
-        Exit-Fail "Linger Computer installation failed."
+        Exit-Fail "Talos Computer installation failed."
     }
 
     $resolved = Resolve-ComputerLauncher $Origin
     $launcher = $resolved.Path
     if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
-        Exit-Fail "Linger Computer launcher was not found after installation: $launcher"
+        Exit-Fail "Talos Computer launcher was not found after installation: $launcher"
     }
 
     $compEnv = Build-ComputerEnvOverrides $resolved.BinDir
@@ -1834,13 +1834,13 @@ function Invoke-ConnectStep([string]$Origin) {
     }
 
     if ($authorized) {
-        Write-OutLine "  This computer is already linked to Linger. Restarting background service..."
+        Write-OutLine "  This computer is already linked to Talos. Restarting background service..."
         $restartRes = Invoke-ComputerCommand $launcher @('daemon', 'restart') $compEnv $true
         if ($restartRes.ExitCode -ne 0) {
-            Exit-Fail "Failed to restart the Linger Computer daemon."
+            Exit-Fail "Failed to restart the Talos Computer daemon."
         }
     } else {
-        Write-OutLine "  Sign in to link this computer to Linger (a browser window may open)..."
+        Write-OutLine "  Sign in to link this computer to Talos (a browser window may open)..."
         $loginArgs = New-Object System.Collections.Generic.List[string]
         $null = $loginArgs.Add('login')
         $null = $loginArgs.Add('--web-url')
@@ -1851,7 +1851,7 @@ function Invoke-ConnectStep([string]$Origin) {
         }
         $loginRes = Invoke-ComputerCommand $launcher ($loginArgs.ToArray()) $compEnv $true
         if ($loginRes.ExitCode -ne 0) {
-            Exit-Fail "Failed to link this computer to Linger."
+            Exit-Fail "Failed to link this computer to Talos."
         }
     }
 
@@ -1901,15 +1901,15 @@ function Invoke-ModeConnect([string]$Origin) {
         Exit-Fail "Cannot connect this computer from an elevated Administrator PowerShell window. Open an ordinary non-elevated PowerShell window and run: $($script:DisplayCmd) --connect --web-url $Origin"
     }
     $targetOrigin = $Origin
-    if (-not (Test-LingerServer $targetOrigin)) {
-        Write-OutLine "  Could not reach a Linger server at $targetOrigin."
+    if (-not (Test-TalosServer $targetOrigin)) {
+        Write-OutLine "  Could not reach a Talos server at $targetOrigin."
         $targetOrigin = Prompt-CustomUrl $targetOrigin $true
         if (-not $targetOrigin) {
             Write-OutLine "  Continuing with local models only."
             return
         }
     } else {
-        Write-OutLine "  Found Linger server at $targetOrigin."
+        Write-OutLine "  Found Talos server at $targetOrigin."
     }
     Invoke-ConnectStep $targetOrigin
 }
@@ -1964,7 +1964,7 @@ while ($i -lt $script:CliArgs.Count) {
             $rawUrl = [string]$script:CliArgs[$i + 1]
             $norm = Normalize-Origin $rawUrl
             if (-not $norm) {
-                Exit-Fail "Invalid Linger server URL: $rawUrl"
+                Exit-Fail "Invalid Talos server URL: $rawUrl"
             }
             $explicitOrigin = $norm
             $i++
@@ -1976,7 +1976,7 @@ while ($i -lt $script:CliArgs.Count) {
             }
             $norm = Normalize-Origin $rawUrl
             if (-not $norm) {
-                Exit-Fail "Invalid Linger server URL: $rawUrl"
+                Exit-Fail "Invalid Talos server URL: $rawUrl"
             }
             $explicitOrigin = $norm
         }
@@ -2038,7 +2038,7 @@ try {
         }
         'guide' {
             if (Test-IsElevated) {
-                Write-OutLine "Note: PowerShell is running as Administrator. Connecting this computer to Linger in step [4/4] requires a non-elevated PowerShell window."
+                Write-OutLine "Note: PowerShell is running as Administrator. Connecting this computer to Talos in step [4/4] requires a non-elevated PowerShell window."
                 if (-not (Read-YesNoPrompt "Continue with server/hardware checks and local model installation anyway? [Y/n]: " $true $assumeYes)) {
                     Write-OutLine "Installation cancelled."
                     exit 0
@@ -2057,7 +2057,7 @@ try {
             if ($localOnly) {
                 Write-OutLine ""
                 Write-OutLine "Local models are ready."
-                Write-OutLine "When your Linger server is running, connect with:"
+                Write-OutLine "When your Talos server is running, connect with:"
                 Write-OutLine "  $($script:DisplayCmd) --connect --web-url $resolvedOrigin"
             } else {
                 Invoke-ConnectStep $resolvedOrigin

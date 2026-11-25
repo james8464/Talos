@@ -6,8 +6,8 @@ package roomattention
 import (
 	"context"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/realtime"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // RoomSummaryUpdate names the Room whose summary changed and the room_seq the

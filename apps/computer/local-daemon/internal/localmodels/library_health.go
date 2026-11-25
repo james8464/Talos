@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 // parseLoopbackHTTPURL accepts only direct HTTP loopback URLs so probes never

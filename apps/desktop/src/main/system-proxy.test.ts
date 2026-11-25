@@ -26,7 +26,7 @@ describe("system proxy", () => {
     await expect(
       systemProxy({}, async () => "PROXY 127.0.0.1:7890"),
     ).resolves.toEqual({
-      env: { LINGER_SYSTEM_HTTPS_PROXY: "http://127.0.0.1:7890" },
+      env: { TALOS_SYSTEM_HTTPS_PROXY: "http://127.0.0.1:7890" },
       source: "system",
     });
     await expect(systemProxy({}, async () => "DIRECT")).resolves.toEqual({

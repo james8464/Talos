@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { components } from "@linger/wire-contracts/node-services-internal/types";
+import type { components } from "@talos/wire-contracts/node-services-internal/types";
 
 import { loadWikiGraphSubjectsForActor } from "./collector.js";
 import { walkFiles } from "./fs-utils.js";

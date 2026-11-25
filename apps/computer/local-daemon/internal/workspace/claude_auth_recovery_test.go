@@ -117,7 +117,7 @@ func TestClaudeScopedKeychainDeletionFailureDoesNotRecordRecovery(t *testing.T) 
 	if err == nil {
 		t.Fatal("failed cleanup was silently accepted")
 	}
-	if _, err := os.Stat(filepath.Join(root, ".linger-auth-source.sha256")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(root, ".talos-auth-source.sha256")); !os.IsNotExist(err) {
 		t.Fatal("failed recovery committed source generation")
 	}
 }

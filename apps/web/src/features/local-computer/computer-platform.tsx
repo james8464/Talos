@@ -13,7 +13,7 @@ export function browserComputerPlatform(): ComputerPlatform {
 
 /**
  * The environment name a Web origin's Computer installs under, as the
- * installers derive it: the host's first label without "-linger",
+ * installers derive it: the host's first label without "-talos",
  * "local" for loopback, or the dashed address for an IP, plus any non-default
  * port.
  */
@@ -31,7 +31,7 @@ export function computerEnvironmentName(origin: string): string {
   else if (/^[0-9.]+$/u.test(host)) name = `ip-${host.replaceAll(".", "-")}`;
   else {
     name = host.split(".")[0]!;
-    if (name !== "linger") name = name.replace(/-linger$/u, "");
+    if (name !== "talos") name = name.replace(/-talos$/u, "");
   }
   return url.port ? `${name}-${url.port}` : name;
 }
@@ -41,14 +41,14 @@ export function computerEnvironmentName(origin: string): string {
  * environments can share one machine.
  */
 export function computerCommand(): string {
-  return `linger-computer-${computerEnvironmentName(window.location.origin)}`;
+  return `talos-computer-${computerEnvironmentName(window.location.origin)}`;
 }
 
 export function computerInstallCommand(platform: ComputerPlatform): string {
   const origin = window.location.origin;
   return platform === "win32"
-    ? `irm '${origin}/install/linger-computer.ps1' | iex`
-    : `curl -fsSL "${origin}/install/linger-computer.sh" | bash`;
+    ? `irm '${origin}/install/talos-computer.ps1' | iex`
+    : `curl -fsSL "${origin}/install/talos-computer.sh" | bash`;
 }
 
 export function ComputerPlatformSelector({

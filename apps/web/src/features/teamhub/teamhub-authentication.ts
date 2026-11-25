@@ -24,7 +24,7 @@ type TeamHubAuthenticationListener = (
   reason?: TeamHubAuthenticationReason,
 ) => void;
 
-const channelName = "linger:teamhub-authentication:v1";
+const channelName = "talos:teamhub-authentication:v1";
 
 export function createTeamHubAuthenticationSignals({
   channelFactory = createBrowserBroadcastChannel,

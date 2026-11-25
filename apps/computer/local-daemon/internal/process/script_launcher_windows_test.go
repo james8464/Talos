@@ -43,7 +43,7 @@ func TestNativeNpmEntryPreservesArgvAndStdin(t *testing.T) {
 	}
 	args := []string{"with space", `quotes "inside"`, "Café déjà vu\nsecond line", `C:\trailing\`, "%PATH% & ^ ! (test)", ""}
 	cmd := exec.Command(shim, args...)
-	cmd.Env = append(os.Environ(), "LINGER_ARGV_FIXTURE=1")
+	cmd.Env = append(os.Environ(), "TALOS_ARGV_FIXTURE=1")
 	cmd.Stdin = strings.NewReader("Größe JSON\n")
 	prepareScriptLauncher(cmd)
 	output, err := cmd.Output()
@@ -110,10 +110,10 @@ func TestNativePiEntryPreservesArgvAndStdin(t *testing.T) {
 	}
 	// The RPC probe sends an empty --system-prompt value, which a PowerShell
 	// launcher drops; the fixture proves the value survives this path.
-	args := []string{"--mode", "rpc", "--no-session", "--system-prompt", "", `{"id":"linger-probe"}`, "Café"}
+	args := []string{"--mode", "rpc", "--no-session", "--system-prompt", "", `{"id":"talos-probe"}`, "Café"}
 	cmd := exec.Command(shim, args...)
-	cmd.Env = append(os.Environ(), "LINGER_ARGV_FIXTURE=1")
-	cmd.Stdin = strings.NewReader(`{"id":"linger-probe","type":"get_state"}` + "\n")
+	cmd.Env = append(os.Environ(), "TALOS_ARGV_FIXTURE=1")
+	cmd.Stdin = strings.NewReader(`{"id":"talos-probe","type":"get_state"}` + "\n")
 	prepareScriptLauncher(cmd)
 	output, err := cmd.Output()
 	if err != nil {
@@ -127,7 +127,7 @@ func TestNativePiEntryPreservesArgvAndStdin(t *testing.T) {
 		t.Fatalf("output=%s: %v", output, err)
 	}
 	expected := append([]string{script}, args...)
-	if !reflect.DeepEqual(result.Args, expected) || result.Stdin != `{"id":"linger-probe","type":"get_state"}`+"\n" {
+	if !reflect.DeepEqual(result.Args, expected) || result.Stdin != `{"id":"talos-probe","type":"get_state"}`+"\n" {
 		t.Fatalf("result=%+v", result)
 	}
 }
@@ -154,7 +154,7 @@ func TestPrepareForegroundKeepsTheConsole(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(shim)
-	cmd.Env = append(os.Environ(), "LINGER_ARGV_FIXTURE=1")
+	cmd.Env = append(os.Environ(), "TALOS_ARGV_FIXTURE=1")
 	PrepareForeground(cmd)
 	if cmd.Path != node || !reflect.DeepEqual(cmd.Args, []string{node, script}) {
 		t.Fatalf("launch=%q %q", cmd.Path, cmd.Args)
@@ -187,7 +187,7 @@ func TestNativePnpmClaudeEntryPreservesArgvAndStdin(t *testing.T) {
 	}
 	args := []string{"with space", `quotes "inside"`, "Café déjà vu\nsecond line", ""}
 	cmd := exec.Command(shim, args...)
-	cmd.Env = append(os.Environ(), "LINGER_ARGV_FIXTURE=1")
+	cmd.Env = append(os.Environ(), "TALOS_ARGV_FIXTURE=1")
 	cmd.Stdin = strings.NewReader("Résumé JSON\n")
 	prepareScriptLauncher(cmd)
 	output, err := cmd.Output()
@@ -218,10 +218,10 @@ func TestBundledNodeExe(t *testing.T) {
 	if err := os.WriteFile(bundled, []byte("node"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if got := bundledNodeExe(filepath.Join(install, "linger-computer.exe")); got != bundled {
+	if got := bundledNodeExe(filepath.Join(install, "talos-computer.exe")); got != bundled {
 		t.Fatalf("node=%q want=%q", got, bundled)
 	}
-	if got := bundledNodeExe(filepath.Join(t.TempDir(), "cli", "linger-computer.exe")); got != "" {
+	if got := bundledNodeExe(filepath.Join(t.TempDir(), "cli", "talos-computer.exe")); got != "" {
 		t.Fatalf("node=%q without a shipped runtime", got)
 	}
 }
@@ -238,7 +238,7 @@ func TestBatchLauncherDoesNotExpandMetacharacterArguments(t *testing.T) {
 	}
 	args := []string{"with space", `quotes "inside"`, `C:\trailing\`, "%PATH% & ^ ! (test)", ""}
 	cmd := exec.Command(script, args...)
-	cmd.Env = append(os.Environ(), "LINGER_ARGV_FIXTURE=1")
+	cmd.Env = append(os.Environ(), "TALOS_ARGV_FIXTURE=1")
 	prepareScriptLauncher(cmd)
 	output, err := cmd.CombinedOutput()
 	if err != nil {

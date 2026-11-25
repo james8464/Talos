@@ -1,4 +1,4 @@
-import { parseOkfFrontmatter } from "@linger/knowledge-format";
+import { parseOkfFrontmatter } from "@talos/knowledge-format";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isMainModule } from "../paths.js";

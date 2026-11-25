@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/secretbox"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/secretbox"
 )
 
 func TestCanonicalRequestPath(t *testing.T) {

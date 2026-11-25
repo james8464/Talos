@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/websearch"
-	api "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/websearch"
+	api "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
 )
 
 // webSearchAction is the business action every web search command runs as.

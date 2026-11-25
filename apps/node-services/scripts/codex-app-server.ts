@@ -223,8 +223,8 @@ export class CodexSessions {
         "initialize",
         {
           clientInfo: {
-            name: "linger-computer",
-            title: "Linger Computer",
+            name: "talos-computer",
+            title: "Talos Computer",
             version: "1",
           },
           capabilities: { experimentalApi: true },

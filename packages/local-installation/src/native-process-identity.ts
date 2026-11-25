@@ -2,11 +2,11 @@ import { execFile, spawn, type ExecFileException } from "node:child_process";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
-import { excerptLine, redact } from "@linger/local-installation/redaction";
+import { excerptLine, redact } from "@talos/local-installation/redaction";
 
 // The source supervisor imports this module directly, before any build, so
 // intra-package imports use the package self-reference in exports.
-const leaseKey = "LINGER_NATIVE_PROCESS_LEASE";
+const leaseKey = "TALOS_NATIVE_PROCESS_LEASE";
 const MAX_INSPECTION_BUFFER = 16 * 1024 * 1024;
 
 interface ProcessResult {
@@ -323,7 +323,7 @@ export function darwinProcessIdentity(
   };
 }
 /**
- * The birth of a macOS process as Linger 0.1.2 recorded it: lstart in the
+ * The birth of a macOS process as Talos 0.1.2 recorded it: lstart in the
  * locale the installer ran in, not the C locale every check now uses. Only
  * for converting such a record; undefined elsewhere.
  */

@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 )
 
 var ErrLatestProjectionNotReady = errors.New("latest Document changed during rendering; retry")

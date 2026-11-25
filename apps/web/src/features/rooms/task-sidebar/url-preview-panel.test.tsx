@@ -33,7 +33,7 @@ describe("URL preview fallback", () => {
       window,
       new MessageEvent("message", {
         source: frame.contentWindow,
-        data: { type: "linger-preview-navigate", url: "http://10.0.0.1/" },
+        data: { type: "talos-preview-navigate", url: "http://10.0.0.1/" },
       }),
     );
     expect(open).not.toHaveBeenCalled();
@@ -95,7 +95,7 @@ describe("URL preview fallback", () => {
 
   it("frames sites directly in the desktop app, even on a development server", () => {
     vi.stubEnv("DEV", true);
-    vi.stubGlobal("lingerDesktop", {});
+    vi.stubGlobal("talosDesktop", {});
     try {
       render(<UrlPreviewPanel url="https://example.com/" />);
       const frame = screen.getByTitle<HTMLIFrameElement>(
@@ -114,12 +114,12 @@ describe("URL preview fallback", () => {
 
 describe("URL preview in the desktop app", () => {
   afterEach(() => {
-    delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+    delete (window as { talosDesktop?: unknown }).talosDesktop;
   });
 
   it("replaces a frame the site refused with a link to open it in a new tab", () => {
     let report: ((frameName: string, url: string) => void) | undefined;
-    (window as { lingerDesktop?: unknown }).lingerDesktop = {
+    (window as { talosDesktop?: unknown }).talosDesktop = {
       preview: {
         onFrameRefused: (
           callback: (frameName: string, url: string) => void,
@@ -131,9 +131,9 @@ describe("URL preview in the desktop app", () => {
     };
     render(<UrlPreviewPanel url="https://linear.app/team/issue/A-1" />);
     const frame = document.querySelector("iframe")!;
-    expect(frame.name).toMatch(/^linger-url-preview:/);
+    expect(frame.name).toMatch(/^talos-url-preview:/);
 
-    act(() => report!("linger-url-preview:another", "https://linear.app/"));
+    act(() => report!("talos-url-preview:another", "https://linear.app/"));
     expect(document.querySelector("iframe")).not.toBeNull();
 
     act(() => report!(frame.name, "https://linear.app/login"));
@@ -227,7 +227,7 @@ describe("URL preview in a native desktop view", () => {
         return () => (report = undefined);
       }),
     };
-    vi.stubGlobal("lingerDesktop", {
+    vi.stubGlobal("talosDesktop", {
       preview: { onFrameRefused: () => () => undefined, view },
     });
     return {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 func appliedResult(t *testing.T, body string) nodeservicesinternal.ApplyDocumentChangeResult {

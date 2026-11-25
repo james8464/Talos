@@ -4,7 +4,7 @@
 // time, and TeamHub by in-memory tasks and tool results. It measures what
 // text runs cannot: turns cut by pauses, swallowed turns, barge-in, and when
 // background updates are actually heard. Results go to
-// .linger-runtime/live-audio/; only aggregated metrics are printed.
+// .talos-runtime/live-audio/; only aggregated metrics are printed.
 import { execFileSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -434,7 +434,7 @@ class Call {
       { source: 1 },
       {
         ...publisher,
-        attributes: { "linger.voice_generation": "1" },
+        attributes: { "talos.voice_generation": "1" },
       },
     );
     // A microphone sends 20 ms frames all the time, silence included.
@@ -1024,7 +1024,7 @@ describe.skipIf(!apiKey || !contextFile)("live audio", () => {
   afterAll(() => {
     const dir = resolve(
       import.meta.dirname,
-      "../../../../.linger-runtime/live-audio",
+      "../../../../.talos-runtime/live-audio",
     );
     mkdirSync(dir, { recursive: true });
     const file = join(

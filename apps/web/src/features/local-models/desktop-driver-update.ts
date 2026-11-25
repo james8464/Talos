@@ -3,7 +3,7 @@ import type {
   DesktopDriverCapabilities,
   DesktopDriverInstallRequest,
   DesktopDriverInstallState,
-} from "@linger/service-kit/nvidia-driver";
+} from "@talos/service-kit/nvidia-driver";
 import { useEffect, useState } from "react";
 
 export interface DesktopDriverUpdateApi {
@@ -23,14 +23,14 @@ export interface DesktopDriverUpdateApi {
 
 /**
  * The desktop app's native NVIDIA driver update bridge
- * (`window.lingerDesktop.driverUpdate`), or undefined in a browser or older
+ * (`window.talosDesktop.driverUpdate`), or undefined in a browser or older
  * desktop release.
  */
 export function desktopDriverUpdate(): DesktopDriverUpdateApi | undefined {
   return typeof window === "undefined"
     ? undefined
-    : (window as { lingerDesktop?: { driverUpdate?: DesktopDriverUpdateApi } })
-        .lingerDesktop?.driverUpdate;
+    : (window as { talosDesktop?: { driverUpdate?: DesktopDriverUpdateApi } })
+        .talosDesktop?.driverUpdate;
 }
 
 export interface DesktopDriverBridge {
@@ -43,7 +43,7 @@ const IDLE_STATE: DesktopDriverInstallState = { phase: "idle" };
 
 /**
  * Reads native driver-update capabilities and subscribes to live install state
- * when the current view is running inside Linger Desktop for this Computer.
+ * when the current view is running inside Talos Desktop for this Computer.
  */
 export function useDesktopDriverUpdate(
   enabled: boolean,

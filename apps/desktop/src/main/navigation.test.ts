@@ -11,7 +11,7 @@ import {
   voiceWindowRequest,
 } from "./navigation.js";
 
-const server = "https://linger.example.com";
+const server = "https://talos.example.com";
 
 describe("serverSwitch", () => {
   const local = "http://localhost:3000";
@@ -65,7 +65,7 @@ describe("window policy", () => {
     expect(navigationDecision("https://evil.example.com/", server)).toBe(
       "external",
     );
-    expect(navigationDecision("https://linger.example.com:8443/", server)).toBe(
+    expect(navigationDecision("https://talos.example.com:8443/", server)).toBe(
       "external",
     );
     expect(navigationDecision("file:///etc/passwd", server)).toBe("deny");
@@ -102,10 +102,10 @@ describe("window policy", () => {
   });
 
   it("accepts only plain http(s) server addresses", () => {
-    expect(parseServerUrl(" https://linger.example.com/path ")).toBe(server);
+    expect(parseServerUrl(" https://talos.example.com/path ")).toBe(server);
     expect(parseServerUrl("javascript:alert(1)")).toBeUndefined();
     expect(
-      parseServerUrl("https://user:pw@linger.example.com"),
+      parseServerUrl("https://user:pw@talos.example.com"),
     ).toBeUndefined();
   });
 
@@ -116,7 +116,7 @@ describe("window policy", () => {
     expect(parseServerUrl("http://192.168.1.20:3000")).toBe(
       "http://192.168.1.20:3000",
     );
-    expect(parseServerUrl("http://linger.example.com")).toBeUndefined();
+    expect(parseServerUrl("http://talos.example.com")).toBeUndefined();
   });
 });
 
@@ -323,7 +323,7 @@ describe("windowLoadDecision", () => {
 
 describe("voiceWindowRequest", () => {
   const page = `${server}/t/1/rooms/2/chat`;
-  const open = { url: "about:blank", frameName: "linger-voice-window-3" };
+  const open = { url: "about:blank", frameName: "talos-voice-window-3" };
 
   it("allows the server's page to open its empty voice window", () => {
     expect(voiceWindowRequest(open, server, page)).toBe(true);

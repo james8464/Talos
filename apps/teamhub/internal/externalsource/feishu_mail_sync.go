@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/feishu"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/feishu"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 )
 
 // mailRenderer renders a message into the Wiki document every mailbox's mail

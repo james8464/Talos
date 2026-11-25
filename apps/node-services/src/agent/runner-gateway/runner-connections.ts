@@ -4,11 +4,11 @@ import type {
   RunnerHello,
   RunnerWelcome,
   RuntimeRegistration,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   parseAgentToDaemonEnvelope,
   parseDaemonToAgentEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 import { logAgentEvent } from "../observability/agent-log.js";
 import { TeamHubRuntimeStateError } from "../executor/teamhub-runtime-state-client.js";
 import { isAgentRunnerOutcome } from "./agent-runner-reconciliation.js";

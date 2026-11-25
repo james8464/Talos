@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/account"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/account"
 )
 
 // SeedIdentities writes the fixed identity used only by local demos and

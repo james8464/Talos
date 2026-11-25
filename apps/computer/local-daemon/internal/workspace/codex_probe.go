@@ -19,7 +19,7 @@ func CodexProbeEnvironment(ctx context.Context, environment map[string]string, v
 	if err != nil {
 		return nil, nil, err
 	}
-	root, err := os.MkdirTemp("", "linger-codex-probe-")
+	root, err := os.MkdirTemp("", "talos-codex-probe-")
 	if err != nil {
 		return nil, nil, err
 	}

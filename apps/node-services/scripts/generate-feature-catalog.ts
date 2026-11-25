@@ -153,7 +153,7 @@ async function main(): Promise<void> {
     const { featureNames, upToDate } = await checkFeatureCatalog();
     if (!upToDate) {
       console.error(
-        `agent-features catalog is stale (${String(featureNames.length)} feature modules discovered); run \`pnpm --filter @linger/node-services catalog:generate\``,
+        `agent-features catalog is stale (${String(featureNames.length)} feature modules discovered); run \`pnpm --filter @talos/node-services catalog:generate\``,
       );
       process.exitCode = 1;
     }

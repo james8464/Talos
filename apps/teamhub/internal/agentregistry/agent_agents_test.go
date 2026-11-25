@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/collaboration"
 )
 
 func TestAgentProfileChangeAcceptsOnlyContractLimits(t *testing.T) {

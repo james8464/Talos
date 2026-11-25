@@ -383,7 +383,7 @@ test("bundled entry resolves its packaged worker and survives caller exit", asyn
   const { expect } = context;
   const root = await fixture(context);
   const app = fileURLToPath(
-    new URL("../../../apps/linger-installer/", import.meta.url),
+    new URL("../../../apps/talos-installer/", import.meta.url),
   );
   const { build } = createRequire(path.join(app, "package.json"))(
     "esbuild",
@@ -431,7 +431,7 @@ test.for(["ENOSPC", "EIO"])(
     const { expect } = context;
     const root = await fixture(context);
     const app = fileURLToPath(
-      new URL("../../../apps/linger-installer/", import.meta.url),
+      new URL("../../../apps/talos-installer/", import.meta.url),
     );
     const { build } = createRequire(path.join(app, "package.json"))(
       "esbuild",
@@ -638,7 +638,7 @@ test("reports a configuration change only for a running recorded process", async
     const socketInode = await readlink(`/proc/self/fd/${listenFd}`);
 
     const app = fileURLToPath(
-      new URL("../../../apps/linger-installer/", import.meta.url),
+      new URL("../../../apps/talos-installer/", import.meta.url),
     );
     const { build } = createRequire(path.join(app, "package.json"))(
       "esbuild",
@@ -753,7 +753,7 @@ const webLog = (root: string) =>
 const supervisorLines = async (root: string) =>
   (await webLog(root))
     .split("\n")
-    .filter((line) => line.startsWith("[linger-supervisor] web "));
+    .filter((line) => line.startsWith("[talos-supervisor] web "));
 test("restarts a supervised service that exits unasked and logs each exit", async (context) => {
   const { expect } = context;
   const root = await fixture(context);
@@ -774,12 +774,12 @@ test("restarts a supervised service that exits unasked and logs each exit", asyn
   await expect
     .poll(() => supervisorLines(root))
     .toEqual([
-      expect.stringMatching(/^\[linger-supervisor\] web started pid=\d+$/),
+      expect.stringMatching(/^\[talos-supervisor\] web started pid=\d+$/),
       expect.stringMatching(
-        /^\[linger-supervisor\] web exited code=null signal=SIGKILL uptime_ms=\d+ restarting_in_ms=100$/,
+        /^\[talos-supervisor\] web exited code=null signal=SIGKILL uptime_ms=\d+ restarting_in_ms=100$/,
       ),
       expect.stringMatching(
-        /^\[linger-supervisor\] web restarted pid=\d+ attempt=1$/,
+        /^\[talos-supervisor\] web restarted pid=\d+ attempt=1$/,
       ),
     ]);
   await expect
@@ -793,7 +793,7 @@ test("restarts a supervised service that exits unasked and logs each exit", asyn
   await stopNativeProcess(root, "web");
   expect((await inspectNativeProcess(root, "web")).running).toBe(false);
   expect((await supervisorLines(root)).at(-1)).toMatch(
-    /^\[linger-supervisor\] web exited code=\S+ signal=\S+ uptime_ms=\d+ restart=no reason=stop_requested$/,
+    /^\[talos-supervisor\] web exited code=\S+ signal=\S+ uptime_ms=\d+ restart=no reason=stop_requested$/,
   );
   expect(await readdir(path.join(root, "native/processes"))).toEqual([]);
 });
@@ -819,7 +819,7 @@ test("never restarts a service an intended stop ends", async (context) => {
   const lines = await supervisorLines(root);
   expect(lines).toHaveLength(2);
   expect(lines[1]).toMatch(
-    /^\[linger-supervisor\] web exited code=0 signal=null uptime_ms=\d+ restart=no reason=stop_requested$/,
+    /^\[talos-supervisor\] web exited code=0 signal=null uptime_ms=\d+ restart=no reason=stop_requested$/,
   );
   expect((await inspectNativeProcess(root, "web")).running).toBe(false);
 });
@@ -871,7 +871,7 @@ test("gives up after the crash-loop limit and leaves the service stopped", async
     ),
   ]);
   expect(lines.at(-1)).toBe(
-    "[linger-supervisor] web gave up restarting after 3 exits within 10000 ms",
+    "[talos-supervisor] web gave up restarting after 3 exits within 10000 ms",
   );
 });
 test.for([
@@ -896,7 +896,7 @@ test.for([
       .toMatchObject({ running: false });
     expect((await supervisorLines(root)).at(-1)).toMatch(
       new RegExp(
-        `^\\[linger-supervisor\\] web exited code=2 signal=null uptime_ms=\\d+ restart=no reason=${reason}$`,
+        `^\\[talos-supervisor\\] web exited code=2 signal=null uptime_ms=\\d+ restart=no reason=${reason}$`,
       ),
     );
   },

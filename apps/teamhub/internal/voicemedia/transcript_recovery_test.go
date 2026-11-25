@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 func TestRecoveryBlocksPreserveInputAndBoundMemory(t *testing.T) {

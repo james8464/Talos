@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/roomattention"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/workitem"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomattention"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/workitem"
 )
 
 func appendWorkItemChangedEvent(

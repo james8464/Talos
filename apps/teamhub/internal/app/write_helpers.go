@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gin-gonic/gin"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/idempotency"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/idempotency"
 )
 
 func writeResultResponse(c *gin.Context, result idempotency.Result) {

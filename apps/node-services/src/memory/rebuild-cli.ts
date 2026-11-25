@@ -1,6 +1,6 @@
 import http from "node:http";
 import { parseArgs } from "node:util";
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 import {
   NODE_SERVICES_DEFAULT_ADDRESS,
   readListenAddress,
@@ -55,7 +55,7 @@ function send(
   environment: NodeJS.ProcessEnv,
 ): Promise<{ status: number; body: string }> {
   const token = serviceCredential("node-services-internal", environment);
-  if (!token) throw new Error("LINGER_SECRET_SEED is required");
+  if (!token) throw new Error("TALOS_SECRET_SEED is required");
   return new Promise((resolve, reject) => {
     const outgoing = http.request(
       {

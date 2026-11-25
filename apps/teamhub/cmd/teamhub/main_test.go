@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/app"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/app"
 )
 
 func TestSkippedWorkersSkipStartupSkillReconciliation(t *testing.T) {

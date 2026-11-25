@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/emailevidence"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/emailevidence"
 	"golang.org/x/sync/errgroup"
 )
 

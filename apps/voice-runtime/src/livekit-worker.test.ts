@@ -17,7 +17,7 @@ import {
   voiceTrackFailureCode,
 } from "./livekit-worker.js";
 import { VoiceFailure } from "./voice-failure.js";
-import { TeamHubVoiceRuntimeError } from "@linger/wire-contracts/teamhub-internal/client";
+import { TeamHubVoiceRuntimeError } from "@talos/wire-contracts/teamhub-internal/client";
 
 // Hands out media epochs the way TeamHub does: every claim takes a new number.
 function claimEpochs() {

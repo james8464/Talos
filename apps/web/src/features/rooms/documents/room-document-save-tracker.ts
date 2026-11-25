@@ -1,5 +1,5 @@
-import { fingerprintRoomDocumentDeletes } from "@linger/document-model";
-import type { components as RuntimeComponents } from "@linger/wire-contracts/node-services-internal/types";
+import { fingerprintRoomDocumentDeletes } from "@talos/document-model";
+import type { components as RuntimeComponents } from "@talos/wire-contracts/node-services-internal/types";
 import * as Y from "yjs";
 
 export type RoomDocumentSaveStatus =

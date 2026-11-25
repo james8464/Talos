@@ -10,7 +10,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 // The driver applies these on every connection it opens, so a second pooled

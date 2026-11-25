@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/permission"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 )
 
 type piHarness struct {
@@ -532,12 +532,12 @@ func TestPiLaunchArguments(t *testing.T) {
 	}
 
 	// The managed extension runs the shell-text-hook without MCP servers.
-	_, outcome = piCollect(t, h.start(t.Context(), "go", RunSpec{Model: piDefaultModel, ShellTextHook: "/opt/linger/linger-computer-daemon"}))
+	_, outcome = piCollect(t, h.start(t.Context(), "go", RunSpec{Model: piDefaultModel, ShellTextHook: "/opt/talos/talos-computer-daemon"}))
 	data, _ = os.ReadFile(argv)
 	if outcome.Status != statusCompleted || !strings.HasSuffix(string(data), "--extension\n"+extension+"\n--tools\n"+piBaseTools) {
 		t.Fatalf("shell text argv = %q (%+v)", data, outcome)
 	}
-	if hook, _ := os.ReadFile(argv + ".shell_text_hook"); string(hook) != "/opt/linger/linger-computer-daemon" {
+	if hook, _ := os.ReadFile(argv + ".shell_text_hook"); string(hook) != "/opt/talos/talos-computer-daemon" {
 		t.Fatalf("%s = %q", piShellTextHookEnvKey, hook)
 	}
 	if nodePath, _ := os.ReadFile(argv + ".node_path"); string(nodePath) != filepath.Join(filepath.Dir(filepath.Dir(extension)), "node_modules") {
@@ -684,7 +684,7 @@ func TestPiCatalogFailures(t *testing.T) {
 		t.Fatal("absent program discovered")
 	}
 	program, _ := os.Executable()
-	silent := NewInvocation(program, nil).WithEnvironment(map[string]string{fixtureEnvKey: "print", "FIXTURE_STDOUT": `{"type":"response","id":"linger-state","command":"get_state","success":false}` + "\n"})
+	silent := NewInvocation(program, nil).WithEnvironment(map[string]string{fixtureEnvKey: "print", "FIXTURE_STDOUT": `{"type":"response","id":"talos-state","command":"get_state","success":false}` + "\n"})
 	if _, err := DiscoverPiModels(t.Context(), silent); err == nil || err.Error() != errPiNoModels.Error() {
 		t.Fatalf("rejected reply = %v", err)
 	}

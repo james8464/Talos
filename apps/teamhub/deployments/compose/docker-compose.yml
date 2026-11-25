@@ -11,7 +11,7 @@ services:
       - "127.0.0.1:${TEAMHUB_POSTGRES_PORT:-54339}:5432"
     volumes:
       - teamhub-postgres:/var/lib/postgresql/data
-      - ../../../../.linger-runtime/postgres-logs/teamhub:/var/log/postgresql
+      - ../../../../.talos-runtime/postgres-logs/teamhub:/var/log/postgresql
     entrypoint:
       - bash
       - -c

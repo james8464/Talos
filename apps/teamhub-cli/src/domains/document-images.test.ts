@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   prepareDocumentSource,
   bundleDocumentImages,
-} from "@linger/document-files";
+} from "@talos/document-files";
 
 const png =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1cAAAAASUVORK5CYII=";

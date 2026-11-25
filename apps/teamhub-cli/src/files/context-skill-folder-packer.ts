@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 import { deflateRawSync } from "node:zlib";
 import { parseDocument } from "yaml";
 import { ZipFile } from "yazl";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 import {
   type CanonicalSkillPackageFile,
   computeSkillPackageSha256,

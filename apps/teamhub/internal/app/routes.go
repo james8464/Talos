@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oapi-codegen/runtime"
-	teamhubagentapi "github.com/simplexai-labs/linger/contracts-go/teamhubagentapi"
-	"github.com/simplexai-labs/linger/contracts-go/teamhubinternal"
+	teamhubagentapi "github.com/simplexai-labs/talos/contracts-go/teamhubagentapi"
+	"github.com/simplexai-labs/talos/contracts-go/teamhubinternal"
 )
 
 // contractRoute mounts one OpenAPI operation on its handler chain. params is

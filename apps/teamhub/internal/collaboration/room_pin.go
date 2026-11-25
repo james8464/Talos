@@ -3,8 +3,8 @@ package collaboration
 import (
 	"context"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 // UpdateRoomPin records a pin private to the Human; repeating a pin keeps its original time.

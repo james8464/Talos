@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	localworkspace "github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	localworkspace "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 type RuntimeMonitorOptions struct {

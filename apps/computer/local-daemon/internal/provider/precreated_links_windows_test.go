@@ -12,7 +12,7 @@ import (
 )
 
 func TestWindowsPrecreatedDiagnosticFileLink(t *testing.T) {
-	root := os.Getenv("LINGER_TEST_PROVIDER_LINK_ROOT")
+	root := os.Getenv("TALOS_TEST_PROVIDER_LINK_ROOT")
 	if root == "" {
 		t.Skip("requires an administrator-precreated file link fixture")
 	}
@@ -32,7 +32,7 @@ func TestWindowsPrecreatedDiagnosticFileLink(t *testing.T) {
 }
 
 func TestWindowsPrecreatedModelWorkspaceFileLink(t *testing.T) {
-	root := os.Getenv("LINGER_TEST_PROVIDER_LINK_ROOT")
+	root := os.Getenv("TALOS_TEST_PROVIDER_LINK_ROOT")
 	if root == "" {
 		t.Skip("requires an administrator-precreated file link fixture")
 	}

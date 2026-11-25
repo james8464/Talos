@@ -86,9 +86,9 @@ check-repository:
 # branch reports the all-zero commit, which is not a ref.
 DOCTOR_BASE = $(if $(filter-out 0000000000000000000000000000000000000000,$(BASE)),--base '$(BASE)')
 
-WEB_TYPES = pnpm --filter @linger/web typecheck
-WEB_LINT = pnpm --filter @linger/web lint
-WEB_TESTS = pnpm --filter @linger/web test
+WEB_TYPES = pnpm --filter @talos/web typecheck
+WEB_LINT = pnpm --filter @talos/web lint
+WEB_TESTS = pnpm --filter @talos/web test
 WEB_DOCTOR = pnpm react:doctor $(DOCTOR_BASE)
 
 check-web:
@@ -110,32 +110,32 @@ check-web-tests:
 	$(WEB_TESTS)$(if $(SHARD), --shard=$(SHARD))
 
 check-node-services:
-	pnpm --filter @linger/node-services check
+	pnpm --filter @talos/node-services check
 
 check-computer:
-	pnpm --filter @linger/computer typecheck
-	pnpm --filter @linger/computer lint
-	$(COMPUTER_TEST_RUNNER) pnpm --filter @linger/computer test
+	pnpm --filter @talos/computer typecheck
+	pnpm --filter @talos/computer lint
+	$(COMPUTER_TEST_RUNNER) pnpm --filter @talos/computer test
 	$(MAKE) -C apps/teamhub lint-go-daemon
 	$(MAKE) check-computer-go
-	LINGER_GO_LOCAL_DAEMON_TEST=1 $(COMPUTER_TEST_RUNNER) pnpm --filter @linger/node-services exec vitest run --project agent tests/agent/runner-gateway/go-local-daemon-process.test.ts --maxWorkers=2
+	TALOS_GO_LOCAL_DAEMON_TEST=1 $(COMPUTER_TEST_RUNNER) pnpm --filter @talos/node-services exec vitest run --project agent tests/agent/runner-gateway/go-local-daemon-process.test.ts --maxWorkers=2
 
 check-teamhub-cli:
-	pnpm --filter @linger/teamhub-cli typecheck
-	pnpm --filter @linger/teamhub-cli lint
-	pnpm --filter @linger/teamhub-cli test
-	pnpm --filter @linger/teamhub-cli build
+	pnpm --filter @talos/teamhub-cli typecheck
+	pnpm --filter @talos/teamhub-cli lint
+	pnpm --filter @talos/teamhub-cli test
+	pnpm --filter @talos/teamhub-cli build
 
-# check-packages covers @linger/local-installation.
+# check-packages covers @talos/local-installation.
 check-installer:
-	pnpm --filter @linger/linger-installer typecheck
-	pnpm --filter @linger/linger-installer lint
-	pnpm --filter @linger/linger-installer test
+	pnpm --filter @talos/talos-installer typecheck
+	pnpm --filter @talos/talos-installer lint
+	pnpm --filter @talos/talos-installer test
 
 check-desktop:
-	pnpm --filter @linger/desktop typecheck
-	pnpm --filter @linger/desktop lint
-	pnpm --filter @linger/desktop test
+	pnpm --filter @talos/desktop typecheck
+	pnpm --filter @talos/desktop lint
+	pnpm --filter @talos/desktop test
 	python3 -m unittest discover -s apps/desktop/packaging -p '*_test.py'
 	# The Go daemon that packaging bundles, for every platform the app ships on.
 	cd apps/desktop && node scripts/build-daemon.mjs --all
@@ -144,14 +144,14 @@ check-desktop:
 check-computer-go:
 	cd apps/computer/local-daemon && go test ./... -run '^$$'
 	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./internal/platform/...
-	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./cmd/linger-computer-daemon ./cmd/linger-computer-launcher ./internal/computercli ./internal/computerconfig ./internal/daemon ./internal/linger/context ./internal/linger/assignment ./internal/linger/control ./internal/linger/registration ./internal/linger/localskills ./internal/linger/mcpproxy ./internal/linger/transport ./internal/linger/runtimehistory ./internal/linger/localtools ./internal/process ./internal/workspace ./internal/provider ./internal/provider/redact ./internal/permission ./internal/localmodels
+	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./cmd/talos-computer-daemon ./cmd/talos-computer-launcher ./internal/computercli ./internal/computerconfig ./internal/daemon ./internal/talos/context ./internal/talos/assignment ./internal/talos/control ./internal/talos/registration ./internal/talos/localskills ./internal/talos/mcpproxy ./internal/talos/transport ./internal/talos/runtimehistory ./internal/talos/localtools ./internal/process ./internal/workspace ./internal/provider ./internal/provider/redact ./internal/permission ./internal/localmodels
 	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./internal/provider/native ./internal/uiruntime
 
 check-computer-release:
 	pnpm vitest run --no-file-parallelism $(SCRIPT_COMPUTER_RELEASE_TEST)
 
 check-voice-runtime:
-	pnpm --filter @linger/voice-runtime check
+	pnpm --filter @talos/voice-runtime check
 
 check-teamhub:
 	$(MAKE) -C apps/teamhub check-code sqlc-verify
@@ -170,7 +170,7 @@ check-teamhub-integration-migrations:
 
 check-contracts:
 	$(MAKE) contracts-verify
-	pnpm --filter @linger/wire-contracts typecheck
+	pnpm --filter @talos/wire-contracts typecheck
 	pnpm exec vitest run --config contracts/vitest.config.ts --no-file-parallelism
 	cd contracts/generated/go && go test ./...
 
@@ -210,14 +210,14 @@ check-repository-gate:
 	BASE="$(BASE)" scripts/ci/check-repository-gate.sh
 
 check-web-build:
-	pnpm --filter @linger/web test:build
-	pnpm --filter @linger/web run build:assets
+	pnpm --filter @talos/web test:build
+	pnpm --filter @talos/web run build:assets
 
 check-node-services-build:
-	pnpm --filter @linger/node-services build
+	pnpm --filter @talos/node-services build
 
 check-voice-runtime-build:
-	pnpm --filter @linger/voice-runtime build
+	pnpm --filter @talos/voice-runtime build
 
 check-build:
 	pnpm build
@@ -273,9 +273,9 @@ check-all:
 # /install/. COMPUTER_RELEASE_TARGETS selects other targets.
 computer-release-local:
 	COMPUTER_RELEASE_TARGETS="$${COMPUTER_RELEASE_TARGETS:-$$(node -p 'process.platform + "-" + process.arch')}" \
-		node scripts/prepare-local-computer-release.mjs --output .linger-runtime/computer-release
+		node scripts/prepare-local-computer-release.mjs --output .talos-runtime/computer-release
 
-# The linger source package that desktop builds download for "Run on This
+# The talos source package that desktop builds download for "Run on This
 # Computer". SOURCE_ARCHIVE_REF picks the tag; SOURCE_ARCHIVE_URL_BASE is where
 # the release hosts it, recorded in source-archive.json for the desktop build.
 source-archive:

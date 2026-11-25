@@ -339,7 +339,7 @@ async function harness(
     "subscribed",
     track,
     { source: 1 },
-    { ...publisher, attributes: { "linger.voice_generation": "1" } },
+    { ...publisher, attributes: { "talos.voice_generation": "1" } },
   );
   await options.beforeReady?.({
     track,
@@ -519,7 +519,7 @@ describe("LiveVoiceWorker", () => {
   it("opens the provider with context, tools and history and announces readiness", async () => {
     const test = await harness();
     expect(test.localParticipant.publishTrack).toHaveBeenCalledWith(
-      { name: "linger-live-reply" },
+      { name: "talos-live-reply" },
       expect.anything(),
     );
     expect(test.setups[0]).toMatchObject({
@@ -545,9 +545,9 @@ describe("LiveVoiceWorker", () => {
     await vi.waitFor(() =>
       expect(test.localParticipant.setAttributes).toHaveBeenCalledWith(
         expect.objectContaining({
-          "linger.voice_ready_generation": "1",
-          "linger.voice_ready_track": "TR-live",
-          "linger.voice_purpose": "chat_live",
+          "talos.voice_ready_generation": "1",
+          "talos.voice_ready_track": "TR-live",
+          "talos.voice_purpose": "chat_live",
         }),
       ),
     );
@@ -567,7 +567,7 @@ describe("LiveVoiceWorker", () => {
         // The microphone alone makes the call ready to hear the user.
         await vi.waitFor(() =>
           expect(readyAttributes()).toContainEqual(
-            expect.objectContaining({ "linger.voice_ready_generation": "1" }),
+            expect.objectContaining({ "talos.voice_ready_generation": "1" }),
           ),
         );
         track.frame(1);

@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
 )
 
 func TestBlankAgentQuestionOffersDistinctOptionsFromThePool(t *testing.T) {

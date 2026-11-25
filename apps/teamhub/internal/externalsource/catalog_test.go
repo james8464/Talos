@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
 )
 
 var fixedAppToolkits = []struct{ key, toolkit string }{

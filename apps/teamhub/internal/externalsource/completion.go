@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
 )
 
 // CompleteConnectionAuthorization checks at once the authorization a returning

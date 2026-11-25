@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 func runtimeInputsForAuthority(rows []store.AgentRuntimeInput) []RuntimeInput {

@@ -4,7 +4,7 @@ import type {
   LocalComputerOwner,
   LocalComputerRegistry,
 } from "./local-computer-registry.js";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 export interface RunnerGatewayCredential {
   readonly expiresAtMs?: number;

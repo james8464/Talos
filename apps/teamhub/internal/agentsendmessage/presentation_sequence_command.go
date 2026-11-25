@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
 )
 
 // AgentPresentationSequence is an Another Me's request to send a paced

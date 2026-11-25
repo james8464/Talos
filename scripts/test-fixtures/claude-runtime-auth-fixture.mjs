@@ -5,17 +5,17 @@ import path from "node:path";
 import { createInterface } from "node:readline";
 
 const args = process.argv.slice(2);
-const loginMarker = argumentValue("--linger-login-marker");
-const workspaceMarker = argumentValue("--linger-workspace-marker");
-removeArgument("--linger-login-marker");
-removeArgument("--linger-workspace-marker");
+const loginMarker = argumentValue("--talos-login-marker");
+const workspaceMarker = argumentValue("--talos-workspace-marker");
+removeArgument("--talos-login-marker");
+removeArgument("--talos-workspace-marker");
 const sessionId =
   argumentValue("--session-id") ??
   argumentValue("--resume") ??
   "claude-smoke-session";
 
 if (!loginMarker) {
-  process.stderr.write("--linger-login-marker is required\n");
+  process.stderr.write("--talos-login-marker is required\n");
   process.exit(2);
 }
 
@@ -121,7 +121,7 @@ for await (const line of input) {
   );
   const markerPath = path.join(
     process.cwd(),
-    workspaceMarker ?? ".linger-smoke-marker",
+    workspaceMarker ?? ".talos-smoke-marker",
   );
   const marker = readFileSync(markerPath, "utf8").trim();
   process.stdout.write(

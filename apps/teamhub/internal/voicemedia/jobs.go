@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // Background voice work is one River job per voice session or Capture and per

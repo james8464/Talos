@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/config"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/typedcard"
-	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/typedcard"
+	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
 )
 
 const (
-	profileSetupGreeting      = "Hi alice, I'm Linger — your personal AI."
+	profileSetupGreeting      = "Hi alice, I'm Talos — your personal AI."
 	profileSetupAppsPrompt    = "Before I help with replies and follow-ups, I'd like to get to know you. The quickest way is to let me see where you talk about work — one account is enough."
 	profileSetupSourcesPrompt = "Do you have a personal website or portfolio? Paste a link, or upload your resume and work samples."
 )

@@ -79,8 +79,8 @@ export const runtimeSessionStartsFresh = (session: RuntimeSession): boolean =>
   runtimeSessionAwaitsFirstRun(session) ||
   (typeof session === "object" &&
     session !== null &&
-    "lingerMaterialized" in session &&
-    session.lingerMaterialized === false);
+    "talosMaterialized" in session &&
+    session.talosMaterialized === false);
 
 export const requireRuntimeSessionThreadId = (
   session: RuntimeSession,

@@ -1,4 +1,4 @@
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 import { queryOptions } from "@tanstack/react-query";
 
 import { teamHubData } from "@/features/teamhub/teamhub-api";
@@ -47,7 +47,7 @@ export function computerPermissionsQueryOptions(
   });
 }
 
-/** Raises the macOS prompt, opens its Settings pane, or relaunches Linger. */
+/** Raises the macOS prompt, opens its Settings pane, or relaunches Talos. */
 export function actOnComputerPermission(
   client: TeamHubClient,
   tenantId: string,

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/voicetranscription"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicetranscription"
 )
 
 // recoveryBlock is one provider read of the source audio. A recovery keeps

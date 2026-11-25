@@ -52,7 +52,7 @@ jobs:
       - name: Native Claude Code compatibility
         working-directory: apps/computer/local-daemon
         env:
-          LINGER_CLAUDE_COMPAT_EXECUTABLE: ${{ steps.claude.outputs.claude-executable }}
+          TALOS_CLAUDE_COMPAT_EXECUTABLE: ${{ steps.claude.outputs.claude-executable }}
         run: go test ./internal/provider -run '^(TestNativeClaudeAuthenticationDoesNotCallModel|TestNativeClaudeFirstRunResume)$' -count=1 -v
       - name: Report a scheduled failure
         if: failure() && github.event_name == 'schedule'

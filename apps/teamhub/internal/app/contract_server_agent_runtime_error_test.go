@@ -14,7 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentruntimestate"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentruntimestate"
 )
 
 func TestAgentRuntimeInboxAuthorizationDoesNotFenceContext(t *testing.T) {

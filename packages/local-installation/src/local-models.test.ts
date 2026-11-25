@@ -773,9 +773,9 @@ test("Computer environment consumes the authoritative binding without parsing Pi
     { localmodels: f.call },
   );
   expect(await localModelsEnvironment(f.instance)).toEqual({
-    LINGER_PI_PATH: "/upstream/pi",
+    TALOS_PI_PATH: "/upstream/pi",
     PI_CODING_AGENT_DIR: "/upstream/profile",
-    LINGER_LOCAL_MODELS_REVISION: "b".repeat(64),
+    TALOS_LOCAL_MODELS_REVISION: "b".repeat(64),
   });
 });
 // A deployed local-models setup that a quit stopped, with the model source

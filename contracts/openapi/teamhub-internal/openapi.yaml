@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Linger TeamHub Internal API
+  title: Talos TeamHub Internal API
   version: 0.1.0
   description:
     Node Services and Voice Runtime calls into TeamHub. Agent Service callbacks commit Agent messages,

@@ -8,8 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 )
 
 // A sweep that a crashed process left running holds its uniqueness key, so

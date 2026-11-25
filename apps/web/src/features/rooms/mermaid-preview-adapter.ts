@@ -48,7 +48,7 @@ export async function renderMermaidSvg(
   const requestId =
     globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
   const request: MermaidPreviewRequest = {
-    kind: "linger.mermaid.render",
+    kind: "talos.mermaid.render",
     requestId,
     source,
   };
@@ -89,7 +89,7 @@ export async function renderMermaidSvg(
       ) {
         return;
       }
-      if (event.data.kind === "linger.mermaid.ready") {
+      if (event.data.kind === "talos.mermaid.ready") {
         window.clearTimeout(timeout);
         timeout = window.setTimeout(
           () => finish(new Error(translate(m.timedOut))),
@@ -99,7 +99,7 @@ export async function renderMermaidSvg(
         return;
       }
       if (event.data.requestId !== requestId) return;
-      if (event.data.kind === "linger.mermaid.error") {
+      if (event.data.kind === "talos.mermaid.error") {
         finish(new Error(event.data.error));
         return;
       }
@@ -188,9 +188,9 @@ function mermaidLabelLines(label: Element) {
 function isRuntimeResponse(value: unknown): value is MermaidPreviewResponse {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<MermaidPreviewResponse>;
-  if (candidate.kind === "linger.mermaid.ready") return true;
+  if (candidate.kind === "talos.mermaid.ready") return true;
   if (
-    candidate.kind === "linger.mermaid.result" &&
+    candidate.kind === "talos.mermaid.result" &&
     "requestId" in candidate &&
     "svg" in candidate
   ) {
@@ -200,7 +200,7 @@ function isRuntimeResponse(value: unknown): value is MermaidPreviewResponse {
     );
   }
   return (
-    candidate.kind === "linger.mermaid.error" &&
+    candidate.kind === "talos.mermaid.error" &&
     "requestId" in candidate &&
     "error" in candidate &&
     typeof candidate.requestId === "string" &&

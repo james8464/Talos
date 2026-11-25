@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/workspace"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/workspace"
 )
 
 func TestToolCommandAlignsPiCodingAgentDir(t *testing.T) {

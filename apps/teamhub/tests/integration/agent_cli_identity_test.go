@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentauth"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentauth"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 func newAgentCLIIdentity(t *testing.T, options ...appOption) (*testEnv, *http.Client, agentcredential.Issued, string) {

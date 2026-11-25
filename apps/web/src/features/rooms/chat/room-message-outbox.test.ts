@@ -175,7 +175,7 @@ describe("Browser Room Message Outbox recovery", () => {
     const intent = failedIntent();
     await outbox.put(intent);
     const upgraded = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("linger-room-message-outbox-v1", 3);
+      const request = indexedDB.open("talos-room-message-outbox-v1", 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () =>
         reject(request.error ?? new Error("IndexedDB request failed"));
@@ -239,7 +239,7 @@ describe("Browser Room Message Outbox recovery", () => {
   it("drops version 1 intents, which carry no creation time", async () => {
     const factory = new IDBFactory();
     await new Promise<void>((resolve, reject) => {
-      const request = factory.open("linger-room-message-outbox-v1", 1);
+      const request = factory.open("talos-room-message-outbox-v1", 1);
       request.onupgradeneeded = () => {
         request.result
           .createObjectStore("message-intents", { keyPath: "key" })

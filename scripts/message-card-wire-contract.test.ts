@@ -26,7 +26,7 @@ interface OpenApiDocument {
 }
 
 const temporaryDirectory = mkdtempSync(
-  join(tmpdir(), "linger-message-card-contract-"),
+  join(tmpdir(), "talos-message-card-contract-"),
 );
 
 afterAll(() => {

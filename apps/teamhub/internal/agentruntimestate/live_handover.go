@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // Attach handover data to the first claimed durable input that resumes Meta. This is a

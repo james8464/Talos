@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // BatchSize bounds one DELETE. A rule repeats until a batch comes back short,

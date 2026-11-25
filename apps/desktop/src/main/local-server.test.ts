@@ -31,7 +31,7 @@ import {
 
 import { NODE_RUNTIME_VERSION } from "../../../../scripts/local-computer-node-distributions.mjs";
 import { rename } from "node:fs/promises";
-import { composeProject } from "@linger/local-installation/instance";
+import { composeProject } from "@talos/local-installation/instance";
 
 import { CredentialStore } from "./computer-credential.js";
 import { EnrollmentModule } from "./enrollment.js";
@@ -60,8 +60,8 @@ import {
   type LocalServerIdentity,
   type LocalServerOptions,
 } from "./local-server.js";
-import { localIdentityProof } from "@linger/local-installation/account";
-import * as windowsPrivate from "@linger/local-installation/windows-private";
+import { localIdentityProof } from "@talos/local-installation/account";
+import * as windowsPrivate from "@talos/local-installation/windows-private";
 import type { DesktopConfig } from "./config.js";
 import { EventBus, type ModuleContext } from "./modules.js";
 import {
@@ -142,7 +142,7 @@ if (args.includes("--migrate")) {
     if (holds && name === "desktop") continue;
     const file = path.join(instances, name, "instance.json");
     const record = JSON.parse(fs.readFileSync(file, "utf8"));
-    fs.writeFileSync(file, JSON.stringify({ ...record, project: record.project.replace(/^simplex-/, "linger-") }));
+    fs.writeFileSync(file, JSON.stringify({ ...record, project: record.project.replace(/^simplex-/, "talos-") }));
   }
   const skipped = holds ? [{ instance: "desktop", reason: "Its Computer is running 1 task(s)." }] : [];
   process.stdout.write(JSON.stringify({ skipped }) + "\n");
@@ -255,20 +255,20 @@ process.stdout.write("Installer is running at " + origin + "\n");
 `;
 
 const sourceArchive = (root: string) => {
-  const tree = path.join(root, "tree", "linger-1.0.0", "scripts");
+  const tree = path.join(root, "tree", "talos-1.0.0", "scripts");
   mkdirSync(tree, { recursive: true });
   writeFileSync(path.join(tree, "source-native.mjs"), "");
   writeFileSync(
     path.join(path.dirname(tree), "package.json"),
-    JSON.stringify({ name: "linger" }),
+    JSON.stringify({ name: "talos" }),
   );
-  const file = path.join(root, "linger.tar.gz");
+  const file = path.join(root, "talos.tar.gz");
   execFileSync("tar", [
     "-czf",
     file,
     "-C",
     path.join(root, "tree"),
-    "linger-1.0.0",
+    "talos-1.0.0",
   ]);
   const bytes = readFileSync(file);
   return {
@@ -278,7 +278,7 @@ const sourceArchive = (root: string) => {
 };
 
 // A source package an earlier app unpacked into `directory`, named `name`.
-const unpackedSource = (directory: string, name = "linger") => {
+const unpackedSource = (directory: string, name = "talos") => {
   mkdirSync(path.join(directory, "scripts"), { recursive: true });
   writeFileSync(path.join(directory, "scripts/source-native.mjs"), "");
   writeFileSync(path.join(directory, "package.json"), JSON.stringify({ name }));
@@ -336,7 +336,7 @@ const installerApi = (
   } = {
     setupChoice: "claude",
     environment: {
-      LINGER_CLAUDE_PATH: "/home/me/.linger/runtime/claude/claude",
+      TALOS_CLAUDE_PATH: "/home/me/.talos/runtime/claude/claude",
       CLAUDE_CONFIG_DIR: "/home/me/.claude",
     },
     login: { state: "ready" },
@@ -362,11 +362,11 @@ const installerApi = (
       expect(JSON.parse(String(init.body))).toEqual({ token: "abc" });
       return new Response("{}", {
         headers: {
-          "set-cookie": "linger_installer_session=s1; Path=/api; HttpOnly",
+          "set-cookie": "talos_installer_session=s1; Path=/api; HttpOnly",
         },
       });
     }
-    if (headers.get("cookie") !== "linger_installer_session=s1")
+    if (headers.get("cookie") !== "talos_installer_session=s1")
       return Response.json({ message: "session" }, { status: 401 });
     if (url.pathname === "/api/setup") return setup.clone();
     if (url.pathname === "/api/jobs" && init.method === "POST") {
@@ -401,7 +401,7 @@ const installerApi = (
             { status: 404 },
           )
         : Response.json({
-            email: "owner@linger.local",
+            email: "owner@talos.local",
             password: "pw",
             origin: "http://localhost:3000",
           });
@@ -597,7 +597,7 @@ const inspectArgs = (home: string) =>
     readFileSync(path.join(home, "runtime", "inspect-args.json"), "utf8"),
   ) as string[];
 
-// A developer's linger checkout (LINGER_CHECKOUT) in the home folder.
+// A developer's talos checkout (TALOS_CHECKOUT) in the home folder.
 const withCheckout = (home: string) => ({ checkout: path.join(home, "src") });
 const checkout = (home: string) => {
   mkdirSync(path.join(home, "src", "scripts"), { recursive: true });
@@ -661,12 +661,12 @@ describe("LocalServerModule", () => {
     // A developer's own sources replace the distribution's.
     expect(
       hasNativePostgres(directory, "linux-x64", {
-        LINGER_NATIVE_DEPENDENCIES_JSON: "[]",
+        TALOS_NATIVE_DEPENDENCIES_JSON: "[]",
       }),
     ).toBe(false);
     expect(
       hasNativePostgres(directory, "win32-x64", {
-        LINGER_NATIVE_DEPENDENCIES_JSON: '[{"target":"win32-x64"}]',
+        TALOS_NATIVE_DEPENDENCIES_JSON: '[{"target":"win32-x64"}]',
       }),
     ).toBe(true);
     // Windows gets Native as soon as its distribution pins PostgreSQL.
@@ -717,7 +717,7 @@ describe("LocalServerModule", () => {
     await f.host.start();
     expect(f.module.status().available).toBe(true);
     await expect(f.module.begin()).rejects.toThrow(
-      "Linger needs macOS 14.0 or later. This Mac runs macOS 13.2. Update macOS in System Settings > General > Software Update, then try again.",
+      "Talos needs macOS 14.0 or later. This Mac runs macOS 13.2. Update macOS in System Settings > General > Software Update, then try again.",
     );
     expect(f.module.status()).toMatchObject({
       phase: "failed",
@@ -754,7 +754,7 @@ describe("LocalServerModule", () => {
   it("uses the runtime returned by the completed install without another lookup", async () => {
     const runtime = {
       setupChoice: "pi",
-      environment: { LINGER_PI_PATH: "/managed/pi" },
+      environment: { TALOS_PI_PATH: "/managed/pi" },
     };
     const api = installerApi([], {
       state: "succeeded",
@@ -781,16 +781,16 @@ describe("LocalServerModule", () => {
     const archive = sourceArchive(root);
     const fetcher = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
-      if (url === "https://github.com/linger.tar.gz")
+      if (url === "https://github.com/talos.tar.gz")
         return new Response(null, {
           status: 302,
-          headers: { location: "https://cdn.example/linger.tar.gz" },
+          headers: { location: "https://cdn.example/talos.tar.gz" },
         });
       return new Response(archive.bytes);
     });
     const f = fixture({
       sourceArchive: {
-        url: "https://github.com/linger.tar.gz",
+        url: "https://github.com/talos.tar.gz",
         sha256: archive.sha256,
       },
       fetch: fetcher as typeof fetch,
@@ -831,7 +831,7 @@ describe("LocalServerModule", () => {
     ]);
     expect(f.signIn).toHaveBeenCalledWith(
       server("http://localhost:3000"),
-      "owner@linger.local",
+      "owner@talos.local",
       "pw",
     );
     expect(f.setServer).toHaveBeenCalledWith(
@@ -1131,7 +1131,7 @@ describe("LocalServerModule", () => {
     expect(f.module.status().message).toBe("Sign in to Pi");
 
     api.runtime.setupChoice = "codex";
-    api.runtime.environment = { LINGER_CODEX_PATH: "/opt/codex/codex" };
+    api.runtime.environment = { TALOS_CODEX_PATH: "/opt/codex/codex" };
     api.runtime.login = { state: "ready" };
     f.module.switchRuntime("codex");
     await done;
@@ -1144,7 +1144,7 @@ describe("LocalServerModule", () => {
     expect(f.module.status().signIn).toBeUndefined();
     expect(f.module.status().steps).not.toContain("signin");
     expect(f.host.ctx.config.get().runtimeEnvironment).toEqual({
-      LINGER_CODEX_PATH: "/opt/codex/codex",
+      TALOS_CODEX_PATH: "/opt/codex/codex",
     });
     expect(f.host.ctx.config.get().preferredRuntime).toBe("codex");
     await f.host.stop("quit");
@@ -1175,7 +1175,7 @@ describe("LocalServerModule", () => {
       );
       const f = fixture({
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         sourceDependencies: {
@@ -1188,7 +1188,7 @@ describe("LocalServerModule", () => {
       await f.module.begin();
       const args = installerArgs(f.home);
       const repo = args[args.indexOf("--source-repo") + 1]!;
-      const index = path.join(repo, ".linger-runtime/pnpm-store/v11/index");
+      const index = path.join(repo, ".talos-runtime/pnpm-store/v11/index");
       expect(existsSync(index)).toBe(available);
       if (available) expect(readFileSync(index, "utf8")).toBe("packages");
       expect(f.module.status().phase).toBe("ready");
@@ -1202,8 +1202,8 @@ describe("LocalServerModule", () => {
     const hosts: string[] = [];
     const f = fixture({
       sourceArchive: {
-        url: "https://github.com/linger.tar.gz",
-        mirrors: ["https://mirror.example/linger.tar.gz"],
+        url: "https://github.com/talos.tar.gz",
+        mirrors: ["https://mirror.example/talos.tar.gz"],
         sha256: archive.sha256,
       },
       fetch: (async (input: string | URL | Request) => {
@@ -1228,7 +1228,7 @@ describe("LocalServerModule", () => {
     let during: string[] = [];
     const f = fixture({
       sourceArchive: {
-        url: "https://cdn.example/linger.tar.gz",
+        url: "https://cdn.example/talos.tar.gz",
         sha256: archive.sha256,
       },
       fetch: (async () => {
@@ -1490,7 +1490,7 @@ describe("LocalServerModule", () => {
     const archive = sourceArchive(root);
     const f = fixture({
       sourceArchive: {
-        url: "https://example.com/linger.tar.gz",
+        url: "https://example.com/talos.tar.gz",
         sha256: "0".repeat(64),
       },
       fetch: (async () => new Response(archive.bytes)) as typeof fetch,
@@ -1510,7 +1510,7 @@ describe("LocalServerModule", () => {
     const archive = sourceArchive(f.root);
     mkdirSync(path.join(f.root, "installer", "source"));
     writeFileSync(
-      path.join(f.root, "installer", "source", "linger.tar.gz"),
+      path.join(f.root, "installer", "source", "talos.tar.gz"),
       archive.bytes,
     );
     const bundled = (sha256: string) =>
@@ -1520,12 +1520,12 @@ describe("LocalServerModule", () => {
         installerDirectory: path.join(f.root, "installer"),
         platform: "linux",
         arch: "x64",
-        sourceArchive: { file: "source/linger.tar.gz", sha256 },
+        sourceArchive: { file: "source/talos.tar.gz", sha256 },
         signIn: f.signIn,
       });
     const damaged = bundled("0".repeat(64));
     await expect(damaged.begin()).rejects.toThrow(
-      "The bundled linger.tar.gz is damaged",
+      "The bundled talos.tar.gz is damaged",
     );
     // The installer stops after the source is in place; only the source matters.
     await bundled(archive.sha256)
@@ -1541,7 +1541,7 @@ describe("LocalServerModule", () => {
     const archive = sourceArchive(f.root);
     mkdirSync(path.join(f.root, "installer", "source"));
     writeFileSync(
-      path.join(f.root, "installer", "source", "linger.tar.gz"),
+      path.join(f.root, "installer", "source", "talos.tar.gz"),
       archive.bytes,
     );
     const binaries = path.join(
@@ -1581,7 +1581,7 @@ describe("LocalServerModule", () => {
         installerDirectory: path.join(f.root, "installer"),
         platform: "linux",
         arch: "x64",
-        sourceArchive: { file: "source/linger.tar.gz", sha256: archive.sha256 },
+        sourceArchive: { file: "source/talos.tar.gz", sha256: archive.sha256 },
         signIn: f.signIn,
       })
         .begin()
@@ -1609,7 +1609,7 @@ describe("LocalServerModule", () => {
     const archive = sourceArchive(f.root);
     mkdirSync(path.join(f.root, "installer", "source"));
     writeFileSync(
-      path.join(f.root, "installer", "source", "linger.tar.gz"),
+      path.join(f.root, "installer", "source", "talos.tar.gz"),
       archive.bytes,
     );
     const bundle = path.join(
@@ -1657,7 +1657,7 @@ describe("LocalServerModule", () => {
         platform: "linux",
         arch: "x64",
         glibcVersion,
-        sourceArchive: { file: "source/linger.tar.gz", sha256: archive.sha256 },
+        sourceArchive: { file: "source/talos.tar.gz", sha256: archive.sha256 },
         signIn: f.signIn,
       })
         .begin()
@@ -1709,7 +1709,7 @@ describe("LocalServerModule", () => {
     const archive = sourceArchive(f.root);
     mkdirSync(path.join(installer, "source"));
     writeFileSync(
-      path.join(installer, "source", "linger.tar.gz"),
+      path.join(installer, "source", "talos.tar.gz"),
       archive.bytes,
     );
     writeFileSync(
@@ -1756,7 +1756,7 @@ describe("LocalServerModule", () => {
       installerDirectory: installer,
       platform: "darwin",
       arch: "arm64",
-      sourceArchive: { file: "source/linger.tar.gz", sha256: archive.sha256 },
+      sourceArchive: { file: "source/talos.tar.gz", sha256: archive.sha256 },
       signIn: f.signIn,
     })
       .begin()
@@ -2501,12 +2501,12 @@ describe("LocalServerModule", () => {
     await f.host.stop("quit");
   });
 
-  it("installs LINGER_CHECKOUT only when it is a Linger source", async () => {
+  it("installs TALOS_CHECKOUT only when it is a Talos source", async () => {
     const f = fixture(withCheckout, {}, (home) =>
       mkdirSync(path.join(home, "src"), { recursive: true }),
     );
     await f.host.start();
-    await expect(f.module.begin()).rejects.toThrow(/not a Linger checkout/);
+    await expect(f.module.begin()).rejects.toThrow(/not a Talos checkout/);
     checkout(f.home);
     await f.module.begin({ runtime: "claude" });
     const args = installerArgs(f.home);
@@ -3114,7 +3114,7 @@ describe("LocalServerModule", () => {
 
   it("pre-checks both the install home and Computer daemon directory on Windows before unpacking", async () => {
     const checked: string[] = [];
-    const daemonDir = "C:\\Users\\me\\AppData\\Roaming\\Linger\\computer";
+    const daemonDir = "C:\\Users\\me\\AppData\\Roaming\\Talos\\computer";
     const winCheckout = (home: string) => {
       checkout(home);
       writeFileSync(
@@ -3188,7 +3188,7 @@ describe("LocalServerModule", () => {
         ...withCheckout(home),
         platform: "win32",
         arch: "x64",
-        daemonDirectory: "C:\\Users\\me\\AppData\\Roaming\\Linger\\computer",
+        daemonDirectory: "C:\\Users\\me\\AppData\\Roaming\\Talos\\computer",
         checkPrivateLocation: async () => {
           throw Object.assign(
             new Error(
@@ -3232,7 +3232,7 @@ describe("LocalServerModule install location", () => {
       if (kind !== "missing") mkdirSync(picked);
       if (kind === "nonempty")
         writeFileSync(path.join(picked, "notes.txt"), "keep");
-      const target = kind === "nonempty" ? path.join(picked, "Linger") : picked;
+      const target = kind === "nonempty" ? path.join(picked, "Talos") : picked;
       await f.host.start();
       try {
         f.module.inspect();
@@ -3378,7 +3378,7 @@ describe("LocalServerModule install location", () => {
 
   it("installs into the folder picked on the setup page", async () => {
     const archive = sourceArchive(tempDirectory());
-    const file = path.join(tempDirectory(), "linger.tar.gz");
+    const file = path.join(tempDirectory(), "talos.tar.gz");
     writeFileSync(file, archive.bytes);
     const f = fixture({ sourceArchive: { file, sha256: archive.sha256 } });
     await f.host.start();
@@ -3390,7 +3390,7 @@ describe("LocalServerModule install location", () => {
     mkdirSync(picked);
     writeFileSync(path.join(picked, "notes.txt"), "");
     await f.module.chooseLocation(picked);
-    const home = path.join(picked, "Linger");
+    const home = path.join(picked, "Talos");
     expect(f.module.status().location).toEqual({ path: home, custom: true });
 
     await f.module.begin();
@@ -3441,7 +3441,7 @@ describe("LocalServerModule install location", () => {
         expect(f.module.status().location).toEqual({
           path: f.home,
           custom: false,
-          error: "Linger can't write to this folder. Choose another one.",
+          error: "Talos can't write to this folder. Choose another one.",
         });
       } finally {
         chmodSync(locked, 0o700);
@@ -3450,7 +3450,7 @@ describe("LocalServerModule install location", () => {
     },
   );
 
-  it("installs into an empty folder or one that holds Linger", async () => {
+  it("installs into an empty folder or one that holds Talos", async () => {
     const root = tempDirectory();
     expect(await installLocation(root)).toBe(root);
     writeFileSync(path.join(root, ".DS_Store"), "");
@@ -3460,7 +3460,7 @@ describe("LocalServerModule install location", () => {
     expect(await installLocation(root)).toBe(root);
     const other = tempDirectory();
     writeFileSync(path.join(other, "notes.txt"), "");
-    expect(await installLocation(other)).toBe(path.join(other, "Linger"));
+    expect(await installLocation(other)).toBe(path.join(other, "Talos"));
   });
 
   it("asks for free space on the folder's disk", async () => {
@@ -3617,7 +3617,7 @@ describe("LocalServerModule after a restart", () => {
           port: webPort,
           releaseDir: "/source",
           computerConfig: path.join(instanceRoot, "computer", "config.json"),
-          computerExecutable: "/source/computer/linger-computer",
+          computerExecutable: "/source/computer/talos-computer",
           source: {
             repo: "/source",
             ports: {
@@ -3779,18 +3779,18 @@ describe("LocalServerModule after a restart", () => {
 
   it("takes the runtime and localmodels paths a resume reports, restarting the Computer once", async () => {
     const tool = {
-      LINGER_LOCALMODELS_PYTHON:
-        "/home/u/.linger/tools/localmodels/kit/python3",
-      LINGER_LOCALMODELS_MODULE_DIR: "/home/u/.linger/tools/localmodels/kit",
-      LINGER_LOCALMODELS_STATE: "/home/u/.linger/runtime/localmodels/state",
-      LINGER_LOCALMODELS_BASE_DIR: "/home/u/.linger/runtime/localmodels/models",
+      TALOS_LOCALMODELS_PYTHON:
+        "/home/u/.talos/tools/localmodels/kit/python3",
+      TALOS_LOCALMODELS_MODULE_DIR: "/home/u/.talos/tools/localmodels/kit",
+      TALOS_LOCALMODELS_STATE: "/home/u/.talos/runtime/localmodels/state",
+      TALOS_LOCALMODELS_BASE_DIR: "/home/u/.talos/runtime/localmodels/models",
     };
-    const environment = { LINGER_PI_PATH: "/home/u/.linger/pi", ...tool };
+    const environment = { TALOS_PI_PATH: "/home/u/.talos/pi", ...tool };
     const f = fixture(
       {},
       {
         ...enrolled,
-        runtimeEnvironment: { LINGER_PI_PATH: "/home/u/.linger/pi" },
+        runtimeEnvironment: { TALOS_PI_PATH: "/home/u/.talos/pi" },
       },
       (home) => {
         mkdirSync(path.join(home, "desktop"), { recursive: true });
@@ -3818,7 +3818,7 @@ describe("LocalServerModule after a restart", () => {
   });
 
   it("starts the services again in the folder they were installed in", async () => {
-    const elsewhere = path.join(tempDirectory(), "Linger");
+    const elsewhere = path.join(tempDirectory(), "Talos");
     const f = fixture({}, enrolled, (home) => {
       mkdirSync(path.join(home, "desktop"), { recursive: true });
       writeFileSync(
@@ -3848,7 +3848,7 @@ describe("LocalServerModule after a restart", () => {
     fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         // The services still answer, as when only the app was replaced.
@@ -4006,7 +4006,7 @@ describe("LocalServerModule after a restart", () => {
     const f = fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         fetch: download as typeof fetch,
@@ -4045,7 +4045,7 @@ describe("LocalServerModule after a restart", () => {
     const f = fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         fetch: (async () => new Response(archive.bytes)) as typeof fetch,
@@ -4155,7 +4155,7 @@ describe("LocalServerModule after a restart", () => {
       expect(f.module.status().phase).toBe("failed"),
     );
     expect(f.showStartFailed).toHaveBeenCalledWith(
-      "The local model's Pi can't load extensions, which every Linger run needs. The upstream tool could not verify the local stack binding. Try Again to apply the approved local model plan again, or Set Up Again to review a new plan or choose another AI runtime.",
+      "The local model's Pi can't load extensions, which every Talos run needs. The upstream tool could not verify the local stack binding. Try Again to apply the approved local model plan again, or Set Up Again to review a new plan or choose another AI runtime.",
     );
     await f.host.stop("quit");
   });
@@ -4238,7 +4238,7 @@ describe("LocalServerModule after a restart", () => {
     const f = fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         fetch: (async (url: string | URL | Request) => {
@@ -4381,7 +4381,7 @@ describe("LocalServerModule after a restart", () => {
     const f = fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         fetch: (async () => new Response(archive.bytes)) as typeof fetch,
@@ -4417,7 +4417,7 @@ describe("LocalServerModule after a restart", () => {
     const f = fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         fetch: (async () => new Response(archive.bytes)) as typeof fetch,
@@ -4444,7 +4444,7 @@ describe("LocalServerModule after a restart", () => {
     expect(args[args.indexOf("--source-repo") + 1]).toBe(repo(f.home));
     expect(
       JSON.parse(readFileSync(path.join(repo(f.home), "package.json"), "utf8")),
-    ).toEqual({ name: "linger" });
+    ).toEqual({ name: "talos" });
     await f.host.stop("quit");
   });
 
@@ -4456,7 +4456,7 @@ describe("LocalServerModule after a restart", () => {
     const f = fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         fetch: (async () => new Response(archive.bytes)) as typeof fetch,
@@ -4497,7 +4497,7 @@ describe("LocalServerModule after a restart", () => {
     const f = fixture(
       {
         sourceArchive: {
-          url: "https://cdn.example/linger.tar.gz",
+          url: "https://cdn.example/talos.tar.gz",
           sha256: archive.sha256,
         },
         fetch: (async () => new Response(archive.bytes)) as typeof fetch,
@@ -4522,8 +4522,8 @@ describe("LocalServerModule after a restart", () => {
     );
     await f.host.start();
     await waitForInstaller(() => expect(f.module.status().phase).toBe("ready"));
-    expect(instanceProject(f.home)).toBe("linger-desktop-1");
-    expect(instanceProject(chosen)).toBe("linger-desktop-1");
+    expect(instanceProject(f.home)).toBe("talos-desktop-1");
+    expect(instanceProject(chosen)).toBe("talos-desktop-1");
     const current = path.join(
       chosen,
       "desktop",
@@ -4888,7 +4888,7 @@ describe("LocalServerModule after a restart", () => {
   );
 
   it("leaves the services alone when the window uses another server", async () => {
-    const f = fixture({}, { serverUrl: "https://linger.example" }, record);
+    const f = fixture({}, { serverUrl: "https://talos.example" }, record);
     await f.host.start();
     expect(f.module.status().phase).toBe("idle");
     expect(existsSync(path.join(f.home, "installer", "args.json"))).toBe(false);
@@ -4926,7 +4926,7 @@ const teamhub = (
     return new Response("{}", {
       headers: {
         "set-cookie":
-          "linger_session=v; Path=/; HttpOnly; SameSite=Lax; Max-Age=60",
+          "talos_session=v; Path=/; HttpOnly; SameSite=Lax; Max-Age=60",
       },
     });
   });
@@ -4985,7 +4985,7 @@ describe("proveLocalServer", () => {
     ).rejects.toMatchObject({
       name: "LocalServerUnverifiedError",
       reason,
-      message: "Linger on this computer is not responding.",
+      message: "Talos on this computer is not responding.",
     });
   });
 
@@ -5038,7 +5038,7 @@ describe("signInWithPassword", () => {
     const fetcher = teamhub();
     await signInWithPassword(
       server(WEB_ORIGIN),
-      "owner@linger.local",
+      "owner@talos.local",
       "pw",
       set,
       fetcher as typeof fetch,
@@ -5049,7 +5049,7 @@ describe("signInWithPassword", () => {
     expect(init?.headers).toMatchObject({ origin: WEB_ORIGIN });
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: "linger_session",
+        name: "talos_session",
         value: "v",
         path: "/",
         httpOnly: true,
@@ -5066,7 +5066,7 @@ describe("signInWithPassword", () => {
     await expect(
       signInWithPassword(
         server(WEB_ORIGIN),
-        "owner@linger.local",
+        "owner@talos.local",
         "a-private-password",
         async () => {},
         fetcher as typeof fetch,
@@ -5108,25 +5108,25 @@ describe("signInFailure", () => {
       cause: Object.assign(new Error("connect"), { code: "ECONNREFUSED" }),
     });
     expect(signInFailure(refused)).toBe(
-      "Linger on this computer is not responding.",
+      "Talos on this computer is not responding.",
     );
     expect(
       signInFailure(
         new DOMException("The operation timed out", "TimeoutError"),
       ),
-    ).toBe("Linger on this computer is not responding.");
+    ).toBe("Talos on this computer is not responding.");
     expect(signInFailure(new DOMException("aborted", "AbortError"))).toBe(
-      "Linger on this computer is not responding.",
+      "Talos on this computer is not responding.",
     );
     expect(signInFailure(new LocalServerUnverifiedError("wrong proof"))).toBe(
-      "Linger on this computer is not responding.",
+      "Talos on this computer is not responding.",
     );
     // A message that merely mentions 401 is not a rejected password.
-    expect(signInFailure(new Error("Signing in to Linger failed (401)"))).toBe(
-      "Signing in to Linger failed (401)",
+    expect(signInFailure(new Error("Signing in to Talos failed (401)"))).toBe(
+      "Signing in to Talos failed (401)",
     );
     expect(signInFailure(new SignInRejectedError(500))).toBe(
-      "Signing in to Linger failed (500)",
+      "Signing in to Talos failed (500)",
     );
   });
 });
@@ -5160,7 +5160,7 @@ describe("anotherMeMissing", () => {
     [null, "could not read this computer's status"],
     [undefined, "does not list this computer"],
     [{ ...online, status: "offline" }, "computer-daemon.log"],
-    [{ ...online, upgrade_required: true }, "Update Linger"],
+    [{ ...online, upgrade_required: true }, "Update Talos"],
     [{ ...online, workspace_grants: [{ mode: "read-only" }] }, "no folder"],
     [
       {
@@ -5207,7 +5207,7 @@ describe("LocalServerModule on Windows", () => {
 
   it("waits out files held right after unpacking the source", async () => {
     const archive = sourceArchive(tempDirectory());
-    const file = path.join(tempDirectory(), "linger.tar.gz");
+    const file = path.join(tempDirectory(), "talos.tar.gz");
     writeFileSync(file, archive.bytes);
     const moves: string[] = [];
     const f = fixture(
@@ -5235,7 +5235,7 @@ describe("LocalServerModule on Windows", () => {
 
   it("replaces a half-done source folder and unpacks under a non-ASCII folder", async () => {
     const archive = sourceArchive(tempDirectory());
-    const file = path.join(tempDirectory(), "linger.tar.gz");
+    const file = path.join(tempDirectory(), "talos.tar.gz");
     writeFileSync(file, archive.bytes);
     const f = fixture({ sourceArchive: { file, sha256: archive.sha256 } });
     await f.host.start();
@@ -5259,7 +5259,7 @@ describe("LocalServerModule on Windows", () => {
 
   it("reports a move that fails for good and leaves nothing half-done", async () => {
     const archive = sourceArchive(tempDirectory());
-    const file = path.join(tempDirectory(), "linger.tar.gz");
+    const file = path.join(tempDirectory(), "talos.tar.gz");
     writeFileSync(file, archive.bytes);
     let moves = 0;
     const f = fixture(
@@ -5316,7 +5316,7 @@ describe("LocalServerModule owner account", () => {
       chmodSync(file, mode);
     };
   const OWNER = {
-    email: "owner@linger.local",
+    email: "owner@talos.local",
     password: "a-private-password",
     provisioned: true,
   };
@@ -5358,7 +5358,7 @@ describe("LocalServerModule owner account", () => {
     );
     expect(await f.module.servesWindow()).toBe(false);
     await expect(f.module.signInWithAccount()).rejects.toThrow(
-      "This window is not showing the Linger on this computer.",
+      "This window is not showing the Talos on this computer.",
     );
     expect(f.signIn).not.toHaveBeenCalled();
     await f.host.stop("quit");
@@ -5371,11 +5371,11 @@ describe("LocalServerModule owner account", () => {
     ],
     [
       new TypeError("fetch failed"),
-      "Linger on this computer is not responding.",
+      "Talos on this computer is not responding.",
     ],
     [
       new LocalServerUnverifiedError("wrong proof"),
-      "Linger on this computer is not responding.",
+      "Talos on this computer is not responding.",
     ],
   ])("says what to do when signing in fails (%s)", async (error, message) => {
     const f = fixture({}, enrolled, installed(OWNER));
@@ -5422,7 +5422,7 @@ describe("LocalServerModule owner account", () => {
       {
         serverIdentity: async () => {
           throw new Error(
-            "Linger on this computer has no server identity yet.",
+            "Talos on this computer has no server identity yet.",
           );
         },
       },
@@ -5433,7 +5433,7 @@ describe("LocalServerModule owner account", () => {
     await waitForInstaller(() => expect(f.module.status().phase).toBe("ready"));
     expect(await f.module.servesWindow()).toBe(false);
     await expect(f.module.signInWithAccount()).rejects.toThrow(
-      "Linger on this computer is not responding.",
+      "Talos on this computer is not responding.",
     );
     expect(f.signIn).not.toHaveBeenCalled();
     await f.host.stop("quit");
@@ -5448,18 +5448,18 @@ describe("LocalServerModule owner account", () => {
     await f.host.start();
     expect(await f.module.servesWindow()).toBe(false);
     await expect(f.module.signInWithAccount()).rejects.toThrow(
-      "This window is not showing the Linger on this computer.",
+      "This window is not showing the Talos on this computer.",
     );
     expect(f.signIn).not.toHaveBeenCalled();
     await f.host.stop("quit");
   });
 
-  it("does not offer it before Linger is installed here", async () => {
+  it("does not offer it before Talos is installed here", async () => {
     const f = fixture({}, enrolled);
     await f.host.start();
     expect(await f.module.servesWindow()).toBe(false);
     await expect(f.module.account()).rejects.toThrow(
-      "Linger is not installed on this computer.",
+      "Talos is not installed on this computer.",
     );
     await f.host.stop("quit");
   });
@@ -5468,7 +5468,7 @@ describe("LocalServerModule owner account", () => {
     [
       "missing",
       installed(),
-      /^The account file of Linger on this computer is missing \(.*local-account\.json\)\.$/,
+      /^The account file of Talos on this computer is missing \(.*local-account\.json\)\.$/,
     ],
     [
       "not provisioned",
@@ -5531,7 +5531,7 @@ describe("legacyMigrationResult", () => {
     const own = [
       {
         instance: LOCAL_INSTANCE,
-        reason: "Another Linger installer is using it.",
+        reason: "Another Talos installer is using it.",
       },
     ];
     expect(
@@ -5542,7 +5542,7 @@ describe("legacyMigrationResult", () => {
     ).toEqual({
       skipped: own,
       failure:
-        "Linger could not convert this computer's installation from the earlier Simplex app. Another Linger installer is using it.",
+        "Talos could not convert this computer's installation from the earlier Simplex app. Another Talos installer is using it.",
     });
   });
 
@@ -5582,7 +5582,7 @@ it("allows a slow installer runtime lookup and keeps the login deadline", async 
           return Promise.resolve(
             new Response("{}", {
               headers: {
-                "set-cookie": "linger_installer_session=s1; Path=/api",
+                "set-cookie": "talos_installer_session=s1; Path=/api",
               },
             }),
           );
@@ -5685,7 +5685,7 @@ describe("InstallerApi polling", () => {
       if (init.method === "POST") posts.push(input.pathname);
       if (input.pathname === "/api/session")
         return new Response("{}", {
-          headers: { "set-cookie": "linger_installer_session=s1; Path=/api" },
+          headers: { "set-cookie": "talos_installer_session=s1; Path=/api" },
         });
       if (input.pathname === "/api/jobs" && init.method === "POST") {
         created.push(JSON.parse(String(init.body)));
@@ -5752,7 +5752,7 @@ describe("InstallerApi polling", () => {
     const fetcher = (async (input: URL) => {
       if (input.pathname === "/api/session")
         return new Response("{}", {
-          headers: { "set-cookie": "linger_installer_session=s1; Path=/api" },
+          headers: { "set-cookie": "talos_installer_session=s1; Path=/api" },
         });
       asked++;
       const failure = failures.shift();
@@ -5773,7 +5773,7 @@ describe("InstallerApi polling", () => {
     const fetcher = (async (input: URL) => {
       if (input.pathname === "/api/session")
         return new Response("{}", {
-          headers: { "set-cookie": "linger_installer_session=s1; Path=/api" },
+          headers: { "set-cookie": "talos_installer_session=s1; Path=/api" },
         });
       throw reset();
     }) as unknown as typeof fetch;

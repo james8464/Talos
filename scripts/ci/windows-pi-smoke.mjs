@@ -70,7 +70,7 @@ export function probePi(executable, args, options, timeoutMs = 30_000) {
 }
 
 async function main() {
-  const home = process.env.LINGER_HOME;
+  const home = process.env.TALOS_HOME;
   if (
     process.platform !== "win32" ||
     process.arch !== "x64" ||
@@ -248,7 +248,7 @@ async function main() {
     const env = {
       ...process.env,
       PI_CODING_AGENT_DIR: join(home, "pi-profile"),
-      LINGER_PI_MANAGED_MCP_CONFIG: config,
+      TALOS_PI_MANAGED_MCP_CONFIG: config,
     };
     delete env.ELECTRON_RUN_AS_NODE;
     delete env.NODE_PATH;

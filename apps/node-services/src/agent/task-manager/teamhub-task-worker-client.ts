@@ -1,5 +1,5 @@
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
-import { isRecord } from "@linger/service-kit";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
+import { isRecord } from "@talos/service-kit";
 
 export type TaskExecution = components["schemas"]["TaskExecution"];
 export type TaskEffect = components["schemas"]["TaskEffect"];

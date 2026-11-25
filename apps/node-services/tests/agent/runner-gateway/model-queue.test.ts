@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LocalModelsSnapshot } from "@linger/wire-contracts/runner-gateway/types";
+import type { LocalModelsSnapshot } from "@talos/wire-contracts/runner-gateway/types";
 import {
   endpointConcurrency,
   INTERACTIVE_STALL_MS,

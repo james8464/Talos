@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/localidentity"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/secretbox"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/localidentity"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/secretbox"
 )
 
 // A Session expires DefaultSessionTTL after its last renewal unless SessionTTL
@@ -70,7 +70,7 @@ type Config struct {
 	SkillPackageMaxArchiveBytes int64
 	PublicWebURL                string
 	// LocalIdentityKey proves to the desktop app that this server is the
-	// Linger installed on this computer; set only on local installations.
+	// Talos installed on this computer; set only on local installations.
 	LocalIdentityKey string
 	// The optional features: each is assembled from its own group, and one
 	// whose configuration is missing is not built.
@@ -123,7 +123,7 @@ type PermissionReviewConfig struct {
 type VoiceConfig struct {
 	// MediaEnabled is TEAMHUB_VOICE_MEDIA: whether this deployment can run
 	// voice at all (LiveKit and the voice tools). Off keeps voice entirely
-	// off whatever keys exist; without LINGER_SECRET_SEED or ffmpeg the App
+	// off whatever keys exist; without TALOS_SECRET_SEED or ffmpeg the App
 	// runs with voice off too.
 	MediaEnabled bool
 	// XaiAPIKey is the deployment's xAI key for Live. It wins over a key saved
@@ -358,7 +358,7 @@ func validate(cfg *Config) error {
 	}
 	if cfg.NodeServicesURL != "" {
 		if cfg.NodeServicesInternalToken == "" || cfg.TeamHubInternalToken == "" || cfg.AgentRunTokenSecret == "" {
-			return errors.New("LINGER_SECRET_SEED is required when TEAMHUB_NODE_SERVICES_URL is set")
+			return errors.New("TALOS_SECRET_SEED is required when TEAMHUB_NODE_SERVICES_URL is set")
 		}
 		parsed, err := url.Parse(cfg.NodeServicesURL)
 		if err != nil || parsed.Scheme == "" || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
@@ -369,7 +369,7 @@ func validate(cfg *Config) error {
 	cfg.RunnerGatewayURL = strings.TrimSpace(cfg.RunnerGatewayURL)
 	if cfg.RunnerGatewayURL != "" {
 		if cfg.RunnerSigningKey == "" {
-			return errors.New("LINGER_SECRET_SEED is required when AGENT_RUNNER_PUBLIC_GATEWAY_URL is set")
+			return errors.New("TALOS_SECRET_SEED is required when AGENT_RUNNER_PUBLIC_GATEWAY_URL is set")
 		}
 		gateway, err := url.Parse(cfg.RunnerGatewayURL)
 		if err != nil || gateway.Host == "" || (gateway.Scheme != "ws" && gateway.Scheme != "wss") || gateway.User != nil || gateway.RawQuery != "" || gateway.Fragment != "" {
@@ -399,10 +399,10 @@ func validate(cfg *Config) error {
 	}
 	// The judge runs through the Agent Service, which owns the Runtime link.
 	if cfg.PermissionReview.Enabled && (cfg.NodeServicesURL == "" || cfg.NodeServicesInternalToken == "") {
-		return errors.New("TEAMHUB_PERMISSION_REVIEW requires the Agent Service link (LINGER_SECRET_SEED)")
+		return errors.New("TEAMHUB_PERMISSION_REVIEW requires the Agent Service link (TALOS_SECRET_SEED)")
 	}
 	if cfg.RoomDocument.RuntimeURL != "" && (cfg.NodeServicesInternalToken == "" || cfg.TeamHubInternalToken == "") {
-		return errors.New("LINGER_SECRET_SEED is required when TEAMHUB_DOCUMENT_RUNTIME_URL is set")
+		return errors.New("TALOS_SECRET_SEED is required when TEAMHUB_DOCUMENT_RUNTIME_URL is set")
 	}
 	return validateRoomDocument(&cfg.RoomDocument)
 }

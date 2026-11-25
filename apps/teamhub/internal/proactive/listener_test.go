@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 )
 
 func TestListenerAppsHearOnlyWhatIsNewsToTheHuman(t *testing.T) {

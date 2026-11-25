@@ -81,7 +81,7 @@ export const TARGETS = [
     target: "check-installer",
     lane: "fast",
     ci: "installer",
-    packages: ["apps/linger-installer"],
+    packages: ["apps/talos-installer"],
   },
   {
     target: "check-desktop",
@@ -132,7 +132,7 @@ export const TARGETS = [
       "apps/teamhub/Makefile",
       "apps/teamhub/deployments/compose/",
       "apps/desktop/src/main/",
-      "apps/linger-installer/src/server/",
+      "apps/talos-installer/src/server/",
       "packages/local-installation/src/",
     ],
   },
@@ -157,7 +157,7 @@ export const TARGETS = [
     ],
   },
   {
-    // Runs check-computer-go, the @linger/computer suite (which bundles the
+    // Runs check-computer-go, the @talos/computer suite (which bundles the
     // TeamHub CLI and Computer tools) and the Daemon to Node Services process
     // test, which runs nowhere else; the Gateway it starts imports across
     // Node Services, so any change there or in its dependencies selects it.

@@ -91,12 +91,12 @@ const fixture = () => {
       repo,
       "archive",
       "--format=tar",
-      "--prefix=linger-test/",
+      "--prefix=talos-test/",
       ref,
     ]);
     writeFileSync(output, gzipSync(tar));
   };
-  const archive = path.join(root, "linger-test.tar.gz");
+  const archive = path.join(root, "talos-test.tar.gz");
   packageSource(archive, "HEAD");
   return { root, archive, packageSource, commit: git("rev-parse", "HEAD") };
 };

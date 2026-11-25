@@ -6,7 +6,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
 )
 
 // cleanupLatestProjectionObject deletes one replaced or abandoned latest

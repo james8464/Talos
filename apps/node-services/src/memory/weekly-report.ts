@@ -1,4 +1,4 @@
-import { WEEKLY_REPORT_SECTIONS } from "@linger/knowledge-format/sections";
+import { WEEKLY_REPORT_SECTIONS } from "@talos/knowledge-format/sections";
 import {
   renderReportMarkdown,
   reportBullets,
@@ -64,7 +64,7 @@ export function renderWeeklyReport(
       week_start: context.weekStart,
       memory_subject_key: context.memorySubjectKey,
       status: "stable",
-      generated: { by: "linger-memory/1", at: context.now.toISOString() },
+      generated: { by: "talos-memory/1", at: context.now.toISOString() },
     },
     title,
     sections: [

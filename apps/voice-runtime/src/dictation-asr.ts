@@ -6,7 +6,7 @@ import {
   type ASRStream,
 } from "./asr.js";
 import { ASREventQueue } from "./event-queue.js";
-import { asError } from "@linger/service-kit";
+import { asError } from "@talos/service-kit";
 import { VoiceFailure } from "./voice-failure.js";
 
 const sampleRate = 16_000;

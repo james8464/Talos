@@ -87,7 +87,7 @@ interface RealtimePageAttention {
   subscribe(listener: (foreground: boolean) => void): void;
 }
 
-const realtimeActivityLockName = "linger:teamhub-realtime";
+const realtimeActivityLockName = "talos:teamhub-realtime";
 
 export function createBrowserRealtimeActivity({
   attention = browserRealtimePageAttention,

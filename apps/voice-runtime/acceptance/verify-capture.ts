@@ -7,7 +7,7 @@ import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, open, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import type { components } from "@linger/wire-contracts/teamhub-public/types";
+import type { components } from "@talos/wire-contracts/teamhub-public/types";
 
 type Capture = components["schemas"]["VoiceCapture"];
 type Version = components["schemas"]["DocumentVersion"];

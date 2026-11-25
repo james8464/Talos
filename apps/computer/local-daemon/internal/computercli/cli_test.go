@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/control"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/transport"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 func contains(t *testing.T, output, want string) {
@@ -109,10 +109,10 @@ func TestLoginConnectsBeforeRuntimeInstallation(t *testing.T) {
 		t.Fatalf("setup=%+v", f.setupOptions)
 	}
 	output := f.stdout.String()
-	contains(t, output, "Opening Linger in your browser...\n")
+	contains(t, output, "Opening Talos in your browser...\n")
 	contains(t, output, "is authorized; daemon started.")
-	contains(t, output, "\nNo runtime is ready yet. To see what to install or sign in to, run:\n  linger-computer runtime check\n")
-	if strings.Contains(output, "linger-computer daemon start") {
+	contains(t, output, "\nNo runtime is ready yet. To see what to install or sign in to, run:\n  talos-computer runtime check\n")
+	if strings.Contains(output, "talos-computer daemon start") {
 		t.Fatal("login pointed at daemon start")
 	}
 }
@@ -121,7 +121,7 @@ func TestLoginMapsTokenInputAndRuntimeOverrides(t *testing.T) {
 	f := newFixture(t)
 	codexPath := filepath.Join(f.root, "bin", "codex")
 	claudePath := filepath.Join(f.root, "bin", "claude")
-	f.stdin = "  linger-connect-v1.payload\n"
+	f.stdin = "  talos-connect-v1.payload\n"
 	code := f.run("login", "--config", f.configPath, "--gateway-url", "wss://gateway.example.test/v1/runner-gateway",
 		"--max-concurrent-runs", "4", "--token-stdin", "--codex-path", codexPath, "--claude-path", claudePath)
 	if code != 0 {
@@ -134,7 +134,7 @@ func TestLoginMapsTokenInputAndRuntimeOverrides(t *testing.T) {
 	options := f.setupOptions[0]
 	if options.configPath != f.configPath || options.stateDirectory != filepath.Join(f.root, "state") ||
 		options.gatewayURL != "wss://gateway.example.test/v1/runner-gateway" || options.maxRuns == nil || *options.maxRuns != 4 ||
-		options.serverToken != "linger-connect-v1.payload" || !reflect.DeepEqual(options.runtimePaths, want) {
+		options.serverToken != "talos-connect-v1.payload" || !reflect.DeepEqual(options.runtimePaths, want) {
 		t.Fatalf("setup=%+v", options)
 	}
 	contains(t, f.stdout.String(), "Connecting Local Computer...\n")
@@ -203,7 +203,7 @@ func TestLoginRejectsTheRemovedWorkspaceOption(t *testing.T) {
 	if code := f.run("login", "--workspace", f.home); code != 2 {
 		t.Fatalf("exit=%d", code)
 	}
-	if got := f.stderr.String(); got != "Unknown command: login --workspace "+f.home+"\nRun \"linger-computer --help\" for usage.\n" {
+	if got := f.stderr.String(); got != "Unknown command: login --workspace "+f.home+"\nRun \"talos-computer --help\" for usage.\n" {
 		t.Fatalf("stderr=%q", got)
 	}
 }
@@ -265,7 +265,7 @@ func TestDaemonStartShowsProcessConnectionAndRuntimes(t *testing.T) {
 		"Connection  Connecting...\n" +
 		"Runtimes    Codex READY\n" +
 		"Runners     1 active\n" +
-		"\nThe server has not confirmed the connection yet. Check again with:\n  linger-computer daemon status\n"
+		"\nThe server has not confirmed the connection yet. Check again with:\n  talos-computer daemon status\n"
 	if got := f.stdout.String(); got != want {
 		t.Fatalf("stdout=%q", got)
 	}
@@ -283,13 +283,13 @@ func TestDaemonStartShowsProcessConnectionAndRuntimes(t *testing.T) {
 	if code := f.run("daemon", "start", "--config", f.configPath); code != 11 {
 		t.Fatalf("exit=%d", code)
 	}
-	contains(t, f.stdout.String(), "Connection  Rejected by the server. Run linger-computer login to authorize again.\n")
+	contains(t, f.stdout.String(), "Connection  Rejected by the server. Run talos-computer login to authorize again.\n")
 	f.clear()
 	f.gatewayState = "identity-conflict"
 	if code := f.run("daemon", "start", "--config", f.configPath); code != 11 {
 		t.Fatalf("exit=%d", code)
 	}
-	contains(t, f.stdout.String(), "Connection  This computer's identity is already bound to another Computer registration. Run linger-computer doctor --prune to reset local state.\n")
+	contains(t, f.stdout.String(), "Connection  This computer's identity is already bound to another Computer registration. Run talos-computer doctor --prune to reset local state.\n")
 }
 
 func TestDefaultConfigLocations(t *testing.T) {
@@ -298,12 +298,12 @@ func TestDefaultConfigLocations(t *testing.T) {
 		t.Fatalf("exit=%d", code)
 	}
 	data := filepath.Join(f.root, "isolated")
-	f.deps.environment["LINGER_COMPUTER_DATA_DIR"] = data
+	f.deps.environment["TALOS_COMPUTER_DATA_DIR"] = data
 	f.run("daemon", "start")
-	f.deps.environment["LINGER_COMPUTER_CONFIG"] = "relative.json"
+	f.deps.environment["TALOS_COMPUTER_CONFIG"] = "relative.json"
 	f.run("daemon", "start")
 	want := []string{
-		filepath.Join(f.home, ".local/share/linger/computer/config.json"),
+		filepath.Join(f.home, ".local/share/talos/computer/config.json"),
 		filepath.Join(data, "config.json"),
 		filepath.Join(f.root, "relative.json"),
 	}
@@ -311,11 +311,11 @@ func TestDefaultConfigLocations(t *testing.T) {
 		t.Fatalf("started=%v", f.started)
 	}
 	windows := parseOptions{goos: "windows", environment: map[string]string{"LOCALAPPDATA": filepath.Join(f.root, "Local")}, homeDirectory: f.home, workingDirectory: f.root}
-	if got := resolveConfigPath("", windows); got != filepath.Join(f.root, "Local", "Linger", "Computer", "config.json") {
+	if got := resolveConfigPath("", windows); got != filepath.Join(f.root, "Local", "Talos", "Computer", "config.json") {
 		t.Fatalf("windows default=%s", got)
 	}
 	windows.environment = map[string]string{}
-	if got := resolveConfigPath("", windows); got != filepath.Join(f.home, "AppData", "Local", "Linger", "Computer", "config.json") {
+	if got := resolveConfigPath("", windows); got != filepath.Join(f.home, "AppData", "Local", "Talos", "Computer", "config.json") {
 		t.Fatalf("windows fallback=%s", got)
 	}
 }
@@ -409,7 +409,7 @@ func TestDaemonStatusJSONKeepsItsShape(t *testing.T) {
 	if code := f.run("daemon", "status", "--config", filepath.Join(f.root, "none.json")); code != 10 {
 		t.Fatalf("unconfigured exit=%d", code)
 	}
-	if got := f.stdout.String(); got != "This computer is not logged in.\n\nNext:\n  linger-computer login\n" {
+	if got := f.stdout.String(); got != "This computer is not logged in.\n\nNext:\n  talos-computer login\n" {
 		t.Fatalf("unconfigured=%q", got)
 	}
 }
@@ -420,7 +420,7 @@ func TestStoppedStatusPointsToDaemonStart(t *testing.T) {
 	if code := f.run("daemon", "status", "--config", f.configPath); code != 0 {
 		t.Fatalf("exit=%d", code)
 	}
-	if got := f.stdout.String(); got != "Process     Stopped\nConnection  Not connected\n\nNext:\n  linger-computer daemon start\n" {
+	if got := f.stdout.String(); got != "Process     Stopped\nConnection  Not connected\n\nNext:\n  talos-computer daemon start\n" {
 		t.Fatalf("stdout=%q", got)
 	}
 }
@@ -514,7 +514,7 @@ func TestRuntimeCheckWorksWithoutLoginOrDaemon(t *testing.T) {
 		"Pi            NOT_INSTALLED   Install: npm install -g @earendil-works/pi-coding-agent\n" +
 		"Antigravity   NOT_INSTALLED   Install: curl -fsSL https://antigravity.google/cli/install.sh | bash\n" +
 		"\n1/4 runtimes ready. This computer can run agents.\n" +
-		"Model reply not verified. Run linger-computer runtime check <name> --live to verify it.\n"
+		"Model reply not verified. Run talos-computer runtime check <name> --live to verify it.\n"
 	if !strings.HasSuffix(output, want) {
 		t.Fatalf("runtime check=%q", output)
 	}
@@ -581,7 +581,7 @@ func TestRuntimeCheckUsesConfiguredPathsAndCodexHome(t *testing.T) {
 
 func TestAuthStatusShowsTheSavedAuthorization(t *testing.T) {
 	f := newFixture(t)
-	f.deps.environment["LINGER_WEB_URL"] = "https://app.example.test"
+	f.deps.environment["TALOS_WEB_URL"] = "https://app.example.test"
 	f.deps.newClient = func(string) controlClient { t.Fatal("auth status contacted the daemon"); return nil }
 	if code := f.run("auth", "status", "--config", f.configPath); code != 0 {
 		t.Fatalf("exit=%d", code)
@@ -602,7 +602,7 @@ func TestAuthStatusShowsTheSavedAuthorization(t *testing.T) {
 	if code := f.run("auth", "status", "--config", filepath.Join(f.root, "none.json")); code != 10 {
 		t.Fatalf("missing exit=%d", code)
 	}
-	if got := f.stdout.String(); got != "This computer is not logged in.\n\nNext:\n  linger-computer login\n" {
+	if got := f.stdout.String(); got != "This computer is not logged in.\n\nNext:\n  talos-computer login\n" {
 		t.Fatalf("missing=%q", got)
 	}
 	if err := os.Remove(filepath.Join(f.root, "runner-token")); err != nil {
@@ -613,7 +613,7 @@ func TestAuthStatusShowsTheSavedAuthorization(t *testing.T) {
 		t.Fatalf("missing credential exit=%d", code)
 	}
 	contains(t, f.stdout.String(), "Status      Not authorized\n")
-	contains(t, f.stdout.String(), "Error       Gateway credential file is unavailable or has unsafe permissions\n\nNext:\n  linger-computer login\n")
+	contains(t, f.stdout.String(), "Error       Gateway credential file is unavailable or has unsafe permissions\n\nNext:\n  talos-computer login\n")
 }
 
 func TestDoctorReportsEveryCheck(t *testing.T) {
@@ -687,12 +687,12 @@ func TestDoctorFailures(t *testing.T) {
 	f = newFixture(t)
 	f.gatewayState = "identity-conflict"
 	f.deps.inspectDaemon = func(ctx context.Context, _ string) doctorCheck {
-		return inspectDaemonHealth(ctx, fakeClient{f: f}, "linger-computer")
+		return inspectDaemonHealth(ctx, fakeClient{f: f}, "talos-computer")
 	}
 	if code := f.run("doctor", "--json", "--config", f.configPath); code != 11 {
 		t.Fatalf("identity-conflict doctor exit=%d", code)
 	}
-	contains(t, f.stdout.String(), "Run linger-computer doctor --prune to reset local state")
+	contains(t, f.stdout.String(), "Run talos-computer doctor --prune to reset local state")
 	if strings.Contains(f.stdout.String(), "login to reconnect") {
 		t.Fatalf("unexpected login reconnect hint: %s", f.stdout.String())
 	}
@@ -734,7 +734,7 @@ func TestDoctorPrune(t *testing.T) {
 	if f.idleShutdowns != 1 {
 		t.Fatalf("idle shutdowns=%d", f.idleShutdowns)
 	}
-	if got := f.stdout.String(); got != "Local Computer enrollment was removed from this machine.\nRun linger-computer login to connect it again.\nThe Computer record in Agent Service was not deleted.\n" {
+	if got := f.stdout.String(); got != "Local Computer enrollment was removed from this machine.\nRun talos-computer login to connect it again.\nThe Computer record in Agent Service was not deleted.\n" {
 		t.Fatalf("stdout=%q", got)
 	}
 }
@@ -805,23 +805,23 @@ func TestLogsAndVersion(t *testing.T) {
 		contains(t, f.stderr.String(), "Log line count must be between 1 and 10000")
 	}
 	f.clear()
-	if code := f.run("version"); code != 0 || f.stdout.String() != "linger-computer "+transport.ReleaseVersion+"\n" {
+	if code := f.run("version"); code != 0 || f.stdout.String() != "talos-computer "+transport.ReleaseVersion+"\n" {
 		t.Fatalf("version=%q", f.stdout.String())
 	}
 }
 
 func TestEnvironmentCommandNamesHintsAndHelp(t *testing.T) {
 	f := newFixture(t)
-	f.deps.environment["LINGER_COMPUTER_COMMAND"] = "linger-computer-staging"
+	f.deps.environment["TALOS_COMPUTER_COMMAND"] = "talos-computer-staging"
 	f.run("--help")
-	contains(t, f.stdout.String(), "  linger-computer-staging login\n\nRun \"linger-computer-staging <command> --help\" for options.\n")
+	contains(t, f.stdout.String(), "  talos-computer-staging login\n\nRun \"talos-computer-staging <command> --help\" for options.\n")
 	f.clear()
 	f.run("auth", "status", "--config", filepath.Join(f.root, "none.json"))
-	contains(t, f.stdout.String(), "  linger-computer-staging login\n")
-	f.deps.environment["LINGER_COMPUTER_COMMAND"] = "other-tool"
+	contains(t, f.stdout.String(), "  talos-computer-staging login\n")
+	f.deps.environment["TALOS_COMPUTER_COMMAND"] = "other-tool"
 	f.clear()
 	f.run("--help")
-	contains(t, f.stdout.String(), "  linger-computer login\n")
+	contains(t, f.stdout.String(), "  talos-computer login\n")
 }
 
 func terminalLogin(t *testing.T, ctx context.Context, stdin io.Reader, rawErr error) (*fixture, int, int) {
@@ -841,13 +841,13 @@ func terminalLogin(t *testing.T, ctx context.Context, stdin io.Reader, rawErr er
 
 func TestLoginTerminalTokenIsHiddenAndEdited(t *testing.T) {
 	for name, input := range map[string]string{
-		"enter":     "linger-connect-v1.payload\r",
-		"backspace": "linger-connect-v1.X\x08x\x7fpay\x1bload\n",
-		"eof":       "  linger-connect-v1.payload",
+		"enter":     "talos-connect-v1.payload\r",
+		"backspace": "talos-connect-v1.X\x08x\x7fpay\x1bload\n",
+		"eof":       "  talos-connect-v1.payload",
 	} {
 		t.Run(name, func(t *testing.T) {
 			f, code, restores := terminalLogin(t, context.Background(), strings.NewReader(input), nil)
-			if code != 0 || len(f.setupOptions) != 1 || f.setupOptions[0].serverToken != "linger-connect-v1.payload" {
+			if code != 0 || len(f.setupOptions) != 1 || f.setupOptions[0].serverToken != "talos-connect-v1.payload" {
 				t.Fatalf("code=%d setup=%#v stderr=%s", code, f.setupOptions, f.stderr.String())
 			}
 			contains(t, f.stderr.String(), "Paste the server connection token, then press Enter: \n")
@@ -872,7 +872,7 @@ func TestLoginTerminalTokenFailures(t *testing.T) {
 		message  string
 		restores int
 	}{
-		"ctrl-c":   {context.Background(), strings.NewReader("linger\x03rest\r"), nil, "input was cancelled", 1},
+		"ctrl-c":   {context.Background(), strings.NewReader("talos\x03rest\r"), nil, "input was cancelled", 1},
 		"empty":    {context.Background(), strings.NewReader("\r"), nil, "must not be empty", 1},
 		"too long": {context.Background(), strings.NewReader(strings.Repeat("a", maxTokenBytes+1)), nil, "exceeds 64 KiB", 1},
 		"cancel":   {cancelled, blocked, nil, "input was cancelled", 1},

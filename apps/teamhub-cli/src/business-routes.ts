@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { components } from "@linger/wire-contracts/teamhub-agent-api/types";
+import type { components } from "@talos/wire-contracts/teamhub-agent-api/types";
 import { loadAgentCommandSchema } from "./command-schema-loader.js";
 import { invalidInput, zodInputIssues } from "./input-issues.js";
 import type { TeamHubApiPostPath } from "./http-client.js";

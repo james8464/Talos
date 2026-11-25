@@ -258,13 +258,13 @@ jobs:
           claude: ${{ steps.pins.outputs.claude }}
       - name: Native compatibility of the pinned Runtimes
         env:
-          LINGER_CODEX_COMPAT_EXECUTABLE: ${{ steps.runtimes.outputs.codex-executable }}
-          LINGER_CLAUDE_COMPAT_EXECUTABLE: ${{ steps.runtimes.outputs.claude-executable }}
+          TALOS_CODEX_COMPAT_EXECUTABLE: ${{ steps.runtimes.outputs.codex-executable }}
+          TALOS_CLAUDE_COMPAT_EXECUTABLE: ${{ steps.runtimes.outputs.claude-executable }}
         run: |
           set -euo pipefail
           (cd apps/computer/local-daemon && go test ./internal/provider -count=1 -v \
             -run '^(TestNativeCodexAuthenticationWithoutAuthFile|TestNativeClaudeAuthenticationDoesNotCallModel|TestNativeClaudeFirstRunResume)$')
-          pnpm --filter @linger/computer exec vitest run --config vitest.config.ts tests/codex-native-compat.test.ts
+          pnpm --filter @talos/computer exec vitest run --config vitest.config.ts tests/codex-native-compat.test.ts
 
   # The daemon ships on Windows, and its Windows-only files build and run only
   # there. The same paths as check (computer-go) select it.
@@ -322,7 +322,7 @@ jobs:
       # Builds every package and test for Windows, then runs the packages that
       # hold the Windows launcher, process Job, CLI and overlay path code.
       - run: go test -run '^$' ./...
-      - run: go test ./cmd/linger-computer-launcher ./internal/computercli ./internal/computerconfig ./internal/localmodels ./internal/process
+      - run: go test ./cmd/talos-computer-launcher ./internal/computercli ./internal/computerconfig ./internal/localmodels ./internal/process
       # A failed run saves unpruned; the next successful push prunes.
       - if: success() && github.event_name == 'push'
         run: |

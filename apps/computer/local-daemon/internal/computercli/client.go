@@ -9,7 +9,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/linger/control"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 )
 
 // controlClient is the Daemon's local control API.

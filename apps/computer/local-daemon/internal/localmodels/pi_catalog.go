@@ -14,12 +14,12 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider"
-	wire "github.com/simplexai-labs/linger/contracts-go/runnergateway"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 
 // piCatalogSchema versions the file of remembered Pi catalog entries.
-const piCatalogSchema = "linger.local-models-pi-catalog/v1"
+const piCatalogSchema = "talos.local-models-pi-catalog/v1"
 
 // piCatalogFileName sits beside the Library's job directory.
 const piCatalogFileName = "pi-catalog.json"

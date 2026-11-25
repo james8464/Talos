@@ -14,13 +14,13 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 )
 
 const (
 	claudeMarkerLimit = 1 << 20
 	claudePromptLimit = 512 << 10
-	claudeSessionRoot = "LINGER_CLAUDE_SESSION_ROOT"
+	claudeSessionRoot = "TALOS_CLAUDE_SESSION_ROOT"
 )
 
 // claudeMarkerWrites serializes marker rewrites across the whole Daemon.

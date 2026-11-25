@@ -178,25 +178,25 @@ func TestHooksConfigRunsTheDaemonInHookMode(t *testing.T) {
 		url:     "http://127.0.0.1:1/permission-request/secret",
 		stopURL: "http://127.0.0.1:1/stop/secret",
 	}
-	config := endpoint.HooksConfigFor("/Applications/Linger Computer/bin/daemon's", true, false)
+	config := endpoint.HooksConfigFor("/Applications/Talos Computer/bin/daemon's", true, false)
 	handler := config["PermissionRequest"].([]any)[0].(map[string]any)["hooks"].([]any)[0].(map[string]any)
 	if handler["type"] != "command" || handler["timeout"] != 90 ||
-		handler["command"] != `'/Applications/Linger Computer/bin/daemon'\''s' permission-hook 'http://127.0.0.1:1/permission-request/secret'` ||
-		handler["commandWindows"] != `& '/Applications/Linger Computer/bin/daemon''s' permission-hook 'http://127.0.0.1:1/permission-request/secret'` {
+		handler["command"] != `'/Applications/Talos Computer/bin/daemon'\''s' permission-hook 'http://127.0.0.1:1/permission-request/secret'` ||
+		handler["commandWindows"] != `& '/Applications/Talos Computer/bin/daemon''s' permission-hook 'http://127.0.0.1:1/permission-request/secret'` {
 		t.Fatalf("handler = %#v", handler)
 	}
 	if _, hasStop := config["Stop"]; hasStop {
 		t.Fatalf("HooksConfigFor(true, false) unexpectedly included Stop: %#v", config)
 	}
 
-	stopOnly := endpoint.HooksConfigFor("/Applications/Linger Computer/bin/daemon's", false, true)
+	stopOnly := endpoint.HooksConfigFor("/Applications/Talos Computer/bin/daemon's", false, true)
 	if _, hasPerm := stopOnly["PermissionRequest"]; hasPerm {
 		t.Fatalf("stopOnly unexpectedly included PermissionRequest: %#v", stopOnly)
 	}
 	stopHandler := stopOnly["Stop"].([]any)[0].(map[string]any)["hooks"].([]any)[0].(map[string]any)
 	if stopHandler["type"] != "command" || stopHandler["timeout"] != int(CodexStopHookTimeout/time.Second) ||
-		stopHandler["command"] != `'/Applications/Linger Computer/bin/daemon'\''s' stop-hook 'http://127.0.0.1:1/stop/secret'` ||
-		stopHandler["commandWindows"] != `& '/Applications/Linger Computer/bin/daemon''s' stop-hook 'http://127.0.0.1:1/stop/secret'` {
+		stopHandler["command"] != `'/Applications/Talos Computer/bin/daemon'\''s' stop-hook 'http://127.0.0.1:1/stop/secret'` ||
+		stopHandler["commandWindows"] != `& '/Applications/Talos Computer/bin/daemon''s' stop-hook 'http://127.0.0.1:1/stop/secret'` {
 		t.Fatalf("stopHandler = %#v", stopHandler)
 	}
 }

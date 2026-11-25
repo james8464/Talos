@@ -23,7 +23,7 @@ import type {
   OperationResult,
   RuntimeOperationRequest,
   RunEvent as WireRunEvent,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 
 import { RemoteCodexProvider } from "../../../src/agent/runner-gateway/remote-codex-provider.js";
 import { RunnerOperationError } from "../../../src/agent/runner-gateway/runner-gateway.js";
@@ -635,7 +635,7 @@ describe("RemoteCodexProvider", () => {
       sessionId: expect.stringMatching(
         /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
       ),
-      lingerMaterialized: false,
+      talosMaterialized: false,
     });
     const other = await createProvider(dispatcher, "claude").createSession(
       sessionOptions(),
@@ -665,7 +665,7 @@ describe("RemoteCodexProvider", () => {
     expect(session).toEqual({
       provider: "pi",
       sessionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
-      lingerMaterialized: false,
+      talosMaterialized: false,
     });
     const other = createProvider(dispatcher, "pi");
     const otherSession = await other.createSession(sessionOptions());
@@ -700,7 +700,7 @@ describe("RemoteCodexProvider", () => {
     expect(starts[0]).toMatchObject({
       kind: "run.start",
       runtime: { type: "pi" },
-      session: { provider: "pi", lingerMaterialized: false },
+      session: { provider: "pi", talosMaterialized: false },
     });
     expect(starts[1]).toMatchObject({ session: starts[0]?.session });
     await provider.close();
@@ -1061,7 +1061,7 @@ describe("RemoteCodexProvider", () => {
       const retained = {
         provider: runtimeType,
         sessionId: "native-session-retained",
-        lingerMaterialized: true,
+        talosMaterialized: true,
       };
       const changed = sessionOptions();
       changed.baseInstructions = "Always respond in Chinese.";
@@ -1702,7 +1702,7 @@ describe("RemoteCodexProvider session compaction", () => {
     const session = {
       provider: "claude",
       sessionId: "session-1",
-      lingerMaterialized: true,
+      talosMaterialized: true,
     };
     await expect(
       provider.compactSession!(session, {
@@ -1728,7 +1728,7 @@ describe("RemoteCodexProvider session compaction", () => {
     expect(session).toEqual({
       provider: "claude",
       sessionId: "session-1",
-      lingerMaterialized: true,
+      talosMaterialized: true,
     });
   });
 
@@ -1756,7 +1756,7 @@ describe("RemoteCodexProvider session compaction", () => {
     ).resolves.toEqual({ status: "nothing_to_compact" });
     await expect(
       createProvider(dispatcher, "claude").compactSession!(
-        { provider: "claude", sessionId: "s", lingerMaterialized: false },
+        { provider: "claude", sessionId: "s", talosMaterialized: false },
         { signal: signal() },
       ),
     ).resolves.toEqual({ status: "nothing_to_compact" });

@@ -4,11 +4,11 @@ import type {
   DebugInspected,
   DebugHistoryInspectionRequest,
   DebugHistoryInspectionResult,
-} from "@linger/wire-contracts/runner-gateway/types";
+} from "@talos/wire-contracts/runner-gateway/types";
 import {
   RUNNER_GATEWAY_PROTOCOL_VERSION,
   parseAgentToDaemonEnvelope,
-} from "@linger/wire-contracts/runner-gateway/validator";
+} from "@talos/wire-contracts/runner-gateway/validator";
 import {
   AgentRunnerDesiredStateError,
   type AgentRunnerDesiredRecord,

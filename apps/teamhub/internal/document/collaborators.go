@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 )
 
 type CreateDirectCollaboratorInput struct {

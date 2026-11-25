@@ -1,4 +1,4 @@
-module github.com/simplexai-labs/linger/apps/teamhub
+module github.com/simplexai-labs/talos/apps/teamhub
 
 go 1.26.0
 
@@ -6,13 +6,13 @@ toolchain go1.26.5
 
 require golang.org/x/crypto v0.53.0
 
-require github.com/simplexai-labs/linger/contracts-go v0.0.0
+require github.com/simplexai-labs/talos/contracts-go v0.0.0
 
-require github.com/simplexai-labs/linger/skills v0.0.0
+require github.com/simplexai-labs/talos/skills v0.0.0
 
-replace github.com/simplexai-labs/linger/contracts-go => ../../contracts/generated/go
+replace github.com/simplexai-labs/talos/contracts-go => ../../contracts/generated/go
 
-replace github.com/simplexai-labs/linger/skills => ../../skills
+replace github.com/simplexai-labs/talos/skills => ../../skills
 
 require (
 	github.com/adrg/frontmatter v0.2.0

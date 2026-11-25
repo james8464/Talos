@@ -363,11 +363,11 @@ describe("Voice Mode microphone refusal", () => {
   });
 
   it("points the Mac desktop app to System Settings", async () => {
-    vi.stubGlobal("window", { lingerDesktop: { platform: "darwin" } });
+    vi.stubGlobal("window", { talosDesktop: { platform: "darwin" } });
     expect(await refusedState()).toMatchObject({
       status: "error",
       error:
-        "Linger can't use the microphone. Allow Linger in System Settings › Privacy & Security › Microphone, then try again.",
+        "Talos can't use the microphone. Allow Talos in System Settings › Privacy & Security › Microphone, then try again.",
     });
   });
 });

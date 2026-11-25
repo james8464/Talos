@@ -1133,7 +1133,7 @@ describe("Context Runtime Activator", () => {
           previousSession: {
             provider: "claude",
             sessionId: "reserved",
-            lingerMaterialized: false,
+            talosMaterialized: false,
           },
         },
         {

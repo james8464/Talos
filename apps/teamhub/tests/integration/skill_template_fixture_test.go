@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	artifactstore "github.com/simplexai-labs/linger/apps/teamhub/internal/artifact"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/platform/agenttemplates"
+	artifactstore "github.com/simplexai-labs/talos/apps/teamhub/internal/artifact"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/platform/agenttemplates"
 )
 
 // copyTemplateSkillObjects pairs a database clone with its own writable object

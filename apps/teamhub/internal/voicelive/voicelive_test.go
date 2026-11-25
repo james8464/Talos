@@ -301,8 +301,8 @@ func TestInstructionsCarryTheUsersMemory(t *testing.T) {
 	if strings.Contains(Instructions("A", "R", UserMemory{}), "About the User") {
 		t.Fatal("no memory, no section")
 	}
-	text := Instructions("A", "R", UserMemory{Name: "Zh\u00e8ng", Markdown: "- Leads product at Linger\n" + strings.Repeat("\U0001F332", 2000)})
-	for _, want := range []string{"## About the User", "Name: Zh\u00e8ng", "Leads product at Linger"} {
+	text := Instructions("A", "R", UserMemory{Name: "Zh\u00e8ng", Markdown: "- Leads product at Talos\n" + strings.Repeat("\U0001F332", 2000)})
+	for _, want := range []string{"## About the User", "Name: Zh\u00e8ng", "Leads product at Talos"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("instructions miss %q", want)
 		}

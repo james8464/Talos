@@ -1,14 +1,14 @@
 import type { ModelLease } from "./model-tasks.js";
 import { Ajv, type ValidateFunction } from "ajv";
-import { isRecord, sleep } from "@linger/service-kit";
-import { sha256Hex, type JsonLogger } from "@linger/service-kit/node";
+import { isRecord, sleep } from "@talos/service-kit";
+import { sha256Hex, type JsonLogger } from "@talos/service-kit/node";
 import type {
   ModelInvoke,
   ModelInvoked,
   ModelInvokeFile,
-} from "@linger/wire-contracts/runner-gateway/types";
-import { createTeamHubAgentRuntimeStateClient } from "@linger/wire-contracts/teamhub-internal/client";
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
+} from "@talos/wire-contracts/runner-gateway/types";
+import { createTeamHubAgentRuntimeStateClient } from "@talos/wire-contracts/teamhub-internal/client";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
 import {
   createModelCallResults,
   type ModelCallAnswer,

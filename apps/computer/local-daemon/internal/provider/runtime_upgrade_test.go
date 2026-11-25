@@ -27,8 +27,8 @@ IFS= read -r request
 }
 
 const upgradeClaudeProtocol = `case "$request" in
-  *linger-catalog*) echo '{"type":"control_response","response":{"subtype":"success","request_id":"linger-catalog","response":{"models":[{"value":"fixture-model","displayName":"Fixture model"}]}}}' ;;
-  *) echo '{"type":"control_response","response":{"subtype":"success","request_id":"linger-computer-doctor"}}' ;;
+  *talos-catalog*) echo '{"type":"control_response","response":{"subtype":"success","request_id":"talos-catalog","response":{"models":[{"value":"fixture-model","displayName":"Fixture model"}]}}}' ;;
+  *) echo '{"type":"control_response","response":{"subtype":"success","request_id":"talos-computer-doctor"}}' ;;
 esac
 while IFS= read -r line; do :; done`
 

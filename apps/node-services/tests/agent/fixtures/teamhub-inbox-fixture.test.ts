@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import os from "node:os";
 import path from "node:path";
-import type { components } from "@linger/wire-contracts/teamhub-internal/types";
+import type { components } from "@talos/wire-contracts/teamhub-internal/types";
 import { expect, it } from "vitest";
 import { createTeamHubAgentResourcesResolver } from "../../../src/agent/executor/teamhub-context-resolvers.js";
 

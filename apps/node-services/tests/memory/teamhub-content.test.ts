@@ -4,7 +4,7 @@ import {
   fetchTeamHubDocumentVersionContent,
   teamHubContentAccess,
 } from "../../src/memory/teamhub-content.js";
-import { serviceCredential } from "@linger/service-kit/node";
+import { serviceCredential } from "@talos/service-kit/node";
 
 const seed = "test-seed-0123456789abcdef0123456789";
 
@@ -34,9 +34,9 @@ describe("TeamHub content access", () => {
   });
   it("requires the Memory token and defaults TeamHub to the single-host address", () => {
     expect(() => teamHubContentAccess({})).toThrow(
-      "LINGER_SECRET_SEED is required",
+      "TALOS_SECRET_SEED is required",
     );
-    expect(teamHubContentAccess({ LINGER_SECRET_SEED: seed }).baseUrl).toBe(
+    expect(teamHubContentAccess({ TALOS_SECRET_SEED: seed }).baseUrl).toBe(
       "http://127.0.0.1:8080",
     );
   });
@@ -46,7 +46,7 @@ describe("TeamHub content access", () => {
     const content = new TextEncoder().encode("# from TeamHub");
     const access = teamHubContentAccess({
       TEAMHUB_BASE_URL: "https://teamhub.example/base?ignored=1",
-      LINGER_SECRET_SEED: seed,
+      TALOS_SECRET_SEED: seed,
     });
     access.fetch = vi.fn(async (input, init) => {
       request = new Request(input, init);
@@ -60,7 +60,7 @@ describe("TeamHub content access", () => {
       "https://teamhub.example/base/v0/memory/fetch_session/tenants/tenant%2Fone/document-versions/version%2Ftwo",
     );
     expect(request?.headers.get("authorization")).toBe(
-      `Bearer ${serviceCredential("teamhub-internal", { LINGER_SECRET_SEED: seed })}`,
+      `Bearer ${serviceCredential("teamhub-internal", { TALOS_SECRET_SEED: seed })}`,
     );
   });
 
@@ -108,7 +108,7 @@ describe("TeamHub content access", () => {
   it("surfaces non-success responses without falling back to local paths", async () => {
     const access = teamHubContentAccess({
       TEAMHUB_BASE_URL: "http://teamhub",
-      LINGER_SECRET_SEED: seed,
+      TALOS_SECRET_SEED: seed,
     });
     access.fetch = vi.fn(async () => new Response(null, { status: 404 }));
 

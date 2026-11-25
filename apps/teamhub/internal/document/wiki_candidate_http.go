@@ -17,7 +17,7 @@ import (
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
-	"github.com/simplexai-labs/linger/contracts-go/nodeservicesinternal"
+	"github.com/simplexai-labs/talos/contracts-go/nodeservicesinternal"
 )
 
 const maxWikiCandidateResponseBytes = 256 << 20

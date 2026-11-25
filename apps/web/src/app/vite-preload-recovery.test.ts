@@ -37,7 +37,7 @@ describe("Vite preload recovery", () => {
     const reload = vi.fn();
     const storage = createStorage();
     storage.setItem(
-      "linger.web.vite-preload-recovery.v1",
+      "talos.web.vite-preload-recovery.v1",
       "https://web.example/assets/index-build-a.js",
     );
 

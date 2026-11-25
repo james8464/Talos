@@ -26,7 +26,7 @@ if ($WorkerAccount) {
       !$env:LOCALAPPDATA.StartsWith("$env:USERPROFILE\", [StringComparison]::OrdinalIgnoreCase)) {
     throw 'The smoke user does not have its own loaded profile'
   }
-  $app = Join-Path $env:LOCALAPPDATA 'Programs\Linger'
+  $app = Join-Path $env:LOCALAPPDATA 'Programs\Talos'
   if (Test-Path -LiteralPath $app) { throw 'The smoke profile is not clean' }
   $setupWatch = [Diagnostics.Stopwatch]::StartNew()
   $install = Start-Process -FilePath $Setup -ArgumentList '/S' -PassThru
@@ -38,14 +38,14 @@ if ($WorkerAccount) {
   @{ phase = 'setup'; setup_sha256 = $ExpectedSha256; elapsed_ms = $setupWatch.ElapsedMilliseconds } |
     ConvertTo-Json -Compress
   $env:ELECTRON_RUN_AS_NODE = '1'
-  $env:LINGER_HOME = Join-Path $env:LOCALAPPDATA 'LingerPackageSmoke'
+  $env:TALOS_HOME = Join-Path $env:LOCALAPPDATA 'TalosPackageSmoke'
   Remove-Item Env:NODE_PATH,Env:NODE_OPTIONS -ErrorAction SilentlyContinue
-  & (Join-Path $app 'Linger.exe') (Join-Path $PSScriptRoot 'windows-pi-smoke.mjs') | Out-Host
+  & (Join-Path $app 'Talos.exe') (Join-Path $PSScriptRoot 'windows-pi-smoke.mjs') | Out-Host
   exit $LASTEXITCODE
 }
 
 if (!$isAdmin) { throw 'Run the orchestrator on a disposable elevated Windows x64 runner' }
-$name = 'LingerSmoke' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
+$name = 'TalosSmoke' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
 $scratch = Join-Path $env:ProgramData $name
 $password = ConvertTo-SecureString ('Aa9!' + [Guid]::NewGuid().ToString('N')) -AsPlainText -Force
 $account = New-LocalUser -Name $name -Password $password

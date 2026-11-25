@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/feishu"
-	idgen "github.com/simplexai-labs/linger/apps/teamhub/internal/ids"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/feishu"
+	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 )
 
 // ErrStaleRevision reports a Connection revision that changed since the caller read it.

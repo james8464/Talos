@@ -6,7 +6,7 @@ import { dirname, join, relative } from "node:path";
 
 import { degradeInvalidMermaidFences } from "openwiki/dist/mermaid/validate.js";
 import { parse as parseYaml } from "yaml";
-import { isRecord } from "@linger/service-kit";
+import { isRecord } from "@talos/service-kit";
 
 import {
   estimateTokens,

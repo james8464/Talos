@@ -10,7 +10,7 @@ import (
 	"io"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentcredential"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/agentcredential"
 )
 
 // ReplaceAgentDocumentBody reuses native mutation admission, transaction and history.

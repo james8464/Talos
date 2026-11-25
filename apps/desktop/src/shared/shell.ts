@@ -21,7 +21,7 @@ export type ShellCommand =
   | "maximize"
   | "close";
 
-export interface LingerShellApi {
+export interface TalosShellApi {
   getState(): Promise<TitlebarState>;
   onState(callback: (state: TitlebarState) => void): () => void;
   command(name: ShellCommand): void;

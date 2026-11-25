@@ -71,7 +71,7 @@ import {
 } from "../../../src/agent/executor/context-ref.js";
 import { createInMemoryExecutionContextStore } from "../test-support/in-memory-execution-context-store.js";
 import { RemoteRuntimeProvider } from "../../../src/agent/runner-gateway/remote-codex-provider.js";
-import type { RunEvent } from "@linger/wire-contracts/runner-gateway/types";
+import type { RunEvent } from "@talos/wire-contracts/runner-gateway/types";
 import type { ContextExecutor } from "../../../src/agent/executor/context-executor.js";
 import { createTestFeatureAssembly } from "../test-support/executor-features.js";
 import { createStandaloneExecutor } from "../test-support/standalone-executor.js";
@@ -98,14 +98,14 @@ afterAll(async () => {
 const buildOnce = (): Promise<{ daemon: string; cli: string }> =>
   (builds ??= (async () => {
     const root = await mkdtemp(
-      path.join(os.tmpdir(), "linger-go-daemon-build-"),
+      path.join(os.tmpdir(), "talos-go-daemon-build-"),
     );
-    const daemon = path.join(root, "linger-computer-daemon");
+    const daemon = path.join(root, "talos-computer-daemon");
     const cli = path.join(root, "cli");
     await Promise.all([
       execFileAsync(
         "go",
-        ["build", "-o", daemon, "./cmd/linger-computer-daemon"],
+        ["build", "-o", daemon, "./cmd/talos-computer-daemon"],
         {
           cwd: path.resolve(process.cwd(), "../computer/local-daemon"),
           timeout: 60_000,
@@ -136,7 +136,7 @@ const installTeamHubCli = async (directory: string): Promise<void> => {
 };
 
 const processTest =
-  process.env.LINGER_GO_LOCAL_DAEMON_TEST === "1" ? it : it.skip;
+  process.env.TALOS_GO_LOCAL_DAEMON_TEST === "1" ? it : it.skip;
 
 // Issues from the TeamHub fixture, whose origin is known only after it listens.
 /**
@@ -388,7 +388,7 @@ processTest(
         process.cwd(),
         "../computer/node_modules/.bin/pi",
       );
-      const binary = path.join(root, "bin", "linger-computer-daemon");
+      const binary = path.join(root, "bin", "talos-computer-daemon");
       const config = path.join(root, "computer.json");
       const profile = path.join(root, ".pi", "agent");
       const credential = path.join(root, "runner-token");
@@ -559,7 +559,7 @@ processTest(
       lifecycle.signal,
       AbortSignal.timeout(105_000),
     ]);
-    const binary = path.join(root, "bin", "linger-computer-daemon");
+    const binary = path.join(root, "bin", "talos-computer-daemon");
     const state = path.join(root, "state");
     const workspace = path.join(root, "workspace");
     const codex = path.join(root, "codex");
@@ -996,8 +996,8 @@ console.log(JSON.stringify({ jsonrpc: '2.0', method: 'item/completed', params: {
 processTest(
   "connects the real Go Local Computer Daemon through Registration reconciliation",
   async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "linger-go-daemon-"));
-    const binary = path.join(root, "linger-computer-daemon");
+    const root = await mkdtemp(path.join(os.tmpdir(), "talos-go-daemon-"));
+    const binary = path.join(root, "talos-computer-daemon");
     await installDaemonBinary(binary);
     const computerId = "computer-go-canary";
     const tenantId = "tenant-acme";
@@ -1332,7 +1332,7 @@ processTest(
       session: {
         provider: "claude",
         sessionId: randomUUID(),
-        lingerMaterialized: false,
+        talosMaterialized: false,
       },
     };
     const claudeSubmittedAt = performance.now();
@@ -1382,7 +1382,7 @@ processTest(
       session: {
         provider: "claude",
         sessionId: initialClaudeSession.session.sessionId,
-        lingerMaterialized: true,
+        talosMaterialized: true,
       },
     });
     const claudeResultAt = performance.now();
@@ -1857,10 +1857,10 @@ processTest(
   "prepares a suspended Codex thread from an input accepted before reactivation, then starts it through the real Go Daemon",
   async () => {
     const root = await mkdtemp(
-      path.join(os.tmpdir(), "linger-context-reconnect-"),
+      path.join(os.tmpdir(), "talos-context-reconnect-"),
     );
     // The Daemon finds the bundled TeamHub CLI at <binary dir>/../cli.
-    const binary = path.join(root, "bin", "linger-computer-daemon");
+    const binary = path.join(root, "bin", "talos-computer-daemon");
     const state = path.join(root, "state");
     const workspace = path.join(root, "workspace");
     const computerId = "computer-context-reconnect";
@@ -2288,7 +2288,7 @@ interface PresenceHarnessOptions {
 
 const openPresenceHarness = async (options: PresenceHarnessOptions) => {
   const root = await mkdtemp(
-    path.join(os.tmpdir(), `linger-presence-${options.runtimeType}-`),
+    path.join(os.tmpdir(), `talos-presence-${options.runtimeType}-`),
   );
   const daemon: { child?: ChildProcess } = {};
   cleanups.push(async () => {
@@ -2299,7 +2299,7 @@ const openPresenceHarness = async (options: PresenceHarnessOptions) => {
     }
     await rm(root, { recursive: true, force: true });
   });
-  const binary = path.join(root, "bin/linger-computer-daemon");
+  const binary = path.join(root, "bin/talos-computer-daemon");
   const state = path.join(root, "state");
   const workspace = path.join(root, "workspace");
   await Promise.all([
@@ -3523,7 +3523,7 @@ processTest(
     const root = await mkdtemp(
       path.join(os.tmpdir(), "go-daemon-manager-revocation-"),
     );
-    const binary = path.join(root, "linger-computer-daemon");
+    const binary = path.join(root, "talos-computer-daemon");
     const state = path.join(root, "state");
     const workspace = path.join(root, "workspace");
     const hangMarker = path.join(root, "hang");
@@ -4110,17 +4110,17 @@ done
 if [ -z "$session_id" ]; then
   read initialize
   case "$initialize" in
-    *linger-catalog*)
-      echo '{"type":"control_response","response":{"subtype":"success","request_id":"linger-catalog","response":{"models":[{"value":"claude-default","displayName":"Claude default"}]}}}'
+    *talos-catalog*)
+      echo '{"type":"control_response","response":{"subtype":"success","request_id":"talos-catalog","response":{"models":[{"value":"claude-default","displayName":"Claude default"}]}}}'
       ;;
-    *) echo '{"type":"control_response","response":{"subtype":"success","request_id":"linger-computer-doctor"}}' ;;
+    *) echo '{"type":"control_response","response":{"subtype":"success","request_id":"talos-computer-doctor"}}' ;;
   esac
   exit 0
 fi
 read line
 case "$line" in
   *'"type":"control_request"'*)
-    echo '{"type":"control_response","response":{"subtype":"success","request_id":"linger-session-restore"}}'
+    echo '{"type":"control_response","response":{"subtype":"success","request_id":"talos-session-restore"}}'
     if ! read line; then exit 0; fi
     ;;
 esac
@@ -4147,7 +4147,7 @@ const startDaemon = (
     env: {
       PATH: [root, ...pathEntries].join(path.delimiter),
       HOME: root,
-      LINGER_DAEMON_LAUNCH_NONCE: "go-canary-launch",
+      TALOS_DAEMON_LAUNCH_NONCE: "go-canary-launch",
     },
   });
   child.stderr?.on("data", (chunk: Buffer) => onStderr(chunk.toString("utf8")));

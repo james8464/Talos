@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/linger/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 )
 
 func TestExecutorPrepareMCPDoesNotStartProviderTurn(t *testing.T) {
@@ -23,7 +23,7 @@ func TestExecutorPrepareMCPDoesNotStartProviderTurn(t *testing.T) {
 	_, err := executor.PrepareMCP(context.Background(), OperationSpec{
 		OperationKind: "run.start", Provider: "codex", ExecutablePath: "/bin/runtime", WorkingDirectory: t.TempDir(),
 		ResumeSessionID: "thread-test",
-		MCPConfig:       json.RawMessage(`{"mcpServers":{"linger_teamhub_collaboration":{"type":"http","url":"http://127.0.0.1:12345/mcp"}}}`),
+		MCPConfig:       json.RawMessage(`{"mcpServers":{"talos_teamhub_collaboration":{"type":"http","url":"http://127.0.0.1:12345/mcp"}}}`),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestExecutorPreservesExternalMCPWithoutRequiringInternalProductMCP(t *testi
 			}}
 			execution, err := executor.Start(context.Background(), OperationSpec{
 				Provider: runtimeType, ExecutablePath: "/bin/runtime", WorkingDirectory: t.TempDir(),
-				MCPConfig: json.RawMessage(`{"mcpServers":{"linger_teamhub_collaboration":{"type":"http","url":"http://127.0.0.1:12345/mcp"},"linger_lev8":{"type":"http","url":"http://127.0.0.1:12346/mcp"}}}`),
+				MCPConfig: json.RawMessage(`{"mcpServers":{"talos_teamhub_collaboration":{"type":"http","url":"http://127.0.0.1:12345/mcp"},"talos_lev8":{"type":"http","url":"http://127.0.0.1:12346/mcp"}}}`),
 			}, func(context.Context, protocol.Event) error { return nil })
 			if err != nil {
 				t.Fatal(err)
@@ -63,8 +63,8 @@ func TestExecutorPreservesExternalMCPWithoutRequiringInternalProductMCP(t *testi
 			if err := json.Unmarshal(options.MCPServers, &config); err != nil {
 				t.Fatal(err)
 			}
-			server := config.Servers["linger_teamhub_collaboration"]
-			optional := config.Servers["linger_lev8"]
+			server := config.Servers["talos_teamhub_collaboration"]
+			optional := config.Servers["talos_lev8"]
 			if server["required"] != nil || server["startup_timeout_sec"] != nil || optional["required"] != nil || optional["startup_timeout_sec"] != nil {
 				t.Fatal("Executor added an implicit internal MCP startup requirement")
 			}

@@ -1,7 +1,7 @@
 import {
   NVIDIA_DRIVER_DOWNLOAD_URL,
   NVIDIA_DRIVER_GUIDE_URL,
-} from "@linger/service-kit/nvidia-driver";
+} from "@talos/service-kit/nvidia-driver";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -75,7 +75,7 @@ function makeView(
 
 describe("UpdateDriverDialog", () => {
   afterEach(() => {
-    delete (window as { lingerDesktop?: unknown }).lingerDesktop;
+    delete (window as { talosDesktop?: unknown }).talosDesktop;
     vi.restoreAllMocks();
   });
 
@@ -83,7 +83,7 @@ describe("UpdateDriverDialog", () => {
     const openNvidiaApp = vi.fn(async () => ({ ok: true as const }));
     const openOfficialDownload = vi.fn(async () => ({ ok: true as const }));
     const openGuide = vi.fn(async () => ({ ok: true as const }));
-    (window as { lingerDesktop?: unknown }).lingerDesktop = {
+    (window as { talosDesktop?: unknown }).talosDesktop = {
       driverUpdate: {
         getCapabilities: vi.fn(async () => ({
           directInstallSupported: false,
@@ -134,7 +134,7 @@ describe("UpdateDriverDialog", () => {
     fireEvent.click(nvidiaAppButton);
     await waitFor(() => expect(openNvidiaApp).toHaveBeenCalledOnce());
 
-    // Returning focus to Linger triggers an automatic driver recheck.
+    // Returning focus to Talos triggers an automatic driver recheck.
     window.dispatchEvent(new Event("focus"));
     expect(onRecheck).toHaveBeenCalledOnce();
 
@@ -241,7 +241,7 @@ describe("UpdateDriverDialog", () => {
     let listener: ((state: unknown) => void) | undefined;
     const startInstall = vi.fn(async () => ({ ok: true as const }));
     const openNvidiaApp = vi.fn(async () => ({ ok: true as const }));
-    (window as { lingerDesktop?: unknown }).lingerDesktop = {
+    (window as { talosDesktop?: unknown }).talosDesktop = {
       driverUpdate: {
         clearInstallState: vi.fn(async () => {}),
         getCapabilities: vi.fn(async () => ({
@@ -326,7 +326,7 @@ describe("UpdateDriverDialog", () => {
     });
     expect(
       await screen.findByText(
-        "NVIDIA driver 621.24 installed. Restart Windows to finish — when you reopen Linger, your GPU will be rechecked automatically.",
+        "NVIDIA driver 621.24 installed. Restart Windows to finish — when you reopen Talos, your GPU will be rechecked automatically.",
       ),
     ).toBeVisible();
 

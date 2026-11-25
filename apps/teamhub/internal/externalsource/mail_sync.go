@@ -12,9 +12,9 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
 
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/composio"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/jobs"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/store"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/composio"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/jobs"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
 // MailSyncArgs reads into the Wiki the mail a Connection received since its
