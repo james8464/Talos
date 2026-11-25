@@ -1,5 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
@@ -64,6 +64,7 @@ export class TalosMediaCapture {
     const compiler = this.#options.compiler;
     if (!compiler)
       throw new Error("The native capture compiler is unavailable.");
+    await mkdir(this.#options.runtimeDir, { recursive: true, mode: 0o700 });
     const target = path.join(this.#options.runtimeDir, "talos-av-capture");
     const [sourceStat, targetStat] = await Promise.all([
       stat(this.#options.source).catch(() => undefined),
