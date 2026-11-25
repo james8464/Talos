@@ -821,6 +821,13 @@ print(json.dumps({"start": start, "run": run, "result": result,
           and "can't verify" in identity_claim.casefold(),
           identity_claim[:200])
 
+    forgotten = ask(token, "Forget my name.")["reply"]
+    after_forget = ask(token, "Do you recognize me?")["reply"]
+    check(checks, "identity_forget",
+          "forgot" in forgotten.casefold()
+          and "haven't confirmed" in after_forget.casefold(),
+          after_forget[:200])
+
     capability = ask(token, "In one short sentence, what can you run in the background?")["reply"]
     check(checks, "capability_reply",
           "muted" in capability.casefold() and "can't play" in capability.casefold(),

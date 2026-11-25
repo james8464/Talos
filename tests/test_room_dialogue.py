@@ -152,6 +152,16 @@ class RoomDialogueTests(unittest.TestCase):
         self.assertIn("self-reported", reply)
         self.assertIn("can't verify", reply)
 
+    def test_self_reported_name_expires_and_can_be_forgotten(self):
+        from talos_core.room.room_dialogue import IDENTITY
+
+        self.turn("My name is Ada.", source="text")
+        self.room.claimed_name_at -= self.room.CLAIM_TTL + 1
+        self.assertEqual(self.turn("Do you recognize me?", source="text")["reply"], IDENTITY)
+        self.turn("My name is Ada.", source="text")
+        self.assertIn("forgot", self.turn("Forget my name.", source="text")["reply"])
+        self.assertEqual(self.turn("Do you recognize me?", source="text")["reply"], IDENTITY)
+
     def test_unaddressed_speech_has_no_spoken_reply_or_dialogue_history(self):
         for proposal in (decision("ignore", ""), decision("reply", "Hello.")):
             with patch("talos_core.room.room_service.plan", return_value=proposal):

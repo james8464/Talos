@@ -168,8 +168,10 @@ class Room:
         self.voice_window: list[dict[str, str]] = []
         self.voice_window_updated = 0.0
         # Self-reported name from an introduction in this process. This is not
-        # biometric identity and is never used to confirm who is speaking.
+        # biometric identity, is never used to confirm who is speaking, and
+        # expires so a stale claim is not attributed to a later speaker.
         self.claimed_name: str | None = None
+        self.claimed_name_at = 0.0
         self.facing_offer = None
         self.facing_exchange = None
         self.last_voice_reminder = None
@@ -1097,6 +1099,13 @@ class Room:
             return decision("reply", f"{app}: {description[:560]}")
         return None
 
+    CLAIM_TTL = 1800
+
+    def _claimed_name(self) -> str | None:
+        if self.claimed_name and monotonic() - self.claimed_name_at < self.CLAIM_TTL:
+            return self.claimed_name
+        return None
+
     def facing_turn(self, db, body, stream=None):
         self.review_after = monotonic() + 10
         if body.get("occupied") is not None and type(body["occupied"]) is not bool:
@@ -1157,9 +1166,10 @@ class Room:
             if profile and words in ("who am i", "do you recognize me", "do you remember me"):
                 name = db.execute("SELECT name FROM visitors WHERE id=?", (profile,)).fetchone()[0]
                 reply = f"You confirmed your saved profile as {name}."
-            elif self.claimed_name and words in ("who am i", "do you recognize me", "do you recognize me?",
-                                                 "can you tell who i am", "do you know who is speaking"):
-                reply = (f"You introduced yourself as {self.claimed_name}. That is self-reported; "
+            elif (claimed := self._claimed_name()) and words in (
+                    "who am i", "do you recognize me", "do you recognize me?",
+                    "can you tell who i am", "do you know who is speaking"):
+                reply = (f"You introduced yourself as {claimed}. That is self-reported; "
                          "I can't verify identity from the camera.")
             elif profile and re.fullmatch(r"what (?:do you (?:remember|know) about me|did i tell you(?: last time)?)", words):
                 recalled = visitor_memory.recall(db, profile)
@@ -1172,8 +1182,14 @@ class Room:
                 reply = f"Got it. You meant {correction}."
             elif history and (recollection := corrected_recollection(text, history)):
                 reply = recollection
+            elif re.fullmatch(r"(?:forget|clear) (?:my name|what i told you about my name)[?.! ]*",
+                              text.strip(), re.I):
+                had = self.claimed_name is not None
+                self.claimed_name, self.claimed_name_at = None, 0.0
+                reply = ("I forgot the name you introduced. I still can't verify identity."
+                         if had else "I don't have a self-reported name to forget.")
             elif name := visitor_memory.introduced_name(text):
-                self.claimed_name = name
+                self.claimed_name, self.claimed_name_at = name, monotonic()
                 reply = f"Nice to meet you, {name}."
             elif room_vision.visual_question(text):
                 reply = room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent)
@@ -1276,14 +1292,14 @@ class Room:
                 proposal = decision("ignore", "")
             elif room_vision.visual_question(text):
                 proposal = decision("reply", room_vision.answer(text, body.get("camera_jpeg"), body.get("frame_people"), state=self.db_path.parent))
-            elif self.claimed_name and re.fullmatch(
+            elif (claimed := self._claimed_name()) and re.fullmatch(
                     r"(?:who am i|do you (?:recognize|remember) me|can you tell who i am|"
                     r"do you know who is speaking)[?.! ]*", text.strip(), re.I):
                 proposal = decision("reply", (
-                    f"You introduced yourself as {self.claimed_name}. That is self-reported; "
+                    f"You introduced yourself as {claimed}. That is self-reported; "
                     "I can't verify identity from the camera."))
             elif (name := visitor_memory.introduced_name(text)):
-                self.claimed_name = name
+                self.claimed_name, self.claimed_name_at = name, monotonic()
                 proposal = decision("reply", f"Nice to meet you, {name}.")
             elif quick:
                 proposal = decision("reply", quick)
@@ -1651,6 +1667,13 @@ class Room:
                 reason = ("speaker is not the owner" if other else
                           "multiple people in view" if crowd else "speaker is facing away")
                 return {"reply": "", "action": "ignored", "attention": reason}
+        if not voice and re.fullmatch(
+                r"(?:forget|clear) (?:my name|what i told you about my name)[?.! ]*",
+                text.strip(), re.I):
+            had = self.claimed_name is not None
+            self.claimed_name, self.claimed_name_at = None, 0.0
+            return {"reply": ("I forgot the name you introduced. I still can't verify identity."
+                              if had else "I don't have a self-reported name to forget.")}
         audio_check = voice_recovery.handle(db, text, apply=self.apply)
         if audio_check is not None:
             if audio_check.get("voice_recovery") == "test_output":

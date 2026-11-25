@@ -84,7 +84,8 @@ the consented path.
 ## Self-reported identity
 
 A name introduced in conversation is remembered for the running room process
-only. Asking "do you recognize me?" then answers with that self-reported name
-and the caveat that camera identity is not verified. A stored owner profile
-still answers "who am I?" with the saved name; nothing here is biometric
-identification, and the claim is lost on restart.
+only, expires after 30 minutes, and can be cleared with "forget my name".
+Asking "do you recognize me?" then answers with that self-reported name and the
+caveat that camera identity is not verified. A stored owner profile still
+answers "who am I?" with the saved name; nothing here is biometric
+identification, and the claim is lost on restart or expiry.
