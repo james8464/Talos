@@ -16,12 +16,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
-	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
 
 // testViewContent is a fake Agent Service content route. Manifests answer at

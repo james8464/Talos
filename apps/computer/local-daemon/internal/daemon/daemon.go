@@ -9,6 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
 	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
@@ -16,10 +20,6 @@ import (
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
 )
 
 // SelfUpdater receives the Gateway signals that drive a Computer self-upgrade.

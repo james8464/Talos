@@ -16,8 +16,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/computerconfig"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 )
 
 // Windows discovery can use 30 seconds for readiness and another 30 for the

@@ -12,10 +12,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 )
 
 type ProviderInstallation struct {
@@ -439,11 +439,11 @@ type semanticRequest struct {
 }
 
 type semanticSession struct {
-	ThreadID           string  `json:"thread_id,omitempty"`
-	ThreadIDCamel      *string `json:"threadId,omitempty"`
-	SessionID          string  `json:"session_id,omitempty"`
-	SessionIDCamel     string  `json:"sessionId,omitempty"`
-	Provider           string  `json:"provider,omitempty"`
+	ThreadID          string  `json:"thread_id,omitempty"`
+	ThreadIDCamel     *string `json:"threadId,omitempty"`
+	SessionID         string  `json:"session_id,omitempty"`
+	SessionIDCamel    string  `json:"sessionId,omitempty"`
+	Provider          string  `json:"provider,omitempty"`
 	TalosMaterialized *bool   `json:"talosMaterialized,omitempty"`
 }
 

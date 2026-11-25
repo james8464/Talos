@@ -50,12 +50,12 @@ type desktopPermissionRequest struct {
 
 // desktopLine is any line the Desktop app writes to the Daemon's stdin.
 type desktopLine struct {
-	Type        string                        `json:"type"`
-	Features    []string                      `json:"features"`
-	ID          string                        `json:"id"`
-	OK          bool                          `json:"ok"`
+	Type        string                       `json:"type"`
+	Features    []string                     `json:"features"`
+	ID          string                       `json:"id"`
+	OK          bool                         `json:"ok"`
 	Permissions []localtools.TalosPermission `json:"permissions"`
-	Error       string                        `json:"error"`
+	Error       string                       `json:"error"`
 }
 
 // desktopChannel is the stdio channel to the Desktop app that runs this

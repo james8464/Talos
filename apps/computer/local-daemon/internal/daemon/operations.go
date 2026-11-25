@@ -9,11 +9,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
 
 func (d *Daemon) awaitOperation(ctx context.Context, command protocol.Command, spec provider.OperationSpec, resultCh <-chan provider.Result) {

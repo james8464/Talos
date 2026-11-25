@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 )
 
 // fakeClient stands in for the Daemon control API with the fields the TS

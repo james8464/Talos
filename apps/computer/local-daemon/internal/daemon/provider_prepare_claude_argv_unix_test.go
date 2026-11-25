@@ -12,12 +12,12 @@ import (
 	"strings"
 	"testing"
 
-	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/permission"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 )
 
 // claudeArgvScript records each spawn's argv, one argument per line, then

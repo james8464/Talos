@@ -13,7 +13,7 @@ const (
 	PermissionScreenRecording = "screen_recording"
 	PermissionAccessibility   = "accessibility"
 
-	PermissionSubjectTalos      = "talos"
+	PermissionSubjectTalos       = "talos"
 	PermissionSubjectComputerUse = "computer_use"
 
 	PermissionActionStatus       = "status"
@@ -119,7 +119,7 @@ type ComputerPermissionOptions struct {
 	Platform string
 	// Desktop is set when the Desktop app launched this Daemon.
 	Desktop bool
-	Talos  TalosBridge
+	Talos   TalosBridge
 	Cua     CuaPermissionChecker
 	// Open opens a URL with /usr/bin/open; nil uses openURL.
 	Open func(ctx context.Context, url string) error

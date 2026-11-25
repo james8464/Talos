@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -120,8 +121,11 @@ func TestDispatcherRunsTheOnlyEnvironmentAndListsSeveral(t *testing.T) {
 		t.Fatal(err)
 	}
 	var dispatched dispatchError
+	want := "Talos Computer is installed for 2 environments on this computer. Run the command of the environment you mean:" +
+		"\n  " + fmt.Sprintf("%-34s %s", "talos-computer-ci", "https://ci-talos.example.test") +
+		"\n  " + fmt.Sprintf("%-34s ", "talos-computer-staging")
 	if _, err := resolveTarget(dispatcher); !errors.As(err, &dispatched) || dispatched.code != 2 ||
-		dispatched.message != "Talos Computer is installed for 2 environments on this computer. Run the command of the environment you mean:\n  talos-computer-ci                 https://ci-talos.example.test\n  talos-computer-staging            " {
+		dispatched.message != want {
 		t.Fatalf("several environments: %#v", err)
 	}
 

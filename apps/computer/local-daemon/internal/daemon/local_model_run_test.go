@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/localmodels"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
 
 const localRunModel = "localmodels-library/localmodels-lib-qwen3-4b-q4-k-m/Qwen3-4B-Q4_K_M"

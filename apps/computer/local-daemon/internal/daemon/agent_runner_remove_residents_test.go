@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
 
 const parkedClaudeScript = `#!/bin/sh

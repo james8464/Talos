@@ -6,9 +6,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/localtools"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 

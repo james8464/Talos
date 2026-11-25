@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
-	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
 
 // dispatchStream is a Gateway stream fed by the test. Sent events are recorded

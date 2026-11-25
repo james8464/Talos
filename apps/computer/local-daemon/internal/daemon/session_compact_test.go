@@ -9,10 +9,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 )
 
 // fakeParkedSession holds a compaction until release or cancellation. A

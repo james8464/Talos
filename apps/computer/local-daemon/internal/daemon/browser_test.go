@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/localtools"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/localtools"
 )
 
 type browserEventStream struct{ events []protocol.Event }

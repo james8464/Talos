@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 )
 
 // This opt-in probe never starts a desktop session, captures the screen, or

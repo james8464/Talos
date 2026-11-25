@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 )
 
 type liveBrowserSession struct {

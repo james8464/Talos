@@ -17,11 +17,11 @@ import (
 
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/computerconfig"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/daemon"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 type managedFixturePlane struct{ ready chan struct{} }

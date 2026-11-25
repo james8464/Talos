@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
 	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 // skillPackageClient fetches Skill packages from TeamHub. A package is at most

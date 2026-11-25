@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/winprocess"
 	localprocess "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 )
 
 // platformRequest is one request of the Windows installer helper. Node cannot

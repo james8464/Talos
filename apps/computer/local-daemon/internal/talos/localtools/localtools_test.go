@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 )
 
 // shortenForTest lowers a package duration for one test and restores it in

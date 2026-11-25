@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 )
 
 // TestMacDesktopLive drives the signed-in Mac through the bundled Cua app and

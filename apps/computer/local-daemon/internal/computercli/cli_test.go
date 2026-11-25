@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 )
 
 func contains(t *testing.T, output, want string) {

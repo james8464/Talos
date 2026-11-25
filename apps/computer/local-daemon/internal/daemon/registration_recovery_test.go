@@ -14,11 +14,11 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
 	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func TestReconnectHelloCarriesTheProcessRegistrationsAndRunners(t *testing.T) {

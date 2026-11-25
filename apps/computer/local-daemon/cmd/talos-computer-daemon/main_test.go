@@ -19,10 +19,10 @@ import (
 	"time"
 
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/computerconfig"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
-	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/localmodels"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/assignment"
+	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
 )
 
 // Extend the transient protocol failure regression through the real discovery
@@ -173,7 +173,7 @@ func TestPausedRunnerResultUsesLifecycleState(t *testing.T) {
 func TestRuntimeProviderEnvironmentUsesConfiguredCodexAuthHome(t *testing.T) {
 	authHome := filepath.Join(t.TempDir(), ".codex")
 	got := runtimeProviderEnvironment(map[string]string{
-		"CODEX_HOME":           "/ambient/.codex",
+		"CODEX_HOME":          "/ambient/.codex",
 		"TALOS_GATEWAY_TOKEN": "gateway-token",
 	}, "gateway-token", filepath.Join(authHome, "auth.json"))
 	if got["CODEX_HOME"] != authHome {

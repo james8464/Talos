@@ -7,10 +7,10 @@ import (
 	"io"
 	"testing"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func TestOperationStartPrepareWaitDoesNotBlockGatewayCancel(t *testing.T) {

@@ -8,10 +8,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/native"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider/redact"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 	wire "github.com/simplexai-labs/talos/contracts-go/runnergateway"
 )
 

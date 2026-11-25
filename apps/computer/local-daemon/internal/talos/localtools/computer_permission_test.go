@@ -54,7 +54,7 @@ func (f *fakeCuaPermissions) RestartCua() error {
 }
 
 type permissionFixture struct {
-	talos  *fakeTalosBridge
+	talos   *fakeTalosBridge
 	cua     *fakeCuaPermissions
 	opened  []string
 	service *ComputerPermissions

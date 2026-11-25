@@ -6,9 +6,9 @@ import (
 	"errors"
 	"log/slog"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/clicredential"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 // agentCLICredentialPayload is the wire payload. Its token must never reach a

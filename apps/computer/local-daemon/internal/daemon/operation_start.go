@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 	taloscontext "github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/context"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
 )
 
 func (d *Daemon) handleOperationStart(ctx context.Context, stream transport.Stream, command protocol.Command) error {

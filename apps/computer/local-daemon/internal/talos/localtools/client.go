@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/mcpproxy"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/process"
 )
 
 const maxMCPBytes = 24 * 1024 * 1024

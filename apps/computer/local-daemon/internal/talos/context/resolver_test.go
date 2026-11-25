@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/protocol"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/registration"
 )
 
 func TestAuthorizedClaudeSkillsUseOnlyPublishedSkillRoots(t *testing.T) {

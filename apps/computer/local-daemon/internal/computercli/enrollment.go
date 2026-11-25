@@ -274,6 +274,7 @@ type serverToken struct {
 	ExpiresAt         string `json:"expires_at"`
 }
 
+//nolint:gosec // Fixed protocol prefix; the credential follows it.
 const serverTokenPrefix = "talos-connect-v1."
 
 var (

@@ -4,14 +4,14 @@ import "testing"
 
 func TestRuntimeEnvironmentRejectsControlPlaneCredentials(t *testing.T) {
 	source := map[string]string{
-		"PATH":                            "/usr/bin",
-		"ANTHROPIC_API_KEY":               "provider-key",
-		"CODEX_AGENT_TIMEOUT":             "30m",
+		"PATH":                           "/usr/bin",
+		"ANTHROPIC_API_KEY":              "provider-key",
+		"CODEX_AGENT_TIMEOUT":            "30m",
 		"TALOS_SERVER_URL":               "https://talos.example",
 		"talos_token":                    "talos-token",
 		"TALOS_LLM_API_KEY":              "talos-llm-key",
 		"TALOS_GATEWAY_TOKEN":            "talos-token",
-		"UNRELATED_GATEWAY_TOKEN_COPY":    "talos-token",
+		"UNRELATED_GATEWAY_TOKEN_COPY":   "talos-token",
 		"TALOS_COMPUTER_SERVICE_COMMAND": `["/bin/talos-computer","--config","/c.json"]`,
 	}
 	got := RuntimeEnvironment(source, "talos-token")

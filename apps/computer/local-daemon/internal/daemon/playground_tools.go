@@ -26,14 +26,14 @@ func (f *playgroundFailure) Error() string { return f.code + ": " + f.detail }
 
 type playgroundRequest struct {
 	Folder taloscontext.PlaygroundFolder `json:"folder"`
-	Path   string                         `json:"path"`
-	Offset int64                          `json:"offset"`
-	Limit  int64                          `json:"limit"`
+	Path   string                        `json:"path"`
+	Offset int64                         `json:"offset"`
+	Limit  int64                         `json:"limit"`
 }
 
 type playgroundCardFile struct {
 	Folder taloscontext.PlaygroundFolder `json:"folder"`
-	Path   string                         `json:"path"`
+	Path   string                        `json:"path"`
 }
 
 type playgroundImage struct {
