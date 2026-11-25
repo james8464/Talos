@@ -742,6 +742,7 @@ export interface components {
     ModelCallKind:
       | "approval"
       | "voice_ask"
+      | "coding"
       | "meeting_notes"
       | "memory"
       | "agent_memory"

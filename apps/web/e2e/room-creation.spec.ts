@@ -84,6 +84,25 @@ test("creates the Room before optional membership and persists the second step",
       }),
     ).toBeVisible();
     await expect(members).toHaveCount(0);
+    // The Room answers deterministic questions as its Agent, in a real browser
+    // session, before any model runs.
+    const timeline = alice.page.getByLabel("Room timeline", { exact: true });
+    await alice.page
+      .getByLabel("Message Room", { exact: true })
+      .fill("My name is Ada.");
+    await alice.page.getByLabel("Message Room", { exact: true }).press("Enter");
+    await expect(
+      timeline.getByText("Nice to meet you, Ada.", { exact: true }),
+    ).toBeVisible();
+    await alice.page
+      .getByLabel("Message Room", { exact: true })
+      .fill("Can you see me?");
+    await alice.page.getByLabel("Message Room", { exact: true }).press("Enter");
+    await expect(
+      timeline.getByText("I don't have a current camera reading.", {
+        exact: true,
+      }),
+    ).toBeVisible();
     await alice.page.screenshot({
       path: testInfo.outputPath("created-room.png"),
     });

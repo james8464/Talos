@@ -6,6 +6,7 @@ import { serviceCredential, type JsonLogger } from "@talos/service-kit/node";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { HttpHost, HttpRoute } from "../src/http-host.js";
+import type { ModelCall } from "../src/runtime-model-call.js";
 import { startCodingService } from "../src/coding/service.js";
 
 const environment = {
@@ -28,7 +29,7 @@ async function workspace(): Promise<string> {
   return root;
 }
 
-async function fixture(root: string) {
+async function fixture(root: string, modelCall?: () => ModelCall) {
   let route: HttpRoute | undefined;
   const service = await startCodingService({
     http: {
@@ -44,6 +45,7 @@ async function fixture(root: string) {
       file: "sh",
       args: ["-c", 'test "$(cat src/value.txt)" = "two"'],
     },
+    ...(modelCall ? { modelCall } : {}),
   });
   return { route: route!, service };
 }
@@ -108,6 +110,82 @@ describe("coding route", () => {
       send({ kind: "job", target: "src/missing.txt", request: "read" }),
     );
     expect((await missing.json()).status).toBe("declined");
+  });
+
+  it("drafts a patch with the model seam and verifies it in a sandbox", async () => {
+    const root = await workspace();
+    const calls: Record<string, unknown>[] = [];
+    const model = {
+      call: async (request: Record<string, unknown>) => {
+        calls.push(request);
+        const output = {
+          before: "one\n",
+          after: "two\n",
+          regression_path: "tests/test_value.txt",
+          regression: "expect two\n",
+        };
+        const reason = await (
+          request.validate as (
+            value: Record<string, unknown>,
+          ) => Promise<string | undefined>
+        )(output);
+        if (reason) throw new Error(reason);
+        return { output, model: "fake-model" };
+      },
+    } as unknown as ModelCall;
+    const { route } = await fixture(root, () => model);
+    const response = await route.fetch(
+      send({
+        kind: "job",
+        job_id: "codingjob_1",
+        tenant_id: "tenant_acme",
+        requester_actor_id: "actor_human",
+        target: "src/value.txt",
+        request: "change one to two",
+      }),
+    );
+    const body = await response.json();
+    expect(body.status).toBe("verified");
+    expect(body.model).toBe("fake-model");
+    const first = calls[0]!;
+    expect(first.kind).toBe("coding");
+    expect(first.key).toBe("coding:codingjob_1");
+    expect(first.owner).toEqual({
+      tenantId: "tenant_acme",
+      ownerActorId: "actor_human",
+    });
+    expect(await readFile(path.join(root, "src", "value.txt"), "utf8")).toBe(
+      "one\n",
+    );
+  });
+
+  it("declines a draft whose before text does not match the file", async () => {
+    const root = await workspace();
+    const model = {
+      call: async (request: Record<string, unknown>) => {
+        const output = {
+          before: "missing\n",
+          after: "two\n",
+          regression_path: "tests/test_value.txt",
+          regression: "expect two\n",
+        };
+        const reason = await (
+          request.validate as (
+            value: Record<string, unknown>,
+          ) => Promise<string | undefined>
+        )(output);
+        if (reason) throw new Error(reason);
+        return { output, model: "fake-model" };
+      },
+    } as unknown as ModelCall;
+    const { route } = await fixture(root, () => model);
+    const response = await route.fetch(
+      send({ kind: "job", target: "src/value.txt", request: "change one" }),
+    );
+    const body = await response.json();
+    expect(body.status).toBe("declined");
+    expect(body.message).toContain("could not draft a patch");
+    expect(body.message).toContain("exactly once");
   });
 
   it("requires the service token", async () => {

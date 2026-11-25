@@ -21,6 +21,8 @@ import (
 type Outcome struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
+	// Model names the model that drafted the verified patch, when one did.
+	Model string `json:"model,omitempty"`
 }
 
 // Executor runs one accepted job on the Computer that owns the workspace.
@@ -131,6 +133,9 @@ func (w *Worker) Run(ctx context.Context, interval time.Duration) {
 func (w *Worker) report(job store.RoomCodingJob, outcome Outcome) (string, string) {
 	switch outcome.Status {
 	case "verified":
+		if outcome.Model != "" {
+			return "done", fmt.Sprintf("Coding job %s verified in a sandbox with %s: %s. No change was applied.", job.ID, outcome.Model, outcome.Message)
+		}
 		return "done", fmt.Sprintf("Coding job %s verified in a sandbox: %s. No change was applied.", job.ID, outcome.Message)
 	case "planned":
 		return "done", fmt.Sprintf("Coding job %s planned; no patch was applied: %s", job.ID, outcome.Message)
@@ -162,6 +167,7 @@ func NewHTTPExecutor(baseURL, token string) *HTTPExecutor {
 func (e *HTTPExecutor) Execute(ctx context.Context, job store.RoomCodingJob) (Outcome, error) {
 	body, err := json.Marshal(map[string]any{
 		"kind": job.Kind, "target": job.TargetPath, "request": job.Request,
+		"job_id": job.ID, "tenant_id": job.TenantID, "requester_actor_id": job.RequesterActorID,
 	})
 	if err != nil {
 		return Outcome{}, err

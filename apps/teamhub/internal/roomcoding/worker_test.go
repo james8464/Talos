@@ -50,12 +50,14 @@ func TestHTTPExecutorPostsTheJobAndReadsTheOutcome(t *testing.T) {
 
 	executor := NewHTTPExecutor(server.URL, "token")
 	outcome, err := executor.Execute(context.Background(), store.RoomCodingJob{
+		ID: "codingjob_1", TenantID: "tenant_acme", RequesterActorID: "actor_human",
 		Kind: "job", TargetPath: "internal/app/app.go", Request: "add a comment",
 	})
 	if err != nil || outcome.Status != "verified" {
 		t.Fatalf("outcome=%+v err=%v", outcome, err)
 	}
-	if body["kind"] != "job" || body["target"] != "internal/app/app.go" || body["request"] != "add a comment" {
+	if body["kind"] != "job" || body["target"] != "internal/app/app.go" || body["request"] != "add a comment" ||
+		body["job_id"] != "codingjob_1" || body["tenant_id"] != "tenant_acme" || body["requester_actor_id"] != "actor_human" {
 		t.Fatalf("body=%+v", body)
 	}
 }

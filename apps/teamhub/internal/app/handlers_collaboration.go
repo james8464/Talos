@@ -16,6 +16,7 @@ import (
 	idgen "github.com/simplexai-labs/talos/apps/teamhub/internal/ids"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomsenses"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/voicelive"
 	httpapi "github.com/simplexai-labs/talos/contracts-go/teamhubpublic"
@@ -253,17 +254,21 @@ func (a *App) createMessage(c *gin.Context) {
 		return
 	}
 	a.recordMessageCommitTiming(c)
-	a.replyToIdentityMessage(c, c.Param("roomId"), content.PlainText(), key)
+	a.replyToRoomCommand(c, c.Param("roomId"), content.PlainText(), key)
 	writeResultResponse(c, result)
 }
 
-// replyToIdentityMessage writes one Agent-authored reply for a deterministic
-// identity command. A failure never changes the accepted Human message.
-func (a *App) replyToIdentityMessage(c *gin.Context, roomID, text, key string) {
+// replyToRoomCommand writes one Agent-authored reply for a deterministic
+// identity, sensing or coding command. A failure never changes the accepted
+// Human message.
+func (a *App) replyToRoomCommand(c *gin.Context, roomID, text, key string) {
 	if a.roomIdentity == nil || strings.TrimSpace(text) == "" || key == "" {
 		return
 	}
 	reply := a.roomIdentity.Answer(roomID, text, time.Now())
+	if reply == "" {
+		reply = roomsenses.Answer(text)
+	}
 	if reply == "" {
 		reply = a.roomCodingReply(c, roomID, text)
 	}
@@ -273,14 +278,14 @@ func (a *App) replyToIdentityMessage(c *gin.Context, roomID, text, key string) {
 	agents, err := a.queries.ListRoomAgentActors(c.Request.Context(), roomID)
 	if err != nil || len(agents) == 0 {
 		if a.logger != nil {
-			a.logger.Warn("identity_reply.no_agent", "room_id", roomID, "error", err)
+			a.logger.Warn("room_command.no_agent", "room_id", roomID, "error", err)
 		}
 		return
 	}
 	if _, err := a.collaboration.CreateAgentMessage(
 		c.Request.Context(), roomID, agents[0].ID, reply, "identity:"+key,
 	); err != nil && a.logger != nil {
-		a.logger.Warn("identity_reply.failed", "room_id", roomID, "error", err)
+		a.logger.Warn("room_command.failed", "room_id", roomID, "error", err)
 	}
 }
 

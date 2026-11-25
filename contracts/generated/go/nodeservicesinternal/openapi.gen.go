@@ -1071,6 +1071,7 @@ func (e ModelCallEffort) Valid() bool {
 const (
 	ModelCallKindAgentMemory  ModelCallKind = "agent_memory"
 	ModelCallKindApproval     ModelCallKind = "approval"
+	ModelCallKindCoding       ModelCallKind = "coding"
 	ModelCallKindInsight      ModelCallKind = "insight"
 	ModelCallKindMeetingNotes ModelCallKind = "meeting_notes"
 	ModelCallKindMemory       ModelCallKind = "memory"
@@ -1085,6 +1086,8 @@ func (e ModelCallKind) Valid() bool {
 	case ModelCallKindAgentMemory:
 		return true
 	case ModelCallKindApproval:
+		return true
+	case ModelCallKindCoding:
 		return true
 	case ModelCallKindInsight:
 		return true

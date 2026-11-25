@@ -1538,6 +1538,7 @@ components:
       enum:
         - approval
         - voice_ask
+        - coding
         - meeting_notes
         - memory
         - agent_memory
@@ -1547,6 +1548,7 @@ components:
       x-enum-varnames:
         - ModelCallKindApproval
         - ModelCallKindVoiceAsk
+        - ModelCallKindCoding
         - ModelCallKindMeetingNotes
         - ModelCallKindMemory
         - ModelCallKindAgentMemory

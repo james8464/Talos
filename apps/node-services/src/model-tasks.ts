@@ -7,6 +7,7 @@
 const modelCallKinds = [
   "approval",
   "voice_ask",
+  "coding",
   "meeting_notes",
   "memory",
   "agent_memory",
@@ -140,6 +141,12 @@ export const modelCallPolicies: Readonly<
     interactive: true,
     attempts: 1,
     timeoutMs: 45_000,
+  },
+  coding: {
+    priority: 20,
+    interactive: false,
+    attempts: 2,
+    timeoutMs: 10 * 60_000,
   },
   meeting_notes: {
     priority: RECORDING_PRIORITY,

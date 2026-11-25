@@ -98,6 +98,7 @@ const roles = {
     (await import("./coding/service.js")).startCodingService({
       http: requireHttp(host),
       logger: host.logger,
+      modelCall: () => host.seams.modelCall,
     }),
   identity: async (host) =>
     (await import("./identity/service.js")).startIdentityService({
