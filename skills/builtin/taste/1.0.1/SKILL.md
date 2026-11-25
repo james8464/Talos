@@ -5,7 +5,7 @@ description: Use when UI looks generic, noisy, or off-brand. Rejects AI-default 
 
 # Taste
 
-Talos should feel like a quiet team tool. Agents are teammates, not spectacle.
+Linger should feel like a quiet team tool. Agents are teammates, not spectacle.
 
 ## Refuse these defaults
 

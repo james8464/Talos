@@ -5,7 +5,7 @@ description: Use when designing, redesigning, or polishing product UI. Covers hi
 
 # Impeccable
 
-Ship production-grade product UI that matches the current Talos surfaces. Do not invent a second visual system.
+Ship production-grade product UI that matches the current Linger surfaces. Do not invent a second visual system.
 
 ## Follow the product
 

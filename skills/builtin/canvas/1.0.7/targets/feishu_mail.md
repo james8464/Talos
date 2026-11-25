@@ -20,7 +20,7 @@ for a canvas email, since the draft and the email are rebuilt from the canvas.
 ## Send
 
 The canvas card in the chat has a Send button. Editing the canvas only saves
-it in Talos; when the user clicks Send, Talos uploads the canvas, its inline
+it in Linger; when the user clicks Send, Linger uploads the canvas, its inline
 images and attachments included, to Feishu Mail and sends it exactly as the
 user sees it, then marks the header `status: sent`.
 
