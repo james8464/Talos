@@ -40,9 +40,12 @@ skills:
         version: 1.0.0
         package_path: builtin/teamhub-files/1.0.0
   - skill_id: simplexai_lev8_search
-    bootstrap_manifest_id: skill_manifest_simplexai_lev8_search_1_0_1
+    bootstrap_manifest_id: skill_manifest_simplexai_lev8_search_1_0_2
     default_agent_types: []
     manifests:
+      - manifest_id: skill_manifest_simplexai_lev8_search_1_0_2
+        version: 1.0.2
+        package_path: builtin/lev8-search/1.0.2
       - manifest_id: skill_manifest_simplexai_lev8_search_1_0_1
         version: 1.0.1
         package_path: builtin/lev8-search/1.0.1
@@ -50,9 +53,12 @@ skills:
         version: 1.0.0
         package_path: builtin/lev8-search/1.0.0
   - skill_id: simplexai_impeccable
-    bootstrap_manifest_id: skill_manifest_simplexai_impeccable_1_0_1
+    bootstrap_manifest_id: skill_manifest_simplexai_impeccable_1_0_2
     default_agent_types: []
     manifests:
+      - manifest_id: skill_manifest_simplexai_impeccable_1_0_2
+        version: 1.0.2
+        package_path: builtin/impeccable/1.0.2
       - manifest_id: skill_manifest_simplexai_impeccable_1_0_1
         version: 1.0.1
         package_path: builtin/impeccable/1.0.1
@@ -67,9 +73,12 @@ skills:
         version: 1.0.0
         package_path: builtin/superpowers/1.0.0
   - skill_id: simplexai_taste
-    bootstrap_manifest_id: skill_manifest_simplexai_taste_1_0_1
+    bootstrap_manifest_id: skill_manifest_simplexai_taste_1_0_2
     default_agent_types: []
     manifests:
+      - manifest_id: skill_manifest_simplexai_taste_1_0_2
+        version: 1.0.2
+        package_path: builtin/taste/1.0.2
       - manifest_id: skill_manifest_simplexai_taste_1_0_1
         version: 1.0.1
         package_path: builtin/taste/1.0.1
@@ -100,11 +109,14 @@ skills:
         version: 1.0.0
         package_path: builtin/proactive-response/1.0.0
   - skill_id: simplexai_canvas
-    bootstrap_manifest_id: skill_manifest_simplexai_canvas_1_0_7
+    bootstrap_manifest_id: skill_manifest_simplexai_canvas_1_0_8
     default_agent_types:
       - anotherme
       - general
     manifests:
+      - manifest_id: skill_manifest_simplexai_canvas_1_0_8
+        version: 1.0.8
+        package_path: builtin/canvas/1.0.8
       - manifest_id: skill_manifest_simplexai_canvas_1_0_7
         version: 1.0.7
         package_path: builtin/canvas/1.0.7
