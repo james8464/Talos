@@ -71,3 +71,5 @@ Status meanings: **ported** (works here and is tested here), **present**
    | Typed Room reminder command | **present** | `reminder in <n><m/h/d>: <task>` creates a one-shot Routine, replies as the Agent, and fires through the worker. |
    | No-progress streak on repeated sandbox failures | **present** | OpenClaw `getNoProgressStreak` port with branch tests; the coding worker stops after two identical failures. |
    | Room Document create, edit, comment and reopen | **present** | Browser e2e covers both journeys and `pnpm talos:live` runs them as `room-document-e2e`. |
+   | Stale Agent one-shot follow-up grace | **present** | Hermes-style two-minute grace retires a late Agent follow-up; Human reminders still fire. |
+   | Typed Room pin and unpin commands | **present** | `pin this room` / `unpin this room` update the requester’s private pin and reply as the Agent. |

@@ -17,6 +17,7 @@ import (
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roompin"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomreminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomsenses"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
@@ -275,6 +276,9 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 		reply = a.roomReminderReply(c, roomID, text)
 	}
 	if reply == "" {
+		reply = a.roomPinReply(c, roomID, text)
+	}
+	if reply == "" {
 		reply = a.roomCodingReply(c, roomID, text)
 	}
 	if reply == "" {
@@ -292,6 +296,25 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 	); err != nil && a.logger != nil {
 		a.logger.Warn("room_command.failed", "room_id", roomID, "error", err)
 	}
+}
+
+// roomPinReply pins or unpins the Room for the requesting Human.
+func (a *App) roomPinReply(c *gin.Context, roomID, text string) string {
+	pinned, ok := roompin.Parse(text)
+	if !ok {
+		return ""
+	}
+	if _, err := a.collaboration.UpdateRoomPin(c.Request.Context(),
+		currentPrincipal(c).Session.AccountID, roomID, pinned); err != nil {
+		if a.logger != nil {
+			a.logger.Warn("room_command.pin_failed", "room_id", roomID, "error", err)
+		}
+		return "I couldn't change this Room's pin."
+	}
+	if pinned {
+		return "Pinned this Room."
+	}
+	return "Unpinned this Room."
 }
 
 // roomReminderReply creates a one-shot Room reminder from the typed command.

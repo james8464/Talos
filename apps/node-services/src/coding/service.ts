@@ -227,6 +227,7 @@ export async function executeCodingJob(
     readonly now?: number;
     readonly verify?: { file: string; args: readonly string[] };
     readonly drafter?: CodingDrafter;
+    readonly localDrafter?: CodingDrafter;
   } = {},
 ): Promise<CodingJobOutcome> {
   const now = options.now ?? Math.floor(Date.now() / 1000);
@@ -265,7 +266,8 @@ export async function executeCodingJob(
       message: "No verify command is configured on this Computer.",
       steps,
     };
-  if (!draft && job.kind === "job" && job.target && options.drafter) {
+  const primaryDrafter = options.drafter ?? options.localDrafter;
+  if (!draft && job.kind === "job" && job.target && primaryDrafter) {
     const source = await readFile(
       workspaceTarget(workspace, job.target),
       "utf8",
@@ -276,20 +278,33 @@ export async function executeCodingJob(
         message: `${job.target} is too large to draft in one patch.`,
         steps,
       };
+    const input = { target: job.target, request: job.request, source };
     try {
-      const drafted = await options.drafter({
-        target: job.target,
-        request: job.request,
-        source,
-      });
+      const drafted = await primaryDrafter(input);
       draft = drafted.draft;
       draftedBy = drafted.model;
     } catch (error) {
-      return {
-        status: "declined",
-        message: `The model could not draft a patch: ${error instanceof Error ? error.message : "unknown error"}`,
-        steps,
-      };
+      const primaryReason =
+        error instanceof Error ? error.message : "unknown error";
+      if (options.drafter && options.localDrafter) {
+        try {
+          const drafted = await options.localDrafter(input);
+          draft = drafted.draft;
+          draftedBy = drafted.model;
+        } catch (fallbackError) {
+          return {
+            status: "declined",
+            message: `The model could not draft a patch: ${primaryReason}; local fallback: ${fallbackError instanceof Error ? fallbackError.message : "unknown error"}`,
+            steps,
+          };
+        }
+      } else {
+        return {
+          status: "declined",
+          message: `The model could not draft a patch: ${primaryReason}`,
+          steps,
+        };
+      }
     }
   }
   if (!draft)
@@ -382,11 +397,13 @@ export async function startCodingService(options: {
                   : `coding:${body.target ?? "request"}`,
               ...(owner ? { owner } : {}),
             })
-          : (options.localDrafter ??
-            ollamaDrafter({
-              baseUrl: env.TALOS_OLLAMA_URL ?? "http://127.0.0.1:11434",
-              model: env.TALOS_CODING_MODEL ?? "qwen3:4b",
-            }));
+          : undefined;
+        const localDrafter =
+          options.localDrafter ??
+          ollamaDrafter({
+            baseUrl: env.TALOS_OLLAMA_URL ?? "http://127.0.0.1:11434",
+            model: env.TALOS_CODING_MODEL ?? "qwen3:4b",
+          });
         return Response.json(
           await executeCodingJob(
             workspace,
@@ -400,7 +417,11 @@ export async function startCodingService(options: {
                 ? { draft: body.draft as PatchDraft }
                 : {}),
             },
-            { ...(verify ? { verify } : {}), drafter },
+            {
+              ...(verify ? { verify } : {}),
+              localDrafter,
+              ...(drafter ? { drafter } : {}),
+            },
           ),
         );
       } catch (error) {

@@ -221,6 +221,42 @@ describe("coding route", () => {
     );
   });
 
+  it("falls back to the local drafter when the Agent model fails", async () => {
+    const root = await workspace();
+    const model = {
+      call: async () => {
+        throw new Error("no Computer is online");
+      },
+    } as unknown as ModelCall;
+    const { route } = await fixture(
+      root,
+      () => model,
+      async () => ({
+        draft: {
+          patches: [
+            { target: "src/value.txt", before: "one\n", after: "two\n" },
+          ],
+          regressionPath: "tests/test_value.txt",
+          regression: "expect two\n",
+        },
+        model: "qwen3:4b",
+      }),
+    );
+    const response = await route.fetch(
+      send({
+        kind: "job",
+        target: "src/value.txt",
+        request: "change one to two",
+      }),
+    );
+    const body = await response.json();
+    expect(body.status).toBe("verified");
+    expect(body.model).toBe("qwen3:4b");
+    expect(await readFile(path.join(root, "src", "value.txt"), "utf8")).toBe(
+      "one\n",
+    );
+  });
+
   it("declines a draft whose before text does not match the file", async () => {
     const root = await workspace();
     const model = {

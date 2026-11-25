@@ -182,3 +182,25 @@ Document Runtime and Web: it renames a Document and edits its body, then adds
 an anchored comment and reopens the Thread in another session. The check is
 `room-document-e2e`; it is skipped when `TALOS_LIVE_DOCUMENT_E2E=0` or no test
 database is configured.
+
+## Missed-run grace
+
+Hermes retires a one-shot past its grace window instead of firing it late.
+Talos applies that to an Agent's one-shot follow-up: more than two minutes
+late, it is retired without a message. Human Reminders keep firing because a
+late reminder is still useful. `TestAgentOneShotPastGraceIsRetired` covers both
+sides and the live harness runs it.
+
+## Local draft fallback
+
+The coding service asks the Agent Runtime first. If that call fails (no Computer,
+offline, or a provider quota), it retries the same request once with the
+on-device `qwen3:4b` drafter, so a Room coding job still completes without a
+provider bill. The response names the model that actually drafted the patch.
+
+## Typed Room pin
+
+`pin this room` and `unpin this room` change the requesting Human's private pin
+and reply as the Agent. The pin is per Human, so another member's list is
+unaffected. `TestRoomPinCommandPinsForTheRequester` covers both commands and the
+stored state; the live harness runs it.

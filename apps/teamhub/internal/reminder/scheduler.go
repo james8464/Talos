@@ -16,6 +16,11 @@ import (
 // Routine permanently.
 const unfinishedOccurrenceTTL = 24 * time.Hour
 
+// agentOneShotGrace retires an Agent's one-shot follow-up that the daemon
+// could not fire on time, so a stale check-in does not arrive hours late.
+// Human reminders keep firing because a late reminder is still useful.
+const agentOneShotGrace = 2 * time.Minute
+
 // fireOccurrence delivers one scheduled occurrence and enqueues the next one in
 // the same transaction. found is false when the occurrence is stale or skipped.
 func (s *Service) fireOccurrence(ctx context.Context, reminderID string, dueAt time.Time) (ScheduleResult, bool, error) {
@@ -42,6 +47,12 @@ func (s *Service) fireOccurrence(ctx context.Context, reminderID string, dueAt t
 	nextRunAtTime, err := advanceOccurrenceTx(ctx, tx, queries, record, dueAt, now)
 	if err != nil {
 		return ScheduleResult{}, false, err
+	}
+	if record.CadenceKind.Valid && record.CadenceKind.String == "once" && now.Sub(dueAt) > agentOneShotGrace {
+		creator, err := queries.GetActor(ctx, store.GetActorParams{ID: record.CreatedByActorID, TenantID: record.TenantID})
+		if err == nil && creator.Kind == "agent" {
+			return ScheduleResult{}, false, tx.Commit(ctx)
+		}
 	}
 	// No active Agent speaks for this copy: skip the occurrence, keep the schedule.
 	if status != "active" {
