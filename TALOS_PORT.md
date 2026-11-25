@@ -282,3 +282,17 @@ The live harness also runs `TestGlobalSearchMessagesPublicHTTP`
 (`room-search-journey`: visibility, pagination and case-insensitive search) and
 `TestPrivateAgentVisibilityAndDirectRoomLifecycle` (`room-direct-journey`:
 Direct Room lifecycle and Agent visibility).
+
+### 8B retry
+
+`qwen3:8b-16k` also passes the direct shell-tool check, but the Room run still
+ended `reply_not_sent`:
+
+```text
+model=qwen3:8b-16k sequence=1 output=327
+model=qwen3:8b-16k sequence=2 output=366
+failedMessageWrites=0 deliveredMessageWrites=0 finalResponseLength=98
+```
+
+Both 4B and 8B write text instead of running `teamhub message send`, so a
+larger model alone does not satisfy the reply contract.
