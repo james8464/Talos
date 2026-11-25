@@ -40,7 +40,7 @@ type MessageContent struct {
 
 // NormalizeMessageCreateRequest validates a Human Message request against the Message contract.
 // PlainText is the normalized text a deterministic Room command reads.
-func (c MessageContent) PlainText() string { return c.rawMessage }
+func (content MessageContent) PlainText() string { return content.rawMessage }
 
 func NormalizeMessageCreateRequest(request httpapi.MessageCreateRequest) (MessageContent, error) {
 	if request.MessageKind != nil && *request.MessageKind != httpapi.Conversation {
