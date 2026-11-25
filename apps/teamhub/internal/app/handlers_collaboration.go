@@ -256,10 +256,13 @@ func (a *App) createMessage(c *gin.Context) {
 // replyToIdentityMessage writes one Agent-authored reply for a deterministic
 // identity command. A failure never changes the accepted Human message.
 func (a *App) replyToIdentityMessage(c *gin.Context, roomID, text, key string) {
-	if a.roomIdentity == nil || strings.TrimSpace(text) == "" || key == "" {
+	if (a.roomIdentity == nil && a.roomCoding == nil) || strings.TrimSpace(text) == "" || key == "" {
 		return
 	}
 	reply := a.roomIdentity.Answer(roomID, text, time.Now())
+	if reply == "" && a.roomCoding != nil {
+		reply = a.roomCoding.Handle(roomID, text)
+	}
 	if reply == "" {
 		return
 	}

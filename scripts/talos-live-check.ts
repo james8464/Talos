@@ -186,6 +186,33 @@ async function main(): Promise<number> {
     await rm(captureDir, { recursive: true, force: true });
   }
 
+  if (process.env.TEST_DATABASE_URL && process.env.TEAMHUB_TEST_RUN_TOKEN) {
+    try {
+      await exec(
+        process.env.GO_BIN ?? "go",
+        [
+          "test",
+          "./tests/integration",
+          "-run",
+          "TestIdentityTextWritesAgentReply|TestCodingCommandsWriteAgentReplies",
+          "-count=1",
+        ],
+        {
+          cwd: path.join(ROOT, "apps/teamhub"),
+          env: process.env,
+          timeout: 300_000,
+        },
+      );
+      check(
+        "room-commands",
+        true,
+        "Postgres-backed Room identity and coding replies",
+      );
+    } catch (error) {
+      check("room-commands", false, (error as Error).message);
+    }
+  }
+
   check(
     "service-stopped",
     await noProcess("NODE_SERVICES_ROLES=identity,perception"),

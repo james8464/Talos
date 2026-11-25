@@ -60,6 +60,7 @@ import (
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/realtime"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomdocument"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomidentity"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
@@ -162,6 +163,7 @@ type App struct {
 	documents                      *document.Service
 	collaboration                  *collaboration.Service
 	roomIdentity                   *roomidentity.Claims
+	roomCoding                     *roomcoding.Queue
 	sessions                       *account.Sessions
 	agents                         *agentregistry.Service
 	agentMessages                  *agentmessages.Service
@@ -516,7 +518,7 @@ func newApp(cfg config.Config, deps Deps, pool *pgxpool.Pool, signingKey []byte,
 	}
 	workerContext, stopWorkers := context.WithCancel(context.Background())
 	return &App{
-		cfg: cfg, pool: pool, queries: store.New(pool), logger: slog.Default(), roomIdentity: roomidentity.New(),
+		cfg: cfg, pool: pool, queries: store.New(pool), logger: slog.Default(), roomIdentity: roomidentity.New(), roomCoding: roomcoding.New(),
 		broker: broker, streamsDone: streamsDone, stopStreams: stopStreams,
 		workerContext: workerContext, stopWorkers: stopWorkers,
 		artifacts: core.artifacts, documentPreviews: document.NewPreviewService(pool, core.artifacts, cfg.DocumentPreviewPublicOrigin, signingKey), signingKey: signingKey, agentManagement: deps.AgentManagement,
