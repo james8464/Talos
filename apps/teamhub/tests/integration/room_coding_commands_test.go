@@ -61,7 +61,7 @@ func TestCodingCommandsWriteAgentReplies(t *testing.T) {
 		t.Fatalf("claimed=%+v", claimed)
 	}
 	if completed, err := queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
-		ID: claimed.ID, Status: "done", Result: "sandbox passed",
+		ID: claimed.ID, Status: "done", Result: "sandbox passed", AttemptHashes: []string{},
 	}); err != nil || completed != 1 {
 		t.Fatalf("complete coding job=%d err=%v", completed, err)
 	}

@@ -58,7 +58,7 @@ func TestRoomCodingClaimsRecoverAfterTheLease(t *testing.T) {
 		t.Fatalf("cancel claimed job=%d err=%v", cancelled, err)
 	}
 	if completed, err := queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
-		ID: second.ID, Status: "done", Result: "planned",
+		ID: second.ID, Status: "done", Result: "planned", AttemptHashes: []string{},
 	}); err != nil || completed != 0 {
 		t.Fatalf("late completion=%d err=%v", completed, err)
 	}

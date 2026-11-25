@@ -50,7 +50,7 @@ WHERE id = (
   ORDER BY created_at
   FOR UPDATE SKIP LOCKED LIMIT 1
 )
-RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at
+RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at, attempt_hashes
 `
 
 type ClaimNextRoomCodingJobParams struct {
@@ -78,6 +78,7 @@ func (q *Queries) ClaimNextRoomCodingJob(ctx context.Context, arg ClaimNextRoomC
 		&i.Attempts,
 		&i.LeaseExpiresAt,
 		&i.NextAttemptAt,
+		&i.AttemptHashes,
 	)
 	return i, err
 }
@@ -85,18 +86,24 @@ func (q *Queries) ClaimNextRoomCodingJob(ctx context.Context, arg ClaimNextRoomC
 const completeRoomCodingJob = `-- name: CompleteRoomCodingJob :execrows
 UPDATE room_coding_jobs
 SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL,
-    next_attempt_at=NULL
+    next_attempt_at=NULL, attempt_hashes=$4
 WHERE id=$1 AND status='claimed'
 `
 
 type CompleteRoomCodingJobParams struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
-	Result string `json:"result"`
+	ID            string   `json:"id"`
+	Status        string   `json:"status"`
+	Result        string   `json:"result"`
+	AttemptHashes []string `json:"attempt_hashes"`
 }
 
 func (q *Queries) CompleteRoomCodingJob(ctx context.Context, arg CompleteRoomCodingJobParams) (int64, error) {
-	result, err := q.db.Exec(ctx, completeRoomCodingJob, arg.ID, arg.Status, arg.Result)
+	result, err := q.db.Exec(ctx, completeRoomCodingJob,
+		arg.ID,
+		arg.Status,
+		arg.Result,
+		arg.AttemptHashes,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -106,7 +113,7 @@ func (q *Queries) CompleteRoomCodingJob(ctx context.Context, arg CompleteRoomCod
 const createRoomCodingJob = `-- name: CreateRoomCodingJob :one
 INSERT INTO room_coding_jobs(id,tenant_id,room_id,requester_actor_id,kind,target_path,request)
 VALUES($1,$2,$3,$4,$5,$6,$7)
-RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at
+RETURNING id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at, attempt_hashes
 `
 
 type CreateRoomCodingJobParams struct {
@@ -147,12 +154,13 @@ func (q *Queries) CreateRoomCodingJob(ctx context.Context, arg CreateRoomCodingJ
 		&i.Attempts,
 		&i.LeaseExpiresAt,
 		&i.NextAttemptAt,
+		&i.AttemptHashes,
 	)
 	return i, err
 }
 
 const findActiveRoomCodingJob = `-- name: FindActiveRoomCodingJob :one
-SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at FROM room_coding_jobs
+SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at, attempt_hashes FROM room_coding_jobs
 WHERE room_id=$1 AND target_path=$2 AND request=$3 AND status IN ('queued','claimed')
 ORDER BY created_at DESC LIMIT 1
 `
@@ -183,12 +191,13 @@ func (q *Queries) FindActiveRoomCodingJob(ctx context.Context, arg FindActiveRoo
 		&i.Attempts,
 		&i.LeaseExpiresAt,
 		&i.NextAttemptAt,
+		&i.AttemptHashes,
 	)
 	return i, err
 }
 
 const listRoomCodingJobsForRoom = `-- name: ListRoomCodingJobsForRoom :many
-SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at FROM room_coding_jobs WHERE room_id=$1 ORDER BY created_at DESC LIMIT 20
+SELECT id, tenant_id, room_id, requester_actor_id, kind, target_path, request, status, result, claimed_by, created_at, claimed_at, completed_at, attempts, lease_expires_at, next_attempt_at, attempt_hashes FROM room_coding_jobs WHERE room_id=$1 ORDER BY created_at DESC LIMIT 20
 `
 
 func (q *Queries) ListRoomCodingJobsForRoom(ctx context.Context, roomID string) ([]RoomCodingJob, error) {
@@ -217,6 +226,7 @@ func (q *Queries) ListRoomCodingJobsForRoom(ctx context.Context, roomID string) 
 			&i.Attempts,
 			&i.LeaseExpiresAt,
 			&i.NextAttemptAt,
+			&i.AttemptHashes,
 		); err != nil {
 			return nil, err
 		}
@@ -231,7 +241,7 @@ func (q *Queries) ListRoomCodingJobsForRoom(ctx context.Context, roomID string) 
 const requeueRoomCodingJob = `-- name: RequeueRoomCodingJob :execrows
 UPDATE room_coding_jobs
 SET status='queued', claimed_by='', claimed_at=NULL, lease_expires_at=NULL,
-    result=$2, next_attempt_at=$3
+    result=$2, next_attempt_at=$3, attempt_hashes=$4
 WHERE id=$1 AND status='claimed'
 `
 
@@ -239,10 +249,16 @@ type RequeueRoomCodingJobParams struct {
 	ID            string             `json:"id"`
 	Result        string             `json:"result"`
 	NextAttemptAt pgtype.Timestamptz `json:"next_attempt_at"`
+	AttemptHashes []string           `json:"attempt_hashes"`
 }
 
 func (q *Queries) RequeueRoomCodingJob(ctx context.Context, arg RequeueRoomCodingJobParams) (int64, error) {
-	result, err := q.db.Exec(ctx, requeueRoomCodingJob, arg.ID, arg.Result, arg.NextAttemptAt)
+	result, err := q.db.Exec(ctx, requeueRoomCodingJob,
+		arg.ID,
+		arg.Result,
+		arg.NextAttemptAt,
+		arg.AttemptHashes,
+	)
 	if err != nil {
 		return 0, err
 	}

@@ -165,3 +165,12 @@ public reminder service and replies as the Agent. The live harness creates it,
 makes it due, runs the reminder worker and reads the delivered message
 (`TestRoomReminderCommandCreatesAndFires`). Accepted units are minutes, hours
 and days, from one minute to thirty days.
+
+## No-progress streak
+
+`internal/noprogress` ports OpenClaw's `getNoProgressStreak`, including the
+exec terminal-failure tail, argument-validation skips, veto anchoring and the
+failure-identity match. The Room coding worker stores one hash per sandbox
+failure; when two identical failures repeat it stops instead of retrying and
+reports that the same failure repeated. `TestRoomCodingWorkerStopsRepeatedSandboxFailures`
+covers the Postgres path and the live harness runs it.

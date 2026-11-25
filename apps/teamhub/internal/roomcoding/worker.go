@@ -3,6 +3,8 @@ package roomcoding
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/noprogress"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
 )
 
@@ -56,6 +59,10 @@ type Worker struct {
 // RunOnce claims at most one job and reports it. It returns false when the
 // queue is empty.
 func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
+	maxAttempts := w.MaxAttempts
+	if maxAttempts <= 0 {
+		maxAttempts = 4
+	}
 	lease := w.LeaseSeconds
 	if lease <= 0 {
 		lease = 900
@@ -69,18 +76,17 @@ func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	history := make([]string, 0, len(job.AttemptHashes)+1)
+	history = append(history, job.AttemptHashes...)
 	outcome, err := w.Executor.Execute(ctx, job)
 	if err != nil {
-		maxAttempts := w.MaxAttempts
-		if maxAttempts <= 0 {
-			maxAttempts = 4
-		}
 		message := "The Computer could not run the job: " + err.Error()
 		if int(job.Attempts) < maxAttempts {
 			delay := RetryDelay(job.Attempts)
 			if _, requeueErr := w.Queries.RequeueRoomCodingJob(ctx, store.RequeueRoomCodingJobParams{
 				ID: job.ID, Result: message,
 				NextAttemptAt: pgtype.Timestamptz{Time: time.Now().Add(delay), Valid: true},
+				AttemptHashes: history,
 			}); requeueErr != nil {
 				return true, requeueErr
 			}
@@ -95,13 +101,36 @@ func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
 		}
 		outcome = Outcome{Status: "failed", Message: message}
 	}
+	argsHash := hashText(job.TargetPath + "\x00" + job.Request)
+	if outcome.Status == "failed" && outcome.Failure != "" {
+		history = append(history, hashText(outcome.Failure))
+		streak, _ := noprogress.Streak(attemptRecords(history, argsHash), "coding", argsHash)
+		if streak < 2 && int(job.Attempts) < maxAttempts {
+			delay := RetryDelay(job.Attempts)
+			if _, requeueErr := w.Queries.RequeueRoomCodingJob(ctx, store.RequeueRoomCodingJobParams{
+				ID: job.ID, Result: outcome.Message + ": " + outcome.Failure,
+				NextAttemptAt: pgtype.Timestamptz{Time: time.Now().Add(delay), Valid: true},
+				AttemptHashes: history,
+			}); requeueErr != nil {
+				return true, requeueErr
+			}
+			notice := SandboxRetryNotice(job, delay, maxAttempts)
+			if err := w.Publish(ctx, job.RoomID, notice, fmt.Sprintf("coding:%s:sandbox:%d", job.ID, job.Attempts)); err != nil && w.Logger != nil {
+				w.Logger.Warn("room_coding.retry_notice_failed", "job_id", job.ID, "error", err)
+			}
+			return true, nil
+		}
+		if streak >= 2 {
+			outcome.Message = "the sandbox failed the same way twice; not retrying"
+		}
+	}
 	status, reply := w.report(job, outcome)
 	result := outcome.Message
 	if outcome.Failure != "" {
 		result += ": " + outcome.Failure
 	}
 	completed, err := w.Queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
-		ID: job.ID, Status: status, Result: result,
+		ID: job.ID, Status: status, Result: result, AttemptHashes: history,
 	})
 	if err != nil {
 		return true, err
@@ -179,6 +208,31 @@ func RetryNotice(job store.RoomCodingJob, delay time.Duration, maxAttempts int) 
 		"Coding job %s could not reach the Computer; retrying in %s (attempt %d of %d).",
 		job.ID, delay.Round(time.Second), job.Attempts, maxAttempts,
 	)
+}
+
+// SandboxRetryNotice tells the Room that a drafted patch failed verification
+// and another attempt is scheduled.
+func SandboxRetryNotice(job store.RoomCodingJob, delay time.Duration, maxAttempts int) string {
+	return fmt.Sprintf(
+		"Coding job %s failed the sandbox check; retrying in %s (attempt %d of %d).",
+		job.ID, delay.Round(time.Second), job.Attempts, maxAttempts,
+	)
+}
+
+func hashText(value string) string {
+	sum := sha256.Sum256([]byte(value))
+	return hex.EncodeToString(sum[:])
+}
+
+func attemptRecords(history []string, argsHash string) []noprogress.Record {
+	records := make([]noprogress.Record, 0, len(history))
+	for _, resultHash := range history {
+		records = append(records, noprogress.Record{
+			ToolName: "coding", ArgsHash: argsHash, ResultHash: resultHash,
+			OutcomeKind: noprogress.TerminalExecFailure,
+		})
+	}
+	return records
 }
 
 // RetryDelay is OpenClaw's bounded exponential retry schedule: 15s for the

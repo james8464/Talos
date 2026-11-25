@@ -69,3 +69,4 @@ Status meanings: **ported** (works here and is tested here), **present**
 7. Full parity replay: run the Talos acceptance list against Talos, muted.
    | Routine fires into a Room with an Agent mention | **present** | `TestRoomRoutineFiresAsAgentMessage` covers the API, worker and wake message; the browser suite edits and fires routines. |
    | Typed Room reminder command | **present** | `reminder in <n><m/h/d>: <task>` creates a one-shot Routine, replies as the Agent, and fires through the worker. |
+   | No-progress streak on repeated sandbox failures | **present** | OpenClaw `getNoProgressStreak` port with branch tests; the coding worker stops after two identical failures. |

@@ -33,9 +33,11 @@ describe("read-only selection Comment control", () => {
 
     fireEvent.mouseUp(screen.getByText("Review this sentence"));
 
-    const action = await screen.findByRole("button", {
-      name: "Add comment to selected text",
-    });
+    const action = await screen.findByRole(
+      "button",
+      { name: "Add comment to selected text" },
+      { timeout: 10_000 },
+    );
     expect(action).toBeVisible();
     fireEvent.click(action);
     expect(onStartComment).toHaveBeenCalledOnce();

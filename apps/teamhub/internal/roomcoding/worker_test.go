@@ -57,6 +57,13 @@ func TestRetryNoticeNamesTheAttemptAndDelay(t *testing.T) {
 	}
 }
 
+func TestSandboxRetryNoticeNamesTheAttemptAndDelay(t *testing.T) {
+	notice := SandboxRetryNotice(store.RoomCodingJob{ID: "codingjob_1", Attempts: 1}, 15*time.Second, 4)
+	if notice != "Coding job codingjob_1 failed the sandbox check; retrying in 15s (attempt 1 of 4)." {
+		t.Fatalf("notice=%q", notice)
+	}
+}
+
 func TestHTTPExecutorPostsTheJobAndReadsTheOutcome(t *testing.T) {
 	var body map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

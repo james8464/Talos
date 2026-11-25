@@ -28,13 +28,13 @@ RETURNING *;
 -- name: RequeueRoomCodingJob :execrows
 UPDATE room_coding_jobs
 SET status='queued', claimed_by='', claimed_at=NULL, lease_expires_at=NULL,
-    result=$2, next_attempt_at=$3
+    result=$2, next_attempt_at=$3, attempt_hashes=$4
 WHERE id=$1 AND status='claimed';
 
 -- name: CompleteRoomCodingJob :execrows
 UPDATE room_coding_jobs
 SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL,
-    next_attempt_at=NULL
+    next_attempt_at=NULL, attempt_hashes=$4
 WHERE id=$1 AND status='claimed';
 
 -- name: CancelRoomCodingJob :execrows

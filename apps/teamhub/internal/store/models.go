@@ -1453,6 +1453,7 @@ type RoomCodingJob struct {
 	Attempts         int32              `json:"attempts"`
 	LeaseExpiresAt   pgtype.Timestamptz `json:"lease_expires_at"`
 	NextAttemptAt    pgtype.Timestamptz `json:"next_attempt_at"`
+	AttemptHashes    []string           `json:"attempt_hashes"`
 }
 
 type RoomDocumentComment struct {
