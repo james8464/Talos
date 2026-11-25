@@ -91,6 +91,38 @@ class RoomDialogueTests(unittest.TestCase):
         self.assertIn("Targets unchanged: yes", reply)
         self.assertEqual(target.read_text(), "VALUE = 1\n")
 
+    def test_free_form_plan_is_generated_and_run_verify_only(self):
+        state = self.root / "state"
+        state.mkdir()
+        (self.root / "talos_core").mkdir()
+        target = self.root / "talos_core" / "example.py"
+        target.write_text("VALUE = 1\n")
+        room = Room(state / "memory.sqlite", "local")
+        generated = {"steps": [{"id": "one", "target": "talos_core/example.py",
+                                "request": "Add a note."}]}
+        with patch("talos_core.room.room_coding.generate_plan",
+                   return_value=generated), \
+                patch("talos_core.room.room_coding.local_infer",
+                      return_value=lambda prompt: "{}"):
+            reply = room.route("POST", "/v1/turn", {
+                "text": "coding plan: make the example clearer",
+                "source": "text"})[1]["reply"]
+        self.assertIn("Coding plan", reply)
+        self.assertIn("declined", reply)
+        self.assertIn("Targets unchanged: yes", reply)
+        self.assertEqual(target.read_text(), "VALUE = 1\n")
+
+    def test_free_form_plan_generation_failure_is_reported(self):
+        state = self.root / "state"
+        state.mkdir()
+        room = Room(state / "memory.sqlite", "local")
+        with patch("talos_core.room.room_coding.generate_plan",
+                   side_effect=ValueError("no safe plan")):
+            reply = room.route("POST", "/v1/turn", {
+                "text": "coding plan: do something vague",
+                "source": "text"})[1]["reply"]
+        self.assertIn("Plan rejected: no safe plan", reply)
+
     def test_capability_questions_are_answered_from_room_state(self):
         from talos_core.room.room_dialogue import capability_answer
 

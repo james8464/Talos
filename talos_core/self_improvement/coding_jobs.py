@@ -546,11 +546,11 @@ def _order(steps: list[dict]) -> list[str]:
     return order
 
 
-def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
-               budget: int = 300, apply: bool = False) -> dict:
-    """Validate and store a dependency-ordered plan without running it."""
-    if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_STEPS:
-        raise ValueError(f"A plan needs between 1 and {MAX_STEPS} steps.")
+def validate_steps(steps: list[dict], *, root: Path | str,
+                   max_steps: int = MAX_STEPS) -> list[dict]:
+    """Return normalized steps or raise before anything is written."""
+    if not isinstance(steps, list) or not 1 <= len(steps) <= max_steps:
+        raise ValueError(f"A plan needs between 1 and {max_steps} steps.")
     root = Path(root)
     clean = []
     for step in steps:
@@ -560,13 +560,16 @@ def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
         if not request or len(request) > MAX_REQUEST:
             raise ValueError(f"Step {step['id']} needs a request under {MAX_REQUEST} characters.")
         if step.get("targets") is not None and step.get("target") is not None:
-            raise ValueError(f"Step {step['id']} cannot set both target and targets.")
+            targets_value = step.get("targets")
+            if not (isinstance(targets_value, list) and targets_value
+                    and targets_value[0] == step.get("target")):
+                raise ValueError(f"Step {step['id']} cannot set both target and targets.")
         if step.get("targets") is not None:
             targets = step["targets"]
-            if (not isinstance(targets, list) or not 2 <= len(targets) <= MAX_TARGETS
+            if (not isinstance(targets, list) or not 1 <= len(targets) <= MAX_TARGETS
                     or not all(isinstance(item, str) for item in targets)
                     or len(set(targets)) != len(targets)):
-                raise ValueError(f"Step {step['id']} needs 2-{MAX_TARGETS} unique targets.")
+                raise ValueError(f"Step {step['id']} needs 1-{MAX_TARGETS} unique targets.")
         else:
             target = step.get("target")
             if not isinstance(target, str):
@@ -581,6 +584,14 @@ def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
                       "targets": list(targets),
                       "needs": list(dict.fromkeys(needs)), "status": "queued",
                       "message": "", "job_id": None})
+    _order(clean)
+    return clean
+
+
+def start_plan(state: Path | str, steps: list[dict], *, root: Path | str,
+               budget: int = 300, apply: bool = False) -> dict:
+    """Validate and store a dependency-ordered plan without running it."""
+    clean = validate_steps(steps, root=root)
     order = _order(clean)
     if not isinstance(budget, int) or not MIN_SECONDS <= budget <= 3600:
         raise ValueError("Budget must be between 5 and 3600 seconds.")

@@ -64,17 +64,14 @@ def _job_reply(body: str, state: Path, root: Path, model: str) -> dict:
     )}
 
 
-def _plan_reply(body: str, state: Path, root: Path, model: str) -> dict:
-    path = (root / body.strip().strip('"')).resolve()
-    if root.resolve() not in path.parents or not path.is_file():
-        return {"reply": "Name a plan JSON file inside the project."}
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        steps = payload.get("steps") if isinstance(payload, dict) else payload
-        plan = coding_jobs.start_plan(state, steps, root=root,
-                                      budget=PLAN_BUDGET, apply=False)
-    except (OSError, ValueError, TypeError, AttributeError) as error:
-        return {"reply": f"Plan rejected: {error}"}
+def generate_plan(request: str, *, root: Path, model: str) -> dict:
+    from talos_core.self_improvement import plan_generator
+
+    return plan_generator.generate(request, root=root,
+                                   infer=plan_generator.default_infer(model))
+
+
+def _run_plan_reply(plan: dict, state: Path, root: Path, model: str) -> dict:
     targets = [step["target"] for step in plan["steps"]]
     paths = [root / target for target in targets if (root / target).is_file()]
     before = {str(path): _hash(path) for path in paths}
@@ -89,6 +86,27 @@ def _plan_reply(body: str, state: Path, root: Path, model: str) -> dict:
         f"Coding plan {plan['id']} {result.get('status')}: {statuses}. "
         f"Targets unchanged: {'yes' if unchanged else 'no'}."
     )}
+
+
+def _plan_reply(body: str, state: Path, root: Path, model: str) -> dict:
+    raw = body.strip().strip('"')
+    path = (root / raw).resolve()
+    if not (path.is_file() and path.suffix == ".json" and root.resolve() in path.parents):
+        try:
+            steps = generate_plan(raw, root=root, model=model)["steps"]
+            plan = coding_jobs.start_plan(state, steps, root=root,
+                                          budget=PLAN_BUDGET, apply=False)
+        except (OSError, ValueError, TypeError, AttributeError) as error:
+            return {"reply": f"Plan rejected: {error}"}
+        return _run_plan_reply(plan, state, root, model)
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        steps = payload.get("steps") if isinstance(payload, dict) else payload
+        plan = coding_jobs.start_plan(state, steps, root=root,
+                                      budget=PLAN_BUDGET, apply=False)
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        return {"reply": f"Plan rejected: {error}"}
+    return _run_plan_reply(plan, state, root, model)
 
 
 def handle(text: str, *, state: Path | str, root: Path | str, model: str) -> dict | None:

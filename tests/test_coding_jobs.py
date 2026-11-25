@@ -200,6 +200,13 @@ class CodingPlanTests(unittest.TestCase):
             self.plan([{"id": "a", "target": "talos_core/example.py", "request": "x",
                         "needs": ["missing"]}])
 
+    def test_start_plan_accepts_already_normalized_steps(self):
+        clean = coding_jobs.validate_steps(
+            [{"id": "a", "target": "talos_core/example.py", "request": "x"}],
+            root=self.tmp)
+        plan = coding_jobs.start_plan(self.state, clean, root=self.tmp)
+        self.assertEqual(plan["steps"][0]["targets"], ["talos_core/example.py"])
+
     def test_dependent_step_is_blocked_when_dependency_declines(self):
         plan = self.plan([
             {"id": "first", "target": "talos_core/example.py", "request": "first"},

@@ -76,10 +76,13 @@ Typed messages can run the same verify-only path without a terminal:
 ```text
 coding job talos_core/runtime/text_stream.py: Add one clarifying sentence to the module docstring.
 coding plan state/plan.json
+coding plan: make the helper clearer and update its caller
 coding jobs
 ```
 
 The room queues the work, runs it with the local model, and replies with the
 job or plan status, per-step statuses for plans, and whether every target stayed
-unchanged. Voice input is not routed to these commands, and a room request can
+unchanged. A `coding plan:` request without a JSON file generates a plan from
+the source catalog: at most three steps, three targets per step, validated for
+unsafe paths, cycles and unknown dependencies before anything runs. Voice input is not routed to these commands, and a room request can
 never apply a patch.

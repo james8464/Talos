@@ -635,6 +635,14 @@ class TotalTest(unittest.TestCase):
           and "target unchanged: yes" in room_coding.casefold(),
           room_coding)
 
+    room_plan = ask(token, "coding plan: add a clarifying sentence to the module "
+                           "docstring in talos_core/runtime/text_stream.py")["reply"]
+    check(checks, "room_coding_plan",
+          "coding plan" in room_plan.casefold()
+          and ("done" in room_plan.casefold() or "blocked" in room_plan.casefold())
+          and "targets unchanged: yes" in room_plan.casefold(),
+          room_plan[:240])
+
     music = ask(token, "Play music.")["reply"]
     check(checks, "music_blocked", "disabled" in music.casefold() or "muted" in music.casefold(),
           music)
