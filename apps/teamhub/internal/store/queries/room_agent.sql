@@ -19,3 +19,22 @@ WHERE room.id=sqlc.arg(room_id)::text
   AND registration.agent_management_id=sqlc.arg(agent_management_id)::text
 FOR KEY SHARE OF room,membership,actor,registration;
 
+
+-- name: ListRoomAgentActors :many
+SELECT actor.id,actor.tenant_id,actor.kind,actor.display_name,
+       actor.account_id,actor.handle,actor.created_at
+FROM rooms room
+JOIN room_members membership
+  ON membership.room_id=collaboration_membership_room_id(room.id)
+ AND membership.tenant_id=room.tenant_id
+JOIN actors actor
+  ON actor.id=membership.actor_id
+ AND actor.tenant_id=membership.tenant_id
+ AND actor.kind='agent'
+JOIN agent_registrations registration
+  ON registration.actor_id=actor.id
+ AND registration.tenant_id=actor.tenant_id
+ AND registration.status='active'
+WHERE room.id=sqlc.arg(room_id)::text
+ORDER BY actor.id
+FOR KEY SHARE OF room,membership,actor,registration;

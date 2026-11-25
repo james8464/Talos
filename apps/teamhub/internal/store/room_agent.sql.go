@@ -66,3 +66,51 @@ func (q *Queries) GetRoomAgentMessageAuthority(ctx context.Context, arg GetRoomA
 	)
 	return i, err
 }
+
+const listRoomAgentActors = `-- name: ListRoomAgentActors :many
+SELECT actor.id,actor.tenant_id,actor.kind,actor.display_name,
+       actor.account_id,actor.handle,actor.created_at
+FROM rooms room
+JOIN room_members membership
+  ON membership.room_id=collaboration_membership_room_id(room.id)
+ AND membership.tenant_id=room.tenant_id
+JOIN actors actor
+  ON actor.id=membership.actor_id
+ AND actor.tenant_id=membership.tenant_id
+ AND actor.kind='agent'
+JOIN agent_registrations registration
+  ON registration.actor_id=actor.id
+ AND registration.tenant_id=actor.tenant_id
+ AND registration.status='active'
+WHERE room.id=$1::text
+ORDER BY actor.id
+FOR KEY SHARE OF room,membership,actor,registration
+`
+
+func (q *Queries) ListRoomAgentActors(ctx context.Context, roomID string) ([]Actor, error) {
+	rows, err := q.db.Query(ctx, listRoomAgentActors, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Actor{}
+	for rows.Next() {
+		var i Actor
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Kind,
+			&i.DisplayName,
+			&i.AccountID,
+			&i.Handle,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
