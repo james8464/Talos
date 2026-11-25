@@ -17,6 +17,11 @@ export const settingsMessages = defineMessages("settings", {
     "Saved on this device. Text written by Agents and other people stays as they wrote it.",
   languageUnavailable:
     "That language could not be loaded. Check your connection and try again.",
+  captureCheck: "Test camera and microphone",
+  captureCheckDone:
+    "Captured a {frame}-byte frame and {audio}-byte clip; media deleted.",
+  captureCheckFailed:
+    "Capture failed. Check the macOS camera and microphone permissions.",
   saveDiagnostics: "Save diagnostics…",
   saveDiagnosticsFailed: "Diagnostics could not be saved. Try again.",
 });

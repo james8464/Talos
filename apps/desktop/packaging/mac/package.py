@@ -194,6 +194,11 @@ def stage_app(arch, version, electron_version, workdir, cache):
     os.makedirs(computer)
     shutil.copy2(daemon_binary(arch), computer)
     computer_tools.copy(resources, target)
+    shutil.copytree(
+        os.path.join(DESKTOP, "resources", "talos"),
+        os.path.join(resources, "talos"),
+        dirs_exist_ok=True,
+    )
     write_icon(resources)
 
     os.rename(os.path.join(contents, "MacOS", "Electron"), os.path.join(contents, "MacOS", "Talos"))

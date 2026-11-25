@@ -50,6 +50,16 @@ export type LocalAccountSignIn =
   | { readonly ok: true }
   | { readonly ok: false; readonly message: string };
 
+export interface TalosCaptureCheck {
+  readonly ok: true;
+  readonly seconds: number;
+  readonly cameraPermission: string;
+  readonly microphonePermission: string;
+  readonly mediaDeleted: true;
+  readonly frameBytes: number;
+  readonly audioBytes: number;
+}
+
 export type DesktopPermissionId =
   | "screen_recording"
   | "accessibility"
@@ -199,6 +209,11 @@ export interface TalosDesktopApi {
   readonly permissions?: {
     act(step: DesktopPermissionStep): Promise<void>;
   };
+  // One local frame and a short clip, then the temporary media is deleted.
+  // Absent in browsers and desktop builds that predate it.
+  readonly capture?: {
+    check(): Promise<TalosCaptureCheck>;
+  };
   // Native NVIDIA driver update helpers (Windows / Linux). Older desktop apps
   // lack it, so the page falls back to direct browser links and copyable steps.
   readonly driverUpdate?: {
@@ -229,6 +244,7 @@ export const IPC = {
   settingsSet: "settings.set",
   settingsEvent: "settings.event",
   permissionAct: "permission.act",
+  captureCheck: "capture.check",
   driverUpdateCapabilities: "driver-update.capabilities",
   driverUpdateOpenNvidiaApp: "driver-update.open-nvidia-app",
   driverUpdateOpenDownload: "driver-update.open-download",

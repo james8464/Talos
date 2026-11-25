@@ -46,6 +46,10 @@ const api: TalosDesktopApi = {
       };
     },
   },
+  capture:
+    process.platform === "darwin"
+      ? { check: () => ipcRenderer.invoke(IPC.captureCheck) }
+      : undefined,
   localAccount: {
     available: () => ipcRenderer.invoke(IPC.localAccountAvailable),
     signIn: () => ipcRenderer.invoke(IPC.localAccountSignIn),

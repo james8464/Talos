@@ -1,4 +1,6 @@
 import { app, ipcMain, type IpcMainInvokeEvent } from "electron";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 
 import {
@@ -25,6 +27,7 @@ import {
   runDesktopPermissionStep,
   type DesktopPermissionHost,
 } from "./system-permissions.js";
+import { TalosMediaCapture } from "./talos-media-capture.js";
 import type { UpdaterModule, UpdateState } from "./updater.js";
 import type { WindowManagerModule } from "./window-manager.js";
 import type { WorkspaceGrantsModule } from "./workspace-grants.js";
@@ -268,6 +271,28 @@ export class DesktopIpcModule implements Module {
       handle(IPC.permissionAct, (step) =>
         runDesktopPermissionStep(permissions, permissionStepInput.parse(step)),
       );
+    handle(IPC.captureCheck, async () => {
+      const source = [
+        path.join(process.resourcesPath, "talos/av_capture.swift"),
+        path.join(app.getAppPath(), "resources/talos/av_capture.swift"),
+        path.join(app.getAppPath(), "dist/talos/av_capture.swift"),
+      ].find((candidate) => existsSync(candidate));
+      if (!source) throw new Error("The native capture helper is missing.");
+      const receipt = await new TalosMediaCapture({
+        source,
+        runtimeDir: path.join(app.getPath("userData"), "native"),
+        compiler: "swiftc",
+      }).capture(1);
+      return {
+        ok: true as const,
+        seconds: receipt.seconds,
+        cameraPermission: receipt.cameraPermission,
+        microphonePermission: receipt.microphonePermission,
+        mediaDeleted: receipt.mediaDeleted,
+        frameBytes: Buffer.from(receipt.frameBase64, "base64").length,
+        audioBytes: Buffer.from(receipt.audioBase64, "base64").length,
+      };
+    });
 
     const driverUpdater = this.#driverUpdater;
     if (driverUpdater) {
