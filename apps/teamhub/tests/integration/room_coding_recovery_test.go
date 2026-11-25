@@ -51,10 +51,16 @@ func TestRoomCodingClaimsRecoverAfterTheLease(t *testing.T) {
 	if err != nil || second.ID != first.ID || second.Attempts != 2 || second.ClaimedBy != "live-computer" {
 		t.Fatalf("second claim=%+v err=%v", second, err)
 	}
-	if err := queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
+	// Cancelling a claimed job wins; the late completion writes nothing.
+	if cancelled, err := queries.CancelRoomCodingJob(ctx, store.CancelRoomCodingJobParams{
+		ID: second.ID, RoomID: roomID, RequesterActorID: agents[0].ID, Result: "cancelled",
+	}); err != nil || cancelled != 1 {
+		t.Fatalf("cancel claimed job=%d err=%v", cancelled, err)
+	}
+	if completed, err := queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
 		ID: second.ID, Status: "done", Result: "planned",
-	}); err != nil {
-		t.Fatalf("complete: %v", err)
+	}); err != nil || completed != 0 {
+		t.Fatalf("late completion=%d err=%v", completed, err)
 	}
 	if _, err := queries.ClaimNextRoomCodingJob(ctx, store.ClaimNextRoomCodingJobParams{
 		ClaimedBy: "live-computer", LeaseSeconds: 60,

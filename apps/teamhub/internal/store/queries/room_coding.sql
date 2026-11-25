@@ -25,7 +25,12 @@ UPDATE room_coding_jobs
 SET status='queued', claimed_by='', claimed_at=NULL, lease_expires_at=NULL, result=$2
 WHERE id=$1 AND status='claimed';
 
--- name: CompleteRoomCodingJob :exec
+-- name: CompleteRoomCodingJob :execrows
 UPDATE room_coding_jobs
 SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL
 WHERE id=$1 AND status='claimed';
+
+-- name: CancelRoomCodingJob :execrows
+UPDATE room_coding_jobs
+SET status='cancelled', result=$4, completed_at=clock_timestamp(), lease_expires_at=NULL
+WHERE id=$1 AND room_id=$2 AND requester_actor_id=$3 AND status IN ('queued','claimed');

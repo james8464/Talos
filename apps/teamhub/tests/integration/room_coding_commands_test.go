@@ -60,10 +60,10 @@ func TestCodingCommandsWriteAgentReplies(t *testing.T) {
 	if claimed.Status != "claimed" || claimed.ClaimedBy != "computer_test" || claimed.RoomID != roomID {
 		t.Fatalf("claimed=%+v", claimed)
 	}
-	if err := queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
+	if completed, err := queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
 		ID: claimed.ID, Status: "done", Result: "sandbox passed",
-	}); err != nil {
-		t.Fatalf("complete coding job: %v", err)
+	}); err != nil || completed != 1 {
+		t.Fatalf("complete coding job=%d err=%v", completed, err)
 	}
 	var status, result string
 	if err := env.pool.QueryRow(ctx, `SELECT status,result FROM room_coding_jobs WHERE id=$1`, claimed.ID).Scan(&status, &result); err != nil || status != "done" || result != "sandbox passed" {
@@ -72,5 +72,27 @@ func TestCodingCommandsWriteAgentReplies(t *testing.T) {
 	var queued int
 	if err := env.pool.QueryRow(ctx, `SELECT count(*) FROM room_coding_jobs WHERE room_id=$1 AND status='queued'`, roomID).Scan(&queued); err != nil || queued != 1 {
 		t.Fatalf("remaining queued=%d err=%v", queued, err)
+	}
+	// The requester can cancel a job that is still queued.
+	var remaining string
+	if err := env.pool.QueryRow(ctx, `SELECT id FROM room_coding_jobs WHERE room_id=$1 AND status='queued'`, roomID).Scan(&remaining); err != nil {
+		t.Fatalf("remaining job: %v", err)
+	}
+	createHumanMessage(t, env, alice, roomID, "coding cancel "+remaining, "coding-cancel")
+	var cancelled int
+	if err := env.pool.QueryRow(ctx, `SELECT count(*) FROM room_coding_jobs WHERE id=$1 AND status='cancelled'`, remaining).Scan(&cancelled); err != nil || cancelled != 1 {
+		t.Fatalf("cancelled=%d err=%v", cancelled, err)
+	}
+	createHumanMessage(t, env, alice, roomID, "coding jobs", "coding-list-cancelled")
+	var listAfter string
+	if err := env.pool.QueryRow(ctx, `
+		SELECT message.body FROM messages message
+		JOIN actors actor ON actor.id=message.author_actor_id AND actor.tenant_id=message.tenant_id
+		WHERE message.room_id=$1 AND actor.kind='agent' AND message.body LIKE 'Coding jobs: %'
+		ORDER BY message.created_at DESC LIMIT 1`, roomID).Scan(&listAfter); err != nil {
+		t.Fatalf("list after cancel: %v", err)
+	}
+	if !strings.Contains(listAfter, remaining+" plan cancelled") {
+		t.Fatalf("list after cancel=%q", listAfter)
 	}
 }

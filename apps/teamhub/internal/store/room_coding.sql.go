@@ -9,6 +9,32 @@ import (
 	"context"
 )
 
+const cancelRoomCodingJob = `-- name: CancelRoomCodingJob :execrows
+UPDATE room_coding_jobs
+SET status='cancelled', result=$4, completed_at=clock_timestamp(), lease_expires_at=NULL
+WHERE id=$1 AND room_id=$2 AND requester_actor_id=$3 AND status IN ('queued','claimed')
+`
+
+type CancelRoomCodingJobParams struct {
+	ID               string `json:"id"`
+	RoomID           string `json:"room_id"`
+	RequesterActorID string `json:"requester_actor_id"`
+	Result           string `json:"result"`
+}
+
+func (q *Queries) CancelRoomCodingJob(ctx context.Context, arg CancelRoomCodingJobParams) (int64, error) {
+	result, err := q.db.Exec(ctx, cancelRoomCodingJob,
+		arg.ID,
+		arg.RoomID,
+		arg.RequesterActorID,
+		arg.Result,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const claimNextRoomCodingJob = `-- name: ClaimNextRoomCodingJob :one
 UPDATE room_coding_jobs
 SET status='claimed', claimed_by=$1, claimed_at=clock_timestamp(),
@@ -52,7 +78,7 @@ func (q *Queries) ClaimNextRoomCodingJob(ctx context.Context, arg ClaimNextRoomC
 	return i, err
 }
 
-const completeRoomCodingJob = `-- name: CompleteRoomCodingJob :exec
+const completeRoomCodingJob = `-- name: CompleteRoomCodingJob :execrows
 UPDATE room_coding_jobs
 SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL
 WHERE id=$1 AND status='claimed'
@@ -64,9 +90,12 @@ type CompleteRoomCodingJobParams struct {
 	Result string `json:"result"`
 }
 
-func (q *Queries) CompleteRoomCodingJob(ctx context.Context, arg CompleteRoomCodingJobParams) error {
-	_, err := q.db.Exec(ctx, completeRoomCodingJob, arg.ID, arg.Status, arg.Result)
-	return err
+func (q *Queries) CompleteRoomCodingJob(ctx context.Context, arg CompleteRoomCodingJobParams) (int64, error) {
+	result, err := q.db.Exec(ctx, completeRoomCodingJob, arg.ID, arg.Status, arg.Result)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const createRoomCodingJob = `-- name: CreateRoomCodingJob :one

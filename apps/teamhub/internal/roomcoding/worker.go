@@ -85,10 +85,15 @@ func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
 		outcome = Outcome{Status: "failed", Message: message}
 	}
 	status, reply := w.report(job, outcome)
-	if err := w.Queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
+	completed, err := w.Queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
 		ID: job.ID, Status: status, Result: outcome.Message,
-	}); err != nil {
+	})
+	if err != nil {
 		return true, err
+	}
+	if completed == 0 {
+		// The Room cancelled the job while the Computer ran it.
+		return true, nil
 	}
 	if err := w.Publish(ctx, job.RoomID, reply, "coding:"+job.ID+":"+status); err != nil {
 		return true, err

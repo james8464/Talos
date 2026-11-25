@@ -16,9 +16,10 @@ type Command struct {
 }
 
 var (
-	jobCommand  = regexp.MustCompile(`(?i)^coding job ([^:]{1,300}):\s*(.{1,800})$`)
-	planCommand = regexp.MustCompile(`(?i)^coding plan:\s*(.{1,800})$`)
-	listCommand = regexp.MustCompile(`(?i)^coding jobs$`)
+	jobCommand    = regexp.MustCompile(`(?i)^coding job ([^:]{1,300}):\s*(.{1,800})$`)
+	planCommand   = regexp.MustCompile(`(?i)^coding plan:\s*(.{1,800})$`)
+	listCommand   = regexp.MustCompile(`(?i)^coding jobs$`)
+	cancelCommand = regexp.MustCompile(`(?i)^coding cancel (codingjob_[a-z0-9]+)$`)
 )
 
 // Parse returns a command, true, or false when text is not a coding command.
@@ -34,6 +35,9 @@ func Parse(text string) (Command, bool, error) {
 	}
 	if match := planCommand.FindStringSubmatch(words); match != nil {
 		return Command{Kind: "plan", Request: strings.TrimSpace(match[1])}, true, nil
+	}
+	if match := cancelCommand.FindStringSubmatch(words); match != nil {
+		return Command{Kind: "cancel", Target: match[1]}, true, nil
 	}
 	return Command{}, false, nil
 }

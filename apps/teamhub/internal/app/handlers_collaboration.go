@@ -325,6 +325,16 @@ func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {
 	if err != nil {
 		return ""
 	}
+	if command.Kind == "cancel" {
+		cancelled, err := a.queries.CancelRoomCodingJob(ctx, store.CancelRoomCodingJobParams{
+			ID: command.Target, RoomID: roomID, RequesterActorID: actor.ID,
+			Result: "cancelled from the Room",
+		})
+		if err != nil || cancelled == 0 {
+			return "I couldn't cancel " + command.Target + "; it may be finished or belong to another request."
+		}
+		return "Coding job " + command.Target + " cancelled."
+	}
 	id := idgen.New("codingjob")
 	if _, err := a.queries.CreateRoomCodingJob(ctx, store.CreateRoomCodingJobParams{
 		ID: id, TenantID: tenantID, RoomID: roomID, RequesterActorID: actor.ID,
