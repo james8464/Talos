@@ -220,7 +220,8 @@ def _codeplan(args) -> int:
                 payload = json.loads(args.json_text or "{}")
             steps = payload.get("steps") if isinstance(payload, dict) else payload
             plan = coding_jobs.start_plan(args.state, steps, root=args.root,
-                                          budget=args.budget, apply=args.apply)
+                                          budget=args.budget, apply=args.apply,
+                                          request=args.request)
         except (OSError, ValueError, TypeError, AttributeError) as error:
             print(json.dumps({"ok": False, "error": str(error)}))
             return 1
@@ -239,10 +240,22 @@ def _codeplan(args) -> int:
         return 0
 
     infer = initiative_coder.local_infer(args.model)
+    repair = None
     try:
+        plan = coding_jobs.load_plan(args.state, args.id)
+        if plan.get("request"):
+            from talos_core.self_improvement import plan_generator
+
+            goal = plan["request"]
+            repair_infer = plan_generator.default_infer(args.model)
+
+            def repair(failed, completed, error, _goal=goal, _infer=repair_infer):
+                return plan_generator.repair(
+                    _goal, root=args.root, failed=failed, completed=completed,
+                    error=error, infer=_infer)["steps"]
         result = coding_jobs.run_plan(
             args.state, args.id, root=args.root, infer=infer,
-            infer_many=coding_jobs.local_infer_many(args.model))
+            infer_many=coding_jobs.local_infer_many(args.model), repair=repair)
     except ValueError as error:
         print(json.dumps({"ok": False, "error": str(error)}))
         return 1
@@ -1372,6 +1385,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan_start.add_argument("--state", type=Path, default=ROOT / "state")
     plan_start.add_argument("--root", type=Path, default=ROOT)
     plan_start.add_argument("--budget", type=int, default=300)
+    plan_start.add_argument("--request", help="Original goal, enables one plan repair.")
     plan_start.add_argument("--apply", action="store_true",
                             help="Allow verified steps to write (default verify-only).")
     plan_start.set_defaults(func=_codeplan)

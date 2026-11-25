@@ -89,8 +89,8 @@ never apply a patch.
 
 ## Plan-level repair
 
-For model-generated plans, a step that still ends `declined` after its per-step
-retry triggers one plan-level revision. The failed step, the verified steps,
+For model-generated plans (and CLI plans created with `--request`), a step that
+still ends `declined` after its per-step retry triggers one plan-level revision. The failed step, the verified steps,
 and the captured failure output go back to the planner, which returns
 replacement steps for the remaining work. The failed step is marked
 `superseded`, queued steps it replaced are reported as dropped, and one revision

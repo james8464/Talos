@@ -217,6 +217,40 @@ class CliTests(unittest.TestCase):
             self.assertEqual(cli.main(["codeplan", "start", "--json", json.dumps(bad),
                                        "--root", str(root), "--state", str(state)]), 1)
 
+    def test_codeplan_run_repairs_when_request_present(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (root / "a.py").write_text("A = 1\n")
+        (root / "b.py").write_text("B = 2\n")
+        state = root / "state"
+        steps = {"steps": [
+            {"id": "bad", "target": "a.py", "request": "first"},
+            {"id": "after", "target": "b.py", "request": "second", "needs": ["bad"]},
+        ]}
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = cli.main(["codeplan", "start", "--json", json.dumps(steps),
+                             "--request", "make it better", "--root", str(root),
+                             "--state", str(state)])
+        self.assertEqual(code, 0)
+        plan = json.loads(output.getvalue())
+        output = io.StringIO()
+        with patch("talos_core.self_improvement.plan_generator.repair",
+                   return_value={"steps": [{"id": "fixed", "targets": ["b.py"],
+                                            "request": "second"}]}) as repair, \
+                patch("talos_core.self_improvement.initiative_coder.local_infer",
+                      return_value=lambda prompt: "{}"), \
+                redirect_stdout(output):
+            code = cli.main(["codeplan", "run", plan["id"], "--root", str(root),
+                             "--state", str(state), "--model", "test"])
+        self.assertEqual(code, 1)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["revision"], 1)
+        self.assertEqual(result["repair"]["failed"], "bad")
+        statuses = {step["id"]: step["status"] for step in result["steps"]}
+        self.assertEqual(statuses["bad"], "superseded")
+        self.assertEqual(statuses["fixed"], "declined")
+        repair.assert_called_once()
+
     def test_codejob_detach_forwards_state_root_and_model(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         (root / "example.py").write_text("VALUE = 1\n")
