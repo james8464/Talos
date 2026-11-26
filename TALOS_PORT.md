@@ -146,6 +146,16 @@ counterpart to OpenClaw's no-progress detector: identical work is not enqueued
 twice while it is still running. Unit and Postgres integration coverage lives in
 `TestDuplicateCodingCommandsShareOneJob`.
 
+## Capability replies
+
+Identity, hearing, seeing and speaking questions get deterministic
+Agent-authored replies without a model call. A speak question reports the mute
+state: with `TALOS_MUTE=1` the Agent says audio is muted and it will answer in
+text; without it, audio is not muted and voice mode may use the speaker. The
+seeing answer never invents a camera reading. Unit and Postgres coverage is in
+`TestSpeakAnswersFollowMute` and `TestSensorQuestionsWriteAgentReplies`; the
+live harness runs `room-commands` with both.
+
 ## Process inventory
 
 `talos-computer doctor` reports audio-capable and leftover Talos test processes

@@ -14,18 +14,24 @@ const (
 	Visible = "I can see someone in the camera view."
 	Empty   = "The camera isn't detecting anyone right now."
 	Unknown = "I don't have a current camera reading."
+	// SpeakMuted keeps the host silent and says so; SpeakReady does not claim
+	// a speaker or voice session exists.
+	SpeakMuted = "Audio is muted in this environment, so I will not speak out loud. I can answer here in text."
+	SpeakReady = "Audio is not muted, so voice mode can use the speaker when it is available."
 )
 
 var (
 	prefixes = []string{"hey talos ", "ok talos ", "okay talos ", "talos ", "tell us "}
 	hearing  = regexp.MustCompile(`^(?:can|do) you hear me$|^did you hear me$|^am i coming through$|^can you hear my voice$|^is my voice coming through$`)
 	seeing   = regexp.MustCompile(`^(?:can|do) you see me$|^(?:can|do) you see anyone$|^is anyone in the room$|^is there anyone in the room$|^am i in the room$`)
+	speaking = regexp.MustCompile(`^(?:can|do) you (?:speak|talk)(?: out loud)?$|^do you have a voice$|^are you (?:muted|on mute|silent|quiet)$|^is (?:your voice|audio) (?:off|on|muted|on mute)$|^why (?:are you|do you stay) (?:silent|quiet|muted)$|^why don t you (?:talk|speak)$`)
 	combined = regexp.MustCompile(`^(?:can|do) you (hear|see)(?: me)? and (?:can you |do you )?(hear|see) me$`)
 )
 
 // Answer returns a deterministic reply, or "" when text asks nothing about
-// hearing or seeing. voice reports that the turn arrived as speech.
-func Answer(text string, voice bool) string {
+// hearing, seeing or speaking. voice reports that the turn arrived as speech;
+// muted reports that the host has no audio output.
+func Answer(text string, voice, muted bool) string {
 	words := normalize(text)
 	if words == "" {
 		return ""
@@ -43,6 +49,12 @@ func Answer(text string, voice bool) string {
 	}
 	if seeing.MatchString(words) {
 		return Unknown
+	}
+	if speaking.MatchString(words) {
+		if muted {
+			return SpeakMuted
+		}
+		return SpeakReady
 	}
 	return ""
 }

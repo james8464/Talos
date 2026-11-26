@@ -55,6 +55,9 @@ type Config struct {
 	// TextReplyFallback is TALOS_AGENT_TEXT_REPLY: post a Room Run's final
 	// text when it sent no message. Off by default.
 	TextReplyFallback bool
+	// Muted is TALOS_MUTE: the host must not produce audio output, so
+	// capability answers say so instead of claiming a voice.
+	Muted bool
 	// RunnerGatewayURL is the public Runner Gateway address an enrolled
 	// Computer receives; enrollment is off while it is empty.
 	RunnerGatewayURL string
@@ -160,6 +163,7 @@ func Load() (Config, error) {
 	if err := applyPermissionReview(&cfg); err != nil {
 		return Config{}, err
 	}
+	applyMute(&cfg)
 	if err := applyTextReplyFallback(&cfg); err != nil {
 		return Config{}, err
 	}
@@ -474,6 +478,15 @@ func applyPermissionReview(cfg *Config) error {
 	}
 	cfg.PermissionReview.Enabled = enabled
 	return nil
+}
+
+// applyMute reads TALOS_MUTE with the same truthy values as the service kit's
+// isMuted, so TeamHub and the workers agree on the mute state.
+func applyMute(cfg *Config) {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("TALOS_MUTE"))) {
+	case "1", "true", "yes", "on":
+		cfg.Muted = true
+	}
 }
 
 // applyTextReplyFallback reads TALOS_AGENT_TEXT_REPLY; unset keeps it off.

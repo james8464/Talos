@@ -11,6 +11,7 @@ import (
 var teamhubEnvironment = []string{
 	"TEAMHUB_PERMISSION_REVIEW",
 	"TALOS_AGENT_TEXT_REPLY",
+	"TALOS_MUTE",
 	"TEAMHUB_TRUSTED_PROXIES",
 	"TEAMHUB_HTTP_ADDRESS",
 	"TEAMHUB_DATABASE_URL",
@@ -441,5 +442,20 @@ func TestForTestStartsFromDefaults(t *testing.T) {
 	if cfg.ArtifactStorageRoot == Default().ArtifactStorageRoot || cfg.DocumentPreviewPublicOrigin != "http://localhost:8080" ||
 		cfg.Jobs.PollInterval >= Default().Jobs.PollInterval {
 		t.Fatalf("ForTest root=%q origin=%q poll=%s", cfg.ArtifactStorageRoot, cfg.DocumentPreviewPublicOrigin, cfg.Jobs.PollInterval)
+	}
+}
+
+func TestLoadMute(t *testing.T) {
+	for _, tc := range []struct {
+		value string
+		want  bool
+	}{{"1", true}, {"true", true}, {"YES", true}, {"on", true}, {"", false}, {"0", false}, {"false", false}} {
+		clearTeamHubEnvironment(t)
+		t.Setenv("TEAMHUB_DATABASE_URL", "postgres://environment.example/teamhub")
+		t.Setenv("TALOS_MUTE", tc.value)
+		cfg, err := Load()
+		if err != nil || cfg.Muted != tc.want {
+			t.Fatalf("TALOS_MUTE=%q: muted=%v err=%v", tc.value, cfg.Muted, err)
+		}
 	}
 }

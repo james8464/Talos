@@ -272,7 +272,7 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 	}
 	reply := a.roomIdentity.Answer(roomID, text, time.Now())
 	if reply == "" {
-		reply = roomsenses.Answer(text, voice)
+		reply = roomsenses.Answer(text, voice, a.cfg.Muted)
 	}
 	if reply == "" {
 		reply = a.roomReminderReply(c, roomID, text)

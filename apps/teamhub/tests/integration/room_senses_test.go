@@ -3,6 +3,9 @@ package integration_test
 import (
 	"context"
 	"testing"
+
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomsenses"
 )
 
 // TestSensorQuestionsWriteAgentReplies proves the old Talos hear/see answers
@@ -56,5 +59,33 @@ func TestSensorQuestionsWriteAgentReplies(t *testing.T) {
 		JOIN actors actor ON actor.id=message.author_actor_id AND actor.tenant_id=message.tenant_id
 		WHERE message.room_id=$1 AND actor.kind='agent'`, roomID).Scan(&after); err != nil || after != agentMessages {
 		t.Fatalf("ordinary question drew a reply: %d -> %d err=%v", agentMessages, after, err)
+	}
+}
+
+// TestSpeakAnswersFollowMute proves the Agent tells the Room the truth about
+// audio without starting a voice session.
+func TestSpeakAnswersFollowMute(t *testing.T) {
+	allowParallelIntegrationTest(t)
+	for _, tc := range []struct {
+		name  string
+		muted bool
+		want  string
+	}{
+		{"muted", true, roomsenses.SpeakMuted},
+		{"unmuted", false, roomsenses.SpeakReady},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env, alice, _, roomID := newAgentCLIIdentity(t, withConfig(func(cfg *config.Config) {
+				cfg.Muted = tc.muted
+			}))
+			createHumanMessage(t, env, alice, roomID, "Can you speak out loud?", "senses-speak")
+			var replies int
+			if err := env.pool.QueryRow(t.Context(), `
+				SELECT count(*) FROM messages message
+				JOIN actors actor ON actor.id=message.author_actor_id AND actor.tenant_id=message.tenant_id
+				WHERE message.room_id=$1 AND actor.kind='agent' AND message.body=$2`, roomID, tc.want).Scan(&replies); err != nil || replies != 1 {
+				t.Fatalf("speak reply=%d err=%v", replies, err)
+			}
+		})
 	}
 }
