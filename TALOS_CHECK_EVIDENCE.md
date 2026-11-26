@@ -88,3 +88,20 @@ Tests  12 passed (12)
    Duration  21.25s (transform 350ms, setup 13ms, import 531ms, tests 20.64s, environment 0ms)
 
 ```
+
+## Live model conversation
+
+Run against TeamHub on 8090, the Agent Service on 4319, the Local Computer
+Daemon and the local Codex home for `qwen3:8b-16k`, with `TALOS_MUTE=1` and
+`TALOS_AGENT_TEXT_REPLY=1`:
+
+```text
+$ TEAMHUB_BASE_URL=http://127.0.0.1:8090 node scripts/talos-agent-live.mjs
+room=room_d31e3bb14ac7b600c28d2d1b6f018a4a
+message=message_99568571625b99073776025c472d88ce
+reply[Talos]: Hello! I'm Talos, your AI assistant here to help with onboarding and tasks.
+AGENT_REPLY_FOUND
+```
+
+Both model requests used `qwen3:8b-16k`; the Room reply guard blocked the
+model's text-only finish, and the reviewed fallback posted it as the Agent.

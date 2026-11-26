@@ -319,6 +319,16 @@ body="Hello! I'm Talos, your AI assistant here to help with onboarding and tasks
 `scripts/talos-agent-live.mjs` waits for that persisted Agent-authored reply;
 `pnpm talos:live` runs it when `TALOS_LIVE_AGENT=1` points at a running stack.
 
+Re-verified with the local bundle on the `talos_ollama_live` database:
+
+```text
+agent.model_request model=qwen3:8b-16k (3602/551, 152/741 tokens)
+room_reply_guard.blocked unansweredInboxIds=[room_d31e3bb14ac7b600c28d2d1b6f018a4a]
+local_run.text_reply_posted run_id=local-run-7e54f811186941fc9c85c3d9828cb3af
+reply[Talos]: Hello! I'm Talos, your AI assistant here to help with onboarding and tasks.
+AGENT_REPLY_FOUND
+```
+
 ## Proactive check-in journey
 
 The live harness runs `TestProactiveWindowsAndQuietWakes`
