@@ -17,6 +17,10 @@ export const settingsMessages = defineMessages("settings", {
     "Saved on this device. Text written by Agents and other people stays as they wrote it.",
   languageUnavailable:
     "That language could not be loaded. Check your connection and try again.",
+  screenHighlight: "Test screen highlight",
+  screenHighlightLabel: "Talos highlight preview",
+  screenHighlightHint:
+    "Outlines a sample area without speaking or taking focus.",
   mediaReadiness: "Camera and microphone",
   cameraPermission: "Camera",
   microphonePermission: "Microphone",

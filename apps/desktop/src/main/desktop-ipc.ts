@@ -1,4 +1,10 @@
-import { app, ipcMain, type IpcMainInvokeEvent } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  type IpcMainInvokeEvent,
+} from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -22,6 +28,7 @@ import type { LanguageModule } from "./language.js";
 import type { LocalServerModule } from "./local-server.js";
 import type { Module, ModuleContext } from "./modules.js";
 import { sameOrigin } from "./navigation.js";
+import { ScreenOverlay, type OverlayWindowHandle } from "./screen-overlay.js";
 import type { PowerGuardModule } from "./power-guard.js";
 import {
   runDesktopPermissionStep,
@@ -38,6 +45,15 @@ import type { WindowManagerModule } from "./window-manager.js";
 import type { WorkspaceGrantsModule } from "./workspace-grants.js";
 
 const grantIdInput = z.string().min(1).max(128);
+const overlayTargetInput = z
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+    label: z.string().max(100).optional(),
+  })
+  .strict();
 const languageInput = z.enum(LANGUAGES);
 // The server address is not settable from the SPA: a page served by one
 // server must not be able to repoint the app. It changes on app://offline.
@@ -120,6 +136,7 @@ export class DesktopIpcModule implements Module {
   readonly #driverUpdater: DriverUpdaterHost | undefined;
   readonly #unsubscribe: (() => void)[] = [];
   #perceptionInstance: TalosPerception | undefined;
+  #overlay: ScreenOverlay | undefined;
 
   constructor(options: {
     defaultDisplayName: string;
@@ -148,6 +165,26 @@ export class DesktopIpcModule implements Module {
       compiler: "swiftc",
     });
     return this.#perceptionInstance;
+  }
+
+  #overlayInstance(): ScreenOverlay {
+    if (this.#overlay) return this.#overlay;
+    this.#overlay = new ScreenOverlay({
+      deps: {
+        // BrowserWindow carries the subset the overlay calls; the level is a
+        // string so the module stays testable without Electron types.
+        createWindow: (options) =>
+          new BrowserWindow(options) as unknown as OverlayWindowHandle,
+        workAreaFor: (target) =>
+          screen.getDisplayMatching({
+            x: target.x,
+            y: target.y,
+            width: target.width,
+            height: target.height,
+          }).workArea,
+      },
+    });
+    return this.#overlay;
   }
 
   async start(ctx: ModuleContext): Promise<void> {
@@ -298,6 +335,10 @@ export class DesktopIpcModule implements Module {
       );
       handle(IPC.permissionStatus, () => permissions.permissions.status());
     }
+    handle(IPC.overlayShow, (target) =>
+      this.#overlayInstance().show(overlayTargetInput.parse(target)),
+    );
+    handle(IPC.overlayHide, () => this.#overlayInstance().hide());
     handle(IPC.captureCheck, async () => {
       const source = [
         path.join(process.resourcesPath, "talos/av_capture.swift"),
@@ -399,5 +440,7 @@ export class DesktopIpcModule implements Module {
 
   async stop(): Promise<void> {
     for (const off of this.#unsubscribe.splice(0)) off();
+    this.#overlay?.dispose();
+    this.#overlay = undefined;
   }
 }

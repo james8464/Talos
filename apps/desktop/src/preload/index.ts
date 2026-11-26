@@ -53,6 +53,10 @@ const api: TalosDesktopApi = {
           status: () => ipcRenderer.invoke(IPC.permissionStatus),
         }
       : undefined,
+  overlay: {
+    show: (target) => ipcRenderer.invoke(IPC.overlayShow, target),
+    hide: () => ipcRenderer.invoke(IPC.overlayHide),
+  },
   capture:
     process.platform === "darwin"
       ? { check: () => ipcRenderer.invoke(IPC.captureCheck) }

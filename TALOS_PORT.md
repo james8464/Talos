@@ -158,6 +158,15 @@ seeing answer never invents a camera reading. Unit and Postgres coverage is in
 with all three. A camera or microphone request is answered with the explicit
 Settings capture step instead of starting a capture.
 
+## Screen highlight
+
+`ScreenOverlay` is a transparent, click-through, always-on-top Electron window
+that outlines one screen region with a ring and an optional label. It never
+focuses, never receives input and never speaks; it hides itself after four
+seconds. Settings › Test screen highlight shows it, and the IPC accepts any
+region an Agent action reports. Wiring the computer tools to raise it on every
+action is still open.
+
 ## Camera and microphone readiness
 
 Settings shows the macOS camera and microphone permission state from

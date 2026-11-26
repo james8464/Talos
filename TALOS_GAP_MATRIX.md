@@ -45,9 +45,9 @@ Status meanings: **ported** (works here and is tested here), **present**
 
 | Talos behaviour                            | Talos status | Where / next step                                                                                                                               |
 | ------------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native Swift menu-bar app and overlays     | **missing**  | Talos desktop is Electron; decide whether overlays become Electron windows or keep a Swift helper.                                              |
+| Native Swift menu-bar app and overlays     | **present**  | The Electron app already has a tray; overlays are one transparent, click-through Electron window rather than a Swift helper.                    |
 | AX-first click/type/read with OCR fallback | **present**  | Cua/Playwright/Shell behind the Guardrail. Compare permission prompts and receipts.                                                             |
-| Non-speaking screen highlight              | **missing**  | Port the ring/label overlay.                                                                                                                    |
+| Non-speaking screen highlight              | **present**  | `ScreenOverlay` draws a ring and label without focus, input or speech; Settings previews it and the IPC accepts a target region.                |
 | Muted capability and identity replies      | **present**  | Identity, hear, see and speak questions get deterministic Agent replies; speak reports `TALOS_MUTE` and never claims a camera reading.          |
 | Offline voice transcription                | **present**  | Local MLX Whisper adapter, supervisor selection without a Soniox key, unit tests and a silent `say -o` transcription check in the live harness. |
 

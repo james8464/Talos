@@ -62,6 +62,16 @@ export interface TalosSoundEvent {
   readonly confidence: number;
 }
 
+// One screen region to outline without speaking or taking focus. Screen points
+// on macOS, physical-independent pixels elsewhere.
+export interface TalosOverlayTarget {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly label?: string;
+}
+
 export interface TalosCaptureCheck {
   readonly ok: true;
   readonly seconds: number;
@@ -230,6 +240,12 @@ export interface TalosDesktopApi {
     // Reads the macOS state without showing a prompt or capturing media.
     status(): Promise<TalosSystemPermission[]>;
   };
+  // A transparent, click-through highlight over one screen region. It never
+  // takes focus and hides itself.
+  readonly overlay?: {
+    show(target: TalosOverlayTarget): Promise<void>;
+    hide(): Promise<void>;
+  };
   // One local frame and a short clip, then the temporary media is deleted.
   // Absent in browsers and desktop builds that predate it.
   readonly capture?: {
@@ -271,6 +287,8 @@ export const IPC = {
   settingsEvent: "settings.event",
   permissionAct: "permission.act",
   permissionStatus: "permission.status",
+  overlayShow: "overlay.show",
+  overlayHide: "overlay.hide",
   captureCheck: "capture.check",
   perceptionScene: "perception.scene",
   perceptionSound: "perception.sound",
