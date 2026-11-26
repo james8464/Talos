@@ -22,39 +22,17 @@ wire_api = "responses"
 requires_openai_auth = false
 EOF
 printf '{}\n' >"$home/auth.json"
-node - "$model" "$home/model_catalog.json" <<'NODE'
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
-const [model, target] = process.argv.slice(2);
-const source = process.env.TALOS_CODEX_SOURCE_HOME || path.join(os.homedir(), ".codex");
-let base = {};
-try {
-  const cache = JSON.parse(fs.readFileSync(path.join(source, "models_cache.json"), "utf8"));
-  base = cache.models?.[0] ?? {};
-} catch {
-  // Fields below still describe a usable entry.
-}
-const entry = JSON.parse(JSON.stringify(base));
-entry.slug = model;
-entry.display_name = "Qwen3 4B (8k)";
-entry.description = "Local Ollama model served through the Responses API";
-entry.context_window = 8192;
-if ("max_output_tokens" in entry) entry.max_output_tokens = 2048;
-entry.shell_type = "shell_command";
-delete entry.tool_mode;
-delete entry.apply_patch_tool_type;
-delete entry.web_search_tool_type;
-entry.experimental_supported_tools = [];
-entry.supports_search_tool = false;
-entry.use_responses_lite = false;
-fs.writeFileSync(target, JSON.stringify({ models: [entry] }), { mode: 0o600 });
-NODE
 if ! ollama show "$model" >/dev/null 2>&1; then
   modelfile="$(mktemp "${TMPDIR:-/tmp}/talos-ollama-modelfile.XXXXXX")"
   trap 'rm -f "$modelfile"' EXIT
   printf 'FROM qwen3:4b\nPARAMETER num_ctx 8192\n' >"$modelfile"
   ollama create "$model" -f "$modelfile" >/dev/null
 fi
+
+# Every installed model is advertised, so an Agent configured for another
+# Ollama model still finds a placement on this Computer.
+installed="$(ollama list 2>/dev/null | tail -n +2 | awk '{print $1}' | grep -v '^$' || true)"
+# shellcheck disable=SC2086
+node "$(dirname "$0")/ollama-codex-catalog.mjs" "$home/model_catalog.json" "$model" $installed
 
 printf '%s\n' "$home"

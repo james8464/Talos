@@ -329,6 +329,12 @@ reply[Talos]: Hello! I'm Talos, your AI assistant here to help with onboarding a
 AGENT_REPLY_FOUND
 ```
 
+`scripts/ollama-codex-home.sh` writes one `model_catalog.json` entry per
+installed Ollama model (primary first, context from a `-8k`/`-16k` suffix). A
+Computer whose catalog named only `qwen3:8b-16k` rejected Agents configured for
+`qwen3:4b-8k` with `runner.placement.unavailable`; the daemon now reports
+`models=6` and no placement warning.
+
 ## Proactive check-in journey
 
 The live harness runs `TestProactiveWindowsAndQuietWakes`
