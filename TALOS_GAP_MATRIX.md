@@ -31,15 +31,15 @@ Status meanings: **ported** (works here and is tested here), **present**
 
 ## Coding autonomy
 
-| Talos behaviour                                                            | Talos status | Where / next step                                                                                                                                                    |
-| -------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| One-file coding job with model draft, sandbox verify, apply/rollback       | **present**  | Live Room proof: `qwen3:4b` drafted a patch, the sandbox verified it, and the Agent reported it; the Agent Runtime is used when configured.                          |
-| Retry once on failed sandbox test with failure output                      | **present**  | `runCodingJob` retries once with the failure text as feedback.                                                                                                       |
-| Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.                                                                                     |
-| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.                                                                               |
-| Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                                                                                        |
-| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | Durable commands, cancel, visible retry schedule and duplicate suppression; every reply is Agent-authored.                                                           |
-| Receipts: diff, regression, hashes, attempts, remaining budget             | **partial**  | Verified jobs store per-target sizes and SHA-256, the regression hash and attempts; `coding job <id>` reports them. A text diff and remaining budget are not stored. |
+| Talos behaviour                                                            | Talos status | Where / next step                                                                                                                                                                  |
+| -------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One-file coding job with model draft, sandbox verify, apply/rollback       | **present**  | Live Room proof: `qwen3:4b` drafted a patch, the sandbox verified it, and the Agent reported it; the Agent Runtime is used when configured.                                        |
+| Retry once on failed sandbox test with failure output                      | **present**  | `runCodingJob` retries once with the failure text as feedback.                                                                                                                     |
+| Multi-file step verified as one patch                                      | **present**  | `runCodingJob` applies and verifies every patch of a draft as one sandbox patch.                                                                                                   |
+| Dependency-ordered plans, shared budget, two revisions, superseded steps   | **present**  | `createPlan`/`recordStepResult`/`applyRepair` enforce order, budget and two revisions.                                                                                             |
+| Catalog guard (source/tests only) and independent same-file conflict guard | **present**  | `allowedTargets` and `assertIndependentTargets` guard a plan.                                                                                                                      |
+| Typed room commands `coding job`, `coding plan`, `coding jobs`             | **present**  | Durable commands, cancel, visible retry schedule and duplicate suppression; every reply is Agent-authored.                                                                         |
+| Receipts: diff, regression, hashes, attempts, remaining budget             | **present**  | Verified jobs store per-target sizes and SHA-256, the regression hash, a diff hash, attempts and budget left; `coding job <id>` reports them. The diff text stays on the Computer. |
 
 ## Control and UI
 

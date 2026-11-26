@@ -69,6 +69,11 @@ describe("runCodingJob", () => {
       },
     ]);
     expect(receipt?.regression_sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(receipt?.diff_sha256).toBe(
+      "6c0e17d313d232f978b2d89b5f4d36bae4d25ac0d2fbae07b38dac277905fee3",
+    );
+    expect(receipt?.budget_remaining_seconds).toBeGreaterThanOrEqual(0);
+    expect(receipt?.budget_remaining_seconds).toBeLessThanOrEqual(300);
     expect(JSON.stringify(receipt)).not.toContain("two");
   });
 

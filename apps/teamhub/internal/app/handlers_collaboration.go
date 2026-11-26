@@ -436,7 +436,11 @@ func codingReceiptLine(raw []byte) string {
 	for _, file := range receipt.Files {
 		parts = append(parts, fmt.Sprintf("%s %d->%d bytes", file.Target, file.BytesBefore, file.BytesAfter))
 	}
-	return " Receipt: " + strings.Join(parts, "; ") + "."
+	summary := " Receipt: " + strings.Join(parts, "; ") + "."
+	if receipt.BudgetRemainingSeconds > 0 {
+		summary += fmt.Sprintf(" %ds budget left.", receipt.BudgetRemainingSeconds)
+	}
+	return summary
 }
 
 func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {

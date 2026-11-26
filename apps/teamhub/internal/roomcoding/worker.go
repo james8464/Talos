@@ -38,6 +38,9 @@ type Outcome struct {
 type Receipt struct {
 	Files            []FileReceipt `json:"files"`
 	RegressionSHA256 string        `json:"regression_sha256"`
+	DiffSHA256       string        `json:"diff_sha256"`
+	// BudgetRemainingSeconds is what the Computer had left when it verified.
+	BudgetRemainingSeconds int64 `json:"budget_remaining_seconds"`
 }
 
 // FileReceipt is one target's before and after identity.
@@ -227,7 +230,14 @@ func receiptSummary(receipt *Receipt) string {
 			file.Target, file.BytesBefore, file.BytesAfter,
 			shortHash(file.BeforeSHA256), shortHash(file.AfterSHA256)))
 	}
-	return " Receipt: " + strings.Join(parts, "; ") + "."
+	summary := " Receipt: " + strings.Join(parts, "; ") + "."
+	if receipt.DiffSHA256 != "" {
+		summary += " Diff sha256 " + shortHash(receipt.DiffSHA256) + "."
+	}
+	if receipt.BudgetRemainingSeconds > 0 {
+		summary += fmt.Sprintf(" %ds budget left.", receipt.BudgetRemainingSeconds)
+	}
+	return summary
 }
 
 func shortHash(hash string) string {

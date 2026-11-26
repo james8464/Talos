@@ -46,11 +46,15 @@ func TestReportAddsAReceiptWithoutFileContents(t *testing.T) {
 			Target: "src/value.txt", BytesBefore: 4, BytesAfter: 4,
 			BeforeSHA256: "2c8b08da5ce60398e1f19af0e5dccc744",
 			AfterSHA256:  "27dd8ed44a83ff94d557f9fd0412ed5a",
-		}}, RegressionSHA256: "f8f90421ddaf88273f5020fa1981e09e"},
+		}}, RegressionSHA256: "f8f90421ddaf88273f5020fa1981e09e",
+			DiffSHA256:             "6c0e17d313d232f978b2d89b5f4d36bae4d25ac0d2fbae07b38dac277905fee3",
+			BudgetRemainingSeconds: 243},
 	})
 	for _, want := range []string{
 		"src/value.txt 4->4 bytes",
 		"sha256 2c8b08da5ce6->27dd8ed44a83",
+		"Diff sha256 6c0e17d313d2.",
+		"243s budget left.",
 	} {
 		if !strings.Contains(reply, want) {
 			t.Fatalf("reply=%q missing %q", reply, want)

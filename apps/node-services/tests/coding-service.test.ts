@@ -146,6 +146,8 @@ describe("coding route", () => {
     expect(body.receipt.regression_sha256).toBe(
       "f8f90421ddaf88273f5020fa1981e09e1cac39807406d3aa80dc52986e195dd2",
     );
+    expect(body.receipt.diff_sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(body.receipt.budget_remaining_seconds).toBeGreaterThanOrEqual(0);
     expect(await readFile(path.join(root, "src", "value.txt"), "utf8")).toBe(
       "one\n",
     );

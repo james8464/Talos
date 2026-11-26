@@ -185,7 +185,8 @@ the stale test labels and never an audio player.
 ## Coding receipts
 
 A verified patch reports each target's size and short SHA-256 before and after,
-plus the regression file's hash, without copying file contents into the Room.
+the regression file's hash, a hash of the changed hunk text and the seconds left
+in the job budget, without copying file contents into the Room.
 The receipt is stored on `room_coding_jobs.receipt`; `coding job <id>` shows the
 status, attempts, result and receipt for one job. Coverage lives in
 `TestCodingCommandsWriteAgentReplies`.

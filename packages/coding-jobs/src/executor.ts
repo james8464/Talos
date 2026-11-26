@@ -68,6 +68,10 @@ export interface CodingJobFileReceipt {
 export interface CodingJobReceipt {
   readonly files: readonly CodingJobFileReceipt[];
   readonly regression_sha256: string;
+  /** Hash of the before/after hunk text; the text itself stays on the Computer. */
+  readonly diff_sha256: string;
+  /** Seconds left in the job budget when verification finished. */
+  readonly budget_remaining_seconds: number;
 }
 
 export interface CodingJobResult {
@@ -147,10 +151,29 @@ async function applyDraft(
 const sha256 = (value: string | Buffer) =>
   createHash("sha256").update(value).digest("hex");
 
+function hunkText(draft: PatchDraft): string {
+  return draft.patches
+    .map(
+      (patch) =>
+        `--- a/${patch.target}\n+++ b/${patch.target}\n` +
+        patch.before
+          .split("\n")
+          .map((line) => `-${line}`)
+          .join("\n") +
+        "\n" +
+        patch.after
+          .split("\n")
+          .map((line) => `+${line}`)
+          .join("\n"),
+    )
+    .join("\n");
+}
+
 async function jobReceipt(
   root: string,
   folder: string,
   draft: PatchDraft,
+  remainingSeconds: number,
 ): Promise<CodingJobReceipt> {
   const files: CodingJobFileReceipt[] = [];
   for (const patch of draft.patches) {
@@ -164,7 +187,12 @@ async function jobReceipt(
       bytes_after: after.length,
     });
   }
-  return { files, regression_sha256: sha256(draft.regression) };
+  return {
+    files,
+    regression_sha256: sha256(draft.regression),
+    diff_sha256: sha256(hunkText(draft)),
+    budget_remaining_seconds: Math.max(0, Math.floor(remainingSeconds)),
+  };
 }
 
 async function runVerify(
@@ -245,7 +273,7 @@ export async function runCodingJob(
         feedback = `\nThe previous patch failed verification:\n${lastFailure}`;
         continue;
       }
-      const receipt = await jobReceipt(root, folder, draft);
+      const receipt = await jobReceipt(root, folder, draft, deadline - now());
       if (!options.apply) {
         return {
           status: "verified",
