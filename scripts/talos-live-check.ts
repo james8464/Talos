@@ -13,7 +13,7 @@
  */
 import { execFile, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -158,6 +158,42 @@ async function main(): Promise<number> {
   check("voice-refusal", voice);
   check("no-voice-process", await noProcess("voice-runtime|livekit-server"));
 
+  // Text to speech runs to a file and is never played. The system voice is
+  // Talos's documented fallback when a cloud voice is unavailable.
+  if (process.platform === "darwin") {
+    const folder = await mkdtemp(path.join(os.tmpdir(), "talos-tts-live-"));
+    const clip = path.join(folder, "speech.wav");
+    try {
+      await exec(
+        "say",
+        [
+          "-o",
+          clip,
+          "--data-format=LEI16@16000",
+          "Talos text to speech check.",
+        ],
+        { timeout: 60_000 },
+      );
+      const wav = await readFile(clip);
+      const pcm = pcmFromWAV(wav);
+      const seconds = pcm.length / 2 / 16_000;
+      check(
+        "tts-synthesis",
+        wav.subarray(0, 4).toString() === "RIFF" &&
+          wav.subarray(8, 12).toString() === "WAVE" &&
+          seconds >= 0.5 &&
+          seconds <= 10,
+        `${pcm.length} bytes · ${seconds.toFixed(2)}s · 16 kHz mono`,
+      );
+    } catch (error) {
+      check("tts-synthesis", false, (error as Error).message);
+    } finally {
+      await rm(folder, { recursive: true, force: true });
+    }
+  } else {
+    check("tts-synthesis", true, "skipped: system text to speech needs macOS");
+  }
+
   // Transcription runs on a file `say` writes; it never reaches a speaker.
   const whisperPython = path.join(ROOT, "apps/voice-runtime/.venv/bin/python");
   if (process.platform === "darwin" && existsSync(whisperPython)) {
@@ -207,6 +243,78 @@ async function main(): Promise<number> {
       "local-whisper-transcribe",
       true,
       "skipped: macOS `say` or the local Whisper environment is absent",
+    );
+  }
+
+  // A full audible loop: play a phrase through the speaker, record it from the
+  // microphone, and transcribe the recording. Off unless audio is allowed.
+  if (
+    process.env.TALOS_LIVE_AUDIO === "1" &&
+    process.platform === "darwin" &&
+    existsSync(whisperPython)
+  ) {
+    const folder = await mkdtemp(path.join(os.tmpdir(), "talos-audio-loop-"));
+    try {
+      const capture = new TalosMediaCapture({
+        source: path.join(
+          ROOT,
+          "apps/desktop/resources/talos/av_capture.swift",
+        ),
+        runtimeDir: folder,
+        compiler: "swiftc",
+      });
+      // Compile the helper before speaking so the phrase is not missed.
+      await capture.capture(true, 0.1);
+      const spoken = spawn(
+        "say",
+        ["The quick brown fox jumps over the lazy dog."],
+        { stdio: "ignore" },
+      );
+      const said = new Promise<void>((resolve) =>
+        spoken.once("exit", () => resolve()),
+      );
+      const receipt = await capture.capture(true, 6);
+      await said;
+      const raw = path.join(folder, "raw.wav");
+      const converted = path.join(folder, "16k.wav");
+      await writeFile(raw, Buffer.from(receipt.audioBase64, "base64"));
+      await exec("/usr/bin/afconvert", [
+        "-f",
+        "WAVE",
+        "-d",
+        "LEI16@16000",
+        "-c",
+        "1",
+        raw,
+        converted,
+      ]);
+      const pcm = pcmFromWAV(await readFile(converted));
+      const transcript = await mlxWhisperTranscriber({
+        python: whisperPython,
+        helper: path.join(
+          ROOT,
+          "apps/voice-runtime/scripts/transcribe_mlx_whisper.py",
+        ),
+        model: "mlx-community/whisper-base-mlx",
+      })(pcm);
+      const lower = transcript.toLowerCase();
+      check(
+        "voice-loop-audible",
+        ["quick", "fox", "lazy"].some((word) => lower.includes(word)),
+        `${transcript.slice(0, 120)} · ${pcm.length} bytes`,
+      );
+    } catch (error) {
+      check("voice-loop-audible", false, (error as Error).message);
+    } finally {
+      await rm(folder, { recursive: true, force: true });
+    }
+  } else {
+    check(
+      "voice-loop-audible",
+      true,
+      process.env.TALOS_LIVE_AUDIO === "1"
+        ? "skipped: playback and recording need macOS and the local Whisper environment"
+        : "skipped: set TALOS_LIVE_AUDIO=1 to play and record a phrase",
     );
   }
 

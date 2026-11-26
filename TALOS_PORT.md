@@ -175,6 +175,17 @@ seconds. Settings › Test screen highlight previews it. The Daemon advertises
 pointer coordinates (`x`, `y`) raises a ring around that point; element-targeted
 input has no point to outline and raises nothing.
 
+## Text to speech and the audible loop
+
+The live harness always synthesizes one short phrase with the macOS system voice
+to a WAV file and asserts its RIFF/WAVE header, 16 kHz mono format and 0.5–10
+second duration; that check never plays a sample. With `TALOS_LIVE_AUDIO=1` it
+also speaks the phrase aloud, records it from the microphone through the native
+capture helper, converts to 16 kHz and transcribes it with local Whisper,
+asserting the words came back. The xAI Live voice and the old Kokoro model are
+not part of this loop; Live voice remains covered by the voice-runtime
+acceptance suite rather than the mute-safe live check.
+
 ## Camera and microphone readiness
 
 Settings shows the macOS camera and microphone permission state from
