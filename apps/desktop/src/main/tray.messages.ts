@@ -16,6 +16,8 @@ export const statusMessages = defineMessages("status", {
 // The tray menu, its tooltip and the update notifications.
 export const trayMessages = defineMessages("tray", {
   tooltip: "Talos · {status}",
+  mutedTooltip: "Talos · {status} · Muted",
+  muted: "Audio Muted (TALOS_MUTE)",
   open: "Open Talos",
   reconnect: "Reconnect This Computer",
   connect: "Connect This Computer…",

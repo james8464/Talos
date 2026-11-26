@@ -57,7 +57,7 @@ Tests  989 passed | 15 skipped (1004)
 Test Files  28 passed (28)
 Tests  221 passed (221)
 Test Files  50 passed | 1 skipped (51)
-Tests  650 passed | 1 skipped (651)
+Tests  651 passed | 1 skipped (652)
 Test Files  16 passed (16)
 Tests  185 passed (185)
 Test Files  14 passed (14)
@@ -84,7 +84,7 @@ Tests  12 passed (12)
 
  Test Files  1 passed (1)
       Tests  12 passed (12)
-   Start at  11:34:51
-   Duration  21.21s (transform 346ms, setup 12ms, import 531ms, tests 20.61s, environment 0ms)
+   Start at  11:49:10
+   Duration  21.42s (transform 440ms, setup 13ms, import 670ms, tests 20.66s, environment 0ms)
 
 ```

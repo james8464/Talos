@@ -159,6 +159,12 @@ with all three. A camera or microphone request is answered with the explicit
 Settings capture step instead of starting a capture. Asking "What can you do?"
 returns the same list of commands and the current mute state.
 
+## Mute in the tray
+
+When `TALOS_MUTE` is set, the desktop tray tooltip ends with "Muted" and the
+menu shows "Audio Muted (TALOS_MUTE)", so the silent state is visible without
+asking the Agent.
+
 ## Screen highlight
 
 `ScreenOverlay` is a transparent, click-through, always-on-top Electron window

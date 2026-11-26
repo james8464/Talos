@@ -342,6 +342,8 @@
   },
   "tray": {
     "tooltip": "Talos · {status}",
+    "mutedTooltip": "Talos · {status} · 已静音",
+    "muted": "音频已静音 (TALOS_MUTE)",
     "open": "打开 Talos",
     "reconnect": "重新连接这台电脑",
     "connect": "连接这台电脑…",

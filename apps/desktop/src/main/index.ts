@@ -18,6 +18,7 @@ import {
 } from "electron";
 
 import { talosHome } from "@talos/local-installation/home";
+import { isMuted } from "@talos/service-kit";
 
 import { quitRequested } from "./app-window.js";
 import { CredentialStore } from "./computer-credential.js";
@@ -409,7 +410,7 @@ async function main(): Promise<void> {
     }),
     setup,
     updater,
-    new TrayModule({ quit: () => void quit() }),
+    new TrayModule({ quit: () => void quit(), muted: isMuted() }),
     new DesktopIpcModule({
       defaultDisplayName,
       ...(desktopPermissions ? { permissions: desktopPermissions } : {}),

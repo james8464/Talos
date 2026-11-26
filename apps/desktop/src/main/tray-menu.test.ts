@@ -10,6 +10,19 @@ const menu = (state: TrayMenuState) => trayMenu(state, en);
 const notice = (update: AnnouncedUpdate) => updateNotice(update, en);
 
 describe("trayMenu", () => {
+  it("says when audio is muted", () => {
+    const items = menu({
+      status: { tone: "online", label: "Idle" },
+      muted: true,
+      preventSleep: false,
+      enrolled: true,
+    });
+    expect(items[1]).toEqual({
+      kind: "label",
+      label: "Audio Muted (TALOS_MUTE)",
+    });
+  });
+
   it("leads with the status and ends with quit", () => {
     const items = menu({
       status: { tone: "busy", label: "Running 2 Tasks" },

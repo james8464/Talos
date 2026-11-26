@@ -26,6 +26,8 @@ export type TrayMenuItem =
 
 export interface TrayMenuState {
   readonly status: StatusSummary;
+  // The host has TALOS_MUTE set, so no audio will play.
+  readonly muted?: boolean;
   readonly preventSleep: boolean;
   readonly enrolled: boolean;
   // The updater's progress; a failure says why, since it is otherwise only
@@ -42,6 +44,7 @@ export const trayMenu = (
   t: Translate,
 ): TrayMenuItem[] => [
   { kind: "label", label: state.status.label },
+  ...(state.muted ? [{ kind: "label" as const, label: t(m.muted) }] : []),
   ...updateItems(state.update, t),
   { kind: "separator" },
   { kind: "action", action: "open", label: t(m.open) },

@@ -30,6 +30,8 @@ import type { WindowManagerModule } from "./window-manager.js";
 export interface TrayOptions {
   // Owned by the app lifecycle.
   readonly quit: () => void;
+  // TALOS_MUTE: the host must not produce audio; the menu says so.
+  readonly muted?: boolean;
 }
 
 const BUSY_FRAME_MS = 400;
@@ -135,7 +137,10 @@ export class TrayModule implements Module {
     if (!this.#tray) return;
     this.#tray.setImage(this.#icon());
     this.#tray.setToolTip(
-      this.#t(trayMessages.tooltip, { status: this.#status().label }),
+      this.#t(
+        this.#options.muted ? trayMessages.mutedTooltip : trayMessages.tooltip,
+        { status: this.#status().label },
+      ),
     );
     this.#tray.setContextMenu(this.#menu());
   }
@@ -162,6 +167,7 @@ export class TrayModule implements Module {
     const items = trayMenu(
       {
         status,
+        muted: this.#options.muted,
         preventSleep: power.alwaysOn(),
         enrolled: !!this.#ctx!.config.get().computerId,
         update,
