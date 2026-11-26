@@ -292,10 +292,12 @@ export class DesktopIpcModule implements Module {
     handle(IPC.updateCheck, () => updater.check());
 
     const permissions = this.#permissions;
-    if (permissions)
+    if (permissions) {
       handle(IPC.permissionAct, (step) =>
         runDesktopPermissionStep(permissions, permissionStepInput.parse(step)),
       );
+      handle(IPC.permissionStatus, () => permissions.permissions.status());
+    }
     handle(IPC.captureCheck, async () => {
       const source = [
         path.join(process.resourcesPath, "talos/av_capture.swift"),

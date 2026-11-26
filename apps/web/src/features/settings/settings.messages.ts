@@ -17,6 +17,13 @@ export const settingsMessages = defineMessages("settings", {
     "Saved on this device. Text written by Agents and other people stays as they wrote it.",
   languageUnavailable:
     "That language could not be loaded. Check your connection and try again.",
+  mediaReadiness: "Camera and microphone",
+  cameraPermission: "Camera",
+  microphonePermission: "Microphone",
+  permissionGranted: "Granted",
+  permissionNotGranted: "Not granted",
+  permissionUnknown: "Unknown",
+  allowPermission: "Allow",
   captureCheck: "Test camera and microphone",
   captureCheckDone:
     "Captured a {frame}-byte frame and {audio}-byte clip; media deleted.",

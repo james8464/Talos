@@ -129,7 +129,10 @@ export class SystemPermissions {
 
 // What a permission step from the page needs from the app.
 export interface DesktopPermissionHost {
-  readonly permissions: Pick<SystemPermissions, "prompt" | "openSettings">;
+  readonly permissions: Pick<
+    SystemPermissions,
+    "prompt" | "openSettings" | "status"
+  >;
   openExternal(url: string): Promise<void>;
   // Quits and starts the app again, for a Screen Recording grant to apply.
   relaunch(): void;

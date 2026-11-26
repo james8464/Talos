@@ -135,21 +135,35 @@ export function useDesktopComputer(): DesktopComputer | undefined {
 // A permission step the desktop app takes on its own Mac without TeamHub.
 // It runs Talos's own steps and opens any System Settings pane; CuaDriver's
 // prompt and restart need the daemon.
+export type DesktopPermissionId =
+  | "screen_recording"
+  | "accessibility"
+  | "camera"
+  | "microphone";
+
+export interface TalosSystemPermission {
+  readonly id: DesktopPermissionId;
+  readonly state: "granted" | "denied" | "not_determined" | "unknown";
+  readonly relaunch_required: boolean;
+}
+
 export type DesktopPermissionStep =
   | {
       readonly action: "prompt";
       readonly subject: "talos";
-      readonly permission: "screen_recording" | "accessibility";
+      readonly permission: DesktopPermissionId;
     }
   | {
       readonly action: "open_settings";
       readonly subject: "talos" | "computer_use";
-      readonly permission: "screen_recording" | "accessibility";
+      readonly permission: DesktopPermissionId;
     }
   | { readonly action: "relaunch"; readonly subject: "talos" };
 
 export interface DesktopPermissions {
   act(step: DesktopPermissionStep): Promise<void>;
+  // Absent in desktop builds that predate permission status.
+  status?(): Promise<TalosSystemPermission[]>;
 }
 
 // The desktop app's permission steps, or undefined in a browser or off macOS.

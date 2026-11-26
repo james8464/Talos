@@ -72,6 +72,13 @@ export interface TalosCaptureCheck {
   readonly audioBytes: number;
 }
 
+// One macOS permission Talos.app itself holds.
+export interface TalosSystemPermission {
+  readonly id: DesktopPermissionId;
+  readonly state: "granted" | "denied" | "not_determined" | "unknown";
+  readonly relaunch_required: boolean;
+}
+
 export type DesktopPermissionId =
   | "screen_recording"
   | "accessibility"
@@ -220,6 +227,8 @@ export interface TalosDesktopApi {
   // macOS only.
   readonly permissions?: {
     act(step: DesktopPermissionStep): Promise<void>;
+    // Reads the macOS state without showing a prompt or capturing media.
+    status(): Promise<TalosSystemPermission[]>;
   };
   // One local frame and a short clip, then the temporary media is deleted.
   // Absent in browsers and desktop builds that predate it.
@@ -261,6 +270,7 @@ export const IPC = {
   settingsSet: "settings.set",
   settingsEvent: "settings.event",
   permissionAct: "permission.act",
+  permissionStatus: "permission.status",
   captureCheck: "capture.check",
   perceptionScene: "perception.scene",
   perceptionSound: "perception.sound",

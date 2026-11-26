@@ -46,6 +46,13 @@ const api: TalosDesktopApi = {
       };
     },
   },
+  permissions:
+    process.platform === "darwin"
+      ? {
+          act: (step) => ipcRenderer.invoke(IPC.permissionAct, step),
+          status: () => ipcRenderer.invoke(IPC.permissionStatus),
+        }
+      : undefined,
   capture:
     process.platform === "darwin"
       ? { check: () => ipcRenderer.invoke(IPC.captureCheck) }
@@ -143,13 +150,6 @@ const api: TalosDesktopApi = {
       ipcRenderer.invoke(IPC.driverUpdateStartInstall, request),
     clearInstallState: () => ipcRenderer.invoke(IPC.driverUpdateClearState),
   },
-  ...(process.platform === "darwin"
-    ? {
-        permissions: {
-          act: (step) => ipcRenderer.invoke(IPC.permissionAct, step),
-        },
-      }
-    : {}),
 };
 
 contextBridge.exposeInMainWorld("talosDesktop", api);

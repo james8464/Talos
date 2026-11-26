@@ -158,6 +158,13 @@ seeing answer never invents a camera reading. Unit and Postgres coverage is in
 with all three. A camera or microphone request is answered with the explicit
 Settings capture step instead of starting a capture.
 
+## Camera and microphone readiness
+
+Settings shows the macOS camera and microphone permission state from
+`SystemPermissions.status()` without capturing anything, and offers Allow for a
+state that is not granted. The status is the same one the capture helper obeys,
+so a person can check readiness before the first capture.
+
 ## Presence reading
 
 The Settings capture check also classifies the captured frame locally and the

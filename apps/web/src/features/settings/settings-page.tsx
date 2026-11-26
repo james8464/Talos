@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useT } from "@/i18n/use-translation";
 
 import { CaptureCheckButton } from "./capture-check-button";
+import { MediaPermissionReadiness } from "./media-permission-readiness";
 import { SaveDiagnosticsButton } from "./save-diagnostics-button";
 import { settingsMessages } from "./settings.messages";
 
@@ -61,6 +62,7 @@ export function SettingsLayout() {
         </nav>
         <SaveDiagnosticsButton />
         <CaptureCheckButton />
+        <MediaPermissionReadiness />
       </aside>
       <div className="workspace-content-viewport workspace-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-6 py-6 [scrollbar-gutter:stable] md:px-8">
         <Suspense
