@@ -15,8 +15,14 @@ def main() -> None:
     model_path, voices_path, voice, speed, text, output = sys.argv[1:7]
     model = Kokoro(model_path, voices_path)
     language = "en-gb" if voice.startswith("b") else "en-us"
+    # continuous=True avoids the pause inserter, which crashes on very short
+    # sentences such as "I'm here."; sentences are already split by the caller.
     samples, rate = model.create(
-        text, voice=voice, speed=float(speed), lang=language
+        text,
+        voice=voice,
+        speed=float(speed),
+        lang=language,
+        continuous=True,
     )
     pcm = (np.clip(samples, -1, 1) * 32767).astype("<i2")
     with wave.open(output, "wb") as wav:

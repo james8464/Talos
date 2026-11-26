@@ -1,6 +1,6 @@
 # Full check evidence
 
-The full repository gate ran on this branch with audio allowed, from the final
+The full repository gate ran on this branch with audio muted, from the final
 `/Users/james/Developer/Talos` checkout. `CHECK_JOBS=1` keeps the light lanes
 from starving the timing-sensitive desktop and Web suites.
 
@@ -59,8 +59,8 @@ Test Files  28 passed (28)
 Tests  221 passed (221)
 Test Files  50 passed | 1 skipped (51)
 Tests  651 passed | 1 skipped (652)
-Test Files  17 passed (17)
-Tests  187 passed (187)
+Test Files  18 passed (18)
+Tests  191 passed (191)
 Test Files  14 passed (14)
 Tests  100 passed | 1 skipped (101)
 Test Files  1 passed (1)
@@ -85,7 +85,7 @@ Tests  12 passed (12)
 
  Test Files  1 passed (1)
       Tests  12 passed (12)
-   Start at  21:02:34
-   Duration  25.28s (transform 428ms, setup 17ms, import 633ms, tests 24.55s, environment 0ms)
+   Start at  22:42:19
+   Duration  21.70s (transform 346ms, setup 12ms, import 531ms, tests 21.09s, environment 0ms)
 
 ```

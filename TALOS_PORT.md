@@ -161,16 +161,21 @@ returns the same list of commands and the current mute state.
 
 ## Ambient Talos (experimental)
 
-`pnpm talos:ambient [--once]` is the first slice of the always-on assistant:
-it records a short chunk from the microphone, transcribes it locally with
-Whisper (biased toward the name "Talos"), optionally reads presence from the
-camera through native Vision, asks the local model whether the speech is
-addressed to Talos or to someone else, and answers aloud with the Kokoro voice.
-A simulated run heard "Talos, what do you see?", read 0 people from the camera,
-decided it was addressed, and answered "0 people in view." It is chunked, not
-continuous, and does not yet identify faces or take computer actions. Cua's
-computer-use tools are installed but macOS Accessibility and Screen Recording
-approval for CuaDriver is still pending in System Settings.
+`pnpm talos:ambient [--once]` is the first slice of the always-on assistant.
+One long-lived native audio session streams 16 kHz PCM; an energy gate segments
+utterances with pre-roll so a quiet "Talos" is not clipped. Each utterance is
+transcribed locally with Whisper (biased toward the name), read for camera
+presence through native Vision, and sent to the local model, which decides
+whether it was addressed, writes the reply, and chooses the tone. Listening is
+suspended while Talos speaks so it does not answer itself. Silero detects speech instead of a raw level
+threshold. A fast 4B model decides addressed and tone; a streamed 8B answer is
+spoken sentence by sentence, so first audio arrives before the answer finishes.
+Cua is granted (Accessibility and Screen Recording); when the request asks for
+an action, the 4B chooses one of `launch_app` or `get_accessibility_tree`, the
+daemon runs it through the Cua driver, and the reply reports the result. A live
+run of "Talos, open TextEdit." launched TextEdit and spoke a confirmation. Face
+identity is still missing, and the model keeps its own safety limits: it will
+refuse threats or harassment even with the menacing tone available.
 
 ## Personal reminders in Apple Reminders
 
