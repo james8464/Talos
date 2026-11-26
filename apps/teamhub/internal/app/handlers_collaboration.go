@@ -19,6 +19,7 @@ import (
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomgoal"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomhelp"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roompin"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomreminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomsenses"
@@ -271,6 +272,9 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 		return
 	}
 	reply := a.roomIdentity.Answer(roomID, text, time.Now())
+	if reply == "" && roomhelp.Read(text) {
+		reply = roomhelp.Reply(a.cfg.Muted)
+	}
 	if reply == "" {
 		reply = roomsenses.AnswerWithPresence(text, voice, a.cfg.Muted, a.latestPresenceReading(c))
 	}

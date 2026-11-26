@@ -110,3 +110,23 @@ func TestCaptureConsentReplies(t *testing.T) {
 		}
 	}
 }
+
+// TestHelpListsCommandsAndMute proves a help question names the deterministic
+// commands and the current audio state.
+func TestHelpListsCommandsAndMute(t *testing.T) {
+	allowParallelIntegrationTest(t)
+	env, alice, _, roomID := newAgentCLIIdentity(t, withConfig(func(cfg *config.Config) {
+		cfg.Muted = true
+	}))
+	createHumanMessage(t, env, alice, roomID, "What can you do?", "senses-help")
+	var replies int
+	if err := env.pool.QueryRow(t.Context(), `
+		SELECT count(*) FROM messages message
+		JOIN actors actor ON actor.id=message.author_actor_id AND actor.tenant_id=message.tenant_id
+		WHERE message.room_id=$1 AND actor.kind='agent'
+		AND message.body LIKE 'Audio is muted here%'
+		AND message.body LIKE '%coding job <id>%'
+		AND message.body LIKE '%reminder in 10m%'`, roomID).Scan(&replies); err != nil || replies != 1 {
+		t.Fatalf("help reply=%d err=%v", replies, err)
+	}
+}

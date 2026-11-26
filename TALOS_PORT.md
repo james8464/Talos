@@ -156,7 +156,8 @@ seeing answer never invents a camera reading. Unit and Postgres coverage is in
 `TestSpeakAnswersFollowMute`, `TestCaptureConsentReplies` and
 `TestSensorQuestionsWriteAgentReplies`; the live harness runs `room-commands`
 with all three. A camera or microphone request is answered with the explicit
-Settings capture step instead of starting a capture.
+Settings capture step instead of starting a capture. Asking "What can you do?"
+returns the same list of commands and the current mute state.
 
 ## Screen highlight
 
