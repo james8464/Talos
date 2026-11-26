@@ -57,6 +57,7 @@ func defaultDeps() deps {
 			return stopUnreachableDaemon(ctx, configPath, environment)
 		},
 		waitForDaemonStop: waitUntilDaemonStops,
+		addReminder:       runAppleReminder,
 	}
 	result.inspectDaemon = func(ctx context.Context, stateDirectory string) doctorCheck {
 		return inspectDaemonHealth(ctx, newDaemonClient(stateDirectory), commandName)

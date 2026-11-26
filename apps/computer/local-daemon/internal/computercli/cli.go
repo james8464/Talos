@@ -58,6 +58,7 @@ type deps struct {
 	confirmDaemonStopped  func(ctx context.Context, configPath string) (bool, error)
 	stopUnreachableDaemon func(ctx context.Context, configPath string) (bool, error)
 	waitForDaemonStop     func(ctx context.Context, client controlClient, pid int) error
+	addReminder           func(ctx context.Context, title string, due time.Time, list string) ([]byte, error)
 }
 
 type cli struct {
@@ -139,6 +140,8 @@ func (c *cli) execute(ctx context.Context, parsed command) (int, error) {
 			c.out("Computer daemon is not running\n")
 		}
 		return 0, nil
+	case "reminders-add":
+		return c.executeReminderAdd(ctx, parsed)
 	case "doctor":
 		if parsed.stopStale {
 			return c.executeDoctorStopStale(parsed)

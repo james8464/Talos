@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var runtimeTypes = []string{"codex", "claude", "pi", "antigravity"}
@@ -44,6 +45,11 @@ type command struct {
 	tokenStdin      bool
 	localModels     *stagedLocalModels
 
+	// reminders add
+	reminderTitle string
+	reminderAt    time.Time
+	reminderList  string
+
 	// daemon service start|stop
 	serviceName string
 	executable  string
@@ -60,7 +66,9 @@ type parseOptions struct {
 	commandName      string
 }
 
-var groups = map[string]bool{"auth": true, "daemon": true, "runtime": true}
+var groups = map[string]bool{
+	"auth": true, "daemon": true, "runtime": true, "reminders": true,
+}
 
 func isHelpFlag(value string) bool { return value == "help" || value == "--help" || value == "-h" }
 
@@ -141,6 +149,37 @@ func parseArguments(rawArgs []string, options parseOptions) (command, error) {
 		return parsed, requireEmpty()
 	case "daemon start", "daemon restart":
 		parsed.name = strings.ReplaceAll(name, " ", "-")
+		return parsed, requireEmpty()
+	case "reminders add":
+		if parsed.json, err = removeFlag(&args, "--json"); err != nil {
+			return command{}, err
+		}
+		title, err := removeOption(&args, "--title")
+		if err != nil {
+			return command{}, err
+		}
+		at, err := removeOption(&args, "--at")
+		if err != nil {
+			return command{}, err
+		}
+		list, err := removeOption(&args, "--list")
+		if err != nil {
+			return command{}, err
+		}
+		if strings.TrimSpace(title) == "" {
+			return command{}, newError(categoryUsage, "reminders add requires --title")
+		}
+		due, err := time.Parse(time.RFC3339, strings.TrimSpace(at))
+		if err != nil {
+			return command{}, newError(categoryUsage, "Use --at as an RFC 3339 time, such as 2026-11-26T15:00:00Z")
+		}
+		if strings.TrimSpace(list) == "" {
+			list = "Talos"
+		}
+		parsed.name = "reminders-add"
+		parsed.reminderTitle = strings.TrimSpace(title)
+		parsed.reminderAt = due
+		parsed.reminderList = strings.TrimSpace(list)
 		return parsed, requireEmpty()
 	case "version":
 		parsed.name = "version"

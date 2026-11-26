@@ -136,6 +136,21 @@ Options:
   --live                       Also ask each READY runtime for a model reply
   --json                       Print machine-readable results
 ` + runtimePathOptions + "\n" + configOption + "\n",
+	"reminders": `Usage:
+  talos-computer reminders add --title "<what>" --at <RFC 3339 time> [--list Talos] [--json]
+
+Create one reminder in the macOS Reminders app. It is free and local; macOS
+asks for Automation permission the first time.
+`,
+	"reminders add": `Usage:
+  talos-computer reminders add --title "<what>" --at <RFC 3339 time> [--list Talos] [--json]
+
+Options:
+  --title <text>               What to be reminded about
+  --at <RFC 3339 time>         When to be reminded, such as 2026-11-26T15:00:00Z
+  --list <name>                Reminders list (default: Talos)
+  --json                       Print machine-readable results
+`,
 	"doctor": `Usage:
   talos-computer doctor [--json] [--prune] [--stop-stale] [options]
 
@@ -165,6 +180,7 @@ Commands:
   runtime check [name]         Check Codex, Claude Code, Pi, and Antigravity
   runtime login <name>         Open a runtime here to sign in to it
   doctor                       Check installation, connection, and runtimes
+  reminders add                Add one reminder to the macOS Reminders app
   version                      Show the CLI version
 
 Get started:

@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/processinventory"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
@@ -951,4 +952,35 @@ func TestLoginTerminalTokenFailures(t *testing.T) {
 			contains(t, f.stderr.String(), test.message)
 		})
 	}
+}
+
+func TestRemindersAddWritesOneAppleReminder(t *testing.T) {
+	f := newFixture(t)
+	f.deps.goos = "darwin"
+	type call struct {
+		title string
+		due   time.Time
+		list  string
+	}
+	var got call
+	f.deps.addReminder = func(_ context.Context, title string, due time.Time, list string) ([]byte, error) {
+		got = call{title: title, due: due, list: list}
+		return []byte(`{"list":"Talos","title":"Stretch","due":"2026-11-26T15:00:00.000Z"}`), nil
+	}
+	if code := f.run("reminders", "add", "--title", "Stretch", "--at", "2026-11-26T15:00:00Z", "--json", "--config", f.configPath); code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, f.stderr.String())
+	}
+	if got.title != "Stretch" || got.list != "Talos" || !got.due.Equal(time.Date(2026, 11, 26, 15, 0, 0, 0, time.UTC)) {
+		t.Fatalf("call=%+v", got)
+	}
+	contains(t, f.stdout.String(), `"title": "Stretch"`)
+	contains(t, f.stdout.String(), `"list": "Talos"`)
+}
+
+func TestRemindersAddValidatesTheTime(t *testing.T) {
+	f := newFixture(t)
+	if code := f.run("reminders", "add", "--title", "Stretch", "--at", "tomorrow", "--config", f.configPath); code != 2 {
+		t.Fatalf("exit=%d stderr=%s", code, f.stderr.String())
+	}
+	contains(t, f.stderr.String(), "RFC 3339")
 }

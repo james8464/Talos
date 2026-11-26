@@ -159,6 +159,16 @@ with all three. A camera or microphone request is answered with the explicit
 Settings capture step instead of starting a capture. Asking "What can you do?"
 returns the same list of commands and the current mute state.
 
+## Personal reminders in Apple Reminders
+
+`talos-computer reminders add --title "<what>" --at <RFC 3339 time> [--list Talos]`
+creates one reminder in the free, local macOS Reminders app through its
+JavaScript automation interface; no paid service is involved. The Agent's
+instructions name the command, so it can run it from its shell (the exact command
+works; `qwen3:8b-16k` still needs a direct instruction to use it rather than
+answering from text). The older `reminder in 10m: ...` Room command is separate:
+it schedules a Room wake-up so the Agent reports back there.
+
 ## Mute in the tray
 
 When `TALOS_MUTE` is set, the desktop tray tooltip ends with "Muted" and the
