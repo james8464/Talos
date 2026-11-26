@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -61,6 +62,23 @@ type reminderResult struct {
 	Due   string `json:"due"`
 }
 
+// parseReminderDelay accepts a Go duration or a number of days, up to 30 days.
+func parseReminderDelay(value string) (time.Duration, error) {
+	delay, err := time.ParseDuration(value)
+	if err != nil {
+		if days, dayErr := strconv.Atoi(strings.TrimSuffix(value, "d")); dayErr == nil &&
+			strings.HasSuffix(value, "d") && days > 0 {
+			delay = time.Duration(days) * 24 * time.Hour
+		} else {
+			return 0, newError(categoryUsage, "Use --in as a delay such as 20m, 2h, or 1d")
+		}
+	}
+	if delay <= 0 || delay > 30*24*time.Hour {
+		return 0, newError(categoryUsage, "Use a reminder delay between 1 minute and 30 days")
+	}
+	return delay, nil
+}
+
 // executeReminderAdd writes one personal reminder to Apple Reminders.
 func (c *cli) executeReminderAdd(ctx context.Context, parsed command) (int, error) {
 	if c.deps.goos != "darwin" {
@@ -70,18 +88,22 @@ func (c *cli) executeReminderAdd(ctx context.Context, parsed command) (int, erro
 	if add == nil {
 		return 0, newError(categoryConfiguration, "Apple Reminders is unavailable")
 	}
-	output, err := add(ctx, parsed.reminderTitle, parsed.reminderAt, parsed.reminderList)
+	due := parsed.reminderAt
+	if parsed.reminderIn > 0 {
+		due = time.Now().Add(parsed.reminderIn)
+	}
+	output, err := add(ctx, parsed.reminderTitle, due, parsed.reminderList)
 	if err != nil {
 		return 0, wrapError(categoryConfiguration, "Unable to add the Apple Reminder: "+err.Error(), err)
 	}
 	result := reminderResult{
 		List: parsed.reminderList, Title: parsed.reminderTitle,
-		Due: parsed.reminderAt.UTC().Format(time.RFC3339),
+		Due: due.UTC().Format(time.RFC3339),
 	}
 	if json.Unmarshal(output, &result) != nil || result.Title == "" {
 		result = reminderResult{
 			List: parsed.reminderList, Title: parsed.reminderTitle,
-			Due: parsed.reminderAt.UTC().Format(time.RFC3339),
+			Due: due.UTC().Format(time.RFC3339),
 		}
 	}
 	if parsed.json {

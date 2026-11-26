@@ -68,9 +68,10 @@ describe("Room reply contract", () => {
       renderCompactMetaInstructions,
     ]) {
       const prompt = render(input);
-      expect(
-        prompt.endsWith("Do not repeat the reply as assistant text."),
-      ).toBe(true);
+      expect(prompt).toContain("Do not repeat the reply as assistant text.");
+      expect(prompt).toContain("## Personal reminders");
+      expect(prompt).toContain("--in 20m");
+      expect(prompt).toContain("This writes to the free Apple Reminders app.");
       expect(prompt).toContain(
         'teamhub message send --content "Hello! I\'m Talos, your AI assistant here to help with onboarding and tasks."',
       );

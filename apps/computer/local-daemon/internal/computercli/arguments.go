@@ -45,9 +45,10 @@ type command struct {
 	tokenStdin      bool
 	localModels     *stagedLocalModels
 
-	// reminders add
+	// reminders add; exactly one of at/in is set.
 	reminderTitle string
 	reminderAt    time.Time
+	reminderIn    time.Duration
 	reminderList  string
 
 	// daemon service start|stop
@@ -162,6 +163,10 @@ func parseArguments(rawArgs []string, options parseOptions) (command, error) {
 		if err != nil {
 			return command{}, err
 		}
+		in, err := removeOption(&args, "--in")
+		if err != nil {
+			return command{}, err
+		}
 		list, err := removeOption(&args, "--list")
 		if err != nil {
 			return command{}, err
@@ -169,9 +174,26 @@ func parseArguments(rawArgs []string, options parseOptions) (command, error) {
 		if strings.TrimSpace(title) == "" {
 			return command{}, newError(categoryUsage, "reminders add requires --title")
 		}
-		due, err := time.Parse(time.RFC3339, strings.TrimSpace(at))
-		if err != nil {
-			return command{}, newError(categoryUsage, "Use --at as an RFC 3339 time, such as 2026-11-26T15:00:00Z")
+		var due time.Time
+		var delay time.Duration
+		switch {
+		case strings.TrimSpace(at) != "" && strings.TrimSpace(in) != "":
+			return command{}, newError(categoryUsage, "Use either --at or --in, not both")
+		case strings.TrimSpace(at) != "":
+			due, err = time.Parse(time.RFC3339, strings.TrimSpace(at))
+			if err != nil {
+				return command{}, newError(categoryUsage, "Use --at as an RFC 3339 time, such as 2026-11-26T15:00:00Z")
+			}
+			if due.Before(time.Now().Add(-time.Minute)) {
+				return command{}, newError(categoryUsage, "That reminder time is in the past; use --in 20m for a delay from now")
+			}
+		case strings.TrimSpace(in) != "":
+			delay, err = parseReminderDelay(strings.TrimSpace(in))
+			if err != nil {
+				return command{}, err
+			}
+		default:
+			return command{}, newError(categoryUsage, "reminders add requires --at or --in")
 		}
 		if strings.TrimSpace(list) == "" {
 			list = "Talos"
@@ -179,6 +201,7 @@ func parseArguments(rawArgs []string, options parseOptions) (command, error) {
 		parsed.name = "reminders-add"
 		parsed.reminderTitle = strings.TrimSpace(title)
 		parsed.reminderAt = due
+		parsed.reminderIn = delay
 		parsed.reminderList = strings.TrimSpace(list)
 		return parsed, requireEmpty()
 	case "version":

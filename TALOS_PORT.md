@@ -161,13 +161,15 @@ returns the same list of commands and the current mute state.
 
 ## Personal reminders in Apple Reminders
 
-`talos-computer reminders add --title "<what>" --at <RFC 3339 time> [--list Talos]`
-creates one reminder in the free, local macOS Reminders app through its
-JavaScript automation interface; no paid service is involved. The Agent's
-instructions name the command, so it can run it from its shell (the exact command
-works; `qwen3:8b-16k` still needs a direct instruction to use it rather than
-answering from text). The older `reminder in 10m: ...` Room command is separate:
-it schedules a Room wake-up so the Agent reports back there.
+`talos-computer reminders add --title "<what>" --in 20m [--list Talos]` creates
+one reminder in the free, local macOS Reminders app through its JavaScript
+automation interface; `--at <RFC 3339 time>` takes an absolute clock time and is
+refused when it is in the past, with a hint to use `--in`. No paid service is
+involved. The Agent's instructions and the final reply contract name the command,
+and a live request ("create an Apple Reminder in 20 minutes to stretch") created
+a real reminder due about 20 minutes later after the model first tried a wrong
+past time and the CLI corrected it. The older `reminder in 10m: ...` Room command
+is separate: it schedules a Room wake-up so the Agent reports back there.
 
 ## Mute in the tray
 

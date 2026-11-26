@@ -137,17 +137,18 @@ Options:
   --json                       Print machine-readable results
 ` + runtimePathOptions + "\n" + configOption + "\n",
 	"reminders": `Usage:
-  talos-computer reminders add --title "<what>" --at <RFC 3339 time> [--list Talos] [--json]
+  talos-computer reminders add --title "<what>" (--in <delay> | --at <RFC 3339 time>) [--list Talos] [--json]
 
-Create one reminder in the macOS Reminders app. It is free and local; macOS
-asks for Automation permission the first time.
+Create one reminder in the macOS Reminders app. --in takes 20m, 2h, or 1d.
+It is free and local; macOS asks for Automation permission the first time.
 `,
 	"reminders add": `Usage:
-  talos-computer reminders add --title "<what>" --at <RFC 3339 time> [--list Talos] [--json]
+  talos-computer reminders add --title "<what>" (--in <delay> | --at <RFC 3339 time>) [--list Talos] [--json]
 
 Options:
   --title <text>               What to be reminded about
-  --at <RFC 3339 time>         When to be reminded, such as 2026-11-26T15:00:00Z
+  --in <delay>                 Delay from now, such as 20m, 2h, or 1d
+  --at <RFC 3339 time>         Absolute time, such as 2026-11-26T15:00:00Z
   --list <name>                Reminders list (default: Talos)
   --json                       Print machine-readable results
 `,

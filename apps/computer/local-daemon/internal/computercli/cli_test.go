@@ -965,12 +965,12 @@ func TestRemindersAddWritesOneAppleReminder(t *testing.T) {
 	var got call
 	f.deps.addReminder = func(_ context.Context, title string, due time.Time, list string) ([]byte, error) {
 		got = call{title: title, due: due, list: list}
-		return []byte(`{"list":"Talos","title":"Stretch","due":"2026-11-26T15:00:00.000Z"}`), nil
+		return []byte(`{"list":"Talos","title":"Stretch","due":"2027-11-26T15:00:00.000Z"}`), nil
 	}
-	if code := f.run("reminders", "add", "--title", "Stretch", "--at", "2026-11-26T15:00:00Z", "--json", "--config", f.configPath); code != 0 {
+	if code := f.run("reminders", "add", "--title", "Stretch", "--at", "2027-11-26T15:00:00Z", "--json", "--config", f.configPath); code != 0 {
 		t.Fatalf("exit=%d stderr=%s", code, f.stderr.String())
 	}
-	if got.title != "Stretch" || got.list != "Talos" || !got.due.Equal(time.Date(2026, 11, 26, 15, 0, 0, 0, time.UTC)) {
+	if got.title != "Stretch" || got.list != "Talos" || !got.due.Equal(time.Date(2027, 11, 26, 15, 0, 0, 0, time.UTC)) {
 		t.Fatalf("call=%+v", got)
 	}
 	contains(t, f.stdout.String(), `"title": "Stretch"`)
@@ -983,4 +983,34 @@ func TestRemindersAddValidatesTheTime(t *testing.T) {
 		t.Fatalf("exit=%d stderr=%s", code, f.stderr.String())
 	}
 	contains(t, f.stderr.String(), "RFC 3339")
+}
+
+func TestRemindersAddInComputesTheDelay(t *testing.T) {
+	f := newFixture(t)
+	f.deps.goos = "darwin"
+	var due time.Time
+	f.deps.addReminder = func(_ context.Context, _ string, at time.Time, _ string) ([]byte, error) {
+		due = at
+		return []byte(`{"list":"Talos","title":"Stretch","due":""}`), nil
+	}
+	if code := f.run("reminders", "add", "--title", "Stretch", "--in", "20m", "--config", f.configPath); code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, f.stderr.String())
+	}
+	want := time.Now().Add(20 * time.Minute)
+	if due.Before(want.Add(-2*time.Minute)) || due.After(want.Add(2*time.Minute)) {
+		t.Fatalf("due=%s want about %s", due, want)
+	}
+	if code := f.run("reminders", "add", "--title", "Stretch", "--in", "0m", "--config", f.configPath); code != 2 {
+		t.Fatalf("zero delay exit=%d", code)
+	}
+}
+
+func TestRemindersAddRejectsAPastTime(t *testing.T) {
+	f := newFixture(t)
+	f.deps.goos = "darwin"
+	if code := f.run("reminders", "add", "--title", "Stretch", "--at", "2020-01-01T00:00:00Z", "--config", f.configPath); code != 2 {
+		t.Fatalf("past exit=%d stderr=%s", code, f.stderr.String())
+	}
+	contains(t, f.stderr.String(), "in the past")
+	contains(t, f.stderr.String(), "--in 20m")
 }
