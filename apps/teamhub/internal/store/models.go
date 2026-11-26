@@ -1518,6 +1518,19 @@ type RoomEvent struct {
 	OccurredAt pgtype.Timestamptz `json:"occurred_at"`
 }
 
+type RoomGoal struct {
+	RoomID           string             `json:"room_id"`
+	TenantID         string             `json:"tenant_id"`
+	CreatedByActorID string             `json:"created_by_actor_id"`
+	Objective        string             `json:"objective"`
+	Status           string             `json:"status"`
+	TurnsUsed        int32              `json:"turns_used"`
+	MaxTurns         int32              `json:"max_turns"`
+	Criteria         []string           `json:"criteria"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
 type RoomHistoryShare struct {
 	ID                       string             `json:"id"`
 	RoomID                   string             `json:"room_id"`

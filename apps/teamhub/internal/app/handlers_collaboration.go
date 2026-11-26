@@ -17,6 +17,7 @@ import (
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/reminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcreation"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomgoal"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roompin"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomreminder"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomsenses"
@@ -279,6 +280,9 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 		reply = a.roomPinReply(c, roomID, text)
 	}
 	if reply == "" {
+		reply = a.roomGoalReply(c, roomID, text)
+	}
+	if reply == "" {
 		reply = a.roomCodingReply(c, roomID, text)
 	}
 	if reply == "" {
@@ -295,6 +299,68 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 		c.Request.Context(), roomID, agents[0].ID, reply, "identity:"+key,
 	); err != nil && a.logger != nil {
 		a.logger.Warn("room_command.failed", "room_id", roomID, "error", err)
+	}
+}
+
+// roomGoalReply sets or controls the Room's standing goal.
+func (a *App) roomGoalReply(c *gin.Context, roomID, text string) string {
+	command, ok := roomgoal.Parse(text)
+	if !ok {
+		return ""
+	}
+	ctx := c.Request.Context()
+	if command.Action == roomgoal.Status {
+		goal, err := a.queries.GetRoomGoal(ctx, roomID)
+		if errors.Is(err, pgx.ErrNoRows) || goal.Status == "cleared" {
+			return "No standing goal is set."
+		}
+		if err != nil {
+			return ""
+		}
+		return fmt.Sprintf("Goal %s: %s (%d/%d turns).", goal.Status, goal.Objective, goal.TurnsUsed, goal.MaxTurns)
+	}
+	if command.Action == roomgoal.Set {
+		tenantID, err := a.queries.GetRoomTenantID(ctx, roomID)
+		if err != nil {
+			return ""
+		}
+		actor, err := a.queries.GetHumanActor(ctx, store.GetHumanActorParams{
+			TenantID: tenantID, AccountID: textValue(currentPrincipal(c).Session.AccountID),
+		})
+		if err != nil {
+			return ""
+		}
+		goal, err := a.queries.UpsertRoomGoal(ctx, store.UpsertRoomGoalParams{
+			RoomID: roomID, TenantID: tenantID, CreatedByActorID: actor.ID,
+			Objective: command.Objective, MaxTurns: roomgoal.DefaultMaxTurns,
+			Criteria: []string{},
+		})
+		if err != nil {
+			return "I couldn't set that goal."
+		}
+		return fmt.Sprintf("Goal set (%d-turn budget): %s", goal.MaxTurns, goal.Objective)
+	}
+	status := "active"
+	switch command.Action {
+	case roomgoal.Pause:
+		status = "paused"
+	case roomgoal.Clear:
+		status = "cleared"
+	}
+	goal, err := a.queries.SetRoomGoalStatus(ctx, store.SetRoomGoalStatusParams{RoomID: roomID, Status: status})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "No standing goal is set."
+	}
+	if err != nil {
+		return ""
+	}
+	switch status {
+	case "paused":
+		return "Goal paused: " + goal.Objective + "."
+	case "cleared":
+		return "Goal cleared."
+	default:
+		return "Goal resumed: " + goal.Objective + "."
 	}
 }
 

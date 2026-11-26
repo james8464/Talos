@@ -328,3 +328,10 @@ a refresh.
 fallback suppresses a message that is only `HEARTBEAT_OK`/`NO_REPLY` or a short
 acknowledgement around the token; a long report is posted without the token.
 `heartbeat-quiet-guard` runs the unit tests in the live harness.
+
+## Hermes-style standing goals
+
+`goal: <objective>` sets a 20-turn Room goal; `goal status`, `goal pause`,
+`goal resume` and `goal clear` control it. The continuation prompt builder
+matches Hermes' standing-goal wording. `room-goal-journey` runs the Postgres
+command lifecycle. The automatic judge/continuation loop is not wired yet.

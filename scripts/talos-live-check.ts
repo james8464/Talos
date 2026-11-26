@@ -397,6 +397,11 @@ async function main(): Promise<number> {
         "TestPersonalWikiInputTreeAndImmutableVersions|TestPersonalWikiMarkdownSourceUploadAdmitsRefresh",
         "Personal Wiki input tree, immutable versions and upload refresh",
       ],
+      [
+        "room-goal-journey",
+        "TestRoomGoalCommandLifecycle",
+        "standing goal set, status, pause, resume and clear",
+      ],
     ] as const) {
       try {
         await exec(

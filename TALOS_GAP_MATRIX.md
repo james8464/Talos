@@ -82,3 +82,4 @@ Status meanings: **ported** (works here and is tested here), **present**
    | Agent memory publish, revision and read | **present** | `room-memory-journey` runs the Postgres memory scope and revision suite. |
    | Personal Wiki input tree, versions and refresh | **present** | `room-wiki-journey` covers the input tree, immutable versions and upload-triggered refresh. |
    | Heartbeat quiet vs substantive reporting | **present** | OpenClaw token rules ported; quiet acknowledgements stay unposted, long reports surface without the token. |
+   | Standing goal commands and continuation prompt | **partial** | Set/status/pause/resume/clear persist a 20-turn goal and the prompt builder is ported; the judge loop is not. |
