@@ -94,6 +94,11 @@ const roles = {
       logger: host.logger,
       http: requireHttp(host),
     }),
+  goal: async (host) =>
+    (await import("./goal/service.js")).startGoalService({
+      http: requireHttp(host),
+      logger: host.logger,
+    }),
   coding: async (host) =>
     (await import("./coding/service.js")).startCodingService({
       http: requireHttp(host),
@@ -128,6 +133,7 @@ const HTTP_ROLES: ReadonlySet<RoleName> = new Set([
   "identity",
   "perception",
   "coding",
+  "goal",
   "voice",
 ]);
 

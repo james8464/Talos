@@ -1529,6 +1529,8 @@ type RoomGoal struct {
 	Criteria         []string           `json:"criteria"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	LastVerdict      string             `json:"last_verdict"`
+	LastReason       string             `json:"last_reason"`
 }
 
 type RoomHistoryShare struct {

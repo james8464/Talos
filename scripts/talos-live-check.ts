@@ -161,7 +161,7 @@ async function main(): Promise<number> {
       ...process.env,
       TALOS_MUTE: "1",
       TALOS_SECRET_SEED: SEED,
-      NODE_SERVICES_ROLES: "identity,perception,coding",
+      NODE_SERVICES_ROLES: "identity,perception,coding,goal",
       TALOS_NATIVE_HELPERS_DIR: path.join(ROOT, "apps/desktop/resources/talos"),
       TALOS_CODING_ROOT: ROOT,
     },
@@ -245,6 +245,29 @@ async function main(): Promise<number> {
       `${describedBody.model ?? "model"} ${Date.now() - describeStarted}ms · ${
         describedBody.answer ?? describedBody.error ?? ""
       }`.slice(0, 200),
+    );
+
+    const judged = await fetch(`${BASE}/talos/goal/judge`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        objective: "The task is complete.",
+        reply: "I finished the task and the report is ready.",
+      }),
+    });
+    const judgedBody = (await judged.json()) as {
+      verdict?: string;
+      reason?: string;
+      error?: string;
+    };
+    check(
+      "goal-judge",
+      judged.status === 200 &&
+        ["done", "continue", "blocked"].includes(judgedBody.verdict ?? ""),
+      JSON.stringify(judgedBody).slice(0, 160),
     );
 
     const coding = await fetch(`${BASE}/talos/coding/execute`, {
@@ -401,6 +424,11 @@ async function main(): Promise<number> {
         "room-goal-journey",
         "TestRoomGoalCommandLifecycle",
         "standing goal set, status, pause, resume and clear",
+      ],
+      [
+        "room-goal-judge",
+        "TestRoomGoalJudgeLoop",
+        "judge continue/done and the turn budget",
       ],
     ] as const) {
       try {

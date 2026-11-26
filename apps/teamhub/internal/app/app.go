@@ -63,6 +63,7 @@ import (
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomagent"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomcoding"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomdocument"
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomgoal"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/roomidentity"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/skill"
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/store"
@@ -165,6 +166,7 @@ type App struct {
 	collaboration                  *collaboration.Service
 	roomIdentity                   *roomidentity.Claims
 	roomCodingWorker               *roomcoding.Worker
+	roomGoalWorker                 *roomgoal.Worker
 	sessions                       *account.Sessions
 	agents                         *agentregistry.Service
 	agentMessages                  *agentmessages.Service
@@ -641,6 +643,7 @@ func (a *App) registerCollaboration(runtimeState *agentruntimestate.Service) {
 	a.agentRuntimeState = runtimeState
 	a.typedCards = typedcard.New(a.pool)
 	a.collaboration = collaboration.New(a.pool, a.artifacts, a.documents, a.typedCards, a.signingKey, a.logger)
+	a.startGoalWorker()
 	if a.cfg.NodeServicesURL != "" && a.cfg.NodeServicesInternalToken != "" && os.Getenv("TEAMHUB_CODING_WORKER") == "1" {
 		a.roomCodingWorker = &roomcoding.Worker{
 			Queries:   a.queries,
@@ -761,6 +764,13 @@ func (a *App) StartWorkers(ctx context.Context, skip ...Worker) error {
 		go func() {
 			defer a.workerWG.Done()
 			a.roomCodingWorker.Run(a.workerContext, 15*time.Second)
+		}()
+	}
+	if a.roomGoalWorker != nil {
+		a.workerWG.Add(1)
+		go func() {
+			defer a.workerWG.Done()
+			a.roomGoalWorker.Run(a.workerContext, 30*time.Second)
 		}()
 	}
 	if runs(PresentationLoop) {

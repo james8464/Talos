@@ -333,5 +333,8 @@ acknowledgement around the token; a long report is posted without the token.
 
 `goal: <objective>` sets a 20-turn Room goal; `goal status`, `goal pause`,
 `goal resume` and `goal clear` control it. The continuation prompt builder
-matches Hermes' standing-goal wording. `room-goal-journey` runs the Postgres
-command lifecycle. The automatic judge/continuation loop is not wired yet.
+matches Hermes' standing-goal wording. `room-goal-journey` runs the Postgres command lifecycle. `room-goal-judge`
+covers the judge state machine and turn budget; the App worker judges active
+goals every 30 seconds, posts the Hermes continuation prompt as the goal
+creator mentioning the Agent, and stops on done/blocked or after the budget.
+`goal-judge` runs a real local-model judge in the live harness.

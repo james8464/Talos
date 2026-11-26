@@ -10,7 +10,7 @@ import (
 )
 
 const getRoomGoal = `-- name: GetRoomGoal :one
-SELECT room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at FROM room_goals WHERE room_id=$1
+SELECT room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at, last_verdict, last_reason FROM room_goals WHERE room_id=$1
 `
 
 func (q *Queries) GetRoomGoal(ctx context.Context, roomID string) (RoomGoal, error) {
@@ -27,13 +27,110 @@ func (q *Queries) GetRoomGoal(ctx context.Context, roomID string) (RoomGoal, err
 		&i.Criteria,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastVerdict,
+		&i.LastReason,
+	)
+	return i, err
+}
+
+const incrementRoomGoalTurns = `-- name: IncrementRoomGoalTurns :one
+UPDATE room_goals SET turns_used=turns_used+1, updated_at=clock_timestamp()
+WHERE room_id=$1 AND status='active' RETURNING room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at, last_verdict, last_reason
+`
+
+func (q *Queries) IncrementRoomGoalTurns(ctx context.Context, roomID string) (RoomGoal, error) {
+	row := q.db.QueryRow(ctx, incrementRoomGoalTurns, roomID)
+	var i RoomGoal
+	err := row.Scan(
+		&i.RoomID,
+		&i.TenantID,
+		&i.CreatedByActorID,
+		&i.Objective,
+		&i.Status,
+		&i.TurnsUsed,
+		&i.MaxTurns,
+		&i.Criteria,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastVerdict,
+		&i.LastReason,
+	)
+	return i, err
+}
+
+const latestRoomConversationBody = `-- name: LatestRoomConversationBody :one
+SELECT body FROM messages
+WHERE room_id=$1 AND message_kind='conversation'
+ORDER BY room_seq DESC LIMIT 1
+`
+
+func (q *Queries) LatestRoomConversationBody(ctx context.Context, roomID string) (string, error) {
+	row := q.db.QueryRow(ctx, latestRoomConversationBody, roomID)
+	var body string
+	err := row.Scan(&body)
+	return body, err
+}
+
+const nextActiveRoomGoal = `-- name: NextActiveRoomGoal :one
+SELECT room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at, last_verdict, last_reason FROM room_goals
+WHERE status='active' AND turns_used < max_turns
+ORDER BY updated_at LIMIT 1
+`
+
+func (q *Queries) NextActiveRoomGoal(ctx context.Context) (RoomGoal, error) {
+	row := q.db.QueryRow(ctx, nextActiveRoomGoal)
+	var i RoomGoal
+	err := row.Scan(
+		&i.RoomID,
+		&i.TenantID,
+		&i.CreatedByActorID,
+		&i.Objective,
+		&i.Status,
+		&i.TurnsUsed,
+		&i.MaxTurns,
+		&i.Criteria,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastVerdict,
+		&i.LastReason,
+	)
+	return i, err
+}
+
+const recordRoomGoalVerdict = `-- name: RecordRoomGoalVerdict :one
+UPDATE room_goals SET last_verdict=$2, last_reason=$3, updated_at=clock_timestamp()
+WHERE room_id=$1 RETURNING room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at, last_verdict, last_reason
+`
+
+type RecordRoomGoalVerdictParams struct {
+	RoomID      string `json:"room_id"`
+	LastVerdict string `json:"last_verdict"`
+	LastReason  string `json:"last_reason"`
+}
+
+func (q *Queries) RecordRoomGoalVerdict(ctx context.Context, arg RecordRoomGoalVerdictParams) (RoomGoal, error) {
+	row := q.db.QueryRow(ctx, recordRoomGoalVerdict, arg.RoomID, arg.LastVerdict, arg.LastReason)
+	var i RoomGoal
+	err := row.Scan(
+		&i.RoomID,
+		&i.TenantID,
+		&i.CreatedByActorID,
+		&i.Objective,
+		&i.Status,
+		&i.TurnsUsed,
+		&i.MaxTurns,
+		&i.Criteria,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastVerdict,
+		&i.LastReason,
 	)
 	return i, err
 }
 
 const setRoomGoalStatus = `-- name: SetRoomGoalStatus :one
 UPDATE room_goals SET status=$2, updated_at=clock_timestamp()
-WHERE room_id=$1 RETURNING room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at
+WHERE room_id=$1 RETURNING room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at, last_verdict, last_reason
 `
 
 type SetRoomGoalStatusParams struct {
@@ -55,6 +152,8 @@ func (q *Queries) SetRoomGoalStatus(ctx context.Context, arg SetRoomGoalStatusPa
 		&i.Criteria,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastVerdict,
+		&i.LastReason,
 	)
 	return i, err
 }
@@ -66,7 +165,7 @@ ON CONFLICT (room_id) DO UPDATE
 SET tenant_id=EXCLUDED.tenant_id, created_by_actor_id=EXCLUDED.created_by_actor_id,
     objective=EXCLUDED.objective, status='active', turns_used=0,
     max_turns=EXCLUDED.max_turns, criteria=EXCLUDED.criteria, updated_at=clock_timestamp()
-RETURNING room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at
+RETURNING room_id, tenant_id, created_by_actor_id, objective, status, turns_used, max_turns, criteria, created_at, updated_at, last_verdict, last_reason
 `
 
 type UpsertRoomGoalParams struct {
@@ -99,6 +198,8 @@ func (q *Queries) UpsertRoomGoal(ctx context.Context, arg UpsertRoomGoalParams) 
 		&i.Criteria,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastVerdict,
+		&i.LastReason,
 	)
 	return i, err
 }
