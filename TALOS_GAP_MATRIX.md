@@ -14,7 +14,7 @@ Status meanings: **ported** (works here and is tested here), **present**
 | Hard mute: `TALOS_MUTE=1` stops speech, voice returns 503 | **ported**   | `isMuted()` in `@talos/service-kit`; voice runtime exits before config; Node voice supervisor starts no worker. Tests at all three boundaries.                 |
 | No capture without consent                                | **missing**  | Add a camera/mic consent gate before Electron `getUserMedia` or any helper.                                                                                    |
 | Camera/mic readiness without capture                      | **missing**  | Electron only reports screen recording and accessibility. Extend `SystemPermissions`.                                                                          |
-| Process inventory + label-scoped cleanup                  | **partial**  | `apps/computer/local-daemon/internal/process` and diagnostics exist; no Talos-style `stale/audio` inventory. Compare and port.                                 |
+| Process inventory + label-scoped cleanup                  | **partial**  | `doctor` reports audio and stale test processes by label and pid. Label-scoped stopping is not ported.                                                         |
 | Safe live acceptance harness                              | **present**  | `pnpm talos:live` covers mute, voice refusal, identity, capture, vision/sound and coding; the Room e2e suite sends identity and sensing messages in a browser. |
 | Never launch audible checks by default                    | **present**  | `TALOS_MUTE=1` is set by the harness and the voice role exits before starting under mute.                                                                      |
 

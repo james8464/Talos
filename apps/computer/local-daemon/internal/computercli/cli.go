@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/processinventory"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
 )
@@ -47,6 +48,7 @@ type deps struct {
 	inspectDaemon    func(ctx context.Context, stateDirectory string) doctorCheck
 	probeGateway     func(ctx context.Context, gatewayURL string) doctorCheck
 	productRuntime   func() doctorCheck
+	scanProcesses    func() []processinventory.Entry
 	readLogs         func(ctx context.Context, request logRequest, output io.Writer) error
 	// runInteractive runs a Runtime on the CLI's terminal for sign-in.
 	runInteractive        func(cmd *exec.Cmd) (int, error)

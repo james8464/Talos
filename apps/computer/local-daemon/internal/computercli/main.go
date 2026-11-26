@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/computerconfig"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/processinventory"
 	"golang.org/x/term"
 )
 
@@ -42,6 +43,7 @@ func defaultDeps() deps {
 		newClient:        newDaemonClient,
 		probeGateway:     probeGatewayNetwork,
 		productRuntime:   bundledNodeCheck,
+		scanProcesses:    processinventory.Scan,
 		readLogs:         streamComputerLogs,
 		runInteractive:   runRuntimeInteractive,
 		startDaemon: func(ctx context.Context, configPath string) error {

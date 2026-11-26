@@ -144,7 +144,7 @@ check-desktop:
 check-computer-go:
 	cd apps/computer/local-daemon && go test ./... -run '^$$'
 	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./internal/platform/...
-	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./cmd/talos-computer-daemon ./cmd/talos-computer-launcher ./internal/computercli ./internal/computerconfig ./internal/daemon ./internal/talos/context ./internal/talos/assignment ./internal/talos/control ./internal/talos/registration ./internal/talos/localskills ./internal/talos/mcpproxy ./internal/talos/transport ./internal/talos/runtimehistory ./internal/talos/localtools ./internal/process ./internal/workspace ./internal/provider ./internal/provider/redact ./internal/permission ./internal/localmodels
+	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./cmd/talos-computer-daemon ./cmd/talos-computer-launcher ./internal/computercli ./internal/computerconfig ./internal/daemon ./internal/talos/context ./internal/talos/assignment ./internal/talos/control ./internal/talos/registration ./internal/talos/localskills ./internal/talos/mcpproxy ./internal/talos/transport ./internal/talos/runtimehistory ./internal/talos/localtools ./internal/process ./internal/processinventory ./internal/workspace ./internal/provider ./internal/provider/redact ./internal/permission ./internal/localmodels
 	cd apps/computer/local-daemon && $(COMPUTER_TEST_RUNNER) go test ./internal/provider/native ./internal/uiruntime
 
 check-computer-release:

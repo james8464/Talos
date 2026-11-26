@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/processinventory"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/transport"
@@ -629,7 +630,7 @@ func TestDoctorReportsEveryCheck(t *testing.T) {
 	for _, check := range report.Checks {
 		names = append(names, check.Name+"="+check.Status)
 	}
-	want := []string{"product-runtime=pass", "config=pass", "credential=pass", "state-directory=pass", "gateway-network=pass", "daemon=pass", "runtime:codex=pass", "runtime:claude=warn", "runtime:pi=warn", "runtime:antigravity=warn", "enrollment=pass"}
+	want := []string{"product-runtime=pass", "config=pass", "credential=pass", "state-directory=pass", "gateway-network=pass", "daemon=pass", "runtime:codex=pass", "runtime:claude=warn", "runtime:pi=warn", "runtime:antigravity=warn", "enrollment=pass", "processes=pass"}
 	if !report.OK || !reflect.DeepEqual(names[:len(want)], want) || report.Checks[len(want)].Name != "browser" {
 		t.Fatalf("checks=%v", names)
 	}
@@ -642,6 +643,34 @@ func TestDoctorReportsEveryCheck(t *testing.T) {
 	if !strings.HasPrefix(f.stdout.String(), "PASS\tproduct-runtime\tBundled Node 26.5.0\nPASS\tconfig\t"+f.configPath+"\n") {
 		t.Fatalf("text=%q", f.stdout.String())
 	}
+}
+
+func TestDoctorWarnsAboutAudioAndStaleProcesses(t *testing.T) {
+	f := newFixture(t)
+	f.deps.scanProcesses = func() []processinventory.Entry {
+		return []processinventory.Entry{
+			{PID: 101, Label: "audio", Audio: true},
+			{PID: 202, Label: "live harness", Stale: true},
+		}
+	}
+	if code := f.run("doctor", "--json", "--config", f.configPath); code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, f.stderr.String())
+	}
+	var report doctorReport
+	if err := json.Unmarshal([]byte(f.stdout.String()), &report); err != nil {
+		t.Fatal(err)
+	}
+	for _, check := range report.Checks {
+		if check.Name != "processes" {
+			continue
+		}
+		if check.Status != "warn" || !strings.Contains(check.Detail, "audio-capable processes: audio pid=101") ||
+			!strings.Contains(check.Detail, "stale Talos test processes: live harness pid=202") {
+			t.Fatalf("processes=%+v", check)
+		}
+		return
+	}
+	t.Fatal("processes check missing")
 }
 
 func TestDoctorFailures(t *testing.T) {

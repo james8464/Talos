@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/platform/privatefs"
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/processinventory"
 )
 
 // productNodeVersion is the bundled Node that runs the teamhub CLI and the
@@ -102,7 +103,40 @@ func (c *cli) runDoctor(ctx context.Context, parsed command) (doctorReport, erro
 	if config.enrollmentCheck != nil {
 		checks = append(checks, *config.enrollmentCheck)
 	}
+	checks = append(checks, processInventoryCheck(c.deps.scanProcesses))
 	return doctorReport{Version: 1, OK: allPass(checks), Checks: checks}, nil
+}
+
+// processInventoryCheck names stray audio players and dead test processes by
+// label and pid only, never their command line.
+func processInventoryCheck(scan func() []processinventory.Entry) doctorCheck {
+	check := doctorCheck{Name: "processes", Category: categoryConfiguration, Status: "pass", Detail: "No audio-capable or stale Talos test process"}
+	if scan == nil {
+		return check
+	}
+	var audio, stale []string
+	for _, entry := range scan() {
+		detail := fmt.Sprintf("%s pid=%d", entry.Label, entry.PID)
+		if entry.Audio {
+			audio = append(audio, detail)
+		}
+		if entry.Stale {
+			stale = append(stale, detail)
+		}
+	}
+	if len(audio) == 0 && len(stale) == 0 {
+		return check
+	}
+	parts := make([]string, 0, 2)
+	if len(audio) > 0 {
+		parts = append(parts, "audio-capable processes: "+strings.Join(audio, ", "))
+	}
+	if len(stale) > 0 {
+		parts = append(parts, "stale Talos test processes: "+strings.Join(stale, ", "))
+	}
+	check.Status = "warn"
+	check.Detail = strings.Join(parts, "; ")
+	return check
 }
 
 func allPass(checks []doctorCheck) bool {

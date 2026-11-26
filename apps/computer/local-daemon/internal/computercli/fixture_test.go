@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/processinventory"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/provider"
 	"github.com/simplexai-labs/talos/apps/computer/local-daemon/internal/talos/control"
 )
@@ -152,6 +153,7 @@ func newFixture(t *testing.T) *fixture {
 			return doctorCheck{Name: "gateway-network", Category: categoryNetwork, Status: "pass", Detail: "reachable"}
 		},
 		productRuntime: func() doctorCheck { return productRuntimeCheck(productNodeVersion) },
+		scanProcesses:  func() []processinventory.Entry { return nil },
 		readLogs: func(_ context.Context, request logRequest, output io.Writer) error {
 			f.logRequests = append(f.logRequests, request)
 			_, err := io.WriteString(output, "redacted log\n")

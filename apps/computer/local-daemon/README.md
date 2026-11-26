@@ -31,6 +31,11 @@ Daemon through `internal/talos/control`, and diagnoses Runtimes with the same
 `../daemon/talos-computer-daemon` beside its own bundle directory, or at
 `TALOS_GO_LOCAL_DAEMON_PATH` during source development.
 
+`doctor` also reports audio-capable and leftover Talos test processes by label
+and pid, never their command lines, so a diagnostic never echoes a
+prompt or a private path. It is a warning: another application may be playing
+sound, and `TALOS_MUTE` only silences Talos.
+
 When `login` switches the Computer to another account, it deletes the previous
 enrollment's state except `state/workspaces`. On Windows, a program can keep a
 file open inside a state directory, for example an editor that an Agent opened

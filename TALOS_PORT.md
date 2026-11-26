@@ -146,6 +146,13 @@ counterpart to OpenClaw's no-progress detector: identical work is not enqueued
 twice while it is still running. Unit and Postgres integration coverage lives in
 `TestDuplicateCodingCommandsShareOneJob`.
 
+## Process inventory
+
+`talos-computer doctor` reports audio-capable and leftover Talos test processes
+by label and pid, never by command line, and treats them as warnings. The
+scanner lives in `apps/computer/local-daemon/internal/processinventory` and is
+injected so tests need no real processes.
+
 ## Coding receipts
 
 A verified patch reports each target's size and short SHA-256 before and after,
