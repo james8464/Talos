@@ -365,6 +365,20 @@ body="Hello! I'm Talos, your AI assistant here to help with onboarding and tasks
 `scripts/talos-agent-live.mjs` waits for that persisted Agent-authored reply;
 `pnpm talos:live` runs it when `TALOS_LIVE_AGENT=1` points at a running stack.
 
+The whole journey is repeatable with:
+
+```bash
+pnpm talos:agent-live
+```
+
+It builds the bundled TeamHub CLI and daemon, migrates the live database,
+re-signs the stored runner credential with `TALOS_SECRET_SEED`, starts TeamHub
+on 8090, the Agent Service on 4319 and the Local Computer daemon, asks one
+Direct Room question, asserts the persisted reply and stops the stack. It needs
+PostgreSQL on 5433 with the live database, Ollama, and the prepared Codex home
+and Computer state; the env names are documented in the script. Everything runs
+with `TALOS_MUTE=1`.
+
 Re-verified with the local bundle on the `talos_ollama_live` database:
 
 ```text
