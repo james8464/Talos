@@ -230,7 +230,9 @@ async function main() {
       TEAMHUB_BASE_URL: TEAMHUB,
       TEAMHUB_NODE_SERVICES_URL: `http://127.0.0.1:${AGENT_PORT}`,
       AGENT_RUNNER_PUBLIC_GATEWAY_URL: GATEWAY,
-      TALOS_AGENT_TEXT_REPLY: "1",
+      // Off by default so the check proves the model used the message command,
+      // not the reviewed fallback.
+      TALOS_AGENT_TEXT_REPLY: process.env.TALOS_AGENT_TEXT_REPLY ?? "0",
       GIN_MODE: "release",
     }),
   });

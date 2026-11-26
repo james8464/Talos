@@ -42,3 +42,38 @@ describe("Inbox notification prompts", () => {
     ).toBe("Reviewer|2|inbox-a\ninbox-b|2026-08-17T00:00:00.000Z");
   });
 });
+
+describe("Room reply contract", () => {
+  it("ends both Meta prompts with the exact send command and example", async () => {
+    const { renderMetaInstructions } =
+      await import("../../../src/agent/prompt/meta-instructions.js");
+    const { renderCompactMetaInstructions } =
+      await import("../../../src/agent/prompt/compact-meta-instructions.js");
+    const input = {
+      agentName: "Talos",
+      agentActorId: "actor_talos",
+      agentType: "anotherme" as const,
+      representedHuman: {
+        displayName: "Owner",
+        actorId: "actor_owner",
+      },
+      roomId: "room_1",
+      roomKind: "direct" as const,
+      connectedApps: false,
+      connectedAppKeys: [],
+      connectableAppKeys: [],
+    };
+    for (const render of [
+      renderMetaInstructions,
+      renderCompactMetaInstructions,
+    ]) {
+      const prompt = render(input);
+      expect(
+        prompt.endsWith("Do not repeat the reply as assistant text."),
+      ).toBe(true);
+      expect(prompt).toContain(
+        'teamhub message send --content "Hello! I\'m Talos, your AI assistant here to help with onboarding and tasks."',
+      );
+    }
+  });
+});

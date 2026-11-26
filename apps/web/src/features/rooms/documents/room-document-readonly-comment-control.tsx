@@ -35,7 +35,9 @@ export function ReadOnlySelectionCommentControl({
       anchorRef.current = null;
       return;
     }
-    let pendingFrame: number | undefined;
+    // A zero-delay timer, not requestAnimationFrame: the rect is already
+    // measured, and the control must still appear when frames are throttled.
+    let pendingUpdate: ReturnType<typeof setTimeout> | undefined;
     const updateFromSelection = (event?: Event) => {
       if (
         event?.target instanceof Element &&
@@ -47,7 +49,7 @@ export function ReadOnlySelectionCommentControl({
       const next = readOnlyDocumentCommentAnchor(selection, root);
       anchorRef.current = next;
       if (next === null || selection === null) {
-        if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame);
+        if (pendingUpdate !== undefined) clearTimeout(pendingUpdate);
         setAnchor(null);
         setPosition(null);
         return;
@@ -63,9 +65,9 @@ export function ReadOnlySelectionCommentControl({
         Math.max(12, window.innerWidth - controlWidth - 12),
       );
       const top = rect.top >= 52 ? rect.top - 44 : rect.bottom + 8;
-      if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame);
-      pendingFrame = requestAnimationFrame(() => {
-        pendingFrame = undefined;
+      if (pendingUpdate !== undefined) clearTimeout(pendingUpdate);
+      pendingUpdate = setTimeout(() => {
+        pendingUpdate = undefined;
         if (root.querySelector('[data-test="addcomment"]')) {
           setAnchor(null);
           setPosition(null);
@@ -73,7 +75,7 @@ export function ReadOnlySelectionCommentControl({
         }
         setAnchor(next);
         setPosition({ left, top: Math.max(12, top) });
-      });
+      }, 0);
     };
     root.addEventListener("keyup", updateFromSelection);
     root.addEventListener("mouseup", updateFromSelection);
@@ -84,7 +86,7 @@ export function ReadOnlySelectionCommentControl({
       root.removeEventListener("mouseup", updateFromSelection);
       root.removeEventListener("touchend", updateFromSelection);
       document.removeEventListener("selectionchange", updateFromSelection);
-      if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame);
+      if (pendingUpdate !== undefined) clearTimeout(pendingUpdate);
     };
   }, [anchorRef, canComment, editable, editorRootRef]);
 

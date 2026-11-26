@@ -11,7 +11,7 @@ export const ROOM_REPLY_GUARD_FEATURE_ID = "room-reply-guard";
 const DEFAULT_REPLY_CHECK_TIMEOUT_MS = 5_000;
 
 export const ROOM_REPLY_REMINDER =
-  "You have not sent a visible reply to the Room yet for this turn. Room participants cannot see your final assistant text; only messages sent through the `teamhub message` command (such as `teamhub message send`, `teamhub message card`, `teamhub message ask-user`, `teamhub message sequence`, or an emoji reaction) appear in the Room. Send your reply to the Room now, then finish.";
+  'You have not sent a visible reply to the Room yet for this turn. Room participants cannot see your final assistant text; only messages sent through the `teamhub message` command (such as `teamhub message send`, `teamhub message card`, `teamhub message ask-user`, `teamhub message sequence`, or an emoji reaction) appear in the Room. Run this as its own shell call with your shell tool, then finish: teamhub message send --content "<your reply>". Write your own reply in place of <your reply>; do not send a placeholder or this instruction.';
 
 /** Where TeamHub found a visible reply from the Run. */
 export interface RunReplyStatus {

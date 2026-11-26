@@ -10,6 +10,7 @@ import {
 } from "./connected-apps.js";
 import { renderPersonalContextMethod } from "./personal-context-method.js";
 import { PERSONAL_KNOWLEDGE_POLICY_COMPACT } from "./personal-knowledge-policy.js";
+import { REPLY_CONTRACT } from "./reply-contract.js";
 import { serializePromptData } from "./prompt-data.js";
 
 // The Room Meta recipe for models with a small context window: the same
@@ -206,6 +207,7 @@ export function renderCompactMetaInstructions(
     environment(input),
     renderPersonalContextMethod(input.connectedApps, input.connectedAppKeys),
     PERSONAL_KNOWLEDGE_POLICY_COMPACT,
+    REPLY_CONTRACT,
   ]
     .filter(Boolean)
     .join("\n\n");

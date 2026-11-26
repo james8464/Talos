@@ -11,6 +11,7 @@ import {
 } from "./connected-apps.js";
 import { renderPersonalContextMethod } from "./personal-context-method.js";
 import { PERSONAL_KNOWLEDGE_POLICY } from "./personal-knowledge-policy.js";
+import { REPLY_CONTRACT } from "./reply-contract.js";
 import { serializePromptData } from "./prompt-data.js";
 
 export interface MetaInstructionsInput {
@@ -294,6 +295,7 @@ export const renderMetaInstructions = (input: MetaInstructionsInput): string =>
     environment(input),
     renderPersonalContextMethod(input.connectedApps, input.connectedAppKeys),
     PERSONAL_KNOWLEDGE_POLICY,
+    REPLY_CONTRACT,
   ]
     .filter(Boolean)
     .join("\n\n");

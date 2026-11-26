@@ -347,9 +347,12 @@ Direct Room lifecycle and Agent visibility).
 
 ### Reviewed text-reply fallback
 
-Both 4B and 8B write text instead of running `teamhub message send`. With
-`TALOS_AGENT_TEXT_REPLY=1`, TeamHub posts that final text as the Agent reply when
-the Run finishes `reply_not_sent`. The review trims whitespace, strips one
+With the Room reply contract now ending both Meta prompts with the exact
+`teamhub message send` command and a worked example, `qwen3:8b-16k` calls the
+command after the guard's reminder; `pnpm talos:agent-live` runs with the
+fallback off and still finds the persisted reply. The fallback remains for
+models that write text regardless: with `TALOS_AGENT_TEXT_REPLY=1`, TeamHub
+posts that final text as the Agent reply when the Run finishes `reply_not_sent`. The review trims whitespace, strips one
 `<response>…</response>` wrapper, rejects empty or over-2000-rune text and NUL
 bytes, and is off by default. Cloud runtimes can keep the strict guard.
 
