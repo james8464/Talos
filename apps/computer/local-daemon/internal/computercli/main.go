@@ -44,8 +44,11 @@ func defaultDeps() deps {
 		probeGateway:     probeGatewayNetwork,
 		productRuntime:   bundledNodeCheck,
 		scanProcesses:    processinventory.Scan,
-		readLogs:         streamComputerLogs,
-		runInteractive:   runRuntimeInteractive,
+		stopStaleProcesses: func() []int {
+			return processinventory.StopStale(processinventory.Scan())
+		},
+		readLogs:       streamComputerLogs,
+		runInteractive: runRuntimeInteractive,
 		startDaemon: func(ctx context.Context, configPath string) error {
 			return startDetachedDaemon(ctx, configPath, environment, commandName)
 		},

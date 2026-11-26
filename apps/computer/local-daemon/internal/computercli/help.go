@@ -137,13 +137,14 @@ Options:
   --json                       Print machine-readable results
 ` + runtimePathOptions + "\n" + configOption + "\n",
 	"doctor": `Usage:
-  talos-computer doctor [--json] [--prune] [options]
+  talos-computer doctor [--json] [--prune] [--stop-stale] [options]
 
 Check the installation, configuration, connection, and runtimes.
 
 Options:
   --json                       Print machine-readable results
   --prune                      Remove this computer's local enrollment
+  --stop-stale                 Stop only leftover Talos test processes
 ` + runtimePathOptions + "\n" + configOption + "\n",
 	"version": `Usage:
   talos-computer version

@@ -3,10 +3,12 @@
 package processinventory
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 // Entry is one matched process.
@@ -90,4 +92,30 @@ func Scan() []Entry {
 		return nil
 	}
 	return Parse(string(output))
+}
+
+// StopStale asks stale test processes to exit. Audio players are never
+// stopped: another application may be using them, and mute belongs to Talos.
+func StopStale(entries []Entry) []int {
+	return stop(entries, func(pid int, signal syscall.Signal) error {
+		process, err := os.FindProcess(pid)
+		if err != nil {
+			return err
+		}
+		return process.Signal(signal)
+	})
+}
+
+func stop(entries []Entry, kill func(int, syscall.Signal) error) []int {
+	stopped := []int{}
+	for _, entry := range entries {
+		if !entry.Stale || entry.Audio {
+			continue
+		}
+		if err := kill(entry.PID, syscall.SIGTERM); err != nil {
+			continue
+		}
+		stopped = append(stopped, entry.PID)
+	}
+	return stopped
 }

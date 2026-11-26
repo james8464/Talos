@@ -151,7 +151,8 @@ twice while it is still running. Unit and Postgres integration coverage lives in
 `talos-computer doctor` reports audio-capable and leftover Talos test processes
 by label and pid, never by command line, and treats them as warnings. The
 scanner lives in `apps/computer/local-daemon/internal/processinventory` and is
-injected so tests need no real processes.
+injected so tests need no real processes. `doctor --stop-stale` signals only
+the stale test labels and never an audio player.
 
 ## Coding receipts
 

@@ -34,7 +34,10 @@ Daemon through `internal/talos/control`, and diagnoses Runtimes with the same
 `doctor` also reports audio-capable and leftover Talos test processes by label
 and pid, never their command lines, so a diagnostic never echoes a
 prompt or a private path. It is a warning: another application may be playing
-sound, and `TALOS_MUTE` only silences Talos.
+sound, and `TALOS_MUTE` only silences Talos. `doctor --stop-stale` sends
+SIGTERM only to the stale test labels (`live harness`, `headless browser`) and
+never to an audio player. The scanner reads `ps`, which Windows does not ship,
+so the check reports pass there.
 
 When `login` switches the Computer to another account, it deletes the previous
 enrollment's state except `state/workspaces`. On Windows, a program can keep a

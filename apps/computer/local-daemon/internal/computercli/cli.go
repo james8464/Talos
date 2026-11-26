@@ -42,14 +42,15 @@ type deps struct {
 	checkRuntime     func(ctx context.Context, runtimeType string, request runtimeRequest) (runtimeCheck, error)
 	// interruptible derives a context that an interrupt arriving after the
 	// call cancels.
-	interruptible    func(ctx context.Context) (context.Context, context.CancelFunc)
-	diagnoseRuntimes func(ctx context.Context, configuredPaths, environment map[string]string, enabled []string) ([]runtimeDiagnostic, error)
-	newClient        func(stateDirectory string) controlClient
-	inspectDaemon    func(ctx context.Context, stateDirectory string) doctorCheck
-	probeGateway     func(ctx context.Context, gatewayURL string) doctorCheck
-	productRuntime   func() doctorCheck
-	scanProcesses    func() []processinventory.Entry
-	readLogs         func(ctx context.Context, request logRequest, output io.Writer) error
+	interruptible      func(ctx context.Context) (context.Context, context.CancelFunc)
+	diagnoseRuntimes   func(ctx context.Context, configuredPaths, environment map[string]string, enabled []string) ([]runtimeDiagnostic, error)
+	newClient          func(stateDirectory string) controlClient
+	inspectDaemon      func(ctx context.Context, stateDirectory string) doctorCheck
+	probeGateway       func(ctx context.Context, gatewayURL string) doctorCheck
+	productRuntime     func() doctorCheck
+	scanProcesses      func() []processinventory.Entry
+	stopStaleProcesses func() []int
+	readLogs           func(ctx context.Context, request logRequest, output io.Writer) error
 	// runInteractive runs a Runtime on the CLI's terminal for sign-in.
 	runInteractive        func(cmd *exec.Cmd) (int, error)
 	setup                 func(ctx context.Context, options setupOptions) (setupResult, error)
@@ -139,6 +140,9 @@ func (c *cli) execute(ctx context.Context, parsed command) (int, error) {
 		}
 		return 0, nil
 	case "doctor":
+		if parsed.stopStale {
+			return c.executeDoctorStopStale(parsed)
+		}
 		if parsed.prune {
 			return c.executeDoctorPrune(ctx, parsed)
 		}
@@ -410,6 +414,35 @@ func (c *cli) executeRuntimeCheck(ctx context.Context, parsed command) (int, err
 		c.out("\n" + formatRuntimeCheck(rows, parsed.live, c.command))
 	}
 	return code, nil
+}
+
+// executeDoctorStopStale stops only known Talos test leftovers; it never
+// signals audio players or the product.
+func (c *cli) executeDoctorStopStale(parsed command) (int, error) {
+	var stopped []int
+	if c.deps.stopStaleProcesses != nil {
+		stopped = c.deps.stopStaleProcesses()
+	}
+	if stopped == nil {
+		stopped = []int{}
+	}
+	if parsed.json {
+		c.out(marshalReport(struct {
+			Version int   `json:"version"`
+			Stopped []int `json:"stopped"`
+		}{1, stopped}))
+		return 0, nil
+	}
+	if len(stopped) == 0 {
+		c.out("No leftover Talos test processes were running.\n")
+		return 0, nil
+	}
+	names := make([]string, 0, len(stopped))
+	for _, pid := range stopped {
+		names = append(names, fmt.Sprintf("%d", pid))
+	}
+	c.out("Stopped leftover Talos test processes: " + strings.Join(names, ", ") + ".\n")
+	return 0, nil
 }
 
 func (c *cli) executeDoctorPrune(ctx context.Context, parsed command) (int, error) {

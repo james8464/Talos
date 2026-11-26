@@ -20,7 +20,8 @@ type command struct {
 	// daemon stop
 	ifIdle bool
 	// doctor
-	prune bool
+	prune     bool
+	stopStale bool
 	// runtime check
 	live    bool
 	runtime string
@@ -155,6 +156,9 @@ func parseArguments(rawArgs []string, options parseOptions) (command, error) {
 			return command{}, err
 		}
 		if parsed.prune, err = removeFlag(&args, "--prune"); err != nil {
+			return command{}, err
+		}
+		if parsed.stopStale, err = removeFlag(&args, "--stop-stale"); err != nil {
 			return command{}, err
 		}
 		if parsed.runtimePaths, err = removeRuntimePaths(&args, options); err != nil {

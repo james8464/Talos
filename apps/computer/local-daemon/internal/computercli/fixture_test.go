@@ -152,8 +152,9 @@ func newFixture(t *testing.T) *fixture {
 		probeGateway: func(context.Context, string) doctorCheck {
 			return doctorCheck{Name: "gateway-network", Category: categoryNetwork, Status: "pass", Detail: "reachable"}
 		},
-		productRuntime: func() doctorCheck { return productRuntimeCheck(productNodeVersion) },
-		scanProcesses:  func() []processinventory.Entry { return nil },
+		productRuntime:     func() doctorCheck { return productRuntimeCheck(productNodeVersion) },
+		scanProcesses:      func() []processinventory.Entry { return nil },
+		stopStaleProcesses: func() []int { return nil },
 		readLogs: func(_ context.Context, request logRequest, output io.Writer) error {
 			f.logRequests = append(f.logRequests, request)
 			_, err := io.WriteString(output, "redacted log\n")

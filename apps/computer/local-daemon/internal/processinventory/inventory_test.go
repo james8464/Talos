@@ -1,6 +1,10 @@
 package processinventory
 
-import "testing"
+import (
+	"errors"
+	"syscall"
+	"testing"
+)
 
 func TestClassifyMatchesAudioAndStaleProcesses(t *testing.T) {
 	cases := map[string]Entry{
@@ -48,5 +52,31 @@ not a row
 	}
 	if entries[1].PID != 102 || entries[1].Label != "live harness" || !entries[1].Stale {
 		t.Fatalf("second=%+v", entries[1])
+	}
+}
+
+func TestStopStaleSignalsOnlyStaleProcesses(t *testing.T) {
+	var signalled []int
+	stopped := stop([]Entry{
+		{PID: 1, Label: "audio", Audio: true},
+		{PID: 2, Label: "live harness", Stale: true},
+		{PID: 3, Label: "headless browser", Stale: true},
+		{PID: 4, Label: "audio", Audio: true, Stale: true},
+		{PID: 5, Label: "live harness", Stale: true},
+	}, func(pid int, signal syscall.Signal) error {
+		if signal != syscall.SIGTERM {
+			t.Fatalf("signal=%v", signal)
+		}
+		if pid == 5 {
+			return errors.New("gone")
+		}
+		signalled = append(signalled, pid)
+		return nil
+	})
+	if len(signalled) != 2 || signalled[0] != 2 || signalled[1] != 3 {
+		t.Fatalf("signalled=%v", signalled)
+	}
+	if len(stopped) != 2 || stopped[0] != 2 || stopped[1] != 3 {
+		t.Fatalf("stopped=%v", stopped)
 	}
 }

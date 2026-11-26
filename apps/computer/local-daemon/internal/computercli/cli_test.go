@@ -673,6 +673,42 @@ func TestDoctorWarnsAboutAudioAndStaleProcesses(t *testing.T) {
 	t.Fatal("processes check missing")
 }
 
+func TestDoctorStopsOnlyStaleProcesses(t *testing.T) {
+	f := newFixture(t)
+	f.deps.stopStaleProcesses = func() []int { return []int{71, 72} }
+	if code := f.run("doctor", "--stop-stale", "--json", "--config", f.configPath); code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, f.stderr.String())
+	}
+	var report struct {
+		Version int   `json:"version"`
+		Stopped []int `json:"stopped"`
+	}
+	if err := json.Unmarshal([]byte(f.stdout.String()), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Version != 1 || !reflect.DeepEqual(report.Stopped, []int{71, 72}) {
+		t.Fatalf("report=%+v", report)
+	}
+
+	f.clear()
+	f.deps.stopStaleProcesses = func() []int { return nil }
+	if code := f.run("doctor", "--stop-stale"); code != 0 {
+		t.Fatalf("empty exit=%d stderr=%s", code, f.stderr.String())
+	}
+	if got := f.stdout.String(); got != "No leftover Talos test processes were running.\n" {
+		t.Fatalf("empty stdout=%q", got)
+	}
+
+	f.clear()
+	f.deps.stopStaleProcesses = func() []int { return []int{73} }
+	if code := f.run("doctor", "--stop-stale"); code != 0 {
+		t.Fatalf("one exit=%d stderr=%s", code, f.stderr.String())
+	}
+	if got := f.stdout.String(); got != "Stopped leftover Talos test processes: 73.\n" {
+		t.Fatalf("one stdout=%q", got)
+	}
+}
+
 func TestDoctorFailures(t *testing.T) {
 	f := newFixture(t)
 	f.deps.productRuntime = func() doctorCheck { return productRuntimeCheck("26.6.0") }
