@@ -29,6 +29,9 @@ test-results/
 # Local .env backups must never be committed
 .env.bak*
 
+# Local TTS model assets for the offline Kokoro voice.
+apps/voice-runtime/.kokoro/
+
 # Local Python environments, including the offline Whisper transcriber.
 .venv/
 

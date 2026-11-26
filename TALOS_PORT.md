@@ -189,6 +189,13 @@ input has no point to outline and raises nothing.
 
 ## Text to speech and the audible loop
 
+Talos speaks with the free, local Kokoro neural voice. The default `calm` tone is
+`am_onyx`, a deep American male; `alert` uses `am_fenrir`; `menacing` uses the
+slower British `bm_lewis`. `TALOS_KOKORO_TONE` selects the default and
+`TALOS_KOKORO_VOICE` forces one voice. The audible harness check plays the Kokoro
+clip and transcribes the recording, and is what identified the earlier
+system-voice quality problem.
+
 The live harness always synthesizes one short phrase with the macOS system voice
 to a WAV file and asserts its RIFF/WAVE header, 16 kHz mono format and 0.5–10
 second duration; that check never plays a sample. With `TALOS_LIVE_AUDIO=1` it

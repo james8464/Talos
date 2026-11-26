@@ -10,7 +10,9 @@
     "NODE_SERVICES_HTTP_PORT": "docker compose host-port interpolation in the root docker-compose.yml (pnpm stack:up)",
     "DOCUMENT_RUNTIME_HTTP_PORT": "docker compose host-port interpolation in the root docker-compose.yml (pnpm stack:up)",
     "LIVEKIT_NODE_IP": "docker compose interpolation of the LiveKit advertised media address (NODE_IP) in the root docker-compose.yml",
-    "LIVEKIT_RTC_BIND_ADDRESS": "docker compose host-address interpolation of the LiveKit media ports in the root docker-compose.yml"
+    "LIVEKIT_RTC_BIND_ADDRESS": "docker compose host-address interpolation of the LiveKit media ports in the root docker-compose.yml",
+    "TALOS_KOKORO_TONE": "Read by scripts/talos-live-check.ts to choose the local Kokoro voice tone (calm, alert, menacing)",
+    "TALOS_KOKORO_VOICE": "Read by scripts/talos-live-check.ts to force one local Kokoro voice instead of the tone default"
   },
   "unlisted": {
     "agent": {

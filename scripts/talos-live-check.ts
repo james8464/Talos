@@ -26,6 +26,11 @@ import {
   mlxWhisperTranscriber,
   pcmFromWAV,
 } from "../apps/voice-runtime/src/local-whisper.js";
+import {
+  kokoroSynthesizer,
+  kokoroToneProfile,
+  type KokoroTone,
+} from "../apps/voice-runtime/src/local-kokoro.js";
 
 const exec = promisify(execFile);
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -194,8 +199,52 @@ async function main(): Promise<number> {
     check("tts-synthesis", true, "skipped: system text to speech needs macOS");
   }
 
-  // Transcription runs on a file `say` writes; it never reaches a speaker.
+  const kokoroModel = path.join(
+    ROOT,
+    "apps/voice-runtime/.kokoro/kokoro-v1.0.int8.onnx",
+  );
+  const kokoroVoices = path.join(
+    ROOT,
+    "apps/voice-runtime/.kokoro/voices-v1.0.bin",
+  );
+  const kokoroTone = (process.env.TALOS_KOKORO_TONE ?? "calm") as KokoroTone;
+  const kokoroVoice = process.env.TALOS_KOKORO_VOICE;
   const whisperPython = path.join(ROOT, "apps/voice-runtime/.venv/bin/python");
+  const synthesizeKokoro = kokoroSynthesizer({
+    python: whisperPython,
+    helper: path.join(ROOT, "apps/voice-runtime/scripts/synthesize_kokoro.py"),
+    model: kokoroModel,
+    voices: kokoroVoices,
+    ...(kokoroVoice ? { voice: kokoroVoice } : {}),
+  });
+  const kokoroReady =
+    process.platform === "darwin" &&
+    existsSync(whisperPython) &&
+    existsSync(kokoroModel) &&
+    existsSync(kokoroVoices);
+  if (kokoroReady) {
+    try {
+      const clip = await synthesizeKokoro("Hello, I'm Talos.", kokoroTone);
+      check(
+        "tts-kokoro",
+        clip.wav.subarray(0, 4).toString() === "RIFF" &&
+          clip.sampleRate === 24_000 &&
+          clip.seconds >= 0.5 &&
+          clip.seconds <= 10,
+        `${clip.wav.length} bytes · ${clip.seconds.toFixed(2)}s · ${clip.sampleRate}Hz · ${kokoroVoice ?? kokoroToneProfile(kokoroTone).voice} (${kokoroTone})`,
+      );
+    } catch (error) {
+      check("tts-kokoro", false, (error as Error).message);
+    }
+  } else {
+    check(
+      "tts-kokoro",
+      true,
+      "skipped: run apps/voice-runtime/scripts/setup-local-kokoro.sh",
+    );
+  }
+
+  // Transcription runs on a file `say` writes; it never reaches a speaker.
   if (process.platform === "darwin" && existsSync(whisperPython)) {
     const folder = await mkdtemp(path.join(os.tmpdir(), "talos-whisper-live-"));
     const clip = path.join(folder, "clip.wav");
@@ -265,11 +314,22 @@ async function main(): Promise<number> {
       });
       // Compile the helper before speaking so the phrase is not missed.
       await capture.capture(true, 0.1);
-      const spoken = spawn(
-        "say",
-        ["The quick brown fox jumps over the lazy dog."],
-        { stdio: "ignore" },
-      );
+      let spoken: ReturnType<typeof spawn>;
+      if (kokoroReady) {
+        const clip = await synthesizeKokoro(
+          "The quick brown fox jumps over the lazy dog.",
+          kokoroTone,
+        );
+        const file = path.join(folder, "tts.wav");
+        await writeFile(file, clip.wav);
+        spoken = spawn("afplay", [file], { stdio: "ignore" });
+      } else {
+        spoken = spawn(
+          "say",
+          ["The quick brown fox jumps over the lazy dog."],
+          { stdio: "ignore" },
+        );
+      }
       const said = new Promise<void>((resolve) =>
         spoken.once("exit", () => resolve()),
       );
