@@ -318,8 +318,10 @@ Direct Room message and waits for the Agent's reply:
 TEAMHUB_BASE_URL=http://127.0.0.1:8090 node scripts/talos-agent-live.mjs
 ```
 
-The same check is available in `pnpm talos:live` when
-`TALOS_LIVE_AGENT=1` and `TALOS_LIVE_AGENT_BASE_URL` point at that stack.
+`pnpm talos:live` now boots that stack itself when its prerequisites are
+present, asks the question and reports `agent-conversation` with the reply. Set
+`TALOS_LIVE_AGENT=0` to skip it, or `TALOS_LIVE_AGENT=1` with
+`TALOS_LIVE_AGENT_BASE_URL` to use an already-running stack.
 
 On the Ollama-backed Codex stack the Agent did make a real model request:
 

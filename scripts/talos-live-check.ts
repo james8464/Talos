@@ -542,12 +542,66 @@ async function main(): Promise<number> {
     } catch (error) {
       check("agent-conversation", false, (error as Error).message);
     }
-  } else {
+  } else if (process.env.TALOS_LIVE_AGENT === "0") {
     check(
       "agent-conversation",
       true,
-      "skipped: set TALOS_LIVE_AGENT=1 with a running stack",
+      "skipped: TALOS_LIVE_AGENT=0 disables the Agent stack",
     );
+  } else {
+    // Boot the prepared local stack and ask Talos one question, so the default
+    // live check reaches the real Agent without a separate command.
+    const codexHome =
+      process.env.TALOS_AGENT_LIVE_CODEX_HOME ?? "/tmp/talos-ollama-codex-8b";
+    const computerState =
+      process.env.TALOS_AGENT_LIVE_COMPUTER_STATE ??
+      "/tmp/talos-ollama-computer-state";
+    const ownerFile = path.join(ROOT, ".talos-runtime/local-owner.json");
+    const ollama = process.env.TALOS_OLLAMA_URL ?? "http://127.0.0.1:11434";
+    const ready =
+      existsSync(path.join(codexHome, "config.toml")) &&
+      existsSync(path.join(computerState, "config.json")) &&
+      existsSync(ownerFile) &&
+      (await fetch(`${ollama}/api/version`, {
+        signal: AbortSignal.timeout(2_000),
+      })
+        .then((response) => response.ok)
+        .catch(() => false));
+    if (!ready) {
+      check(
+        "agent-conversation",
+        true,
+        "skipped: the local Agent stack prerequisites are absent; set TALOS_AGENT_LIVE_* or TALOS_LIVE_AGENT=1",
+      );
+    } else {
+      try {
+        const { stdout } = await exec(
+          "node",
+          [path.join(ROOT, "scripts/talos-agent-live-stack.mjs")],
+          {
+            cwd: ROOT,
+            env: {
+              ...process.env,
+              TALOS_MUTE: "1",
+              TALOS_AGENT_TEXT_REPLY: process.env.TALOS_AGENT_TEXT_REPLY ?? "0",
+            },
+            timeout: 1_800_000,
+            maxBuffer: 8 * 1024 * 1024,
+          },
+        );
+        // The stack prefixes its own lines, so match the reply by content.
+        const reply = stdout
+          .split("\n")
+          .find((line) => line.includes("reply["));
+        check(
+          "agent-conversation",
+          stdout.includes("[agent-live] PASS") && Boolean(reply),
+          reply ?? "the Agent stack finished without a reply line",
+        );
+      } catch (error) {
+        check("agent-conversation", false, (error as Error).message);
+      }
+    }
   }
 
   try {
