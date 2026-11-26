@@ -163,9 +163,10 @@ Settings capture step instead of starting a capture.
 `ScreenOverlay` is a transparent, click-through, always-on-top Electron window
 that outlines one screen region with a ring and an optional label. It never
 focuses, never receives input and never speaks; it hides itself after four
-seconds. Settings › Test screen highlight shows it, and the IPC accepts any
-region an Agent action reports. Wiring the computer tools to raise it on every
-action is still open.
+seconds. Settings › Test screen highlight previews it. The Daemon advertises
+`overlay.v1` over its Desktop channel, and every computer input that names
+pointer coordinates (`x`, `y`) raises a ring around that point; element-targeted
+input has no point to outline and raises nothing.
 
 ## Camera and microphone readiness
 

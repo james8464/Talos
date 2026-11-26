@@ -325,6 +325,9 @@ func run(args []string) (resultErr error) {
 	if computer.Desktop != nil {
 		desktop = newDesktopChannel(os.Stdout)
 		permissionOptions.Talos = desktop
+		if toolManager != nil {
+			toolManager.SetOverlay(desktop.Overlay)
+		}
 	}
 	if toolManager != nil {
 		permissionOptions.Cua = toolManager

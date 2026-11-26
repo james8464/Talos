@@ -4,12 +4,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  BrowserWindow,
   Notification,
   app,
   desktopCapturer,
   dialog,
   powerMonitor,
   powerSaveBlocker,
+  screen,
   session,
   shell,
   systemPreferences,
@@ -26,6 +28,7 @@ import {
 } from "./computer-daemon.js";
 import { ConfigStore } from "./config.js";
 import { DesktopIpcModule } from "./desktop-ipc.js";
+import { ScreenOverlay, type OverlayWindowHandle } from "./screen-overlay.js";
 import { dialogMessages } from "./dialogs.messages.js";
 import { DiagnosticsModule } from "./diagnostics.js";
 import { DriverUpdater } from "./driver-updater.js";
@@ -326,6 +329,21 @@ async function main(): Promise<void> {
           },
         }
       : undefined;
+  // One highlight window shared by Settings previews and the daemon's
+  // computer tools.
+  const overlay = new ScreenOverlay({
+    deps: {
+      createWindow: (options) =>
+        new BrowserWindow(options) as unknown as OverlayWindowHandle,
+      workAreaFor: (target) =>
+        screen.getDisplayMatching({
+          x: target.x,
+          y: target.y,
+          width: target.width,
+          height: target.height,
+        }).workArea,
+    },
+  });
   const modules: Module[] = [
     {
       name: "Config",
@@ -369,6 +387,11 @@ async function main(): Promise<void> {
         ? { protect: protectWithDaemon(daemonExecutable()) }
         : {}),
       ...desktopPermissions,
+      overlay: (target) => {
+        void overlay.show(target).catch((error: unknown) => {
+          log.warn("screen_overlay.show_failed", { error: String(error) });
+        });
+      },
     }),
     status,
     new PowerGuardModule(electronPower()),
@@ -391,6 +414,7 @@ async function main(): Promise<void> {
       defaultDisplayName,
       ...(desktopPermissions ? { permissions: desktopPermissions } : {}),
       driverUpdater,
+      overlay,
     }),
   ];
   const host = new ModuleHost(modules, { config, log, bus });

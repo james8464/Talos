@@ -69,6 +69,8 @@ export interface ComputerDaemonOptions {
   >;
   // Quits and starts the app again, for a Screen Recording grant to apply.
   readonly relaunch?: () => void;
+  // Draws the non-speaking highlight while a computer tool acts.
+  readonly overlay?: (target: DaemonOverlayRequest) => void;
   // Gives the given directories and the files directly in them an owner-only
   // ACL before the first launch. Only set on Windows, where Node's file modes
   // do nothing and the daemon refuses a config other users could read.
@@ -76,7 +78,16 @@ export interface ComputerDaemonOptions {
 }
 
 // The stdio features this Desktop offers the daemon in its hello line.
-export const DAEMON_FEATURES = ["permissions.v1"];
+export const DAEMON_FEATURES = ["permissions.v1", "overlay.v1"];
+
+// One highlight request from the daemon's computer tools.
+export interface DaemonOverlayRequest {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly label?: string;
+}
 
 interface PermissionRequest {
   readonly id: string;
@@ -405,8 +416,12 @@ export class ComputerDaemonModule implements Module {
       return;
     }
     this.#child = child;
-    if (this.#options.permissions)
-      this.#send(child, { type: "hello", features: DAEMON_FEATURES });
+    const features = DAEMON_FEATURES.filter(
+      (feature) =>
+        (feature === "permissions.v1" && this.#options.permissions) ||
+        (feature === "overlay.v1" && this.#options.overlay),
+    );
+    if (features.length) this.#send(child, { type: "hello", features });
     child.onLine((line) => {
       if (this.#child !== child) return;
       let status: {
@@ -417,10 +432,32 @@ export class ComputerDaemonModule implements Module {
         gateway_state?: unknown;
         active_operations?: unknown;
         active_model_invokes?: unknown;
+        x?: unknown;
+        y?: unknown;
+        width?: unknown;
+        height?: unknown;
+        label?: unknown;
       };
       try {
         status = JSON.parse(line) as typeof status;
       } catch {
+        return;
+      }
+      if (status.type === "overlay") {
+        const numbers = [status.x, status.y, status.width, status.height];
+        if (
+          numbers.every((value) => typeof value === "number") &&
+          this.#options.overlay
+        )
+          this.#options.overlay({
+            x: status.x as number,
+            y: status.y as number,
+            width: status.width as number,
+            height: status.height as number,
+            ...(typeof status.label === "string"
+              ? { label: status.label }
+              : {}),
+          });
         return;
       }
       if (status.type === "permission.request") {

@@ -38,6 +38,40 @@ type Options struct {
 	// The ordinary signed-app installation never enables this option.
 	CuaEmbedded bool
 	Environment map[string]string
+	// Overlay outlines one screen region while an input acts; nil disables it.
+	Overlay func(OverlayTarget)
+}
+
+// OverlayTarget is one screen region to highlight, in screen points.
+type OverlayTarget struct {
+	X, Y, Width, Height float64
+	Label               string
+}
+
+// SetOverlay installs the non-speaking highlight sender. The Daemon calls it
+// once after the Desktop channel exists and before any tool runs.
+func (m *Manager) SetOverlay(overlay func(OverlayTarget)) {
+	m.mu.Lock()
+	m.options.Overlay = overlay
+	m.mu.Unlock()
+}
+
+// outlineInput highlights the pointer target of one input call. Tools that
+// name an element instead of coordinates have no point to outline.
+func (m *Manager) outlineInput(arguments map[string]any) {
+	m.mu.Lock()
+	overlay := m.options.Overlay
+	m.mu.Unlock()
+	if overlay == nil {
+		return
+	}
+	x, xOK := arguments["x"].(float64)
+	y, yOK := arguments["y"].(float64)
+	if !xOK || !yOK {
+		return
+	}
+	const size = 72.0
+	overlay(OverlayTarget{X: x - size/2, Y: y - size/2, Width: size, Height: size})
 }
 
 type Manager struct {

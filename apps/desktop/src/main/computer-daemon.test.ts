@@ -88,6 +88,7 @@ const setup = (
     permissions?: ComputerDaemonOptions["permissions"];
     relaunch?: () => void;
     protect?: ComputerDaemonOptions["protect"];
+    overlay?: ComputerDaemonOptions["overlay"];
   } = {},
 ) => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "computer-daemon-"));
@@ -140,6 +141,7 @@ const setup = (
     ...(options.permissions ? { permissions: options.permissions } : {}),
     ...(options.relaunch ? { relaunch: options.relaunch } : {}),
     ...(options.protect ? { protect: options.protect } : {}),
+    ...(options.overlay ? { overlay: options.overlay } : {}),
   });
   return { daemon, ctx, bus, config, children, credentials, directory, spawn };
 };
@@ -666,6 +668,29 @@ describe("ComputerDaemonModule permission requests", () => {
     const { child } = await started();
     expect(child.written).toEqual([
       { type: "hello", features: ["permissions.v1"] },
+    ]);
+  });
+
+  it("offers the overlay feature and highlights the reported region", async () => {
+    const targets: unknown[] = [];
+    const { daemon, ctx, children } = setup({
+      overlay: (target) => targets.push(target),
+    });
+    await daemon.start(ctx);
+    const child = children[0]!;
+    expect(child.written).toEqual([
+      { type: "hello", features: ["overlay.v1"] },
+    ]);
+    child.send({
+      type: "overlay",
+      x: 10,
+      y: 20,
+      width: 72,
+      height: 72,
+      label: "Talos",
+    });
+    expect(targets).toEqual([
+      { x: 10, y: 20, width: 72, height: 72, label: "Talos" },
     ]);
   });
 

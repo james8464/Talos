@@ -1,10 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  screen,
-  type IpcMainInvokeEvent,
-} from "electron";
+import { app, ipcMain, type IpcMainInvokeEvent } from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -28,7 +22,7 @@ import type { LanguageModule } from "./language.js";
 import type { LocalServerModule } from "./local-server.js";
 import type { Module, ModuleContext } from "./modules.js";
 import { sameOrigin } from "./navigation.js";
-import { ScreenOverlay, type OverlayWindowHandle } from "./screen-overlay.js";
+import type { ScreenOverlay } from "./screen-overlay.js";
 import type { PowerGuardModule } from "./power-guard.js";
 import {
   runDesktopPermissionStep,
@@ -134,18 +128,22 @@ export class DesktopIpcModule implements Module {
   // Set on macOS only.
   readonly #permissions: DesktopPermissionHost | undefined;
   readonly #driverUpdater: DriverUpdaterHost | undefined;
+  readonly #overlay: ScreenOverlay | undefined;
   readonly #unsubscribe: (() => void)[] = [];
   #perceptionInstance: TalosPerception | undefined;
-  #overlay: ScreenOverlay | undefined;
 
   constructor(options: {
     defaultDisplayName: string;
     permissions?: DesktopPermissionHost;
     driverUpdater?: DriverUpdaterHost;
+    // Shared with the Computer daemon, which asks for highlights while its
+    // computer tools act.
+    overlay?: ScreenOverlay;
   }) {
     this.#defaultDisplayName = options.defaultDisplayName;
     this.#permissions = options.permissions;
     this.#driverUpdater = options.driverUpdater;
+    this.#overlay = options.overlay;
   }
 
   #perception(): TalosPerception {
@@ -165,26 +163,6 @@ export class DesktopIpcModule implements Module {
       compiler: "swiftc",
     });
     return this.#perceptionInstance;
-  }
-
-  #overlayInstance(): ScreenOverlay {
-    if (this.#overlay) return this.#overlay;
-    this.#overlay = new ScreenOverlay({
-      deps: {
-        // BrowserWindow carries the subset the overlay calls; the level is a
-        // string so the module stays testable without Electron types.
-        createWindow: (options) =>
-          new BrowserWindow(options) as unknown as OverlayWindowHandle,
-        workAreaFor: (target) =>
-          screen.getDisplayMatching({
-            x: target.x,
-            y: target.y,
-            width: target.width,
-            height: target.height,
-          }).workArea,
-      },
-    });
-    return this.#overlay;
   }
 
   async start(ctx: ModuleContext): Promise<void> {
@@ -335,10 +313,13 @@ export class DesktopIpcModule implements Module {
       );
       handle(IPC.permissionStatus, () => permissions.permissions.status());
     }
-    handle(IPC.overlayShow, (target) =>
-      this.#overlayInstance().show(overlayTargetInput.parse(target)),
-    );
-    handle(IPC.overlayHide, () => this.#overlayInstance().hide());
+    if (this.#overlay) {
+      const overlay = this.#overlay;
+      handle(IPC.overlayShow, (target) =>
+        overlay.show(overlayTargetInput.parse(target)),
+      );
+      handle(IPC.overlayHide, () => overlay.hide());
+    }
     handle(IPC.captureCheck, async () => {
       const source = [
         path.join(process.resourcesPath, "talos/av_capture.swift"),
@@ -441,6 +422,5 @@ export class DesktopIpcModule implements Module {
   async stop(): Promise<void> {
     for (const off of this.#unsubscribe.splice(0)) off();
     this.#overlay?.dispose();
-    this.#overlay = undefined;
   }
 }

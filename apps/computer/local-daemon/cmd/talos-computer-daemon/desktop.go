@@ -26,6 +26,10 @@ const desktopPermissionTimeout = 10 * time.Second
 // answers permission requests.
 const desktopPermissionsFeature = "permissions.v1"
 
+// desktopOverlayFeature is the hello feature of a Desktop app that draws the
+// non-speaking screen highlight.
+const desktopOverlayFeature = "overlay.v1"
+
 // desktopStatus is one JSON line a Desktop-owned Daemon writes to stdout.
 type desktopStatus struct {
 	Type               string `json:"type"`
@@ -46,6 +50,16 @@ type desktopPermissionRequest struct {
 	ID         string `json:"id"`
 	Op         string `json:"op"`
 	Permission string `json:"permission,omitempty"`
+}
+
+// desktopOverlayRequest asks the Desktop app to highlight one screen region.
+type desktopOverlayRequest struct {
+	Type   string  `json:"type"`
+	X      float64 `json:"x"`
+	Y      float64 `json:"y"`
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
+	Label  string  `json:"label,omitempty"`
 }
 
 // desktopLine is any line the Desktop app writes to the Daemon's stdin.
@@ -70,6 +84,7 @@ type desktopChannel struct {
 	// permissions is set once the app's hello announced permission requests;
 	// an app without it never answers them.
 	permissions bool
+	overlay     bool
 	closed      bool
 	pending     map[string]chan desktopLine
 }
@@ -121,6 +136,7 @@ func (c *desktopChannel) receive(line desktopLine) {
 	switch line.Type {
 	case "hello":
 		c.permissions = slices.Contains(line.Features, desktopPermissionsFeature)
+		c.overlay = slices.Contains(line.Features, desktopOverlayFeature)
 	case "permission.response":
 		// A response after its request timed out has no waiter.
 		if reply, ok := c.pending[line.ID]; ok {
@@ -128,6 +144,22 @@ func (c *desktopChannel) receive(line desktopLine) {
 			reply <- line
 		}
 	}
+}
+
+// Overlay asks the Desktop app to highlight one region while a tool acts. A
+// Desktop app without the feature, or one that already closed stdin, is
+// silently skipped: a missing highlight never blocks the action.
+func (c *desktopChannel) Overlay(target localtools.OverlayTarget) {
+	c.mu.Lock()
+	enabled, closed := c.overlay, c.closed
+	c.mu.Unlock()
+	if !enabled || closed {
+		return
+	}
+	_ = c.encode(desktopOverlayRequest{
+		Type: "overlay", X: target.X, Y: target.Y,
+		Width: target.Width, Height: target.Height, Label: target.Label,
+	})
 }
 
 // TalosPermissions sends one permission request to the Desktop app and

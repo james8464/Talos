@@ -365,6 +365,9 @@ func (c *cuaSession) call(ctx context.Context, name string, args json.RawMessage
 	if err != nil {
 		return nil, err
 	}
+	if inputTools[name] {
+		c.op.manager.outlineInput(arguments)
+	}
 	if runtime.GOOS == "windows" {
 		if err := windowsInputRefusal(name, arguments, func() bool { return c.chromiumTarget(arguments) }); err != nil {
 			return nil, err
