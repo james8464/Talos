@@ -20,8 +20,10 @@ def main() -> None:
         samples = np.frombuffer(
             clip.readframes(clip.getnframes()), dtype=np.int16
         ).astype(np.float32)
+    prompt = sys.argv[3] if len(sys.argv) > 3 else None
+    extra = {"initial_prompt": prompt} if prompt else {}
     result = mlx_whisper.transcribe(
-        samples / 32768.0, path_or_hf_repo=sys.argv[2]
+        samples / 32768.0, path_or_hf_repo=sys.argv[2], **extra
     )
     print(json.dumps({"text": (result.get("text") or "").strip()}))
 

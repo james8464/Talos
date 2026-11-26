@@ -77,6 +77,8 @@ export function mlxWhisperTranscriber(options: {
   python: string;
   helper: string;
   model: string;
+  /** Biases recognition toward a name or vocabulary the speaker uses. */
+  initialPrompt?: string;
   timeoutMs?: number;
 }): WhisperTranscriber {
   return async (pcm) => {
@@ -86,7 +88,12 @@ export function mlxWhisperTranscriber(options: {
       await writeFile(file, wavFromPCM(pcm), { mode: 0o600 });
       const { stdout } = await exec(
         options.python,
-        [options.helper, file, options.model],
+        [
+          options.helper,
+          file,
+          options.model,
+          ...(options.initialPrompt ? [options.initialPrompt] : []),
+        ],
         { timeout: options.timeoutMs ?? 120_000, maxBuffer: 4 * 1024 * 1024 },
       );
       const parsed = JSON.parse(stdout) as { text?: unknown };

@@ -159,6 +159,19 @@ with all three. A camera or microphone request is answered with the explicit
 Settings capture step instead of starting a capture. Asking "What can you do?"
 returns the same list of commands and the current mute state.
 
+## Ambient Talos (experimental)
+
+`pnpm talos:ambient [--once]` is the first slice of the always-on assistant:
+it records a short chunk from the microphone, transcribes it locally with
+Whisper (biased toward the name "Talos"), optionally reads presence from the
+camera through native Vision, asks the local model whether the speech is
+addressed to Talos or to someone else, and answers aloud with the Kokoro voice.
+A simulated run heard "Talos, what do you see?", read 0 people from the camera,
+decided it was addressed, and answered "0 people in view." It is chunked, not
+continuous, and does not yet identify faces or take computer actions. Cua's
+computer-use tools are installed but macOS Accessibility and Screen Recording
+approval for CuaDriver is still pending in System Settings.
+
 ## Personal reminders in Apple Reminders
 
 `talos-computer reminders add --title "<what>" --in 20m [--list Talos]` creates

@@ -46,7 +46,8 @@
     "smoke:local-runner:soak": "TALOS_LOCAL_RUNNER_SOAK_ONLY=1 bash scripts/smoke-local-runner-live.sh",
     "smoke:local-runner:live": "bash scripts/smoke-local-runner-live.sh",
     "talos:live": "tsx scripts/talos-live-check.ts",
-    "talos:agent-live": "node scripts/talos-agent-live-stack.mjs"
+    "talos:agent-live": "node scripts/talos-agent-live-stack.mjs",
+    "talos:ambient": "tsx scripts/talos-ambient.ts"
   },
   "devDependencies": {
     "@asyncapi/parser": "3.6.0",
