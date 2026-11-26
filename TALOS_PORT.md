@@ -321,3 +321,10 @@ reject a stale revision, publish the next revision and read it back.
 The live harness runs the Personal Wiki Postgres suites as `room-wiki-journey`:
 the input tree and immutable versions, and a Markdown source upload that admits
 a refresh.
+
+## Heartbeat quiet vs substantive
+
+`internal/heartbeat` ports OpenClaw's `HEARTBEAT_OK` edge rules. The text-reply
+fallback suppresses a message that is only `HEARTBEAT_OK`/`NO_REPLY` or a short
+acknowledgement around the token; a long report is posted without the token.
+`heartbeat-quiet-guard` runs the unit tests in the live harness.

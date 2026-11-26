@@ -3,6 +3,8 @@ package app
 import (
 	"strings"
 	"unicode/utf8"
+
+	"github.com/simplexai-labs/talos/apps/teamhub/internal/heartbeat"
 )
 
 // maxAgentTextReplyRunes bounds the fallback so a runaway model cannot post an
@@ -11,6 +13,21 @@ const maxAgentTextReplyRunes = 2000
 
 // reviewedAgentTextReply accepts a non-empty, bounded final response with no
 // NUL bytes. It trims surrounding whitespace.
+// reviewedFallbackText applies the length review, then the heartbeat rules:
+// a quiet acknowledgement posts nothing; a token-edged long report is surfaced
+// without the token.
+func reviewedFallbackText(value any) (string, bool) {
+	text, ok := reviewedAgentTextReply(value)
+	if !ok {
+		return "", false
+	}
+	result := heartbeat.Strip(text)
+	if result.Skip {
+		return "", false
+	}
+	return result.Text, true
+}
+
 func reviewedAgentTextReply(value any) (string, bool) {
 	text, ok := value.(string)
 	if !ok {

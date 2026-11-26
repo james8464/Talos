@@ -445,6 +445,32 @@ async function main(): Promise<number> {
     );
   }
 
+  try {
+    await exec(
+      process.env.GO_BIN ?? "go",
+      [
+        "test",
+        "./internal/heartbeat",
+        "./internal/app",
+        "-run",
+        "TestStripQuietAcknowledgements|TestStripSurfacesSubstantiveText|TestReviewedFallbackTextQuietAcknowledgements|TestReviewedAgentTextReply",
+        "-count=1",
+      ],
+      {
+        cwd: path.join(ROOT, "apps/teamhub"),
+        env: process.env,
+        timeout: 300_000,
+      },
+    );
+    check(
+      "heartbeat-quiet-guard",
+      true,
+      "HEARTBEAT_OK/NO_REPLY stays quiet; long reports surface",
+    );
+  } catch (error) {
+    check("heartbeat-quiet-guard", false, (error as Error).message);
+  }
+
   const codexModel = process.env.TALOS_OLLAMA_CODEX_MODEL ?? "qwen3:4b-8k";
   const hasCodex = await exec("which", ["codex"]).then(
     () => true,

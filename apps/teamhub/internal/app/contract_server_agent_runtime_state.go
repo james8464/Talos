@@ -332,7 +332,7 @@ func (a *App) postReviewedTextReply(c *gin.Context, request teamhubinternal.Fini
 		string(request.Terminal.Failure.Code) != "reply_not_sent" {
 		return
 	}
-	text, ok := reviewedAgentTextReply(request.Terminal.AdditionalProperties["finalResponse"])
+	text, ok := reviewedFallbackText(request.Terminal.AdditionalProperties["finalResponse"])
 	if !ok {
 		return
 	}

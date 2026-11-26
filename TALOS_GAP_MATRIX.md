@@ -81,3 +81,4 @@ Status meanings: **ported** (works here and is tested here), **present**
    | Proactive check-in windows and quiet wakes | **present** | `room-proactive-journey` runs the Postgres proactive window, quiet-wake and delivery suite. |
    | Agent memory publish, revision and read | **present** | `room-memory-journey` runs the Postgres memory scope and revision suite. |
    | Personal Wiki input tree, versions and refresh | **present** | `room-wiki-journey` covers the input tree, immutable versions and upload-triggered refresh. |
+   | Heartbeat quiet vs substantive reporting | **present** | OpenClaw token rules ported; quiet acknowledgements stay unposted, long reports surface without the token. |
