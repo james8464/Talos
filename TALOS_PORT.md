@@ -158,6 +158,15 @@ seeing answer never invents a camera reading. Unit and Postgres coverage is in
 with all three. A camera or microphone request is answered with the explicit
 Settings capture step instead of starting a capture.
 
+## Presence reading
+
+The Settings capture check also classifies the captured frame locally and the
+Web records `{people, faces}` through `POST /v0/presence-readings`. The reading
+is private to the Human who took it, carries the server's capture time, and
+answers that Human's seeing questions for five minutes; older or missing
+readings answer "I don't have a current camera reading." Nothing captures on a
+Room request.
+
 ## Process inventory
 
 `talos-computer doctor` reports audio-capable and leftover Talos test processes

@@ -272,7 +272,7 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 	}
 	reply := a.roomIdentity.Answer(roomID, text, time.Now())
 	if reply == "" {
-		reply = roomsenses.Answer(text, voice, a.cfg.Muted)
+		reply = roomsenses.AnswerWithPresence(text, voice, a.cfg.Muted, a.latestPresenceReading(c))
 	}
 	if reply == "" {
 		reply = a.roomReminderReply(c, roomID, text)
@@ -300,6 +300,24 @@ func (a *App) replyToRoomCommand(c *gin.Context, roomID, text string, voice bool
 		c.Request.Context(), roomID, agents[0].ID, reply, "identity:"+key,
 	); err != nil && a.logger != nil {
 		a.logger.Warn("room_command.failed", "room_id", roomID, "error", err)
+	}
+}
+
+// latestPresenceReading returns the asking Human's reading on demand. It is a
+// closure because ordinary Room messages never ask about the camera.
+func (a *App) latestPresenceReading(c *gin.Context) func() *roomsenses.Presence {
+	return func() *roomsenses.Presence {
+		session := currentPrincipal(c).Session
+		reading, err := a.queries.GetPresenceReading(c.Request.Context(), store.GetPresenceReadingParams{
+			TenantID: session.HumanTenantID, HumanActorID: session.HumanActorID,
+		})
+		if err != nil {
+			return nil
+		}
+		return &roomsenses.Presence{
+			People: int(reading.People), Faces: int(reading.Faces),
+			CapturedAt: reading.CapturedAt.Time,
+		}
 	}
 }
 

@@ -1293,6 +1293,14 @@ type PocketNote struct {
 	HiddenAt     pgtype.Timestamptz `json:"hidden_at"`
 }
 
+type PresenceReading struct {
+	TenantID     string             `json:"tenant_id"`
+	HumanActorID string             `json:"human_actor_id"`
+	People       int32              `json:"people"`
+	Faces        int32              `json:"faces"`
+	CapturedAt   pgtype.Timestamptz `json:"captured_at"`
+}
+
 type ProactiveConversationWindow struct {
 	RoomID      string             `json:"room_id"`
 	TenantID    string             `json:"tenant_id"`

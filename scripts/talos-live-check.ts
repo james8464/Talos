@@ -368,7 +368,7 @@ async function main(): Promise<number> {
           "test",
           "./tests/integration",
           "-run",
-          "TestIdentityTextWritesAgentReply|TestSensorQuestionsWriteAgentReplies|TestSpeakAnswersFollowMute|TestCaptureConsentReplies|TestCodingCommandsWriteAgentReplies|TestRoomCodingWorkerReportsAsAgent|TestRoomCodingClaimsRecoverAfterTheLease|TestRoomCodingWorkerRetriesTransportFailures|TestDuplicateCodingCommandsShareOneJob|TestRoomRoutineFiresAsAgentMessage|TestRoomReminderCommandCreatesAndFires|TestRoomCodingWorkerStopsRepeatedSandboxFailures|TestAgentOneShotPastGraceIsRetired|TestRoomPinCommandPinsForTheRequester",
+          "TestIdentityTextWritesAgentReply|TestSensorQuestionsWriteAgentReplies|TestSpeakAnswersFollowMute|TestCaptureConsentReplies|TestPresenceReadingAnswersSeeing|TestCodingCommandsWriteAgentReplies|TestRoomCodingWorkerReportsAsAgent|TestRoomCodingClaimsRecoverAfterTheLease|TestRoomCodingWorkerRetriesTransportFailures|TestDuplicateCodingCommandsShareOneJob|TestRoomRoutineFiresAsAgentMessage|TestRoomReminderCommandCreatesAndFires|TestRoomCodingWorkerStopsRepeatedSandboxFailures|TestAgentOneShotPastGraceIsRetired|TestRoomPinCommandPinsForTheRequester",
           "-count=1",
         ],
         {

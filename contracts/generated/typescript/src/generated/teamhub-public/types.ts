@@ -1205,6 +1205,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v0/presence-readings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Record one consented camera scene reading for the current Human.
+     * @description Stores the people and face counts from one camera frame the Human chose to classify. Room capability answers use only the latest reading of the Human who asks, and never claim a reading when none is fresh.
+     */
+    post: operations["recordPresenceReading"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v0/rooms/{roomId}/presence": {
     parameters: {
       query?: never;
@@ -6282,6 +6302,10 @@ export interface components {
       read_through_room_seq: number;
       updated_at: components["schemas"]["Timestamp"];
     };
+    PresenceReadingInput: {
+      people: number;
+      faces: number;
+    };
     RoomPinUpdateRequest: {
       pinned: boolean;
     };
@@ -10934,6 +10958,30 @@ export interface operations {
       400: components["responses"]["BadRequest"];
       401: components["responses"]["Unauthenticated"];
       404: components["responses"]["NotFound"];
+    };
+  };
+  recordPresenceReading: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PresenceReadingInput"];
+      };
+    };
+    responses: {
+      /** @description Reading stored. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthenticated"];
     };
   };
   notifyRoomPresence: {

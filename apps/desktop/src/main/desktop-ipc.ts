@@ -308,6 +308,16 @@ export class DesktopIpcModule implements Module {
         runtimeDir: path.join(app.getPath("userData"), "native"),
         compiler: "swiftc",
       }).capture(true, 1);
+      // The scene counts let the Settings check record one presence reading.
+      // Classification is best-effort: a missing perception helper must not
+      // turn a successful camera check into a failure.
+      const scene = await classifySceneBase64(
+        this.#perception(),
+        receipt.frameBase64,
+      ).then(
+        (result) => ({ people: result.people, faces: result.faces }),
+        () => null,
+      );
       return {
         ok: true as const,
         seconds: receipt.seconds,
@@ -316,6 +326,7 @@ export class DesktopIpcModule implements Module {
         mediaDeleted: receipt.mediaDeleted,
         frameBytes: Buffer.from(receipt.frameBase64, "base64").length,
         audioBytes: Buffer.from(receipt.audioBase64, "base64").length,
+        scene,
       };
     });
 

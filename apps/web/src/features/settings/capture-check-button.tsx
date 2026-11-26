@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { teamHubDone } from "@/features/teamhub/teamhub-api";
+import { useTeamHubRuntime } from "@/features/teamhub/teamhub-runtime";
 import { useT } from "@/i18n/use-translation";
 
 import { settingsMessages } from "./settings.messages";
@@ -12,6 +14,8 @@ interface DesktopCapture {
     frameBytes: number;
     audioBytes: number;
     mediaDeleted: boolean;
+    /** Counts from the captured frame; absent when classification was unavailable. */
+    scene?: { people: number; faces: number } | null;
   }>;
 }
 
@@ -24,6 +28,7 @@ function desktopCapture(): DesktopCapture | undefined {
 
 export function CaptureCheckButton() {
   const t = useT();
+  const { client } = useTeamHubRuntime();
   const [api] = useState(desktopCapture);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -36,7 +41,18 @@ export function CaptureCheckButton() {
     setRunning(true);
     api
       .check()
-      .then((result) => {
+      .then(async (result) => {
+        // Presence stays optional: a failed reading never hides the capture
+        // result the person asked for.
+        if (result.scene)
+          await teamHubDone(
+            client.api.POST("/v0/presence-readings", {
+              body: {
+                people: result.scene.people,
+                faces: result.scene.faces,
+              },
+            }),
+          ).catch(() => undefined);
         setMessage(
           t(settingsMessages.captureCheckDone, {
             frame: result.frameBytes,

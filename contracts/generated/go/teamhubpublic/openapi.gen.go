@@ -8423,6 +8423,12 @@ type PocketNoteUpdateRequest struct {
 	Text PocketNoteText `json:"text"`
 }
 
+// PresenceReadingInput defines model for PresenceReadingInput.
+type PresenceReadingInput struct {
+	Faces  int `json:"faces"`
+	People int `json:"people"`
+}
+
 // ProfileSetupDecisionView The view of an AnotherMe setup decision. A profile_setup_apps card lists the Connected App keys it offers; a profile_setup_sources card has no fields.
 type ProfileSetupDecisionView struct {
 	// Apps Connected App keys a profile_setup_apps card offers first.
@@ -11092,6 +11098,9 @@ type ExchangeLocalComputerEnrollmentJSONRequestBody = LocalComputerEnrollmentExc
 
 // ProveLocalIdentityJSONRequestBody defines body for ProveLocalIdentity for application/json ContentType.
 type ProveLocalIdentityJSONRequestBody = LocalIdentityChallenge
+
+// RecordPresenceReadingJSONRequestBody defines body for RecordPresenceReading for application/json ContentType.
+type RecordPresenceReadingJSONRequestBody = PresenceReadingInput
 
 // UpdateRoomJSONRequestBody defines body for UpdateRoom for application/json ContentType.
 type UpdateRoomJSONRequestBody = RoomUpdateRequest

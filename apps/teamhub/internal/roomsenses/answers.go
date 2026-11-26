@@ -5,6 +5,7 @@ package roomsenses
 import (
 	"regexp"
 	"strings"
+	"time"
 )
 
 // The fixed answers match the old Talos room dialogue.
@@ -34,10 +35,26 @@ var (
 	combined   = regexp.MustCompile(`^(?:can|do) you (hear|see)(?: me)? and (?:can you |do you )?(hear|see) me$`)
 )
 
+// Presence is the latest consented camera reading for one Human.
+type Presence struct {
+	People     int
+	Faces      int
+	CapturedAt time.Time
+}
+
+// PresenceWindow bounds how long a reading answers a Room question.
+const PresenceWindow = 5 * time.Minute
+
 // Answer returns a deterministic reply, or "" when text asks nothing about
 // hearing, seeing or speaking. voice reports that the turn arrived as speech;
 // muted reports that the host has no audio output.
 func Answer(text string, voice, muted bool) string {
+	return AnswerWithPresence(text, voice, muted, nil)
+}
+
+// AnswerWithPresence also answers seeing questions from one fresh reading.
+// presence is read lazily so an ordinary message never queries the store.
+func AnswerWithPresence(text string, voice, muted bool, presence func() *Presence) string {
 	words := normalize(text)
 	if words == "" {
 		return ""
@@ -47,14 +64,14 @@ func Answer(text string, voice, muted bool) string {
 		hearingAnswer = Heard
 	}
 	if match := combined.FindStringSubmatch(words); match != nil && match[1] != match[2] {
-		answers := map[string]string{"hear": hearingAnswer, "see": Unknown}
+		answers := map[string]string{"hear": hearingAnswer, "see": seenAnswer(presence)}
 		return answers[match[1]] + " " + answers[match[2]]
 	}
 	if hearing.MatchString(words) {
 		return hearingAnswer
 	}
 	if seeing.MatchString(words) {
-		return Unknown
+		return seenAnswer(presence)
 	}
 	if speaking.MatchString(words) {
 		if muted {
@@ -69,6 +86,21 @@ func Answer(text string, voice, muted bool) string {
 		return MicrophoneConsent
 	}
 	return ""
+}
+
+// seenAnswer uses a fresh reading and otherwise refuses to invent one.
+func seenAnswer(presence func() *Presence) string {
+	if presence == nil {
+		return Unknown
+	}
+	reading := presence()
+	if reading == nil || time.Since(reading.CapturedAt) > PresenceWindow {
+		return Unknown
+	}
+	if reading.People > 0 {
+		return Visible
+	}
+	return Empty
 }
 
 func normalize(text string) string {

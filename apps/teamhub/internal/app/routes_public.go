@@ -87,6 +87,7 @@ func (a *App) publicRoutes() []contractRoute {
 		route(http.MethodPost, "/v0/local-computer-enrollments/:enrollmentId/exchange", nil, a.exchangeLocalComputerEnrollment),
 		route(http.MethodPost, "/v0/local/identity", nil, a.proveLocalIdentity),
 		route(http.MethodGet, "/v0/me", nil, session, a.getCurrentIdentity),
+		route(http.MethodPost, "/v0/presence-readings", nil, session, a.recordPresenceReading),
 		route(http.MethodDelete, "/v0/rooms/:roomId", nil, session, a.deleteRoom),
 		route(http.MethodGet, "/v0/rooms/:roomId", nil, session, a.getRoom),
 		route(http.MethodPatch, "/v0/rooms/:roomId", nil, session, a.updateRoom),

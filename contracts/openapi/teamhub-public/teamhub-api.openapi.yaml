@@ -1827,6 +1827,28 @@ paths:
           $ref: '../components/common.yaml#/components/responses/Unauthenticated'
         '404':
           $ref: '../components/common.yaml#/components/responses/NotFound'
+  /v0/presence-readings:
+    post:
+      tags: [Rooms]
+      operationId: recordPresenceReading
+      summary: Record one consented camera scene reading for the current Human.
+      description: >-
+        Stores the people and face counts from one camera frame the Human chose to
+        classify. Room capability answers use only the latest reading of the Human
+        who asks, and never claim a reading when none is fresh.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/domain.yaml#/components/schemas/PresenceReadingInput'
+      responses:
+        '204':
+          description: Reading stored.
+        '400':
+          $ref: '../components/common.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components/common.yaml#/components/responses/Unauthenticated'
   /v0/rooms/{roomId}/presence:
     parameters:
       - $ref: '#/components/parameters/RoomId'

@@ -947,6 +947,19 @@ components:
         omitted until the Room has a Message. Counts exclude Messages authored by the caller and
         clear only through an explicit monotonic read-state update. Thread rooms are included for
         current parent Room members who opened the Thread, posted a non-seed reply, or were mentioned.
+    PresenceReadingInput:
+      type: object
+      additionalProperties: false
+      required: [people, faces]
+      properties:
+        people:
+          type: integer
+          minimum: 0
+          maximum: 100
+        faces:
+          type: integer
+          minimum: 0
+          maximum: 100
     RoomPinUpdateRequest:
       type: object
       additionalProperties: false

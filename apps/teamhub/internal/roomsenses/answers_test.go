@@ -1,6 +1,9 @@
 package roomsenses
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestAnswerHearingAndSeeing(t *testing.T) {
 	cases := map[string]string{
@@ -73,5 +76,30 @@ func TestCaptureRequestsExplainConsent(t *testing.T) {
 	// A plain seeing question still reports that no camera reading exists.
 	if got := Answer("Can you see me?", false, true); got != Unknown {
 		t.Fatalf("seeing => %q", got)
+	}
+}
+
+func TestSeeingAnswersUseOnlyFreshPresence(t *testing.T) {
+	people := func(count int, age time.Duration) func() *Presence {
+		return func() *Presence {
+			return &Presence{People: count, Faces: count, CapturedAt: time.Now().Add(-age)}
+		}
+	}
+	cases := []struct {
+		text     string
+		presence func() *Presence
+		want     string
+	}{
+		{"Can you see me?", people(2, time.Minute), Visible},
+		{"Is anyone in the room?", people(0, time.Minute), Empty},
+		{"Can you see me?", people(2, PresenceWindow+time.Minute), Unknown},
+		{"Can you see me?", func() *Presence { return nil }, Unknown},
+		{"Can you see me?", nil, Unknown},
+		{"Can you hear me and see me?", people(1, time.Minute), Typed + " " + Visible},
+	}
+	for _, tc := range cases {
+		if got := AnswerWithPresence(tc.text, false, false, tc.presence); got != tc.want {
+			t.Fatalf("%q => %q want %q", tc.text, got, tc.want)
+		}
 	}
 }
