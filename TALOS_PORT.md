@@ -153,8 +153,10 @@ Agent-authored replies without a model call. A speak question reports the mute
 state: with `TALOS_MUTE=1` the Agent says audio is muted and it will answer in
 text; without it, audio is not muted and voice mode may use the speaker. The
 seeing answer never invents a camera reading. Unit and Postgres coverage is in
-`TestSpeakAnswersFollowMute` and `TestSensorQuestionsWriteAgentReplies`; the
-live harness runs `room-commands` with both.
+`TestSpeakAnswersFollowMute`, `TestCaptureConsentReplies` and
+`TestSensorQuestionsWriteAgentReplies`; the live harness runs `room-commands`
+with all three. A camera or microphone request is answered with the explicit
+Settings capture step instead of starting a capture.
 
 ## Process inventory
 

@@ -254,7 +254,7 @@ async function main(): Promise<number> {
       source: path.join(ROOT, "apps/desktop/resources/talos/av_capture.swift"),
       runtimeDir: path.join(captureDir, "native"),
       compiler: "swiftc",
-    }).capture(1);
+    }).capture(true, 1);
     check(
       "capture-deleted",
       media.mediaDeleted &&
@@ -368,7 +368,7 @@ async function main(): Promise<number> {
           "test",
           "./tests/integration",
           "-run",
-          "TestIdentityTextWritesAgentReply|TestSensorQuestionsWriteAgentReplies|TestSpeakAnswersFollowMute|TestCodingCommandsWriteAgentReplies|TestRoomCodingWorkerReportsAsAgent|TestRoomCodingClaimsRecoverAfterTheLease|TestRoomCodingWorkerRetriesTransportFailures|TestDuplicateCodingCommandsShareOneJob|TestRoomRoutineFiresAsAgentMessage|TestRoomReminderCommandCreatesAndFires|TestRoomCodingWorkerStopsRepeatedSandboxFailures|TestAgentOneShotPastGraceIsRetired|TestRoomPinCommandPinsForTheRequester",
+          "TestIdentityTextWritesAgentReply|TestSensorQuestionsWriteAgentReplies|TestSpeakAnswersFollowMute|TestCaptureConsentReplies|TestCodingCommandsWriteAgentReplies|TestRoomCodingWorkerReportsAsAgent|TestRoomCodingClaimsRecoverAfterTheLease|TestRoomCodingWorkerRetriesTransportFailures|TestDuplicateCodingCommandsShareOneJob|TestRoomRoutineFiresAsAgentMessage|TestRoomReminderCommandCreatesAndFires|TestRoomCodingWorkerStopsRepeatedSandboxFailures|TestAgentOneShotPastGraceIsRetired|TestRoomPinCommandPinsForTheRequester",
           "-count=1",
         ],
         {
@@ -380,7 +380,7 @@ async function main(): Promise<number> {
       check(
         "room-commands",
         true,
-        "Postgres-backed Room identity and coding replies",
+        "Postgres-backed Room identity, capability and coding replies",
       );
     } catch (error) {
       check("room-commands", false, (error as Error).message);

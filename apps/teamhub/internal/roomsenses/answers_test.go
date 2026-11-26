@@ -52,3 +52,26 @@ func TestSpeakAnswersFollowMute(t *testing.T) {
 		t.Fatalf("seeing question answered as speaking: %q", got)
 	}
 }
+
+func TestCaptureRequestsExplainConsent(t *testing.T) {
+	for _, text := range []string{
+		"Can you look at me?", "Open the camera", "Turn on your camera",
+		"Take a photo", "Talos, take a picture",
+	} {
+		if got := Answer(text, false, true); got != CameraConsent {
+			t.Fatalf("%q => %q", text, got)
+		}
+	}
+	for _, text := range []string{
+		"Can you listen to me?", "Record me", "Turn on the microphone",
+		"Start recording", "Are you recording?",
+	} {
+		if got := Answer(text, false, true); got != MicrophoneConsent {
+			t.Fatalf("%q => %q", text, got)
+		}
+	}
+	// A plain seeing question still reports that no camera reading exists.
+	if got := Answer("Can you see me?", false, true); got != Unknown {
+		t.Fatalf("seeing => %q", got)
+	}
+}

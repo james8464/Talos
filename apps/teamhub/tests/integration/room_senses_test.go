@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/simplexai-labs/talos/apps/teamhub/internal/config"
@@ -87,5 +88,25 @@ func TestSpeakAnswersFollowMute(t *testing.T) {
 				t.Fatalf("speak reply=%d err=%v", replies, err)
 			}
 		})
+	}
+}
+
+// TestCaptureConsentReplies proves the Agent explains the explicit capture
+// step and never starts a camera or microphone from a Room request.
+func TestCaptureConsentReplies(t *testing.T) {
+	allowParallelIntegrationTest(t)
+	env, alice, _, roomID := newAgentCLIIdentity(t)
+	for i, tc := range []struct{ text, want string }{
+		{"Can you look at me?", roomsenses.CameraConsent},
+		{"Record me", roomsenses.MicrophoneConsent},
+	} {
+		createHumanMessage(t, env, alice, roomID, tc.text, fmt.Sprintf("senses-consent-%d", i))
+		var replies int
+		if err := env.pool.QueryRow(t.Context(), `
+			SELECT count(*) FROM messages message
+			JOIN actors actor ON actor.id=message.author_actor_id AND actor.tenant_id=message.tenant_id
+			WHERE message.room_id=$1 AND actor.kind='agent' AND message.body=$2`, roomID, tc.want).Scan(&replies); err != nil || replies != 1 {
+			t.Fatalf("%q reply=%d err=%v", tc.text, replies, err)
+		}
 	}
 }

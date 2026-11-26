@@ -12,7 +12,7 @@ Status meanings: **ported** (works here and is tested here), **present**
 | Talos behaviour                                           | Talos status | Where / next step                                                                                                                                              |
 | --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Hard mute: `TALOS_MUTE=1` stops speech, voice returns 503 | **ported**   | `isMuted()` in `@talos/service-kit`; voice runtime exits before config; Node voice supervisor starts no worker. Tests at all three boundaries.                 |
-| No capture without consent                                | **missing**  | Add a camera/mic consent gate before Electron `getUserMedia` or any helper.                                                                                    |
+| No capture without consent                                | **present**  | `TalosMediaCapture.capture` requires explicit `true` consent and the Settings check is the only caller; the helper also applies macOS permissions.             |
 | Camera/mic readiness without capture                      | **missing**  | Electron only reports screen recording and accessibility. Extend `SystemPermissions`.                                                                          |
 | Process inventory + label-scoped cleanup                  | **partial**  | `doctor` reports audio and stale test processes by label and pid. Label-scoped stopping is not ported.                                                         |
 | Safe live acceptance harness                              | **present**  | `pnpm talos:live` covers mute, voice refusal, identity, capture, vision/sound and coding; the Room e2e suite sends identity and sensing messages in a browser. |
@@ -27,7 +27,7 @@ Status meanings: **ported** (works here and is tested here), **present**
 | Presence answers from a camera frame                                       | **missing**  | Depends on vision helper.                                                                                                                          |
 | One-frame + short-clip consented check with media deletion                 | **present**  | `TalosMediaCapture` captures one frame and a 1s clip, then deletes the media.                                                                      |
 | Self-reported name, 30-minute expiry, “forget my name”, no biometric claim | **present**  | TeamHub answers identity text with a deterministic Agent-authored Room reply.                                                                      |
-| Camera/mic capability answers that explain consent                         | **partial**  | `roomsenses` answers hear/see questions without inventing a camera reading; no live consent probe yet.                                             |
+| Camera/mic capability answers that explain consent                         | **present**  | `roomsenses` answers hear/see/speak, explains the explicit Settings capture step for camera/mic requests, and never invents a reading.             |
 
 ## Coding autonomy
 

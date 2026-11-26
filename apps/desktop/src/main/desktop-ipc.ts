@@ -307,7 +307,7 @@ export class DesktopIpcModule implements Module {
         source,
         runtimeDir: path.join(app.getPath("userData"), "native"),
         compiler: "swiftc",
-      }).capture(1);
+      }).capture(true, 1);
       return {
         ok: true as const,
         seconds: receipt.seconds,

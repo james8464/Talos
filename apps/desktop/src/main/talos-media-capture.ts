@@ -43,8 +43,10 @@ const defaultRunner: CaptureRunner = async (binary, args) => {
 };
 
 /**
- * Capture one frame and one short clip without an application-level consent
- * prompt. macOS still applies its own camera/microphone authorization.
+ * Capture one frame and one short clip. `consent` is required and must be the
+ * literal `true`, so no path reaches the helper by accident; the Settings
+ * capture check is the caller that supplies it. macOS still applies its own
+ * camera/microphone authorization.
  */
 export class TalosMediaCapture {
   readonly #options: TalosMediaCaptureOptions;
@@ -79,7 +81,9 @@ export class TalosMediaCapture {
     return target;
   }
 
-  async capture(seconds = 1): Promise<TalosCaptureReceipt> {
+  async capture(consent: boolean, seconds = 1): Promise<TalosCaptureReceipt> {
+    if (consent !== true)
+      throw new Error("Refusing to capture without explicit consent.");
     if (!(seconds > 0 && seconds <= 10))
       throw new Error("Capture length must be between 0 and 10 seconds.");
     const helper = await this.#helper();

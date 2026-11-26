@@ -40,7 +40,7 @@ describe("TalosMediaCapture", () => {
         };
       },
     });
-    const receipt = await capture.capture(1.5);
+    const receipt = await capture.capture(true, 1.5);
     expect(receipt.frameBase64).toMatch(/^\/9j\//);
     expect(
       Buffer.from(receipt.audioBase64, "base64").subarray(0, 4).toString(),
@@ -65,7 +65,7 @@ describe("TalosMediaCapture", () => {
         };
       },
     });
-    await expect(capture.capture()).rejects.toThrow("no JPEG frame");
+    await expect(capture.capture(true)).rejects.toThrow("no JPEG frame");
     expect(await readdir(runtimeDir)).toEqual([]);
   });
 
@@ -81,7 +81,29 @@ describe("TalosMediaCapture", () => {
         return { stdout: "{}", stderr: "" };
       },
     });
-    await expect(capture.capture(0)).rejects.toThrow("between 0 and 10");
+    await expect(capture.capture(true, 0)).rejects.toThrow("between 0 and 10");
     expect(ran).toBe(false);
+  });
+
+  it("refuses to run the helper without explicit consent", async () => {
+    const runtimeDir = await runtime();
+    let ran = false;
+    const capture = new TalosMediaCapture({
+      source: "/unused/av_capture.swift",
+      runtimeDir,
+      binary: "/fake/capture",
+      runner: async () => {
+        ran = true;
+        return { stdout: "{}", stderr: "" };
+      },
+    });
+    await expect(capture.capture(false)).rejects.toThrow(
+      "Refusing to capture without explicit consent.",
+    );
+    await expect(
+      capture.capture(undefined as unknown as boolean),
+    ).rejects.toThrow("Refusing to capture without explicit consent.");
+    expect(ran).toBe(false);
+    expect(await readdir(runtimeDir)).toEqual([]);
   });
 });
