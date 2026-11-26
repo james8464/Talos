@@ -392,8 +392,8 @@ async function main(): Promise<number> {
     process.env.TEST_DATABASE_URL &&
     process.env.TEAMHUB_TEST_RUN_TOKEN
   ) {
-    try {
-      await exec(
+    const runDocumentE2E = () =>
+      exec(
         "pnpm",
         [
           "exec",
@@ -414,6 +414,20 @@ async function main(): Promise<number> {
           maxBuffer: 20 * 1024 * 1024,
         },
       );
+    try {
+      try {
+        await runDocumentE2E();
+      } catch {
+        // A cache cleanup can remove Playwright's browser between runs.
+        // Install the one this version asks for and retry once; a real test
+        // failure still fails on the retry with its own message.
+        await exec("pnpm", ["exec", "playwright", "install", "chromium"], {
+          cwd: ROOT,
+          env: process.env,
+          timeout: 900_000,
+        });
+        await runDocumentE2E();
+      }
       check(
         "room-document-e2e",
         true,
