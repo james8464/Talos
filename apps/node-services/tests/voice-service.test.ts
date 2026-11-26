@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { serviceCredential, type JsonLogger } from "@talos/service-kit/node";
 import {
   startVoiceService,
+  workerKeys,
   VOICE_READY_WAIT_MS,
   VOICE_RECONCILE_POLL_MS,
   type VoiceWorker,
@@ -17,6 +18,8 @@ class Worker extends EventEmitter {
 const environment = {
   TALOS_SECRET_SEED: "voice-service-test-seed-0123456789abcdef",
   TEAMHUB_BASE_URL: "http://teamhub.test",
+  // Keeps the machine's own local Whisper environment out of these keys.
+  TALOS_LOCAL_WHISPER_PYTHON: "/nonexistent/talos-local-whisper-python",
 };
 const SONIOX = "soniox-key-1";
 const XAI = "xai-key-1";
@@ -460,5 +463,30 @@ describe("voice worker reconcile", () => {
     expect(of("live")).toHaveLength(2);
     expect(teamHub.calls).toBe(calls);
     expect(unmount).toHaveBeenCalledOnce();
+  });
+});
+
+describe("workerKeys", () => {
+  it("starts local Whisper transcription when Soniox has no key", () => {
+    const workers = workerKeys({}, "/repo/apps/voice-runtime/.venv/bin/python");
+    expect(workers.get("asr")).toEqual({
+      variable: "TALOS_LOCAL_WHISPER_PYTHON",
+      key: "/repo/apps/voice-runtime/.venv/bin/python",
+    });
+    // Diarized recording has no local adapter.
+    expect(workers.has("recorder")).toBe(false);
+  });
+
+  it("prefers Soniox and leaves local Whisper out", () => {
+    const workers = workerKeys(
+      { soniox_api_key: "soniox-key" },
+      "/repo/apps/voice-runtime/.venv/bin/python",
+    );
+    expect(workers.get("asr")?.variable).toBe("SONIOX_API_KEY");
+    expect(workers.get("recorder")?.variable).toBe("SONIOX_API_KEY");
+  });
+
+  it("starts nothing without a key or local Whisper", () => {
+    expect(workerKeys({}).size).toBe(0);
   });
 });

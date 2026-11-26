@@ -1,6 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { calculateWorkerLoad, loadConfig, refuseWhenMuted } from "./config.js";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+import {
+  calculateWorkerLoad,
+  loadConfig,
+  localWhisperConfig,
+  refuseWhenMuted,
+} from "./config.js";
 
 const base = {
   TEAMHUB_BASE_URL: "http://127.0.0.1:8080",
@@ -144,5 +153,22 @@ describe("loadConfig", () => {
   it("reports proportional worker load", () => {
     expect(calculateWorkerLoad(8, 16)).toBe(0.5);
     expect(calculateWorkerLoad(16, 16)).toBe(1);
+  });
+});
+
+describe("localWhisperConfig", () => {
+  it("is on only when a Python interpreter exists", async () => {
+    const folder = await mkdtemp(
+      path.join(os.tmpdir(), "talos-whisper-config-"),
+    );
+    const python = path.join(folder, "python");
+    expect(localWhisperConfig({ TALOS_LOCAL_WHISPER_PYTHON: python })).toBe(
+      undefined,
+    );
+    await writeFile(python, "");
+    const config = localWhisperConfig({ TALOS_LOCAL_WHISPER_PYTHON: python });
+    expect(config?.python).toBe(python);
+    expect(config?.helper.endsWith("transcribe_mlx_whisper.py")).toBe(true);
+    expect(config?.model).toBe("mlx-community/whisper-base-mlx");
   });
 });

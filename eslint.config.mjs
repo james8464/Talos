@@ -23,6 +23,7 @@ export default [
       "test-results/**",
       ".claude/**",
       ".cache/**",
+      "**/.venv/**",
     ],
   },
   js.configs.recommended,

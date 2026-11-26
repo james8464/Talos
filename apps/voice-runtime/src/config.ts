@@ -1,7 +1,20 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import { isMuted } from "@talos/service-kit";
 import { serviceCredential } from "@talos/service-kit/node";
 
 import { providerProxy, type ProviderProxy } from "./provider-proxy.js";
+
+/** Local, offline transcription used when no Soniox key works. */
+export interface LocalWhisperConfig {
+  /** A Python interpreter with mlx_whisper and numpy installed. */
+  python: string;
+  /** The WAV-to-transcript helper shipped in this package. */
+  helper: string;
+  /** A Hugging Face repo id or local model directory. */
+  model: string;
+}
 
 export interface VoiceRuntimeConfig {
   livekitUrl: string;
@@ -10,6 +23,7 @@ export interface VoiceRuntimeConfig {
   teamhubBaseUrl: string;
   teamhubToken: string;
   sonioxApiKey: string;
+  localWhisper?: LocalWhisperConfig;
   xaiApiKey: string;
   xaiLiveWebSocketUrl: string;
   xaiLiveAudioTransport?: "binary" | "json";
@@ -31,6 +45,8 @@ if (!Number.isInteger(healthPort) || healthPort < 1024 || healthPort > 65535)
   throw new Error("VOICE_WORKER_PORT is invalid");
 export const maxSessions = 16;
 const initializeProcessTimeoutMs = 60_000;
+const packageRoot = path.resolve(import.meta.dirname, "..");
+const localWhisperModel = "mlx-community/whisper-base-mlx";
 export const sonioxRealtimeModel = "stt-rt-v6";
 // Hints bias short openings that sound alike across languages (a Mandarin
 // greeting vs. "Hallo") without excluding other languages.
@@ -79,6 +95,7 @@ export const loadConfig = (
     // Each provider key turns on only its own workers: Soniox transcribes,
     // xAI runs Live.
     sonioxApiKey: env.SONIOX_API_KEY?.trim() ?? "",
+    localWhisper: localWhisperConfig(env),
     xaiApiKey: env.XAI_API_KEY?.trim() ?? "",
     xaiLiveWebSocketUrl:
       env.VOICE_RUNTIME_XAI_LIVE_WEBSOCKET_URL?.trim() ||
@@ -104,6 +121,20 @@ export const loadConfig = (
     "VOICE_RUNTIME_XAI_LIVE_WEBSOCKET_URL",
   );
   return config;
+};
+
+/** Local Whisper is on when TALOS_LOCAL_WHISPER_PYTHON names the interpreter
+ * the setup script installed; it is never inferred from machine state. */
+export const localWhisperConfig = (
+  env: NodeJS.ProcessEnv,
+): LocalWhisperConfig | undefined => {
+  const python = env.TALOS_LOCAL_WHISPER_PYTHON?.trim() ?? "";
+  if (!python || !existsSync(python)) return undefined;
+  return {
+    python,
+    helper: path.join(packageRoot, "scripts", "transcribe_mlx_whisper.py"),
+    model: localWhisperModel,
+  };
 };
 
 export const calculateWorkerLoad = (activeJobs: number, maxSessions: number) =>

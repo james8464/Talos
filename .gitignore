@@ -29,6 +29,9 @@ test-results/
 # Local .env backups must never be committed
 .env.bak*
 
+# Local Python environments, including the offline Whisper transcriber.
+.venv/
+
 # Generated Python bytecode from local verification scripts.
 __pycache__/
 *.py[cod]

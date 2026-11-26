@@ -14,7 +14,11 @@ import {
   modelPackagesRoot,
 } from "../model-packages.js";
 import { hasBearerToken } from "../service-bearer-auth.js";
-import { readVoiceConfig, type VoiceConfig } from "./config.js";
+import {
+  localWhisperPython,
+  readVoiceConfig,
+  type VoiceConfig,
+} from "./config.js";
 
 export type VoiceWorker = "asr" | "recorder" | "live";
 const VOICE_WORKERS = ["asr", "recorder", "live"] as const;
@@ -34,9 +38,12 @@ export interface VoiceWorkerSpawn {
   readonly env: NodeJS.ProcessEnv;
 }
 
-/** Soniox runs transcription and recording; xAI runs Live on its own. */
+/** Soniox runs transcription and recording; xAI runs Live on its own. Without
+ * a Soniox key, the offline Whisper environment transcribes and recording
+ * stays off, because diarized recording has no local adapter. */
 export function workerKeys(
   keys: ProviderKeys,
+  localWhisper?: string,
 ): Map<VoiceWorker, { variable: string; key: string }> {
   const soniox = keys.soniox_api_key?.trim();
   const xai = keys.xai_api_key?.trim();
@@ -44,6 +51,11 @@ export function workerKeys(
   if (soniox) {
     workers.set("asr", { variable: "SONIOX_API_KEY", key: soniox });
     workers.set("recorder", { variable: "SONIOX_API_KEY", key: soniox });
+  } else if (localWhisper) {
+    workers.set("asr", {
+      variable: "TALOS_LOCAL_WHISPER_PYTHON",
+      key: localWhisper,
+    });
   }
   if (xai) workers.set("live", { variable: "XAI_API_KEY", key: xai });
   return workers;
@@ -294,7 +306,7 @@ export async function startVoiceService(options: {
     }
   };
   const apply = (keys: ProviderKeys) => {
-    const wanted = workerKeys(keys);
+    const wanted = workerKeys(keys, localWhisperPython(env));
     for (const worker of VOICE_WORKERS) {
       const entry = entries.get(worker)!;
       const key = wanted.get(worker);

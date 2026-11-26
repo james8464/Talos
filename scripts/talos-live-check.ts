@@ -12,6 +12,7 @@
  * Run: pnpm exec tsx scripts/talos-live-check.ts
  */
 import { execFile, spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -20,6 +21,11 @@ import { promisify } from "node:util";
 import { isMuted } from "../packages/service-kit/src/index.js";
 import { serviceCredential } from "../packages/service-kit/src/node.js";
 import { TalosMediaCapture } from "../apps/desktop/src/main/talos-media-capture.js";
+import {
+  LocalWhisperProvider,
+  mlxWhisperTranscriber,
+  pcmFromWAV,
+} from "../apps/voice-runtime/src/local-whisper.js";
 
 const exec = promisify(execFile);
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -151,6 +157,58 @@ async function main(): Promise<number> {
   );
   check("voice-refusal", voice);
   check("no-voice-process", await noProcess("voice-runtime|livekit-server"));
+
+  // Transcription runs on a file `say` writes; it never reaches a speaker.
+  const whisperPython = path.join(ROOT, "apps/voice-runtime/.venv/bin/python");
+  if (process.platform === "darwin" && existsSync(whisperPython)) {
+    const folder = await mkdtemp(path.join(os.tmpdir(), "talos-whisper-live-"));
+    const clip = path.join(folder, "clip.wav");
+    try {
+      await exec(
+        "say",
+        [
+          "-o",
+          clip,
+          "--data-format=LEI16@16000",
+          "The quick brown fox jumps over the lazy dog.",
+        ],
+        { timeout: 30_000 },
+      );
+      const pcm = pcmFromWAV(await readFile(clip));
+      const provider = new LocalWhisperProvider({
+        transcribe: mlxWhisperTranscriber({
+          python: whisperPython,
+          helper: path.join(
+            ROOT,
+            "apps/voice-runtime/scripts/transcribe_mlx_whisper.py",
+          ),
+          model: "mlx-community/whisper-base-mlx",
+        }),
+      });
+      const stream = await provider.open(new AbortController().signal);
+      await stream.sendPCM(
+        new Int16Array(pcm.buffer, pcm.byteOffset, pcm.length / 2),
+      );
+      await stream.finish();
+      let transcript = "";
+      for await (const event of stream.events()) transcript += event.text ?? "";
+      check(
+        "local-whisper-transcribe",
+        transcript.toLowerCase().includes("quick brown fox"),
+        `${transcript.slice(0, 120)} · ${pcm.length} bytes`,
+      );
+    } catch (error) {
+      check("local-whisper-transcribe", false, (error as Error).message);
+    } finally {
+      await rm(folder, { recursive: true, force: true });
+    }
+  } else {
+    check(
+      "local-whisper-transcribe",
+      true,
+      "skipped: macOS `say` or the local Whisper environment is absent",
+    );
+  }
 
   if (!(await noProcess("node-services|src/main.ts")))
     throw new Error("port 4319 is already held by another Talos process");

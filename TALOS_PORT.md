@@ -329,6 +329,17 @@ fallback suppresses a message that is only `HEARTBEAT_OK`/`NO_REPLY` or a short
 acknowledgement around the token; a long report is posted without the token.
 `heartbeat-quiet-guard` runs the unit tests in the live harness.
 
+## Offline voice transcription
+
+`apps/voice-runtime/scripts/setup-local-whisper.sh` creates a local Python
+environment with `mlx-whisper`; the runtime then transcribes finished clips
+with `mlx-community/whisper-base-mlx` instead of Soniox. It has no streaming
+partials or speaker labels, and it never plays audio. The supervisor starts
+the ASR worker from that interpreter when `TALOS_LOCAL_WHISPER_PYTHON` is set
+and Soniox has no key, and
+`local-whisper-transcribe` in the live harness synthesizes a clip to a file
+with `say -o` and asserts the transcript.
+
 ## Hermes-style standing goals
 
 `goal: <objective>` sets a 20-turn Room goal; `goal status`, `goal pause`,

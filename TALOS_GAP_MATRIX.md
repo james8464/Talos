@@ -43,12 +43,34 @@ Status meanings: **ported** (works here and is tested here), **present**
 
 ## Control and UI
 
-| Talos behaviour                            | Talos status | Where / next step                                                                                  |
-| ------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------- |
-| Native Swift menu-bar app and overlays     | **missing**  | Talos desktop is Electron; decide whether overlays become Electron windows or keep a Swift helper. |
-| AX-first click/type/read with OCR fallback | **present**  | Cua/Playwright/Shell behind the Guardrail. Compare permission prompts and receipts.                |
-| Non-speaking screen highlight              | **missing**  | Port the ring/label overlay.                                                                       |
-| Muted capability and identity replies      | **partial**  | Agent prompt only; add deterministic handlers.                                                     |
+| Talos behaviour                            | Talos status | Where / next step                                                                                                                               |
+| ------------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native Swift menu-bar app and overlays     | **missing**  | Talos desktop is Electron; decide whether overlays become Electron windows or keep a Swift helper.                                              |
+| AX-first click/type/read with OCR fallback | **present**  | Cua/Playwright/Shell behind the Guardrail. Compare permission prompts and receipts.                                                             |
+| Non-speaking screen highlight              | **missing**  | Port the ring/label overlay.                                                                                                                    |
+| Muted capability and identity replies      | **partial**  | Agent prompt only; add deterministic handlers.                                                                                                  |
+| Offline voice transcription                | **present**  | Local MLX Whisper adapter, supervisor selection without a Soniox key, unit tests and a silent `say -o` transcription check in the live harness. |
+
+## Room collaboration (live)
+
+| Behaviour                                                 | Talos status | Evidence                                                                                                                                                     |
+| --------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Routine fires into a Room with an Agent mention           | **present**  | `TestRoomRoutineFiresAsAgentMessage` covers the API, worker and wake message; the browser suite edits and fires routines.                                    |
+| Typed Room reminder command                               | **present**  | `reminder in <n><m/h/d>: <task>` creates a one-shot Routine, replies as the Agent, and fires through the worker.                                             |
+| No-progress streak on repeated sandbox failures           | **present**  | OpenClaw `getNoProgressStreak` port with branch tests; the coding worker stops after two identical failures.                                                 |
+| Room Document create, edit, comment and reopen            | **present**  | Browser e2e covers both journeys and `pnpm talos:live` runs them as `room-document-e2e`.                                                                     |
+| Stale Agent one-shot follow-up grace                      | **present**  | Hermes-style two-minute grace retires a late Agent follow-up; Human reminders still fire.                                                                    |
+| Typed Room pin and unpin commands                         | **present**  | `pin this room` / `unpin this room` update the requester’s private pin and reply as the Agent.                                                               |
+| Real model call through the Codex Runtime on local Ollama | **partial**  | `ollama-codex-model` runs Codex against `qwen3:4b-8k`; daemon catalog placement is still open.                                                               |
+| Room Thread create, reply, summary and search             | **present**  | `TestRoomThreadJourneyLive` covers the full path and the live harness runs it.                                                                               |
+| Real model-generated Agent conversation                   | **partial**  | `qwen3:4b-8k` generated a reply through the Agent Service; the reply guard blocked persisting it because the model did not answer the inbox.                 |
+| Tenant message search journey                             | **present**  | `room-search-journey` covers visibility, pagination and case-insensitive hits.                                                                               |
+| Direct Room lifecycle and Agent visibility                | **present**  | `room-direct-journey` covers opening, visibility and deletion.                                                                                               |
+| Proactive check-in windows and quiet wakes                | **present**  | `room-proactive-journey` runs the Postgres proactive window, quiet-wake and delivery suite.                                                                  |
+| Agent memory publish, revision and read                   | **present**  | `room-memory-journey` runs the Postgres memory scope and revision suite.                                                                                     |
+| Personal Wiki input tree, versions and refresh            | **present**  | `room-wiki-journey` covers the input tree, immutable versions and upload-triggered refresh.                                                                  |
+| Heartbeat quiet vs substantive reporting                  | **present**  | OpenClaw token rules ported; quiet acknowledgements stay unposted, long reports surface without the token.                                                   |
+| Standing goals: commands, judge and continuation          | **present**  | `goal:` commands persist a 20-turn goal; the worker judges each turn locally, posts the Hermes continuation prompt and stops on done, blocked or the budget. |
 
 ## Already stronger in Talos
 
@@ -67,19 +89,3 @@ Status meanings: **ported** (works here and is tested here), **present**
 5. Process inventory + live harness.
 6. Native overlays or Electron equivalents.
 7. Full parity replay: run the Talos acceptance list against Talos, muted.
-   | Routine fires into a Room with an Agent mention | **present** | `TestRoomRoutineFiresAsAgentMessage` covers the API, worker and wake message; the browser suite edits and fires routines. |
-   | Typed Room reminder command | **present** | `reminder in <n><m/h/d>: <task>` creates a one-shot Routine, replies as the Agent, and fires through the worker. |
-   | No-progress streak on repeated sandbox failures | **present** | OpenClaw `getNoProgressStreak` port with branch tests; the coding worker stops after two identical failures. |
-   | Room Document create, edit, comment and reopen | **present** | Browser e2e covers both journeys and `pnpm talos:live` runs them as `room-document-e2e`. |
-   | Stale Agent one-shot follow-up grace | **present** | Hermes-style two-minute grace retires a late Agent follow-up; Human reminders still fire. |
-   | Typed Room pin and unpin commands | **present** | `pin this room` / `unpin this room` update the requester’s private pin and reply as the Agent. |
-   | Real model call through the Codex Runtime on local Ollama | **partial** | `ollama-codex-model` runs Codex against `qwen3:4b-8k`; daemon catalog placement is still open. |
-   | Room Thread create, reply, summary and search | **present** | `TestRoomThreadJourneyLive` covers the full path and the live harness runs it. |
-   | Real model-generated Agent conversation | **partial** | `qwen3:4b-8k` generated a reply through the Agent Service; the reply guard blocked persisting it because the model did not answer the inbox. |
-   | Tenant message search journey | **present** | `room-search-journey` covers visibility, pagination and case-insensitive hits. |
-   | Direct Room lifecycle and Agent visibility | **present** | `room-direct-journey` covers opening, visibility and deletion. |
-   | Proactive check-in windows and quiet wakes | **present** | `room-proactive-journey` runs the Postgres proactive window, quiet-wake and delivery suite. |
-   | Agent memory publish, revision and read | **present** | `room-memory-journey` runs the Postgres memory scope and revision suite. |
-   | Personal Wiki input tree, versions and refresh | **present** | `room-wiki-journey` covers the input tree, immutable versions and upload-triggered refresh. |
-   | Heartbeat quiet vs substantive reporting | **present** | OpenClaw token rules ported; quiet acknowledgements stay unposted, long reports surface without the token. |
-   | Standing goal commands and continuation prompt | **partial** | Set/status/pause/resume/clear persist a 20-turn goal and the prompt builder is ported; the judge loop is not. |
