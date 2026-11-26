@@ -13,6 +13,13 @@ func TestParseJobAndPlan(t *testing.T) {
 	}
 }
 
+func TestParseShow(t *testing.T) {
+	command, ok, err := Parse("coding job codingjob_abc123")
+	if err != nil || !ok || command.Kind != "show" || command.Target != "codingjob_abc123" {
+		t.Fatalf("show=%+v ok=%v err=%v", command, ok, err)
+	}
+}
+
 func TestParseCancel(t *testing.T) {
 	command, ok, err := Parse("coding cancel codingjob_abc123")
 	if err != nil || !ok || command.Kind != "cancel" || command.Target != "codingjob_abc123" {

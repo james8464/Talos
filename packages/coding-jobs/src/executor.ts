@@ -5,6 +5,7 @@
  */
 
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   cp,
   mkdtemp,
@@ -54,6 +55,21 @@ export interface CodingJobOptions {
   readonly now?: () => number;
 }
 
+/** One target's receipt: hashes and sizes only, never file contents. */
+export interface CodingJobFileReceipt {
+  readonly target: string;
+  readonly before_sha256: string;
+  readonly after_sha256: string;
+  readonly bytes_before: number;
+  readonly bytes_after: number;
+}
+
+/** What a verified draft changed, without copying source text into the Room. */
+export interface CodingJobReceipt {
+  readonly files: readonly CodingJobFileReceipt[];
+  readonly regression_sha256: string;
+}
+
 export interface CodingJobResult {
   readonly status:
     | "verified"
@@ -64,6 +80,7 @@ export interface CodingJobResult {
   readonly attempts: number;
   readonly message: string;
   readonly failure?: string;
+  readonly receipt?: CodingJobReceipt;
 }
 
 const COPY_SKIP = new Set([
@@ -125,6 +142,29 @@ async function applyDraft(
     draft.regression,
     "utf8",
   );
+}
+
+const sha256 = (value: string | Buffer) =>
+  createHash("sha256").update(value).digest("hex");
+
+async function jobReceipt(
+  root: string,
+  folder: string,
+  draft: PatchDraft,
+): Promise<CodingJobReceipt> {
+  const files: CodingJobFileReceipt[] = [];
+  for (const patch of draft.patches) {
+    const before = await readFile(safeTarget(root, patch.target));
+    const after = await readFile(safeTarget(folder, patch.target));
+    files.push({
+      target: patch.target,
+      before_sha256: sha256(before),
+      after_sha256: sha256(after),
+      bytes_before: before.length,
+      bytes_after: after.length,
+    });
+  }
+  return { files, regression_sha256: sha256(draft.regression) };
 }
 
 async function runVerify(
@@ -205,11 +245,13 @@ export async function runCodingJob(
         feedback = `\nThe previous patch failed verification:\n${lastFailure}`;
         continue;
       }
+      const receipt = await jobReceipt(root, folder, draft);
       if (!options.apply) {
         return {
           status: "verified",
           attempts,
           message: "sandbox passed",
+          receipt,
         };
       }
 
@@ -240,7 +282,12 @@ export async function runCodingJob(
             failure: lastFailure,
           };
         }
-        return { status: "applied", attempts, message: "verified and applied" };
+        return {
+          status: "applied",
+          attempts,
+          message: "verified and applied",
+          receipt,
+        };
       }
     } finally {
       await rm(sandbox, { recursive: true, force: true });

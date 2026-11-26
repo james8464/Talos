@@ -9,7 +9,12 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { createPlan, runCodingJob, type PatchDraft } from "@talos/coding-jobs";
+import {
+  createPlan,
+  runCodingJob,
+  type CodingJobReceipt,
+  type PatchDraft,
+} from "@talos/coding-jobs";
 import { serviceCredential } from "@talos/service-kit/node";
 import type { JsonLogger } from "@talos/service-kit/node";
 
@@ -35,6 +40,8 @@ export interface CodingJobOutcome {
   readonly failure?: string;
   /** The model that drafted the verified patch, when one did. */
   readonly model?: string;
+  /** Hashes and sizes of the verified change, when one was drafted. */
+  readonly receipt?: CodingJobReceipt;
 }
 
 /** What a drafter sees: one target file and the request for it. */
@@ -337,6 +344,7 @@ export async function executeCodingJob(
     message: result.message,
     steps,
     ...(result.failure ? { failure: result.failure } : {}),
+    ...(result.receipt ? { receipt: result.receipt } : {}),
     ...(draftedBy ? { model: draftedBy } : {}),
   };
 }

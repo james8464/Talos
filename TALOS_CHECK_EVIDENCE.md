@@ -39,7 +39,7 @@ run  check-computer
 Test Files  15 passed (15)
 Tests  74 passed (74)
 Test Files  2 passed (2)
-Tests  14 passed (14)
+Tests  15 passed (15)
 Test Files  3 passed (3)
 Tests  35 passed (35)
 Test Files  7 passed (7)
@@ -84,7 +84,7 @@ Tests  12 passed (12)
 
  Test Files  1 passed (1)
       Tests  12 passed (12)
-   Start at  01:06:53
-   Duration  21.88s (transform 344ms, setup 11ms, import 529ms, tests 21.28s, environment 0ms)
+   Start at  01:25:48
+   Duration  22.36s (transform 346ms, setup 12ms, import 532ms, tests 21.75s, environment 0ms)
 
 ```

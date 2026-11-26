@@ -3,6 +3,9 @@ INSERT INTO room_coding_jobs(id,tenant_id,room_id,requester_actor_id,kind,target
 VALUES($1,$2,$3,$4,$5,$6,$7)
 RETURNING *;
 
+-- name: GetRoomCodingJobForRoom :one
+SELECT * FROM room_coding_jobs WHERE id=$1 AND room_id=$2;
+
 -- name: ListRoomCodingJobsForRoom :many
 SELECT * FROM room_coding_jobs WHERE room_id=$1 ORDER BY created_at DESC LIMIT 20;
 
@@ -34,7 +37,8 @@ WHERE id=$1 AND status='claimed';
 -- name: CompleteRoomCodingJob :execrows
 UPDATE room_coding_jobs
 SET status=$2, result=$3, completed_at=clock_timestamp(), lease_expires_at=NULL,
-    next_attempt_at=NULL, attempt_hashes=$4
+    next_attempt_at=NULL, attempt_hashes=$4,
+    receipt=COALESCE(sqlc.narg('receipt'), receipt)
 WHERE id=$1 AND status='claimed';
 
 -- name: CancelRoomCodingJob :execrows

@@ -146,6 +146,14 @@ counterpart to OpenClaw's no-progress detector: identical work is not enqueued
 twice while it is still running. Unit and Postgres integration coverage lives in
 `TestDuplicateCodingCommandsShareOneJob`.
 
+## Coding receipts
+
+A verified patch reports each target's size and short SHA-256 before and after,
+plus the regression file's hash, without copying file contents into the Room.
+The receipt is stored on `room_coding_jobs.receipt`; `coding job <id>` shows the
+status, attempts, result and receipt for one job. Coverage lives in
+`TestCodingCommandsWriteAgentReplies`.
+
 ## Routine journey
 
 The live harness also creates a recurring Room routine through the public API,

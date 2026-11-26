@@ -132,6 +132,20 @@ describe("coding route", () => {
     const body = await response.json();
     expect(body.status).toBe("verified");
     expect(body.model).toBe("qwen3:4b");
+    expect(body.receipt.files).toEqual([
+      {
+        target: "src/value.txt",
+        before_sha256:
+          "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        after_sha256:
+          "27dd8ed44a83ff94d557f9fd0412ed5a8cbca69ea04922d88c01184a07300a5a",
+        bytes_before: 4,
+        bytes_after: 4,
+      },
+    ]);
+    expect(body.receipt.regression_sha256).toBe(
+      "f8f90421ddaf88273f5020fa1981e09e1cac39807406d3aa80dc52986e195dd2",
+    );
     expect(await readFile(path.join(root, "src", "value.txt"), "utf8")).toBe(
       "one\n",
     );

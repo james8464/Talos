@@ -47,6 +47,31 @@ describe("runCodingJob", () => {
     );
   });
 
+  it("reports hashes and sizes without the file contents", async () => {
+    const root = await fixture();
+    const result = await runCodingJob({
+      root,
+      request: "change one to two",
+      targets: ["src/value.txt"],
+      draft: async () => draft("two\n"),
+      verify,
+    });
+    const receipt = result.receipt;
+    expect(receipt?.files).toEqual([
+      {
+        target: "src/value.txt",
+        before_sha256:
+          "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        after_sha256:
+          "27dd8ed44a83ff94d557f9fd0412ed5a8cbca69ea04922d88c01184a07300a5a",
+        bytes_before: 4,
+        bytes_after: 4,
+      },
+    ]);
+    expect(receipt?.regression_sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(receipt)).not.toContain("two");
+  });
+
   it("retries once with the verification output after a failed sandbox", async () => {
     const root = await fixture();
     const prompts: string[] = [];

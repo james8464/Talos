@@ -29,6 +29,24 @@ type Outcome struct {
 	Model string `json:"model,omitempty"`
 	// Failure is the sandbox output when verification failed.
 	Failure string `json:"failure,omitempty"`
+	// Receipt holds hashes and sizes of a verified change, never its text.
+	Receipt *Receipt `json:"receipt,omitempty"`
+}
+
+// Receipt describes what a verified draft changed without copying file
+// contents into the Room.
+type Receipt struct {
+	Files            []FileReceipt `json:"files"`
+	RegressionSHA256 string        `json:"regression_sha256"`
+}
+
+// FileReceipt is one target's before and after identity.
+type FileReceipt struct {
+	Target       string `json:"target"`
+	BeforeSHA256 string `json:"before_sha256"`
+	AfterSHA256  string `json:"after_sha256"`
+	BytesBefore  int64  `json:"bytes_before"`
+	BytesAfter   int64  `json:"bytes_after"`
 }
 
 // Executor runs one accepted job on the Computer that owns the workspace.
@@ -129,8 +147,15 @@ func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
 	if outcome.Failure != "" {
 		result += ": " + outcome.Failure
 	}
+	var receipt []byte
+	if outcome.Receipt != nil {
+		if receipt, err = json.Marshal(outcome.Receipt); err != nil {
+			return true, err
+		}
+	}
 	completed, err := w.Queries.CompleteRoomCodingJob(ctx, store.CompleteRoomCodingJobParams{
 		ID: job.ID, Status: status, Result: result, AttemptHashes: history,
+		Receipt: receipt,
 	})
 	if err != nil {
 		return true, err
@@ -176,9 +201,11 @@ func (w *Worker) report(job store.RoomCodingJob, outcome Outcome) (string, strin
 	switch outcome.Status {
 	case "verified":
 		if outcome.Model != "" {
-			return "done", fmt.Sprintf("Coding job %s verified in a sandbox with %s: %s. No change was applied.", job.ID, outcome.Model, outcome.Message)
+			return "done", fmt.Sprintf("Coding job %s verified in a sandbox with %s: %s. No change was applied.%s", job.ID, outcome.Model, outcome.Message, receiptSummary(outcome.Receipt))
 		}
-		return "done", fmt.Sprintf("Coding job %s verified in a sandbox: %s. No change was applied.", job.ID, outcome.Message)
+		return "done", fmt.Sprintf("Coding job %s verified in a sandbox: %s. No change was applied.%s", job.ID, outcome.Message, receiptSummary(outcome.Receipt))
+	case "applied":
+		return "done", fmt.Sprintf("Coding job %s verified and applied: %s.%s", job.ID, outcome.Message, receiptSummary(outcome.Receipt))
 	case "planned":
 		return "done", fmt.Sprintf("Coding job %s planned; no patch was applied: %s", job.ID, outcome.Message)
 	case "declined":
@@ -186,6 +213,28 @@ func (w *Worker) report(job store.RoomCodingJob, outcome Outcome) (string, strin
 	default:
 		return "failed", fmt.Sprintf("Coding job %s failed: %s%s", job.ID, outcome.Message, failureHint(outcome.Failure))
 	}
+}
+
+// receiptSummary names each changed file by size and short hash, so a reader
+// can tell one result from another without the file contents.
+func receiptSummary(receipt *Receipt) string {
+	if receipt == nil || len(receipt.Files) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(receipt.Files))
+	for _, file := range receipt.Files {
+		parts = append(parts, fmt.Sprintf("%s %d->%d bytes sha256 %s->%s",
+			file.Target, file.BytesBefore, file.BytesAfter,
+			shortHash(file.BeforeSHA256), shortHash(file.AfterSHA256)))
+	}
+	return " Receipt: " + strings.Join(parts, "; ") + "."
+}
+
+func shortHash(hash string) string {
+	if len(hash) > 12 {
+		return hash[:12]
+	}
+	return hash
 }
 
 func failureHint(failure string) string {

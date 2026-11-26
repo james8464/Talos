@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -404,6 +405,22 @@ func (a *App) roomReminderReply(c *gin.Context, roomID, text string) string {
 	return fmt.Sprintf("Okay. I'll remind you in %s to %s.", roomreminder.Describe(command.Delay), command.Task)
 }
 
+// codingReceiptLine renders the stored receipt without file contents.
+func codingReceiptLine(raw []byte) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var receipt roomcoding.Receipt
+	if err := json.Unmarshal(raw, &receipt); err != nil || len(receipt.Files) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(receipt.Files))
+	for _, file := range receipt.Files {
+		parts = append(parts, fmt.Sprintf("%s %d->%d bytes", file.Target, file.BytesBefore, file.BytesAfter))
+	}
+	return " Receipt: " + strings.Join(parts, "; ") + "."
+}
+
 func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {
 	ctx := c.Request.Context()
 	if roomcoding.IsList(text) {
@@ -431,6 +448,26 @@ func (a *App) roomCodingReply(c *gin.Context, roomID, text string) string {
 	command, ok, err := roomcoding.Parse(text)
 	if !ok {
 		return ""
+	}
+	if command.Kind == "show" {
+		job, err := a.queries.GetRoomCodingJobForRoom(ctx, store.GetRoomCodingJobForRoomParams{ID: command.Target, RoomID: roomID})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "No coding job with that ID is in this Room."
+		}
+		if err != nil {
+			return ""
+		}
+		line := fmt.Sprintf("Coding job %s: %s", job.ID, job.Status)
+		if job.TargetPath != "" {
+			line += " " + job.TargetPath
+		}
+		if job.Attempts > 0 {
+			line += fmt.Sprintf(" (attempt %d)", job.Attempts)
+		}
+		if job.Result != "" {
+			line += ". " + job.Result
+		}
+		return line + "." + codingReceiptLine(job.Receipt)
 	}
 	if err != nil {
 		return err.Error()

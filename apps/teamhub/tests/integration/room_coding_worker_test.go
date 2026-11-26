@@ -52,8 +52,15 @@ func TestRoomCodingWorkerReportsAsAgent(t *testing.T) {
 		return tx.Commit(ctx)
 	}
 	worker := &roomcoding.Worker{
-		Queries:   queries,
-		Executor:  stubExecutor{outcome: roomcoding.Outcome{Status: "verified", Message: "sandbox passed"}},
+		Queries: queries,
+		Executor: stubExecutor{outcome: roomcoding.Outcome{
+			Status: "verified", Message: "sandbox passed",
+			Receipt: &roomcoding.Receipt{Files: []roomcoding.FileReceipt{{
+				Target: "internal/app/app.go", BytesBefore: 120, BytesAfter: 132,
+				BeforeSHA256: "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+				AfterSHA256:  "27dd8ed44a83ff94d557f9fd0412ed5a8cbca69ea04922d88c01184a07300a5a",
+			}}, RegressionSHA256: "f8f90421ddaf88273f5020fa1981e09e1cac39807406d3aa80dc52986e195dd2"},
+		}},
 		Publish:   publish,
 		ClaimedBy: "test-computer",
 	}
@@ -63,6 +70,16 @@ func TestRoomCodingWorkerReportsAsAgent(t *testing.T) {
 	}
 	if !strings.Contains(published, "verified in a sandbox") || !strings.Contains(published, "No change was applied.") {
 		t.Fatalf("published=%q", published)
+	}
+	if !strings.Contains(published, "Receipt: internal/app/app.go 120->132 bytes") {
+		t.Fatalf("published receipt=%q", published)
+	}
+	var receipt []byte
+	if err := env.pool.QueryRow(ctx, `SELECT receipt FROM room_coding_jobs WHERE room_id=$1`, roomID).Scan(&receipt); err != nil {
+		t.Fatalf("stored receipt: %v", err)
+	}
+	if !strings.Contains(string(receipt), `"target": "internal/app/app.go"`) || !strings.Contains(string(receipt), `"bytes_after": 132`) {
+		t.Fatalf("stored receipt=%s", receipt)
 	}
 	var status, result string
 	if err := env.pool.QueryRow(ctx, `SELECT status,result FROM room_coding_jobs WHERE room_id=$1`, roomID).

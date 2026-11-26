@@ -19,6 +19,7 @@ var (
 	jobCommand    = regexp.MustCompile(`(?i)^coding job ([^:]{1,300}):\s*(.{1,800})$`)
 	planCommand   = regexp.MustCompile(`(?i)^coding plan:\s*(.{1,800})$`)
 	listCommand   = regexp.MustCompile(`(?i)^coding jobs$`)
+	showCommand   = regexp.MustCompile(`(?i)^coding job (codingjob_[a-z0-9]+)$`)
 	cancelCommand = regexp.MustCompile(`(?i)^coding cancel (codingjob_[a-z0-9]+)$`)
 )
 
@@ -35,6 +36,9 @@ func Parse(text string) (Command, bool, error) {
 	}
 	if match := planCommand.FindStringSubmatch(words); match != nil {
 		return Command{Kind: "plan", Request: strings.TrimSpace(match[1])}, true, nil
+	}
+	if match := showCommand.FindStringSubmatch(words); match != nil {
+		return Command{Kind: "show", Target: match[1]}, true, nil
 	}
 	if match := cancelCommand.FindStringSubmatch(words); match != nil {
 		return Command{Kind: "cancel", Target: match[1]}, true, nil

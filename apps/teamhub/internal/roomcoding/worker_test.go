@@ -37,6 +37,30 @@ func TestReportNamesTheOutcome(t *testing.T) {
 	}
 }
 
+func TestReportAddsAReceiptWithoutFileContents(t *testing.T) {
+	worker := &Worker{}
+	job := store.RoomCodingJob{ID: "codingjob_1"}
+	_, reply := worker.report(job, Outcome{
+		Status: "applied", Message: "verified and applied",
+		Receipt: &Receipt{Files: []FileReceipt{{
+			Target: "src/value.txt", BytesBefore: 4, BytesAfter: 4,
+			BeforeSHA256: "2c8b08da5ce60398e1f19af0e5dccc744",
+			AfterSHA256:  "27dd8ed44a83ff94d557f9fd0412ed5a",
+		}}, RegressionSHA256: "f8f90421ddaf88273f5020fa1981e09e"},
+	})
+	for _, want := range []string{
+		"src/value.txt 4->4 bytes",
+		"sha256 2c8b08da5ce6->27dd8ed44a83",
+	} {
+		if !strings.Contains(reply, want) {
+			t.Fatalf("reply=%q missing %q", reply, want)
+		}
+	}
+	if strings.Contains(reply, "one") || strings.Contains(reply, "two") {
+		t.Fatalf("reply leaked file text: %q", reply)
+	}
+}
+
 func TestRetryDelayMatchesTheBoundedSchedule(t *testing.T) {
 	cases := map[int32]time.Duration{
 		1: 15 * time.Second, 2: 30 * time.Second, 3: 60 * time.Second,
