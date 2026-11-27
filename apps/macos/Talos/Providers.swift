@@ -2,6 +2,7 @@ import Foundation
 
 enum Provider: String, Codable, CaseIterable, Identifiable {
     case local
+    case openCode
     case openAI
     case anthropic
     case gemini
@@ -11,6 +12,7 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .local: return "Local"
+        case .openCode: return "OpenCode Go"
         case .openAI: return "OpenAI"
         case .anthropic: return "Anthropic"
         case .gemini: return "Google Gemini"
@@ -20,6 +22,7 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .local: return "cpu"
+        case .openCode: return "chevron.left.forwardslash.chevron.right"
         case .openAI: return "sparkle"
         case .anthropic: return "text.book.closed"
         case .gemini: return "diamond"
@@ -29,6 +32,7 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
     var keyAccount: String? {
         switch self {
         case .local: return nil
+        case .openCode: return "opencode-go"
         case .openAI: return "openai"
         case .anthropic: return "anthropic"
         case .gemini: return "gemini"
@@ -38,6 +42,7 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
     var defaultBaseURL: String {
         switch self {
         case .local: return "http://127.0.0.1:11434"
+        case .openCode: return "https://opencode.ai/zen/go/v1"
         case .openAI: return "https://api.openai.com/v1"
         case .anthropic: return "https://api.anthropic.com"
         case .gemini: return "https://generativelanguage.googleapis.com/v1beta/openai"
@@ -47,6 +52,7 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
     var defaultModel: String {
         switch self {
         case .local: return "qwen3:8b-16k"
+        case .openCode: return "deepseek-v4.1-flash"
         case .openAI: return "gpt-5"
         case .anthropic: return "claude-sonnet-4-5"
         case .gemini: return "gemini-2.5-pro"
@@ -56,6 +62,7 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
     var apiKeyURL: URL? {
         switch self {
         case .local: return nil
+        case .openCode: return URL(string: "https://opencode.ai/auth")
         case .openAI: return URL(string: "https://platform.openai.com/api-keys")
         case .anthropic: return URL(string: "https://console.anthropic.com/settings/keys")
         case .gemini: return URL(string: "https://aistudio.google.com/app/apikey")
@@ -66,6 +73,8 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .local:
             return "Ollama runs the model on this Mac. Talos only talks to the server address above."
+        case .openCode:
+            return "OpenCode Go is a subscription gateway. Import the key from your local OpenCode login or paste it from opencode.ai/auth."
         case .openAI:
             return "The base URL can point at OpenAI or any OpenAI-compatible service, including a local gateway."
         case .anthropic:
@@ -79,6 +88,8 @@ enum Provider: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .local:
             return "Requests stay on this Mac and go only to your Ollama server."
+        case .openCode:
+            return "Requests go to OpenCode Zen. Talos keeps the subscription key in the macOS Keychain and does not write prompts to disk."
         case .openAI:
             return "Requests go to OpenAI. Talos keeps the key in the macOS Keychain and does not write prompts to disk."
         case .anthropic:
@@ -118,6 +129,8 @@ struct OpenAICompatibleClient {
     var usesCompletionTokens = false
     var sendsTemperature = false
     var sendsReasoningEffort = false
+    var isOpenCode = false
+    var openCodeSession: String? = nil
 
     func models() async throws -> [String] {
         guard let url = URL(string: root + "/models") else {
@@ -125,7 +138,7 @@ struct OpenAICompatibleClient {
         }
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        applyHeaders(to: &request, accept: "application/json")
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw ProviderError.message("The provider returned no response.")
@@ -151,7 +164,7 @@ struct OpenAICompatibleClient {
                     request.httpMethod = "POST"
                     request.timeoutInterval = 600
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+                    applyHeaders(to: &request, accept: "application/json, text/event-stream")
 
                     var payload: [String: Any] = [
                         "model": model,
@@ -224,6 +237,17 @@ struct OpenAICompatibleClient {
             || id.hasPrefix("o1")
             || id.hasPrefix("o3")
             || id.hasPrefix("o4")
+    }
+
+    private func applyHeaders(to request: inout URLRequest, accept: String) {
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue(accept, forHTTPHeaderField: "Accept")
+        if isOpenCode {
+            request.setValue("opencode/2.4.0", forHTTPHeaderField: "User-Agent")
+            request.setValue("https://opencode.ai", forHTTPHeaderField: "Origin")
+            request.setValue("https://opencode.ai/", forHTTPHeaderField: "Referer")
+            request.setValue(openCodeSession ?? UUID().uuidString, forHTTPHeaderField: "x-opencode-session")
+        }
     }
 
     private var root: String {

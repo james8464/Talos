@@ -9,8 +9,8 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 | Area | Talos |
 | --- | --- |
-| Model selection | Local Ollama models plus OpenAI, Anthropic, Gemini |
-| Provider setup | Editable base URL, model, discovery, Keychain API keys |
+| Model selection | Local Ollama models plus OpenCode Go, OpenAI, Anthropic, Gemini |
+| Provider setup | Compact provider list, one editor sheet, editable base URL/model/discovery, Keychain keys, OpenCode subscription import |
 | Reasoning effort | Only options reported or supported by the selected model |
 | Response speed | Fast / Balanced / Thorough output budgets |
 | Chat | Streaming, stop, per-message model labels, copy, retry, edit-and-resend |
@@ -33,7 +33,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Context | Capability/model/override window, live usage meter |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
-| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/model`, `/queue`, `/skills`, `/plugins`, `/mcp`, `/remote`, `/status`, `/usage`, `/help` |
+| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`, `/todos`, `/help` |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
 | MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable |

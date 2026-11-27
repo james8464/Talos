@@ -8,7 +8,8 @@ tools work regardless of which model is selected.
 - macOS 14 or later
 - Xcode 16 or later
 - [Ollama](https://ollama.com) for local models
-- API keys for OpenAI, Anthropic, or Google Gemini for hosted models
+- OpenCode Go, OpenAI, Anthropic, or Google Gemini credentials for hosted models
+- OpenCode Go detects the local OpenCode sign-in; other providers use API keys
 
 ## Build and run
 

@@ -6,7 +6,8 @@ model that produced them.
 
 ## What is included
 
-- Local models through Ollama, plus OpenAI, Anthropic, and Google Gemini
+- Local models through Ollama, plus OpenCode Go, OpenAI, Anthropic, and Google Gemini
+- OpenCode Go subscription import from the local OpenCode login
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
 - Project switcher, project-scoped tasks, a file browser with previews, and a
@@ -18,8 +19,12 @@ model that produced them.
   image/file previews
 - Context-window accounting, automatic and manual conversation compaction
 - Token usage history with a 12-week heatmap and per-model totals
-- Slash commands: `/new`, `/clear`, `/compact`, `/stop`, `/model`, `/queue`,
-  `/skills`, `/plugins`, `/mcp`, `/remote`, `/status`, `/usage`, `/help`
+- Slash commands including `/new`, `/clear`, `/compact`, `/stop`, `/retry`,
+  `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`,
+  `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/rewind`,
+  `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
+  `/providers`, `/models`, `/skills`,
+  `/plugins`, `/mcp`, `/remote`, `/todos`, `/help`
 - Skills, plugin bundles, and stdio MCP servers
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend

@@ -5,6 +5,8 @@ final class SettingsStore: ObservableObject {
     private let defaults = UserDefaults.standard
 
     @Published var localURL: String { didSet { defaults.set(localURL, forKey: "localURL") } }
+    @Published var openCodeBase: String { didSet { defaults.set(openCodeBase, forKey: "openCodeBase") } }
+    @Published var openCodeModel: String { didSet { defaults.set(openCodeModel, forKey: "openCodeModel") } }
     @Published var openAIBase: String { didSet { defaults.set(openAIBase, forKey: "openAIBase") } }
     @Published var openAIModel: String { didSet { defaults.set(openAIModel, forKey: "openAIModel") } }
     @Published var anthropicBase: String { didSet { defaults.set(anthropicBase, forKey: "anthropicBase") } }
@@ -71,6 +73,8 @@ final class SettingsStore: ObservableObject {
     init() {
         let defaults = UserDefaults.standard
         localURL = defaults.string(forKey: "localURL") ?? Provider.local.defaultBaseURL
+        openCodeBase = defaults.string(forKey: "openCodeBase") ?? Provider.openCode.defaultBaseURL
+        openCodeModel = defaults.string(forKey: "openCodeModel") ?? Provider.openCode.defaultModel
         openAIBase = defaults.string(forKey: "openAIBase") ?? Provider.openAI.defaultBaseURL
         openAIModel = defaults.string(forKey: "openAIModel") ?? Provider.openAI.defaultModel
         anthropicBase = defaults.string(forKey: "anthropicBase") ?? Provider.anthropic.defaultBaseURL
@@ -136,6 +140,7 @@ final class SettingsStore: ObservableObject {
     func baseURL(for provider: Provider) -> String {
         switch provider {
         case .local: return localURL
+        case .openCode: return openCodeBase
         case .openAI: return openAIBase
         case .anthropic: return anthropicBase
         case .gemini: return geminiBase
@@ -145,6 +150,7 @@ final class SettingsStore: ObservableObject {
     func model(for provider: Provider) -> String {
         switch provider {
         case .local: return ""
+        case .openCode: return openCodeModel
         case .openAI: return openAIModel
         case .anthropic: return anthropicModel
         case .gemini: return geminiModel
@@ -154,6 +160,7 @@ final class SettingsStore: ObservableObject {
     func setModel(_ model: String, for provider: Provider) {
         switch provider {
         case .local: break
+        case .openCode: openCodeModel = model
         case .openAI: openAIModel = model
         case .anthropic: anthropicModel = model
         case .gemini: geminiModel = model

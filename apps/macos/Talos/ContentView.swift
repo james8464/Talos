@@ -86,6 +86,11 @@ struct ContentView: View {
                 model.commitRename(session.id, title: title)
             }
         }
+        .sheet(item: $model.editingProvider) { provider in
+            ProviderEditor(provider: provider)
+                .environmentObject(model)
+                .environmentObject(model.settings)
+        }
     }
 }
 
@@ -496,79 +501,90 @@ private struct ProviderPopover: View {
     @EnvironmentObject private var settings: SettingsStore
     @Binding var isPresented: Bool
 
-    private var enabledTools: Int {
-        [settings.enableShell, settings.enableFileEdits, settings.enableComputerUse,
-         settings.enableWeb, settings.enablePlan].filter { $0 }.count
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label(model.choice.provider.title, systemImage: model.choice.provider.symbol)
+                Text("Providers")
                     .font(.headline)
                 Spacer()
-                Text(status)
+                Text("\(settings.savedKeys.count + (model.localModels.isEmpty ? 0 : 1)) ready")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            LabeledContent("Endpoint") {
-                Text(settings.baseURL(for: model.choice.provider))
-                    .font(.caption)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .textSelection(.enabled)
-            }
-
-            if model.choice.provider != .local {
-                LabeledContent("API key") {
-                    Text(settings.savedKeys.contains(model.choice.provider) ? "Stored in Keychain" : "Not set")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            VStack(spacing: 2) {
+                ForEach(Provider.allCases) { provider in
+                    ProviderPopoverRow(provider: provider) {
+                        model.editingProvider = provider
+                        isPresented = false
+                    }
                 }
             }
-
-            LabeledContent("Reasoning") {
-                Text(model.reasoningTitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            LabeledContent("Tools") {
-                Text("\(enabledTools) enabled")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text(model.choice.provider.privacyNote)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
             HStack {
-                SettingsLink {
-                    Text("Settings…")
-                }
+                Text(model.choice.display)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
                 Spacer()
-                Button("Refresh") {
-                    Task {
-                        await model.refreshChoices()
-                        await model.refreshCapabilities()
-                    }
+                SettingsLink {
+                    Text("All Settings…")
                 }
             }
         }
-        .padding(14)
-        .frame(width: 360)
+        .padding(12)
+        .frame(width: 370)
+    }
+
+}
+
+private struct ProviderPopoverRow: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
+    let provider: Provider
+    var onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 9) {
+                Image(systemName: provider.symbol)
+                    .frame(width: 18)
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(provider.title)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(status == "Ready" ? Color.secondary : Color.orange)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 4)
+    }
+
+    private var subtitle: String {
+        if provider == .local {
+            return model.localModels.isEmpty ? "Ollama · offline" : "Ollama · \(model.localModels.count) models"
+        }
+        return settings.model(for: provider)
     }
 
     private var status: String {
-        if model.choice.provider == .local {
-            return model.localModels.isEmpty ? "Offline" : "\(model.localModels.count) models"
+        if provider == .local {
+            return model.localModels.isEmpty ? "Offline" : "Ready"
         }
-        return settings.savedKeys.contains(model.choice.provider) ? "Ready" : "Key missing"
+        return settings.savedKeys.contains(provider) ? "Ready" : "No key"
     }
 }
 
@@ -602,26 +618,29 @@ private struct ComposerView: View {
                 }
 
                 if !slashMatches.isEmpty {
-                    VStack(alignment: .leading, spacing: 1) {
-                        ForEach(slashMatches) { command in
-                            Button {
-                                draft = ""
-                                model.submit(command.id)
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Text(command.id)
-                                        .font(.system(.callout, design: .monospaced))
-                                    Text(command.detail)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 1) {
+                            ForEach(slashMatches) { command in
+                                Button {
+                                    draft = ""
+                                    model.submit(command.id)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Text(command.id)
+                                            .font(.system(.callout, design: .monospaced))
+                                        Text(command.detail)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                    }
+                                    .contentShape(Rectangle())
                                 }
-                                .contentShape(Rectangle())
+                                .buttonStyle(.plain)
+                                .padding(.vertical, 2)
                             }
-                            .buttonStyle(.plain)
-                            .padding(.vertical, 2)
                         }
                     }
+                    .frame(maxHeight: 300)
                     .padding(6)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)

@@ -4,11 +4,14 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 
 struct SettingsView: View {
-    @State private var selection: SettingsSection = .general
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
         NavigationSplitView {
-            List(SettingsSection.allCases, selection: $selection) { section in
+            List(SettingsSection.allCases, selection: Binding(
+                get: { model.settingsSection },
+                set: { model.settingsSection = $0 }
+            )) { section in
                 Label(section.title, systemImage: section.symbol)
                     .tag(section)
             }
@@ -16,14 +19,14 @@ struct SettingsView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 230)
         } detail: {
             detail
-                .navigationTitle(selection.title)
+                .navigationTitle(model.settingsSection.title)
         }
         .frame(width: 880, height: 660)
     }
 
     @ViewBuilder
     private var detail: some View {
-        switch selection {
+        switch model.settingsSection {
         case .general:
             GeneralSettingsView()
         case .projects:
@@ -54,7 +57,7 @@ struct SettingsView: View {
     }
 }
 
-private enum SettingsSection: String, CaseIterable, Identifiable {
+enum SettingsSection: String, CaseIterable, Identifiable {
     case general
     case projects
     case models
@@ -198,17 +201,7 @@ private struct GeneralSettingsView: View {
 private struct ModelsSettingsView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsStore
-
-    private var contextOverrideBinding: Binding<String> {
-        Binding(
-            get: {
-                settings.contextWindowOverride(for: model.choice).map(String.init) ?? ""
-            },
-            set: { value in
-                settings.setContextWindowOverride(Int(value.trimmingCharacters(in: .whitespaces)), for: model.choice)
-            }
-        )
-    }
+    @State private var editingProvider: Provider?
 
     var body: some View {
         Form {
@@ -223,15 +216,11 @@ private struct ModelsSettingsView: View {
                 TextField("Context window override", text: contextOverrideBinding)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { Task { await model.refreshCapabilities() } }
-                Text("Leave empty to use the model's reported window.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section("Local") {
                 TextField("Server", text: $settings.localURL)
                     .textFieldStyle(.roundedBorder)
-
                 HStack {
                     Text("\(model.localModels.count) models found")
                         .font(.caption)
@@ -241,7 +230,6 @@ private struct ModelsSettingsView: View {
                         Task { await model.refreshChoices() }
                     }
                 }
-
                 ForEach(model.localModels) { local in
                     HStack(spacing: 10) {
                         VStack(alignment: .leading, spacing: 2) {
@@ -264,244 +252,152 @@ private struct ModelsSettingsView: View {
                         }
                     }
                 }
-
                 if model.localModels.isEmpty {
                     Text("No local models found. Start Ollama, then refresh.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                Text("Local models run through Ollama at the address above.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section("Cloud models") {
-                ForEach(Provider.allCases.filter { $0 != .local }) { provider in
-                    CloudModelSettings(provider: provider)
+                ForEach(Provider.allCases) { provider in
+                    if provider != .local {
+                    HStack(spacing: 10) {
+                        Image(systemName: provider.symbol)
+                            .frame(width: 18)
+                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(provider.title)
+                            Text(settings.model(for: provider))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        Text(settings.savedKeys.contains(provider) ? "Ready" : "No key")
+                            .font(.caption)
+                            .foregroundStyle(settings.savedKeys.contains(provider) ? Color.secondary : Color.orange)
+                        Button("Configure…") {
+                            editingProvider = provider
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    }
                 }
             }
         }
         .formStyle(.grouped)
         .padding()
-    }
-}
-
-private struct CloudModelSettings: View {
-    @EnvironmentObject private var model: AppModel
-    @EnvironmentObject private var settings: SettingsStore
-
-    let provider: Provider
-    @State private var found: [String] = []
-    @State private var busy = false
-    @State private var notice: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(provider.title, systemImage: provider.symbol)
-                Spacer()
-                Text(settings.savedKeys.contains(provider) ? "Key saved" : "No key")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            TextField("Base URL", text: baseBinding)
-                .textFieldStyle(.roundedBorder)
-            TextField("Model", text: modelBinding)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit {
-                    if model.choice.provider == provider {
-                        model.choose(ModelChoice(provider: provider, id: settings.model(for: provider)))
-                    }
-                    Task { await model.refreshChoices() }
-                }
-
-            HStack(spacing: 8) {
-                Button("Discover Models") {
-                    Task { await discover() }
-                }
-                .disabled(!settings.savedKeys.contains(provider) || busy)
-
-                if busy {
-                    ProgressView().controlSize(.small)
-                }
-
-                Spacer()
-
-                if let notice {
-                    Text(notice)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-
-            if !found.isEmpty {
-                DisclosureGroup("Found \(found.count) models") {
-                    ForEach(found, id: \.self) { id in
-                        Button {
-                            settings.setModel(id, for: provider)
-                            if model.choice.provider == provider {
-                                model.choose(ModelChoice(provider: provider, id: id))
-                            }
-                            notice = "Using \(id)"
-                            Task { await model.refreshChoices() }
-                        } label: {
-                            HStack {
-                                Text(id)
-                                    .lineLimit(1)
-                                Spacer()
-                                if id == settings.model(for: provider) {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-
-            Text(provider.providerNote)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        .sheet(item: $editingProvider) { provider in
+            ProviderEditor(provider: provider)
+                .environmentObject(model)
+                .environmentObject(settings)
         }
-        .padding(.vertical, 4)
     }
 
-    private var baseBinding: Binding<String> {
+    private var contextOverrideBinding: Binding<String> {
         Binding(
-            get: { settings.baseURL(for: provider) },
+            get: {
+                settings.contextWindowOverride(for: model.choice).map(String.init) ?? ""
+            },
             set: { value in
-                switch provider {
-                case .local: break
-                case .openAI: settings.openAIBase = value
-                case .anthropic: settings.anthropicBase = value
-                case .gemini: settings.geminiBase = value
-                }
+                settings.setContextWindowOverride(Int(value.trimmingCharacters(in: .whitespaces)), for: model.choice)
             }
         )
-    }
-
-    private var modelBinding: Binding<String> {
-        Binding(
-            get: { settings.model(for: provider) },
-            set: { settings.setModel($0, for: provider) }
-        )
-    }
-
-    @MainActor
-    private func discover() async {
-        guard let key = settings.key(for: provider) else {
-            notice = "Add an API key first."
-            return
-        }
-        busy = true
-        defer { busy = false }
-        do {
-            let ids: [String]
-            switch provider {
-            case .openAI:
-                ids = try await OpenAICompatibleClient(baseURL: settings.openAIBase, apiKey: key).models()
-            case .anthropic:
-                ids = try await AnthropicClient(baseURL: settings.anthropicBase, apiKey: key).models()
-            case .gemini:
-                ids = try await OpenAICompatibleClient(baseURL: settings.geminiBase, apiKey: key).models()
-            case .local:
-                return
-            }
-            found = ids.sorted()
-            notice = "\(ids.count) models found"
-        } catch {
-            notice = error.localizedDescription
-        }
     }
 }
 
 private struct ProvidersSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
+    @State private var editingProvider: Provider?
+
     var body: some View {
         Form {
             Section {
-                Text("Talos stores API keys in the macOS Keychain. A key is sent only to the provider you select.")
+                Text("Everything provider-specific is in this compact list. Click a row to edit its key, endpoint, and model.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            ForEach(Provider.allCases.filter { $0 != .local }) { provider in
-                ProviderKeySettings(provider: provider)
+            Section("Cloud") {
+                ForEach(Provider.allCases) { provider in
+                    if provider != .local {
+                        ProviderSettingsRow(provider: provider) {
+                            editingProvider = provider
+                        }
+                    }
+                }
+            }
+
+            Section("Local") {
+                ProviderSettingsRow(provider: .local) {
+                    editingProvider = .local
+                }
             }
 
             Section("Subscriptions") {
-                Text("ChatGPT Plus and Claude Pro subscriptions do not include API access for third-party apps. Add an API key from the provider's developer console; Talos never sees your account password.")
+                Text("ChatGPT Plus and Claude Pro subscriptions do not include API access for third-party apps. OpenCode Go can be imported from the local OpenCode login. Other hosted providers use API keys.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .padding()
+        .sheet(item: $editingProvider) { provider in
+            ProviderEditor(provider: provider)
+                .environmentObject(model)
+                .environmentObject(settings)
+        }
     }
 }
 
-private struct ProviderKeySettings: View {
+private struct ProviderSettingsRow: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsStore
-
     let provider: Provider
-    @State private var key = ""
-    @State private var notice: String?
+    var onConfigure: () -> Void
 
     var body: some View {
-        Section {
-            HStack(spacing: 8) {
-                SecureField("API key", text: $key)
-                    .textFieldStyle(.roundedBorder)
-                Button(settings.savedKeys.contains(provider) ? "Replace" : "Save") {
-                    save()
+        Button {
+            onConfigure()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: provider.symbol)
+                    .frame(width: 18)
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(provider.title)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                .disabled(key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                if settings.savedKeys.contains(provider) {
-                    Button("Remove", role: .destructive) {
-                        settings.clearKey(for: provider)
-                        notice = "\(provider.title) key removed."
-                        Task { await model.refreshChoices() }
-                    }
-                }
-            }
-
-            LabeledContent("Status") {
-                Text(settings.savedKeys.contains(provider) ? "Stored in Keychain" : "Not set")
+                Spacer()
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(status == "Ready" ? Color.secondary : Color.orange)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-
-            if let apiKeyURL = provider.apiKeyURL {
-                Link("Get an API key", destination: apiKeyURL)
-                    .font(.caption)
-            }
-
-            if let notice {
-                Text(notice)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        } header: {
-            Label(provider.title, systemImage: provider.symbol)
-        } footer: {
-            Text(provider.providerNote)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
-    private func save() {
-        do {
-            try settings.saveKey(key, for: provider)
-            key = ""
-            notice = "\(provider.title) key saved in Keychain."
-            Task { await model.refreshChoices() }
-        } catch {
-            notice = "Could not save the \(provider.title) key."
+    private var subtitle: String {
+        if provider == .local {
+            return model.localModels.isEmpty ? "Ollama · offline" : "Ollama · \(model.localModels.count) models"
         }
+        return "\(settings.model(for: provider)) · \(settings.baseURL(for: provider))"
+    }
+
+    private var status: String {
+        if provider == .local {
+            return model.localModels.isEmpty ? "Offline" : "Ready"
+        }
+        return settings.savedKeys.contains(provider) ? "Ready" : "No key"
     }
 }
 

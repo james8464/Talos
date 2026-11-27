@@ -50,6 +50,8 @@ final class AppModel: ObservableObject {
     @Published var showArchived = false
     @Published var renameTarget: Session?
     @Published var pendingDraft: String?
+    @Published var editingProvider: Provider?
+    @Published var settingsSection: SettingsSection = .general
 
     let settings = SettingsStore()
     let usage = UsageStore()
@@ -61,6 +63,7 @@ final class AppModel: ObservableObject {
     private let defaults = UserDefaults.standard
     private var runTask: Task<Void, Never>?
     private var approvalContinuation: CheckedContinuation<ApprovalDecision, Never>?
+    private let openCodeSessionID = UUID().uuidString
 
     init() {
         if let snapshot = SessionPersistence.load(), !snapshot.sessions.isEmpty {
@@ -249,7 +252,7 @@ final class AppModel: ObservableObject {
         guard let session = selected else {
             return ContextUsage(used: 0, limit: contextLimit)
         }
-        let system = ChatMessage(role: .system, text: ToolPrompt.system(context: toolContext()))
+        let system = ChatMessage(role: .system, text: systemPrompt())
         let messages = [system] + session.messages.filter {
             $0.role != .system && !($0.role == .assistant && $0.text.isEmpty)
         }
@@ -389,7 +392,7 @@ final class AppModel: ObservableObject {
         }
 
         settings.refreshKeys()
-        for provider in [Provider.openAI, .anthropic, .gemini] where settings.savedKeys.contains(provider) {
+        for provider in [Provider.openCode, .openAI, .anthropic, .gemini] where settings.savedKeys.contains(provider) {
             let model = settings.model(for: provider)
             if !model.isEmpty {
                 next.append(ModelChoice(provider: provider, id: model))
@@ -558,14 +561,60 @@ final class AppModel: ObservableObject {
             stop()
         case "/model":
             showModelPicker = true
-        case "/settings", "/tools":
-            openSettings()
+        case "/settings", "/config":
+            openSettings(.general)
+        case "/tools", "/permissions":
+            openSettings(.tools)
+        case "/providers":
+            openSettings(.providers)
+        case "/models":
+            openSettings(.models)
         case "/queue":
             if remainder.isEmpty {
                 appendCommandMessage(queueSummary())
             } else {
                 enqueue(remainder)
             }
+        case "/retry":
+            retryLastTurn()
+        case "/fork":
+            if let id = selectedID { fork(id) }
+        case "/archive":
+            if let id = selectedID { archive(id) }
+        case "/rename", "/title":
+            if remainder.isEmpty {
+                appendCommandMessage("Usage: /rename New task name")
+            } else if let id = selectedID {
+                commitRename(id, title: remainder)
+            }
+        case "/context":
+            appendCommandMessage(contextSummary())
+        case "/todos":
+            appendCommandMessage(todosSummary())
+        case "/cost":
+            appendCommandMessage(usageSummary())
+        case "/diff":
+            showGitPanel = true
+        case "/review":
+            reviewChanges(focus: .general)
+        case "/security-review":
+            reviewChanges(focus: .security)
+        case "/rewind":
+            rewindLastTurn()
+        case "/export":
+            exportSession()
+        case "/doctor":
+            Task {
+                appendCommandMessage(await doctorReport())
+            }
+        case "/init":
+            initializeAgentsFile()
+        case "/resume":
+            resumeSummary()
+        case "/memory", "/instructions":
+            showProjectMemory()
+        case "/add-dir":
+            appendCommandMessage("Use Projects → Open Folder… to switch the workspace. Additional writable roots are not implemented yet.")
         case "/status":
             appendCommandMessage(statusSummary())
         case "/remote":
@@ -601,26 +650,222 @@ final class AppModel: ObservableObject {
         case "/usage":
             appendCommandMessage(usageSummary())
         case "/help", "/":
-            appendCommandMessage("""
-            Commands:
-            /new — start a new task
-            /clear — clear this task's messages
-            /compact — summarize earlier messages now
-            /stop — stop the current response
-            /model — open the model picker
-            /queue [text] — show or add to the queue
-            /skills — list local skills
-            /plugins — list local plugin bundles
-            /mcp — list connected MCP tools
-            /remote — show the phone-control URL
-            /status — show model, context, and tool state
-            /settings — open Settings
-            /usage — show token usage
-            /help — show this list
-            """)
+            appendCommandMessage(
+                "Commands:\n" + SlashCommands.all.map { "\($0.id) — \($0.detail)" }.joined(separator: "\n")
+            )
         default:
             appendCommandMessage("Unknown command \(command). Type /help for the list.")
         }
+    }
+
+    private var projectInstructions: String? {
+        let paths = [
+            projectURL.appendingPathComponent("AGENTS.md"),
+            projectURL.appendingPathComponent(".talos/AGENTS.md"),
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Talos/AGENTS.md"),
+        ].compactMap { $0 }
+        for path in paths {
+            guard let text = try? String(contentsOf: path, encoding: .utf8),
+                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                continue
+            }
+            let clipped = text.count > 30_000 ? String(text.prefix(30_000)) + "\n…" : text
+            return "Project instructions from \(path.path):\n\(clipped)"
+        }
+        return nil
+    }
+
+    private func systemPrompt() -> String {
+        var prompt = ToolPrompt.system(context: toolContext())
+        if let projectInstructions {
+            prompt += "\n\n" + projectInstructions
+        }
+        return prompt
+    }
+
+    private func contextSummary() -> String {
+        let usage = contextUsage
+        let messageTokens = TokenEstimator.estimate(
+            (selected?.messages ?? []).filter { $0.role != .system }
+        )
+        let systemTokens = TokenEstimator.estimate(systemPrompt())
+        var lines = [
+            "Context: \(usage.label)",
+            "Messages: \(TokenEstimator.format(messageTokens)) tokens",
+            "System and tools: \(TokenEstimator.format(systemTokens)) tokens",
+            "Skills: \(skills.enabled.count)",
+            "MCP tools: \(mcpTools.count)",
+        ]
+        if let fraction = usage.fraction {
+            lines.append("Window used: \(Int(fraction * 100))%")
+        }
+        lines.append("Automatic compaction: \(settings.autoCompact ? "on at \(Int(settings.compactionThreshold * 100))%" : "off")")
+        return lines.joined(separator: "\n")
+    }
+
+    private func todosSummary() -> String {
+        guard let plan = selected?.plan, !plan.isEmpty else {
+            return "No plan yet. Ask the model to use update_plan."
+        }
+        return "Plan:\n" + plan.map {
+            "\($0.status == .completed ? "✓" : $0.status == .inProgress ? "→" : "·") \($0.title)"
+        }.joined(separator: "\n")
+    }
+
+    private enum ReviewFocus {
+        case general
+        case security
+    }
+
+    private func reviewChanges(focus: ReviewFocus) {
+        guard !isStreaming else {
+            error = "Stop the current response before starting a review."
+            return
+        }
+        Task {
+            let diff = await GitService.diff(in: projectURL)
+            guard !diff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !diff.hasPrefix("No diff") else {
+                appendCommandMessage("No working tree changes to review.")
+                return
+            }
+            let instruction = focus == .security
+                ? "Perform a security review of the current working tree changes. Look for injection, unsafe shell or file handling, secret exposure, authorization mistakes, and data leaks. Be concrete and point to files."
+                : "Review the current working tree changes for correctness, regressions, and missing tests. Be concrete and point to files."
+            let prompt = """
+            \(instruction)
+
+            ```diff
+            \(String(diff.prefix(30_000)))
+            ```
+            """
+            send(prompt)
+        }
+    }
+
+    private func rewindLastTurn() {
+        guard !isStreaming, let id = selectedID,
+              let index = sessions.firstIndex(where: { $0.id == id }) else { return }
+        guard let userIndex = sessions[index].messages.lastIndex(where: { $0.role == .user }) else {
+            appendCommandMessage("Nothing to rewind.")
+            return
+        }
+        sessions[index].messages.removeSubrange(userIndex...)
+        sessions[index].updatedAt = Date()
+        saveSessions()
+        appendCommandMessage("Rewound the last turn.")
+    }
+
+    private func exportSession() {
+        guard let session = selected else { return }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let slug = session.title
+            .lowercased()
+            .replacingOccurrences(of: #"[^a-z0-9]+"#, with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        let name = ".talos/exports/\(slug.isEmpty ? "task" : slug)-\(formatter.string(from: Date())).md"
+        var lines = [
+            "# \(session.title)",
+            "",
+            "- Project: \(projectURL.path)",
+            "- Created: \(session.createdAt.formatted())",
+            "",
+        ]
+        for message in session.messages where message.role != .system {
+            switch message.role {
+            case .user:
+                lines.append("## User\n\n\(message.text)\n")
+            case .assistant:
+                lines.append("## \(message.model ?? "Assistant")\n\n\(message.text)\n")
+            case .tool:
+                lines.append("### Tool · \(message.toolName ?? "tool")\n\n```\n\(message.text)\n```\n")
+            case .system:
+                break
+            }
+        }
+        let content = lines.joined(separator: "\n")
+        do {
+            let url = try DocumentWriter.create(name: name, format: "md", content: content, in: projectURL)
+            appendCommandMessage("Exported to \(url.path)")
+        } catch {
+            appendCommandMessage("Export failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func doctorReport() async -> String {
+        let git = await GitService.status(in: projectURL)
+        var lines = [
+            "Talos Doctor",
+            "Workspace: \(projectURL.path)",
+            "Ollama: \(status)",
+            "Selected: \(choice.display) · reasoning \(reasoningTitle)",
+            "Context: \(contextUsage.label)",
+            "MCP: \(mcpStatus) · \(mcpTools.count) tools",
+            "Skills: \(skills.enabled.count) enabled",
+            "Plugins: \(plugins.enabled.count) enabled",
+            "Git: \(git.branch ?? "no repository") · \(git.files.count) changed",
+            "Accessibility: \(ToolPermission.accessibility ? "granted" : "missing")",
+            "Screen Recording: \(ToolPermission.screenRecording ? "granted" : "missing")",
+            "Sandbox: \(settings.sandboxMode.title) · network \(settings.networkAccess ? "on" : "off")",
+            "Approvals: \(settings.approvalPolicy == .onRequest ? "on request" : "never")",
+            "History: \(sessions.count) tasks · \(TokenEstimator.format(usage.totalTokens)) tokens",
+        ]
+        for provider in Provider.allCases where provider != .local {
+            let key = settings.savedKeys.contains(provider) ? "key saved" : "no key"
+            lines.append("\(provider.title): \(settings.model(for: provider)) · \(key)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private func showProjectMemory() {
+        let target = projectURL.appendingPathComponent("AGENTS.md")
+        guard FileManager.default.fileExists(atPath: target.path) else {
+            appendCommandMessage("No AGENTS.md in this project. Run /init to create one.")
+            return
+        }
+        NSWorkspace.shared.open(target)
+        appendCommandMessage("Opened \(target.path). Talos includes this file in the system prompt.")
+    }
+
+    private func initializeAgentsFile() {
+        let target = projectURL.appendingPathComponent("AGENTS.md")
+        guard !FileManager.default.fileExists(atPath: target.path) else {
+            appendCommandMessage("AGENTS.md already exists at \(target.path).")
+            return
+        }
+        let content = """
+        # \(currentProject?.name ?? "Project")
+
+        ## Commands
+
+        - Build:
+        - Test:
+        - Lint:
+
+        ## Conventions
+
+        - Keep changes scoped to the request.
+        - Run the focused checks for changed behavior.
+        """
+        do {
+            let url = try DocumentWriter.create(name: "AGENTS", format: "md", content: content, in: projectURL)
+            appendCommandMessage("Created \(url.path). Fill in the project-specific commands.")
+        } catch {
+            appendCommandMessage("Could not create AGENTS.md: \(error.localizedDescription)")
+        }
+    }
+
+    private func resumeSummary() {
+        let recent = filteredSessions.prefix(10)
+        guard !recent.isEmpty else {
+            appendCommandMessage("No tasks in this project yet.")
+            return
+        }
+        appendCommandMessage("Recent tasks:\n" + recent.map {
+            "- \($0.title)\($0.archived ? " (archived)" : "")"
+        }.joined(separator: "\n") + "\n\nSelect one in the sidebar to resume it.")
     }
 
     private func queueSummary() -> String {
@@ -666,7 +911,8 @@ final class AppModel: ObservableObject {
         saveSessions()
     }
 
-    private func openSettings() {
+    func openSettings(_ section: SettingsSection = .general) {
+        settingsSection = section
         if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
             NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
@@ -771,8 +1017,7 @@ final class AppModel: ObservableObject {
         assistantID: UUID,
         sessionID: UUID
     ) async throws -> String {
-        let context = toolContext()
-        let system = ChatMessage(role: .system, text: ToolPrompt.system(context: context))
+        let system = ChatMessage(role: .system, text: systemPrompt())
         let normalized = history
             .filter { $0.role != .system && !($0.role == .assistant && $0.text.isEmpty) }
             .map { message in
@@ -824,6 +1069,20 @@ final class AppModel: ObservableObject {
         case .local:
             stream = OllamaClient(baseURL: URL(string: settings.localURL) ?? URL(string: Provider.local.defaultBaseURL)!)
                 .stream(model: choice.id, messages: messages, settings: generation)
+        case .openCode:
+            stream = OpenAICompatibleClient(
+                baseURL: settings.openCodeBase,
+                apiKey: settings.key(for: .openCode) ?? "",
+                usesCompletionTokens: false,
+                sendsTemperature: true,
+                sendsReasoningEffort: false,
+                isOpenCode: true,
+                openCodeSession: openCodeSessionID
+            ).stream(
+                model: choice.id,
+                messages: messages.map { ChatTurn(role: $0.role, text: $0.text) },
+                settings: generation
+            )
         case .openAI:
             stream = OpenAICompatibleClient(
                 baseURL: settings.openAIBase,
@@ -875,7 +1134,7 @@ final class AppModel: ObservableObject {
     }
 
     private func contextTokens(for session: Session) -> Int {
-        let system = ChatMessage(role: .system, text: ToolPrompt.system(context: toolContext()))
+        let system = ChatMessage(role: .system, text: systemPrompt())
         let messages = [system] + session.messages.filter {
             $0.role != .system && !($0.role == .assistant && $0.text.isEmpty)
         }

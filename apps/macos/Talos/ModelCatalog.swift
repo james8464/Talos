@@ -5,6 +5,13 @@ enum ModelCatalog {
         switch choice.provider {
         case .local:
             return local(choice: choice, info: ollama)
+        case .openCode:
+            return ModelCapabilities(
+                reasoningOptions: [],
+                defaultReasoning: nil,
+                contextWindow: nil,
+                summary: "OpenCode Go uses its OpenAI-compatible chat endpoint. Reasoning controls depend on the selected model and are not exposed here."
+            )
         case .openAI:
             return openAI(choice: choice)
         case .anthropic:
