@@ -1,0 +1,16 @@
+name: macOS
+
+on:
+  push:
+    branches:
+      - main
+      - "talos/**"
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Talos
+        run: xcodebuild -project apps/macos/Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO build

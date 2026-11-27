@@ -1,19 +1,22 @@
-# Applications: Independently runnable process boundaries
+# Talos macOS
 
-Each directory under `apps/` owns one deployable process.
+The repository contains one app: the native SwiftUI client in `apps/macos`.
 
-## Common Commands
+## Build
 
-- `pnpm --filter <package-name> typecheck`: typecheck one TypeScript app.
-- `pnpm --filter <package-name> test`: test one TypeScript app.
+```sh
+make run
+```
 
-## Structure
+`make build` compiles without launching. `make project` regenerates the Xcode
+project from `apps/macos/project.yml`; the generated project is checked in.
 
-- Each app owns its entrypoints, runtime configuration, tests, and deployment files.
-- Shared in-process behavior belongs in `packages/` only after a real second caller exists.
+## Conventions
 
-## Important Conventions
-
-- Do not import source from another `apps/*` directory.
-- Consume cross-process operations through generated modules from `contracts/`.
-- Do not commit build output, logs, runtime state, or app-local `node_modules`.
+- SwiftUI, macOS 14 deployment target.
+- The app is a model client, not a persona. Do not add a Talos system prompt.
+- Provider credentials live in the macOS Keychain through `Keychain.swift`.
+- Provider and generation settings belong in `SettingsStore`; request payloads
+  are built in the provider clients.
+- Keep the transcript honest: features that are not implemented are labeled
+  **Not yet**, not shown as enabled controls.
