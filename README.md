@@ -21,7 +21,7 @@ controls.
 
 ## Build
 
-Requirements: macOS 14+, Xcode 15+, and [Ollama](https://ollama.com) for local
+Requirements: macOS 14+, Xcode 16+, and [Ollama](https://ollama.com) for local
 models.
 
 ```sh

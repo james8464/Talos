@@ -7,7 +7,7 @@ model that produced them.
 ## Requirements
 
 - macOS 14 or later
-- Xcode 15 or later
+- Xcode 16 or later
 - [Ollama](https://ollama.com) for local models
 - API keys for OpenAI, Anthropic, or Google Gemini if you use hosted models
 
