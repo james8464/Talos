@@ -13,6 +13,11 @@ struct TalosApp: App {
                 .tint(Brand.bronze)
                 .preferredColorScheme(colorScheme)
                 .frame(minWidth: 900, minHeight: 600)
+                .onAppear {
+                    if let icon = Brand.icon {
+                        NSApp.applicationIconImage = icon
+                    }
+                }
         }
         .defaultSize(width: 1200, height: 780)
         .windowToolbarStyle(.unified)

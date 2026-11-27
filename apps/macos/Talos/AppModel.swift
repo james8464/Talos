@@ -41,9 +41,18 @@ final class AppModel: ObservableObject {
     @Published var selectedModelInfo: OllamaModelInfo?
     @Published var pendingApproval: ApprovalRequest?
     @Published var showModelPicker = false
+    @Published var showProjectBrowser = false
+    @Published var currentProject: Project?
+    @Published var mcpTools: [MCPTool] = []
+    @Published var mcpStatus = "No MCP servers"
 
     let settings = SettingsStore()
     let usage = UsageStore()
+    let projects = ProjectStore()
+    let plugins = PluginStore()
+    let skills = SkillStore()
+    let mcp = MCPManager()
+    let remote = RemoteServer()
     private let defaults = UserDefaults.standard
     private var runTask: Task<Void, Never>?
     private var approvalContinuation: CheckedContinuation<ApprovalDecision, Never>?
@@ -61,20 +70,140 @@ final class AppModel: ObservableObject {
             newSession()
         }
 
+        let defaultProject = projects.open(path: settings.workspacePath)
+        currentProject = defaultProject
+        plugins.reload()
+        skills.reload(
+            workspace: URL(fileURLWithPath: defaultProject.path, isDirectory: true),
+            extraDirectories: plugins.enabledSkillDirectories
+        )
+        for index in sessions.indices where sessions[index].projectPath.isEmpty {
+            sessions[index].projectPath = defaultProject.path
+        }
+        if let selectedID,
+           let selected = sessions.first(where: { $0.id == selectedID }),
+           selected.projectPath == defaultProject.path {
+            // Keep the restored selection.
+        } else if let latest = sessions
+            .filter({ $0.projectPath == defaultProject.path })
+            .max(by: { $0.updatedAt < $1.updatedAt }) {
+            self.selectedID = latest.id
+        } else {
+            newSession()
+        }
+
         if let raw = defaults.string(forKey: "selectedProvider"),
            let provider = Provider(rawValue: raw),
            let id = defaults.string(forKey: "selectedModel") {
             choice = ModelChoice(provider: provider, id: id)
         }
+        remote.onText = { [weak self] text in
+            self?.submit(text)
+        }
+        remote.onStop = { [weak self] in
+            self?.stop()
+        }
+        remote.onCompact = { [weak self] in
+            self?.compactCurrentSession()
+        }
+        remote.statusProvider = { [weak self] in
+            guard let self else { return [:] }
+            return [
+                "project": self.currentProject?.name ?? "Project",
+                "model": self.choice.display,
+                "streaming": self.isStreaming,
+                "queue": self.selected?.queue.count ?? 0,
+                "context": self.contextUsage.label,
+            ]
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.saveSessions()
+            self.remote.stop()
+            Task { await self.mcp.stopAll() }
+        }
+
+        if !settings.mcpServers.isEmpty || !plugins.enabledMCPServers.isEmpty {
+            mcpStatus = "Connecting…"
+        }
+
         Task {
             await refreshChoices()
             await refreshCapabilities()
+            await reloadMCP()
+        }
+    }
+
+    var projectURL: URL {
+        URL(
+            fileURLWithPath: currentProject?.path ?? settings.workspacePath,
+            isDirectory: true
+        ).standardizedFileURL
+    }
+
+    func reloadSkills() {
+        skills.reload(workspace: projectURL, extraDirectories: plugins.enabledSkillDirectories)
+    }
+
+    func reloadPlugins() {
+        plugins.reload()
+        reloadSkills()
+        Task { await reloadMCP() }
+    }
+
+    func reloadMCP() async {
+        let configured = settings.mcpServers + plugins.enabledMCPServers
+        guard !configured.isEmpty else {
+            mcpTools = []
+            mcpStatus = "No MCP servers"
+            return
+        }
+        mcpStatus = "Connecting…"
+        let result = await mcp.connect(configured)
+        mcpTools = result.tools
+        if result.errors.isEmpty {
+            mcpStatus = result.tools.isEmpty ? "No MCP tools" : "\(result.tools.count) MCP tools"
+        } else {
+            mcpStatus = result.errors.joined(separator: " · ")
+        }
+    }
+
+    func openProject(_ project: Project) {
+        currentProject = projects.open(path: project.path)
+        settings.workspacePath = project.path
+        reloadSkills()
+        if let latest = sessions
+            .filter({ $0.projectPath == project.path })
+            .max(by: { $0.updatedAt < $1.updatedAt }) {
+            selectedID = latest.id
+        } else {
+            newSession()
+        }
+        saveSessions()
+    }
+
+    func chooseProject() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = projectURL
+        if panel.runModal() == .OK, let url = panel.url {
+            let project = projects.open(path: url.path)
+            openProject(project)
         }
     }
 
     var filteredSessions: [Session] {
-        guard !search.isEmpty else { return sessions }
-        return sessions.filter {
+        let projectPath = currentProject?.path ?? settings.workspacePath
+        let scoped = sessions.filter { $0.projectPath == projectPath }
+        guard !search.isEmpty else { return scoped }
+        return scoped.filter {
             $0.title.localizedCaseInsensitiveContains(search) ||
             $0.preview.localizedCaseInsensitiveContains(search)
         }
@@ -116,7 +245,8 @@ final class AppModel: ObservableObject {
     }
 
     func newSession() {
-        let session = Session(title: "New Task")
+        var session = Session(title: "New Task")
+        session.projectPath = currentProject?.path ?? settings.workspacePath
         sessions.insert(session, at: 0)
         selectedID = session.id
         saveSessions()
@@ -340,6 +470,36 @@ final class AppModel: ObservableObject {
             }
         case "/status":
             appendCommandMessage(statusSummary())
+        case "/remote":
+            if let url = remote.url {
+                appendCommandMessage("Phone control:\n\(url)\n\nOpen it on a device on the same network. The token in the URL is required.")
+            } else {
+                appendCommandMessage("Phone control is off. Enable it in Settings → Tools.")
+            }
+        case "/plugins":
+            if plugins.plugins.isEmpty {
+                appendCommandMessage("No plugins found. Add a plugin.json under \(plugins.directory.path).")
+            } else {
+                appendCommandMessage("Plugins:\n" + plugins.plugins.map {
+                    "- \($0.name)\($0.description.isEmpty ? "" : ": \($0.description)")"
+                }.joined(separator: "\n"))
+            }
+        case "/mcp":
+            if mcpTools.isEmpty {
+                appendCommandMessage("No MCP tools. \(mcpStatus). Add a stdio server in Settings → MCP.")
+            } else {
+                appendCommandMessage("MCP status: \(mcpStatus)\n" + mcpTools.map {
+                    "- \($0.toolName)\($0.description.isEmpty ? "" : ": \($0.description)")"
+                }.joined(separator: "\n"))
+            }
+        case "/skills":
+            if skills.skills.isEmpty {
+                appendCommandMessage("No skills found. Add a folder with SKILL.md under \(skills.directory.path).")
+            } else {
+                appendCommandMessage("Skills:\n" + skills.skills.map {
+                    "- \($0.name)\($0.description.isEmpty ? "" : ": \($0.description)")"
+                }.joined(separator: "\n"))
+            }
         case "/usage":
             appendCommandMessage(usageSummary())
         case "/help", "/":
@@ -351,6 +511,10 @@ final class AppModel: ObservableObject {
             /stop — stop the current response
             /model — open the model picker
             /queue [text] — show or add to the queue
+            /skills — list local skills
+            /plugins — list local plugin bundles
+            /mcp — list connected MCP tools
+            /remote — show the phone-control URL
             /status — show model, context, and tool state
             /settings — open Settings
             /usage — show token usage
@@ -376,6 +540,10 @@ final class AppModel: ObservableObject {
         Workspace: \(settings.workspacePath)
         Sandbox: \(settings.sandboxMode.title)
         Approvals: \(settings.approvalPolicy == .onRequest ? "On request" : "Never")
+        Skills: \(skills.enabled.count)
+        Plugins: \(plugins.enabled.count)
+        MCP tools: \(mcpTools.count)
+        Phone control: \(remote.running ? "on" : "off")
         Queue: \(queue)
         """
     }
@@ -701,6 +869,15 @@ final class AppModel: ObservableObject {
         if call.name == "update_plan" {
             return updatePlan(call, sessionID: sessionID)
         }
+        if call.name.hasPrefix("mcp__") {
+            let arguments = call.arguments.mapValues(\.anyValue)
+            switch await mcp.call(toolName: call.name, arguments: arguments) {
+            case .success(let output):
+                return .ok(output)
+            case .failure(let error):
+                return .fail(error.localizedDescription)
+            }
+        }
         return await ToolRunner(context: toolContext()).run(call)
     }
 
@@ -735,9 +912,7 @@ final class AppModel: ObservableObject {
     }
 
     private func toolContext() -> ToolContext {
-        let workspace = settings.workspacePath.isEmpty
-            ? FileManager.default.homeDirectoryForCurrentUser.path
-            : settings.workspacePath
+        let workspace = projectURL.path
         return ToolContext(
             workspace: workspace,
             sandbox: settings.sandboxMode,
@@ -746,7 +921,9 @@ final class AppModel: ObservableObject {
             enabledFileEdits: settings.enableFileEdits,
             enabledComputerUse: settings.enableComputerUse,
             enabledWeb: settings.enableWeb,
-            enabledPlan: settings.enablePlan
+            enabledPlan: settings.enablePlan,
+            skills: skills.enabled,
+            mcpTools: mcpTools
         )
     }
 

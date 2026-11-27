@@ -8,16 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		0358BE42AA67F81EF744796C /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */; };
+		15F2A611B24AC0D4E15BBB04 /* Plugins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */; };
+		2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88120A756923F2A3457A372B /* Skills.swift */; };
 		2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1A617E407672D5729425D2 /* Keychain.swift */; };
 		2D8A0471734DB5FDB9BC3292 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09A4D0139081FED1D948312 /* AppModel.swift */; };
+		34BAFB83932D74DE05435DAB /* ProjectBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */; };
 		35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D2AC40CFA47F5E6168180BB /* TalosApp.swift */; };
 		3F2A669C71F9ABF065D9BA97 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29612E0C17BE1D0D3A380FCA /* Models.swift */; };
 		456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1122852660CD8181149806 /* ContentView.swift */; };
 		4B326AB0712C6A431D7E95F3 /* OllamaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77222638AE45AC6E779D2AFB /* OllamaClient.swift */; };
+		4BB116C270D7CB0DC5499BD5 /* RemoteServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */; };
 		59EFBCD216961E06356D37D5 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70913AB772F308657E509F42 /* Providers.swift */; };
+		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF7DCED466867A6BC71FB24 /* SettingsView.swift */; };
 		8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B5B87B005EEE76F31442B1 /* Tools.swift */; };
 		96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */; };
+		A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E3AB66594CCF5305513D55 /* Projects.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6301A0926D7044DADE1CB7C2 /* Talos.icns */; };
 		D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DA27C786B558AC4F245F39 /* Brand.swift */; };
@@ -28,13 +34,18 @@
 /* Begin PBXFileReference section */
 		01B5B87B005EEE76F31442B1 /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
 		29612E0C17BE1D0D3A380FCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
 		2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPersistence.swift; sourceTree = "<group>"; };
+		420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plugins.swift; sourceTree = "<group>"; };
+		57E3AB66594CCF5305513D55 /* Projects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Projects.swift; sourceTree = "<group>"; };
 		5C064999B0D1F92F7B32F537 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		5D2AC40CFA47F5E6168180BB /* TalosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosApp.swift; sourceTree = "<group>"; };
 		6301A0926D7044DADE1CB7C2 /* Talos.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Talos.icns; sourceTree = "<group>"; };
 		70913AB772F308657E509F42 /* Providers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		7DF7DCED466867A6BC71FB24 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		847BD0AAE243B78A20C79D30 /* MCP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCP.swift; sourceTree = "<group>"; };
+		88120A756923F2A3457A372B /* Skills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Skills.swift; sourceTree = "<group>"; };
 		98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalog.swift; sourceTree = "<group>"; };
 		AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		AD1122852660CD8181149806 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -43,6 +54,7 @@
 		C09A4D0139081FED1D948312 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		C0DA27C786B558AC4F245F39 /* Brand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brand.swift; sourceTree = "<group>"; };
 		C7B210FBD6286CFA7711C157 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBrowser.swift; sourceTree = "<group>"; };
 		EB1A617E407672D5729425D2 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -63,14 +75,20 @@
 				AD1122852660CD8181149806 /* ContentView.swift */,
 				C7B210FBD6286CFA7711C157 /* Info.plist */,
 				EB1A617E407672D5729425D2 /* Keychain.swift */,
+				847BD0AAE243B78A20C79D30 /* MCP.swift */,
 				98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */,
 				29612E0C17BE1D0D3A380FCA /* Models.swift */,
 				AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */,
 				77222638AE45AC6E779D2AFB /* OllamaClient.swift */,
+				420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */,
+				D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */,
+				57E3AB66594CCF5305513D55 /* Projects.swift */,
 				70913AB772F308657E509F42 /* Providers.swift */,
+				2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */,
 				2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */,
 				5C064999B0D1F92F7B32F537 /* SettingsStore.swift */,
 				7DF7DCED466867A6BC71FB24 /* SettingsView.swift */,
+				88120A756923F2A3457A372B /* Skills.swift */,
 				5D2AC40CFA47F5E6168180BB /* TalosApp.swift */,
 				01B5B87B005EEE76F31442B1 /* Tools.swift */,
 				BDE40BA2F2E62D3115E531DD /* UsageStore.swift */,
@@ -166,14 +184,20 @@
 				D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
 				2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */,
+				6790212F8FC205B737DC983A /* MCP.swift in Sources */,
 				96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */,
 				3F2A669C71F9ABF065D9BA97 /* Models.swift in Sources */,
 				0358BE42AA67F81EF744796C /* NotificationManager.swift in Sources */,
 				4B326AB0712C6A431D7E95F3 /* OllamaClient.swift in Sources */,
+				15F2A611B24AC0D4E15BBB04 /* Plugins.swift in Sources */,
+				34BAFB83932D74DE05435DAB /* ProjectBrowser.swift in Sources */,
+				A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */,
 				59EFBCD216961E06356D37D5 /* Providers.swift in Sources */,
+				4BB116C270D7CB0DC5499BD5 /* RemoteServer.swift in Sources */,
 				DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */,
 				B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */,
 				8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */,
+				2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */,
 				35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */,
 				8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */,
 				E1E61F33240469D831267B5C /* UsageStore.swift in Sources */,
@@ -188,13 +212,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = Talos/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.talos.macos;
 				PRODUCT_NAME = Talos;
 				SDKROOT = macosx;
@@ -333,13 +357,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = Talos/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.talos.macos;
 				PRODUCT_NAME = Talos;
 				SDKROOT = macosx;

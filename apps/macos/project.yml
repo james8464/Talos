@@ -23,16 +23,17 @@ targets:
       properties:
         CFBundleDisplayName: Talos
         CFBundleName: Talos
+        CFBundleIconFile: Talos
+        CFBundleShortVersionString: "0.3.0"
+        CFBundleVersion: "3"
         LSApplicationCategoryType: public.app-category.developer-tools
-        NSMicrophoneUsageDescription: Talos listens only when you enable it.
-        NSCameraUsageDescription: Talos looks only when you enable it.
         NSHumanReadableCopyright: ""
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.talos.macos
         PRODUCT_NAME: Talos
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.3.0"
+        CURRENT_PROJECT_VERSION: "3"
         COMBINE_HIDPI_IMAGES: YES
 schemes:
   Talos:

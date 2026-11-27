@@ -49,6 +49,23 @@ struct PlanStep: Identifiable, Codable, Equatable {
     var id = UUID()
     var title: String
     var status: PlanStatus = .pending
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, status
+    }
+
+    init(id: UUID = UUID(), title: String, status: PlanStatus = .pending) {
+        self.id = id
+        self.title = title
+        self.status = status
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        status = try container.decodeIfPresent(PlanStatus.self, forKey: .status) ?? .pending
+    }
 }
 
 struct ChatMessage: Identifiable, Codable, Equatable {
@@ -62,6 +79,40 @@ struct ChatMessage: Identifiable, Codable, Equatable {
     var attachmentPath: String? = nil
     var attachments: [String] = []
     var createdAt = Date()
+
+    private enum CodingKeys: String, CodingKey {
+        case id, role, text, isStreaming, model, toolName, toolStatus
+        case attachmentPath, attachments, createdAt
+    }
+
+    init(id: UUID = UUID(), role: Role, text: String, isStreaming: Bool = false,
+         model: String? = nil, toolName: String? = nil, toolStatus: ToolStatus? = nil,
+         attachmentPath: String? = nil, attachments: [String] = [], createdAt: Date = Date()) {
+        self.id = id
+        self.role = role
+        self.text = text
+        self.isStreaming = isStreaming
+        self.model = model
+        self.toolName = toolName
+        self.toolStatus = toolStatus
+        self.attachmentPath = attachmentPath
+        self.attachments = attachments
+        self.createdAt = createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        role = try container.decode(Role.self, forKey: .role)
+        text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+        isStreaming = try container.decodeIfPresent(Bool.self, forKey: .isStreaming) ?? false
+        model = try container.decodeIfPresent(String.self, forKey: .model)
+        toolName = try container.decodeIfPresent(String.self, forKey: .toolName)
+        toolStatus = try container.decodeIfPresent(ToolStatus.self, forKey: .toolStatus)
+        attachmentPath = try container.decodeIfPresent(String.self, forKey: .attachmentPath)
+        attachments = try container.decodeIfPresent([String].self, forKey: .attachments) ?? []
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+    }
 }
 
 struct QueuedPrompt: Identifiable, Codable, Equatable {
@@ -69,17 +120,68 @@ struct QueuedPrompt: Identifiable, Codable, Equatable {
     var text: String
     var attachments: [String] = []
     var createdAt = Date()
+
+    private enum CodingKeys: String, CodingKey {
+        case id, text, attachments, createdAt
+    }
+
+    init(id: UUID = UUID(), text: String, attachments: [String] = [], createdAt: Date = Date()) {
+        self.id = id
+        self.text = text
+        self.attachments = attachments
+        self.createdAt = createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+        attachments = try container.decodeIfPresent([String].self, forKey: .attachments) ?? []
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+    }
 }
 
 struct Session: Identifiable, Codable, Equatable {
     var id = UUID()
     var title: String
+    var projectPath: String = ""
     var messages: [ChatMessage] = []
     var plan: [PlanStep] = []
     var queue: [QueuedPrompt] = []
     var approvedTools: [String] = []
     var createdAt = Date()
     var updatedAt = Date()
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, projectPath, messages, plan, queue, approvedTools, createdAt, updatedAt
+    }
+
+    init(id: UUID = UUID(), title: String, projectPath: String = "", messages: [ChatMessage] = [],
+         plan: [PlanStep] = [], queue: [QueuedPrompt] = [], approvedTools: [String] = [],
+         createdAt: Date = Date(), updatedAt: Date = Date()) {
+        self.id = id
+        self.title = title
+        self.projectPath = projectPath
+        self.messages = messages
+        self.plan = plan
+        self.queue = queue
+        self.approvedTools = approvedTools
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? "New Task"
+        projectPath = try container.decodeIfPresent(String.self, forKey: .projectPath) ?? ""
+        messages = try container.decodeIfPresent([ChatMessage].self, forKey: .messages) ?? []
+        plan = try container.decodeIfPresent([PlanStep].self, forKey: .plan) ?? []
+        queue = try container.decodeIfPresent([QueuedPrompt].self, forKey: .queue) ?? []
+        approvedTools = try container.decodeIfPresent([String].self, forKey: .approvedTools) ?? []
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
+    }
 
     var preview: String {
         guard let reply = messages.last(where: { $0.role == .assistant && !$0.text.isEmpty }) else {
@@ -171,6 +273,10 @@ enum SlashCommands {
         SlashCommand(id: "/stop", detail: "Stop the current response"),
         SlashCommand(id: "/model", detail: "Open the model picker"),
         SlashCommand(id: "/queue", detail: "Show the queue"),
+        SlashCommand(id: "/skills", detail: "List local skills"),
+        SlashCommand(id: "/plugins", detail: "List local plugins"),
+        SlashCommand(id: "/mcp", detail: "List connected MCP tools"),
+        SlashCommand(id: "/remote", detail: "Show the phone-control URL"),
         SlashCommand(id: "/status", detail: "Show model and tool state"),
         SlashCommand(id: "/settings", detail: "Open Settings"),
         SlashCommand(id: "/usage", detail: "Show token usage"),

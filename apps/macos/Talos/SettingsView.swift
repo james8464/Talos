@@ -1,27 +1,110 @@
 import SwiftUI
 import AppKit
+import CoreImage
+import CoreImage.CIFilterBuiltins
 
 struct SettingsView: View {
+    @State private var selection: SettingsSection = .general
+
     var body: some View {
-        TabView {
-            GeneralSettingsView()
-                .tabItem { Label("General", systemImage: "gearshape") }
-            ModelsSettingsView()
-                .tabItem { Label("Models", systemImage: "cpu") }
-            ProvidersSettingsView()
-                .tabItem { Label("Providers", systemImage: "key") }
-            ToolsSettingsView()
-                .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
-            AppearanceSettingsView()
-                .tabItem { Label("Appearance", systemImage: "paintbrush") }
-            UsageSettingsView()
-                .tabItem { Label("Usage", systemImage: "chart.bar.xaxis") }
-            AdvancedSettingsView()
-                .tabItem { Label("Advanced", systemImage: "slider.horizontal.3") }
-            AboutSettingsView()
-                .tabItem { Label("About", systemImage: "info.circle") }
+        NavigationSplitView {
+            List(SettingsSection.allCases, selection: $selection) { section in
+                Label(section.title, systemImage: section.symbol)
+                    .tag(section)
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 230)
+        } detail: {
+            detail
+                .navigationTitle(selection.title)
         }
-        .frame(width: 760, height: 680)
+        .frame(width: 880, height: 660)
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        switch selection {
+        case .general:
+            GeneralSettingsView()
+        case .projects:
+            ProjectsSettingsView()
+        case .models:
+            ModelsSettingsView()
+        case .providers:
+            ProvidersSettingsView()
+        case .tools:
+            ToolsSettingsView()
+        case .skills:
+            SkillsSettingsView()
+        case .plugins:
+            PluginsSettingsView()
+        case .mcp:
+            MCPSettingsView()
+        case .remote:
+            RemoteSettingsView()
+        case .appearance:
+            AppearanceSettingsView()
+        case .usage:
+            UsageSettingsView()
+        case .advanced:
+            AdvancedSettingsView()
+        case .about:
+            AboutSettingsView()
+        }
+    }
+}
+
+private enum SettingsSection: String, CaseIterable, Identifiable {
+    case general
+    case projects
+    case models
+    case providers
+    case tools
+    case skills
+    case plugins
+    case mcp
+    case remote
+    case appearance
+    case usage
+    case advanced
+    case about
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .projects: return "Projects"
+        case .models: return "Models"
+        case .providers: return "Providers"
+        case .tools: return "Tools"
+        case .skills: return "Skills"
+        case .plugins: return "Plugins"
+        case .mcp: return "MCP"
+        case .remote: return "Remote"
+        case .appearance: return "Appearance"
+        case .usage: return "Usage"
+        case .advanced: return "Advanced"
+        case .about: return "About"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .general: return "gearshape"
+        case .projects: return "folder"
+        case .models: return "cpu"
+        case .providers: return "key"
+        case .tools: return "wrench.and.screwdriver"
+        case .skills: return "sparkles"
+        case .plugins: return "puzzlepiece.extension"
+        case .mcp: return "point.3.connected.trianglepath.dotted"
+        case .remote: return "iphone"
+        case .appearance: return "paintbrush"
+        case .usage: return "chart.bar.xaxis"
+        case .advanced: return "slider.horizontal.3"
+        case .about: return "info.circle"
+        }
     }
 }
 
@@ -422,6 +505,91 @@ private struct ProviderKeySettings: View {
     }
 }
 
+private struct ProjectsSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
+
+    var body: some View {
+        Form {
+            Section("Current project") {
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(model.currentProject?.name ?? "Project")
+                            .font(.headline)
+                        Text(model.projectURL.path)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                    Spacer()
+                    Button("Browse Files…") { model.showProjectBrowser = true }
+                }
+                HStack {
+                    Button("Open Folder…") { model.chooseProject() }
+                    Button("Reveal in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([model.projectURL])
+                    }
+                }
+                Text("The project folder is the workspace for shell, file, search, and document tools.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Recent projects") {
+                if model.projects.projects.isEmpty {
+                    Text("No projects yet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(model.projects.sorted) { project in
+                        HStack(spacing: 10) {
+                            Button {
+                                model.openProject(project)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(project.name)
+                                    Text(project.path)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            Spacer()
+                            if project.path == model.currentProject?.path {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Button(role: .destructive) {
+                                model.projects.remove(project)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                }
+            }
+
+            Section("Workspace") {
+                LabeledContent("Path") {
+                    Text(settings.workspacePath)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                Button("Sync Workspace to Current Project") {
+                    settings.workspacePath = model.projectURL.path
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
+
 private struct ToolsSettingsView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsStore
@@ -430,20 +598,6 @@ private struct ToolsSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Workspace") {
-                HStack(spacing: 10) {
-                    Text(settings.workspacePath)
-                        .font(.callout)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer()
-                    Button("Choose…") { chooseWorkspace() }
-                }
-                Text("Relative paths resolve here and shell commands start here.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Approvals and sandbox") {
                 Picker("Approval policy", selection: $settings.approvalPolicy) {
                     ForEach(ApprovalPolicy.allCases) { policy in
@@ -525,16 +679,308 @@ private struct ToolsSettingsView: View {
         accessibility = ToolPermission.accessibility
         screenRecording = ToolPermission.screenRecording
     }
+}
 
-    private func chooseWorkspace() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: settings.workspacePath, isDirectory: true)
-        if panel.runModal() == .OK, let url = panel.url {
-            settings.workspacePath = url.path
+private struct SkillsSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            Section {
+                HStack {
+                    Text("\(model.skills.skills.count) skills")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reload") { model.reloadSkills() }
+                    Button("Open Folder") { model.skills.openFolder() }
+                }
+
+                if model.skills.skills.isEmpty {
+                    Text("Add a folder containing SKILL.md under \(model.skills.directory.path).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(model.skills.skills) { skill in
+                        Toggle(isOn: Binding(
+                            get: { !model.skills.disabled.contains(skill.path) },
+                            set: { model.skills.setEnabled(skill, $0) }
+                        )) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(skill.name)
+                                if !skill.description.isEmpty {
+                                    Text(skill.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Button("Create Example Skill") {
+                    model.skills.createStarter()
+                    model.reloadSkills()
+                }
+            } header: {
+                Text("Local skills")
+            } footer: {
+                Text("Skills are reusable instructions. Every model sees their names and descriptions, and can load one with the read_skill tool.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
+
+private struct PluginsSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            Section {
+                HStack {
+                    Text("\(model.plugins.plugins.count) plugins")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reload") { model.reloadPlugins() }
+                    Button("Open Folder") { model.plugins.openFolder() }
+                }
+
+                if model.plugins.plugins.isEmpty {
+                    Text("Add a folder with plugin.json under \(model.plugins.directory.path).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(model.plugins.plugins) { plugin in
+                        HStack(spacing: 8) {
+                            Toggle(isOn: Binding(
+                                get: { !model.plugins.disabled.contains(plugin.path) },
+                                set: { model.plugins.setEnabled(plugin, $0); model.reloadPlugins() }
+                            )) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(plugin.name)
+                                    if !plugin.description.isEmpty {
+                                        Text(plugin.description)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                    }
+                                }
+                            }
+                            Spacer()
+                            Button {
+                                NSWorkspace.shared.open(URL(fileURLWithPath: plugin.path))
+                            } label: {
+                                Image(systemName: "folder")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Reveal plugin folder")
+                        }
+                    }
+                }
+
+                Button("Create Example Plugin") {
+                    model.plugins.createStarter()
+                    model.reloadPlugins()
+                }
+            } header: {
+                Text("Local plugins")
+            } footer: {
+                Text("A plugin can bundle skills and stdio MCP servers. Enabled plugins add their skills and tools to every model.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
+
+private struct MCPSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
+    @State private var name = ""
+    @State private var command = ""
+    @State private var arguments = ""
+
+    var body: some View {
+        Form {
+            Section("Connected servers") {
+                HStack {
+                    Text(model.mcpStatus)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reload") {
+                        Task { await model.reloadMCP() }
+                    }
+                }
+
+                ForEach(settings.mcpServers) { server in
+                    HStack(spacing: 8) {
+                        Toggle(server.name, isOn: Binding(
+                            get: { server.enabled },
+                            set: { value in
+                                settings.setMCPEnabled(server, value)
+                                Task { await model.reloadMCP() }
+                            }
+                        ))
+                        Text(([server.command] + server.args).joined(separator: " "))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button(role: .destructive) {
+                            settings.removeMCPServer(server)
+                            Task { await model.reloadMCP() }
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+            }
+
+            Section {
+                TextField("Name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Command", text: $command)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Arguments", text: $arguments)
+                    .textFieldStyle(.roundedBorder)
+                Button("Add Server") {
+                    let values = arguments
+                        .split(whereSeparator: { $0.isWhitespace })
+                        .map(String.init)
+                    settings.addMCPServer(MCPServerConfig(
+                        name: name.isEmpty ? "MCP" : name,
+                        command: command,
+                        args: values
+                    ))
+                    name = ""
+                    command = ""
+                    arguments = ""
+                    Task { await model.reloadMCP() }
+                }
+                .disabled(command.trimmingCharacters(in: .whitespaces).isEmpty)
+            } header: {
+                Text("Add stdio server")
+            } footer: {
+                Text("Talos launches stdio MCP servers with the command and arguments above. Their tools are offered to every model, so connector-style servers behave like native tools.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
+
+private struct RemoteSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            Section("Phone control") {
+                Toggle("Enable phone control", isOn: Binding(
+                    get: { model.remote.enabled },
+                    set: { model.remote.setEnabled($0) }
+                ))
+
+                HStack {
+                    Text("Port")
+                    TextField("Port", value: Binding(
+                        get: { model.remote.port },
+                        set: { model.remote.port = $0 }
+                    ), format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 90)
+                    Spacer()
+                    Text(model.remote.running ? "Serving" : "Off")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let url = model.remote.url {
+                    HStack(alignment: .top, spacing: 16) {
+                        QRCodeView(text: url)
+                            .frame(width: 150, height: 150)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(url)
+                                .font(.caption.monospaced())
+                                .textSelection(.enabled)
+                                .lineLimit(4)
+                            HStack {
+                                Button("Copy URL") {
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(url, forType: .string)
+                                }
+                                Button("Open") {
+                                    if let url = URL(string: url) { NSWorkspace.shared.open(url) }
+                                }
+                                Button("New Token") {
+                                    model.remote.regenerateToken()
+                                }
+                            }
+                            .font(.caption)
+                            Text("Open this on a phone on the same network. The token is the password.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    Text("Turn this on to serve a local control page for sending prompts, stopping, and compacting the current task.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section {
+                Text("The control page stays on this Mac. It is not a cloud relay, and requests require the token shown above.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
+
+private struct QRCodeView: View {
+    let text: String
+
+    var body: some View {
+        if let image = makeImage() {
+            Image(nsImage: image)
+                .interpolation(.none)
+                .resizable()
+                .scaledToFit()
+                .padding(8)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        } else {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .overlay(Image(systemName: "qrcode").foregroundStyle(.secondary))
+        }
+    }
+
+    private func makeImage() -> NSImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(text.utf8)
+        filter.correctionLevel = "M"
+        guard let output = filter.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
+        let representation = NSCIImageRep(ciImage: scaled)
+        let image = NSImage(size: representation.size)
+        image.addRepresentation(representation)
+        return image
     }
 }
 
@@ -768,9 +1214,17 @@ private struct AdvancedSettingsView: View {
 private struct AboutSettingsView: View {
     var body: some View {
         VStack(spacing: 12) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 64, height: 64)
+            Group {
+                if let icon = Brand.icon {
+                    Image(nsImage: icon)
+                        .resizable()
+                } else {
+                    Image(systemName: "circle.hexagongrid.fill")
+                        .resizable()
+                        .foregroundStyle(Brand.bronze)
+                }
+            }
+            .frame(width: 64, height: 64)
 
             Text("Talos")
                 .font(.title2.weight(.semibold))

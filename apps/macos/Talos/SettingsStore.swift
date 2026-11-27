@@ -25,6 +25,7 @@ final class SettingsStore: ObservableObject {
     @Published private(set) var reasoningByModel: [String: String] = [:]
     @Published private(set) var contextWindowOverrides: [String: Int] = [:]
     @Published private(set) var savedKeys: Set<Provider> = []
+    @Published private(set) var mcpServers: [MCPServerConfig] = []
 
     @Published var approvalPolicy: ApprovalPolicy {
         didSet { defaults.set(approvalPolicy.rawValue, forKey: "approvalPolicy") }
@@ -115,6 +116,10 @@ final class SettingsStore: ObservableObject {
            let decoded = try? JSONDecoder().decode([String: Int].self, from: data) {
             contextWindowOverrides = decoded
         }
+        if let data = defaults.data(forKey: "mcpServers"),
+           let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data) {
+            mcpServers = decoded
+        }
 
         refreshKeys()
     }
@@ -189,6 +194,27 @@ final class SettingsStore: ObservableObject {
         if let data = try? JSONEncoder().encode(next) {
             defaults.set(data, forKey: "contextWindowOverrides")
         }
+    }
+
+    func addMCPServer(_ server: MCPServerConfig) {
+        mcpServers.append(server)
+        saveMCP()
+    }
+
+    func removeMCPServer(_ server: MCPServerConfig) {
+        mcpServers.removeAll { $0.id == server.id }
+        saveMCP()
+    }
+
+    func setMCPEnabled(_ server: MCPServerConfig, _ enabled: Bool) {
+        guard let index = mcpServers.firstIndex(where: { $0.id == server.id }) else { return }
+        mcpServers[index].enabled = enabled
+        saveMCP()
+    }
+
+    private func saveMCP() {
+        guard let data = try? JSONEncoder().encode(mcpServers) else { return }
+        defaults.set(data, forKey: "mcpServers")
     }
 
     func key(for provider: Provider) -> String? {

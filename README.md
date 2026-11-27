@@ -1,23 +1,28 @@
 # Talos
 
-A native macOS client for the models you choose. Talos is intentionally a
-wrapper: it does not add a persona or a system prompt, and each answer is
-labeled with the model that produced it.
+A native macOS agent client for the models you choose. Talos is a wrapper: it
+does not add a persona or system prompt of its own. Answers are labeled with the
+model that produced them.
 
-## Features
+## What is included
 
-- Local models through Ollama, with model size and parameter counts
-- Hosted models through OpenAI, Anthropic, and Google Gemini
-- Model, reasoning effort, and response speed next to the composer
-- Provider endpoint and key status one click from the prompt
-- API keys stored in the macOS Keychain
-- Native Settings window for models, providers, generation, and appearance of
-  the transcript
-- Streaming replies, stop, copy, and per-task model labels
-
-Shell, patch application, approvals, and computer use are not implemented yet.
-They are labeled **Not yet** in the app rather than exposed as non-working
-controls.
+- Local models through Ollama, plus OpenAI, Anthropic, and Google Gemini
+- Model controls beside the composer: model, only the reasoning options the
+  model actually exposes, response speed, provider state
+- Project switcher, project-scoped tasks, and a file browser with previews
+- Tools that work with every model: shell, file read/write, patch, file search,
+  document creation, web fetch/search, task plan, and computer use
+- Approval prompts, per-task “always allow”, sandbox modes, network control
+- Message queueing while a response is streaming, attachments, and inline
+  image/file previews
+- Context-window accounting, automatic and manual conversation compaction
+- Token usage history with a 12-week heatmap and per-model totals
+- Slash commands: `/new`, `/clear`, `/compact`, `/stop`, `/model`, `/queue`,
+  `/skills`, `/plugins`, `/mcp`, `/remote`, `/status`, `/usage`, `/help`
+- Skills, plugin bundles, and stdio MCP servers
+- Local phone control with a token-protected web page and QR code
+- Session persistence, notifications, appearance controls, and a native
+  sidebar Settings window
 
 ## Build
 
@@ -29,17 +34,40 @@ make run
 ```
 
 The Xcode project is checked in, so `open apps/macos/Talos.xcodeproj` also works.
-After changing `apps/macos/project.yml`, regenerate it with `make project`.
+After changing `apps/macos/project.yml`, run `make project`.
 
-## Hosted providers
+## Projects and tools
 
-Add an API key in **Settings → Providers**. OpenAI's base URL can point at any
-OpenAI-compatible service. ChatGPT Plus and Claude Pro subscriptions do not
-include API access for third-party apps, so hosted use requires an API key from
-the provider's developer console.
+Open a folder from the folder menu in the toolbar. The project folder becomes
+the workspace for shell commands, file edits, search, documents, and the file
+browser. Tools are provided by Talos, not by the model.
+
+Approvals and the sandbox are real: shell and file tools run under
+`sandbox-exec` for read-only and workspace-write modes, and network access is
+denied unless enabled. Computer use requires macOS Accessibility and Screen
+Recording permissions.
+
+## Skills, plugins, and MCP
+
+- Skills live in `~/Library/Application Support/Talos/skills` and the current
+  project's `.talos/skills` folder. Each skill is a folder with `SKILL.md`.
+- Plugins live in `~/Library/Application Support/Talos/plugins`. A `plugin.json`
+  can bundle skills and declare stdio MCP servers; plugin-bundled MCP is still
+  experimental.
+- MCP servers are configured in Settings → MCP. Their tools are exposed to every
+  model as `mcp__server__tool`.
+
+## Phone control
+
+Enable it in Settings → Remote and scan the QR code from a phone on the same
+network. The page can send prompts, stop the current turn, compact history, and
+show project/model/context/queue state. The token in the URL is required for
+every API call.
 
 ## Privacy
 
 Local requests go only to the Ollama server configured in Settings. Hosted
-requests go only to the selected provider. Keys stay in the macOS Keychain; the
-repository contains no credentials and no prompt history.
+requests go only to the selected provider. Keys stay in the macOS Keychain. The
+repository contains no credentials or prompt history.
+
+See [CODEX_PARITY.md](CODEX_PARITY.md) for the honest feature-by-feature status.

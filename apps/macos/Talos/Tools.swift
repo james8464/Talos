@@ -61,6 +61,17 @@ enum ToolValue: Sendable {
         if case .object(let value) = self { return value }
         return nil
     }
+
+    var anyValue: Any {
+        switch self {
+        case .string(let value): return value
+        case .number(let value): return value
+        case .bool(let value): return value
+        case .array(let values): return values.map(\.anyValue)
+        case .object(let values): return values.mapValues(\.anyValue)
+        case .null: return NSNull()
+        }
+    }
 }
 
 struct ToolCall: Sendable {
@@ -76,10 +87,14 @@ struct ToolCall: Sendable {
         switch name {
         case "shell":
             return string("command") ?? "Run a shell command"
-        case "read_file", "write_file", "view_image":
+        case "read_file", "write_file", "view_image", "create_document":
             return string("path") ?? name
         case "list_files":
             return string("path") ?? "Workspace"
+        case "search_files":
+            return string("query") ?? "Search files"
+        case "read_skill":
+            return string("name") ?? "Read a skill"
         case "apply_patch":
             let patch = string("patch") ?? ""
             return patch.split(separator: "\n").first.map(String.init) ?? "Apply a patch"
@@ -128,6 +143,8 @@ struct ToolContext: Sendable {
     let enabledComputerUse: Bool
     let enabledWeb: Bool
     let enabledPlan: Bool
+    let skills: [Skill]
+    let mcpTools: [MCPTool]
     let maxOutputCharacters = 30_000
 }
 
@@ -201,6 +218,8 @@ enum ToolPrompt {
             lines.append("- read_file: {\"path\":\"...\",\"start_line\":1,\"end_line\":200} Read a text file.")
             lines.append("- list_files: {\"path\":\".\",\"depth\":2,\"limit\":200} List files in the workspace.")
             lines.append("- write_file: {\"path\":\"...\",\"content\":\"...\"} Write a text file.")
+            lines.append("- create_document: {\"path\":\"notes/plan.md\",\"content\":\"...\",\"format\":\"md\"} Create a document from scratch (md, txt, html, csv, json, rtf, docx).")
+            lines.append("- search_files: {\"query\":\"...\",\"path\":\".\",\"glob\":\"*.swift\",\"limit\":100} Search text files in the project.")
             lines.append("- view_image: {\"path\":\"...\"} Show an image or file from disk to the user.")
             lines.append("- apply_patch: {\"patch\":\"...\"} Apply a unified diff inside the workspace.")
         }
@@ -213,6 +232,22 @@ enum ToolPrompt {
         }
         if context.enabledPlan {
             lines.append("- update_plan: {\"steps\":[{\"title\":\"...\",\"status\":\"pending\"|\"in_progress\"|\"completed\"}]} Replace the task plan.")
+        }
+        if !context.skills.isEmpty {
+            lines.append("")
+            lines.append("Skills (load the full instructions before applying one):")
+            for skill in context.skills {
+                let detail = skill.description.isEmpty ? skill.name : "\(skill.name): \(skill.description)"
+                lines.append("- \(detail)")
+            }
+            lines.append("- read_skill: {\"name\":\"...\"} Load a skill's full instructions.")
+        }
+        if !context.mcpTools.isEmpty {
+            lines.append("")
+            lines.append("MCP tools:")
+            for tool in context.mcpTools {
+                lines.append("- \(tool.toolName): \(tool.promptDescription)")
+            }
         }
         return lines.joined(separator: "\n")
     }
@@ -274,6 +309,12 @@ struct ToolRunner: Sendable {
             return listFiles(call)
         case "write_file":
             return writeFile(call)
+        case "create_document":
+            return await createDocument(call)
+        case "search_files":
+            return await searchFiles(call)
+        case "read_skill":
+            return readSkill(call)
         case "view_image":
             return viewImage(call)
         case "apply_patch":
@@ -389,6 +430,84 @@ struct ToolRunner: Sendable {
         } catch {
             return .fail(error.localizedDescription)
         }
+    }
+
+    private func createDocument(_ call: ToolCall) async -> ToolResult {
+        guard context.enabledFileEdits else { return .fail("File editing is disabled in Settings.") }
+        guard let path = call.string("path"), !path.isEmpty, let content = call.string("content") else {
+            return .fail("create_document requires path and content.")
+        }
+        let format = call.string("format") ?? URL(fileURLWithPath: path).pathExtension
+        let relative: String
+        if path.hasPrefix("/") {
+            relative = ProjectFileTree.relativePath(of: URL(fileURLWithPath: path), in: workspaceURL)
+        } else {
+            relative = path
+        }
+        let url = resolve(relative)
+        do {
+            try ensureWriteAllowed(url)
+            let created = try DocumentWriter.create(
+                name: relative,
+                format: format.isEmpty ? "md" : format,
+                content: content,
+                in: workspaceURL
+            )
+            return .ok("Created \(created.path).", attachment: created.path)
+        } catch {
+            return .fail(error.localizedDescription)
+        }
+    }
+
+    private func searchFiles(_ call: ToolCall) async -> ToolResult {
+        guard let query = call.string("query"), !query.isEmpty else {
+            return .fail("search_files requires a query.")
+        }
+        let root = resolve(call.string("path") ?? ".")
+        let limit = min(max(call.int("limit") ?? 100, 1), 500)
+        var arguments = ["-R", "-n", "--binary-files=without-match"]
+        if let glob = call.string("glob"), !glob.isEmpty {
+            arguments.append("--include=\(glob)")
+        }
+        arguments.append(contentsOf: ["--", query, root.path])
+        let result = await runProcess(
+            "/usr/bin/grep",
+            arguments,
+            directory: workspaceURL,
+            timeout: 30
+        )
+        if result.code == 1 {
+            return .ok("No matches for \(query).")
+        }
+        guard result.code == 0 else {
+            return .fail(result.text.isEmpty ? "Search failed." : result.text)
+        }
+        let lines = result.text
+            .split(separator: "\n")
+            .map(String.init)
+            .filter { line in
+                !line.contains("/.git/")
+                    && !line.contains("/node_modules/")
+                    && !line.contains("/.build/")
+                    && !line.contains("/DerivedData/")
+            }
+            .prefix(limit)
+        return .ok(lines.joined(separator: "\n"))
+    }
+
+    private func readSkill(_ call: ToolCall) -> ToolResult {
+        guard let name = call.string("name"), !name.isEmpty else {
+            return .fail("read_skill requires a name.")
+        }
+        guard let skill = context.skills.first(where: {
+            $0.name.caseInsensitiveCompare(name) == .orderedSame || $0.id == name
+        }) else {
+            return .fail("No enabled skill matches '\(name)'.")
+        }
+        guard let text = try? String(contentsOfFile: skill.path, encoding: .utf8) else {
+            return .fail("Could not read \(skill.path).")
+        }
+        return .ok(String(text.prefix(60_000)))
     }
 
     private func viewImage(_ call: ToolCall) -> ToolResult {

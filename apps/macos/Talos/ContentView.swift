@@ -30,6 +30,9 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigation) {
+                ProjectMenu()
+            }
+            ToolbarItem(placement: .navigation) {
                 Button {
                     model.newSession()
                 } label: {
@@ -67,6 +70,44 @@ struct ContentView: View {
                 model.resolveApproval(decision)
             }
         }
+        .sheet(isPresented: $model.showProjectBrowser) {
+            ProjectBrowserView()
+                .environmentObject(model)
+                .environmentObject(model.settings)
+                .environmentObject(model.usage)
+        }
+    }
+}
+
+private struct ProjectMenu: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Menu {
+            Section("Projects") {
+                ForEach(model.projects.sorted) { project in
+                    Button {
+                        model.openProject(project)
+                    } label: {
+                        if project.path == model.currentProject?.path {
+                            Label(project.name, systemImage: "checkmark")
+                        } else {
+                            Text(project.name)
+                        }
+                    }
+                }
+            }
+            Divider()
+            Button("Open Folder…") { model.chooseProject() }
+            Button("Browse Files…") { model.showProjectBrowser = true }
+            Divider()
+            Button("Reveal in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting([model.projectURL])
+            }
+        } label: {
+            Label(model.currentProject?.name ?? "Project", systemImage: "folder")
+        }
+        .help(model.projectURL.path)
     }
 }
 
@@ -965,9 +1006,17 @@ private struct EmptyTask: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                Image(nsImage: NSApp.applicationIconImage)
-                    .resizable()
-                    .frame(width: 40, height: 40)
+                Group {
+                    if let icon = Brand.icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                    } else {
+                        Image(systemName: "circle.hexagongrid.fill")
+                            .resizable()
+                            .foregroundStyle(Brand.bronze)
+                    }
+                }
+                .frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Talos")
                         .font(.title3.weight(.semibold))
@@ -1023,6 +1072,17 @@ private struct Inspector: View {
 
     var body: some View {
         Form {
+            Section("Project") {
+                LabeledContent("Name", value: model.currentProject?.name ?? "Project")
+                LabeledContent("Folder") {
+                    Text(model.projectURL.path)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section("Model") {
                 LabeledContent("Provider", value: model.choice.provider.title)
                 LabeledContent("Model", value: model.choice.id)

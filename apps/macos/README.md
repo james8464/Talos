@@ -1,63 +1,73 @@
 # Talos for macOS
 
-A native SwiftUI client for the models you choose. Talos is a wrapper: it does
-not add a persona or a system prompt, and the transcript labels answers with the
-model that produced them.
+A native SwiftUI model client and local agent. The app owns the tool runtime;
+tools work regardless of which model is selected.
 
 ## Requirements
 
 - macOS 14 or later
 - Xcode 16 or later
 - [Ollama](https://ollama.com) for local models
-- API keys for OpenAI, Anthropic, or Google Gemini if you use hosted models
+- API keys for OpenAI, Anthropic, or Google Gemini for hosted models
 
 ## Build and run
-
-The Xcode project is checked in. Open `Talos.xcodeproj`, or use the root
-`Makefile`:
 
 ```sh
 make run
 ```
 
-If you change `project.yml`, regenerate the project first:
+Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 
-```sh
-make project
-```
+## Layout
 
-## Models
+- `Talos/AppModel.swift` — sessions, turns, queue, approvals, compaction,
+  projects, usage, MCP, skills, remote
+- `Talos/Tools.swift` — sandboxed process execution, tools, prompt protocol
+- `Talos/Projects.swift` — projects, file tree, document writer
+- `Talos/Skills.swift` — SKILL.md discovery
+- `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
+- `Talos/MCP.swift` — stdio MCP client and tool bridge
+- `Talos/RemoteServer.swift` — local phone-control HTTP server
+- `Talos/SettingsView.swift` — sidebar Settings window
 
-Model selection lives in the composer, next to the prompt:
+## Tools
 
-- **Model**: local Ollama models with size and parameter count, plus the model
-  configured for each hosted provider
-- **Reasoning**: Off, Low, Medium, High. Applied as Ollama thinking, OpenAI
-  reasoning effort, or an Anthropic thinking budget where the model supports it.
-- **Speed**: Fast, Balanced, Thorough. Sets the output budget.
-- **Provider**: endpoint, key status, and a shortcut to Settings
+`shell`, `read_file`, `write_file`, `list_files`, `search_files`,
+`apply_patch`, `create_document`, `view_image`, `computer`, `web_fetch`,
+`web_search`, `update_plan`, `read_skill`, and MCP tools. The model calls them
+through a fenced `tool` block, so even models without native function calling
+can use them.
 
-Settings has five tabs:
+Approval and sandbox behavior is configured in Settings → Tools. The shell tool
+uses `/usr/bin/sandbox-exec`; read-only and workspace-write modes deny writes
+outside the workspace and temporary folders. Network is denied unless enabled.
 
-- **General**: active model, reasoning, speed, inspector
-- **Models**: Ollama server, discovered local models, cloud endpoints and models
-- **Providers**: API keys stored in the macOS Keychain
-- **Advanced**: temperature, local model keep-alive, reset
-- **About**: version and provider links
+## Model capabilities
 
-API keys can also be pointed at any OpenAI-compatible endpoint by changing the
-base URL in **Models**. ChatGPT Plus and Claude Pro subscriptions do not include
-API access for third-party apps, so hosted use requires an API key.
+Reasoning controls come from the selected model:
 
-## Current scope
+- Ollama: `/api/show` capabilities. Thinking models get Off/On; others hide the
+  control.
+- OpenAI: reasoning models get Low/Medium/High.
+- Anthropic: Claude thinking models get a token budget.
+- Gemini: no reasoning control is shown until its compatible endpoint exposes
+  one in this client.
 
-Chat streaming, model discovery, provider configuration, per-message model
-labels, and a native Settings window. Shell, patch application, approvals, and
-computer use are not implemented yet and are shown as **Not yet** rather than as
-fake enabled controls.
+No model gets a fake reasoning level.
 
-## Privacy
+## Context and usage
 
-Local requests go only to the Ollama server configured in Settings. Hosted
-requests go only to the selected provider. Keys are stored in the user's macOS
-Keychain, not in a file in this repository.
+Context usage is estimated from the prompt and shown beside the composer. When
+automatic compaction is enabled, Talos summarizes older messages before the
+window fills. Providers that report token usage are recorded exactly; other
+counts are marked estimated. Settings → Usage shows the totals and a 12-week
+heatmap.
+
+## Phone control
+
+Settings → Remote starts a local HTTP page. It is protected by a random token
+and can send, stop, and compact the current task. No cloud relay is involved.
+
+## Parity
+
+See the repository [CODEX_PARITY.md](../../CODEX_PARITY.md).
