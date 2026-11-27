@@ -41,6 +41,7 @@ struct ContentView: View {
                 .help("New Task (⌘N)")
             }
             ToolbarItemGroup(placement: .primaryAction) {
+                GitButton()
                 Button {
                     model.stop()
                 } label: {
@@ -76,6 +77,15 @@ struct ContentView: View {
                 .environmentObject(model.settings)
                 .environmentObject(model.usage)
         }
+        .sheet(isPresented: $model.showGitPanel) {
+            GitPanelView()
+                .environmentObject(model)
+        }
+        .sheet(item: $model.renameTarget) { session in
+            RenameSheet(session: session) { title in
+                model.commitRename(session.id, title: title)
+            }
+        }
     }
 }
 
@@ -100,6 +110,7 @@ private struct ProjectMenu: View {
             Divider()
             Button("Open Folder…") { model.chooseProject() }
             Button("Browse Files…") { model.showProjectBrowser = true }
+            Button("Review Changes…") { model.showGitPanel = true }
             Divider()
             Button("Reveal in Finder") {
                 NSWorkspace.shared.activateFileViewerSelecting([model.projectURL])
@@ -108,6 +119,38 @@ private struct ProjectMenu: View {
             Label(model.currentProject?.name ?? "Project", systemImage: "folder")
         }
         .help(model.projectURL.path)
+    }
+}
+
+private struct GitButton: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Button {
+            model.showGitPanel = true
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.triangle.branch")
+                if let branch = model.gitStatus.branch {
+                    Text(branch)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: 100, alignment: .leading)
+                } else {
+                    Text("Changes")
+                }
+                if !model.gitStatus.files.isEmpty {
+                    Text("\(model.gitStatus.files.count)")
+                        .font(.caption2.monospacedDigit())
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Brand.bronze.opacity(0.25)))
+                }
+            }
+            .font(.caption)
+        }
+        .buttonStyle(.borderless)
+        .help("Review working tree changes")
     }
 }
 
@@ -121,17 +164,55 @@ private struct Sidebar: View {
                     SidebarRow(session: session)
                         .tag(session.id)
                         .contextMenu {
+                            Button("Rename…") { model.beginRename(session.id) }
+                            Button("Fork") { model.fork(session.id) }
+                            Button("Archive") { model.archive(session.id) }
+                            Divider()
                             Button("Delete", role: .destructive) {
                                 model.delete(session.id)
                             }
                         }
                 }
             }
+
+            if !model.archivedSessions.isEmpty {
+                Section("Archived") {
+                    if model.showArchived {
+                        ForEach(model.archivedSessions) { session in
+                            SidebarRow(session: session)
+                                .tag(session.id)
+                                .opacity(0.7)
+                                .contextMenu {
+                                    Button("Unarchive") { model.unarchive(session.id) }
+                                    Button("Rename…") { model.beginRename(session.id) }
+                                    Button("Fork") { model.fork(session.id) }
+                                    Divider()
+                                    Button("Delete", role: .destructive) {
+                                        model.delete(session.id)
+                                    }
+                                }
+                        }
+                    } else {
+                        Button("Show \(model.archivedSessions.count) Archived") {
+                            model.showArchived = true
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    if model.showArchived {
+                        Button("Hide Archived") {
+                            model.showArchived = false
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
         .listStyle(.sidebar)
         .searchable(text: $model.search, placement: .sidebar, prompt: "Search Tasks")
         .overlay {
-            if model.filteredSessions.isEmpty {
+            if model.filteredSessions.isEmpty && model.archivedSessions.isEmpty {
                 if model.search.isEmpty {
                     ContentUnavailableView(
                         "No Tasks",
@@ -757,6 +838,12 @@ private struct TaskView: View {
         }
         .background(Color(nsColor: .textBackgroundColor))
         .onAppear { composerFocused.wrappedValue = true }
+        .onChange(of: model.pendingDraft) {
+            guard let text = model.pendingDraft else { return }
+            draft = text
+            model.pendingDraft = nil
+            composerFocused.wrappedValue = true
+        }
     }
 
     private var transcript: some View {
@@ -767,8 +854,16 @@ private struct TaskView: View {
                         EmptyTask()
                     }
                     ForEach(visibleMessages) { message in
-                        MessageRow(message: message)
-                            .id(message.id)
+                        MessageRow(
+                            message: message,
+                            onEdit: message.role == .user ? {
+                                model.editMessage(session.id, message.id)
+                            } : nil,
+                            onRetry: message.role == .assistant ? {
+                                model.retryLastTurn()
+                            } : nil
+                        )
+                        .id(message.id)
                     }
                 }
                 .frame(maxWidth: 760, alignment: .leading)
@@ -800,6 +895,8 @@ private struct TaskView: View {
 private struct MessageRow: View {
     @EnvironmentObject private var settings: SettingsStore
     let message: ChatMessage
+    var onEdit: (() -> Void)? = nil
+    var onRetry: (() -> Void)? = nil
     @State private var hovering = false
 
     var body: some View {
@@ -852,6 +949,12 @@ private struct MessageRow: View {
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
             .contextMenu {
+                if let onEdit {
+                    Button("Edit and Resend") { onEdit() }
+                }
+                if let onRetry {
+                    Button("Retry") { onRetry() }
+                }
                 if !message.text.isEmpty {
                     Button("Copy") { copy() }
                 }
@@ -1036,6 +1139,44 @@ private struct EmptyTask: View {
     }
 }
 
+private struct RenameSheet: View {
+    let session: Session
+    let save: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var title: String
+
+    init(session: Session, save: @escaping (String) -> Void) {
+        self.session = session
+        self.save = save
+        _title = State(initialValue: session.title)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Rename Task")
+                .font(.headline)
+            TextField("Task name", text: $title)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit(submit)
+            HStack {
+                Spacer()
+                Button("Cancel", role: .cancel) { dismiss() }
+                Button("Save", action: submit)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 380)
+    }
+
+    private func submit() {
+        save(title)
+        dismiss()
+    }
+}
+
 private struct ApprovalSheet: View {
     let request: ApprovalRequest
     let resolve: (ApprovalDecision) -> Void
@@ -1081,6 +1222,10 @@ private struct Inspector: View {
                         .truncationMode(.middle)
                         .foregroundStyle(.secondary)
                 }
+                if let branch = model.gitStatus.branch {
+                    LabeledContent("Branch", value: branch)
+                }
+                LabeledContent("Changes", value: model.gitStatus.files.isEmpty ? "Clean" : "\(model.gitStatus.files.count)")
             }
 
             Section("Model") {

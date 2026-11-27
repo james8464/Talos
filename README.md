@@ -9,7 +9,8 @@ model that produced them.
 - Local models through Ollama, plus OpenAI, Anthropic, and Google Gemini
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
-- Project switcher, project-scoped tasks, and a file browser with previews
+- Project switcher, project-scoped tasks, a file browser with previews, and a
+  Git changes panel with colored diffs, staging, and commit
 - Tools that work with every model: shell, file read/write, patch, file search,
   document creation, web fetch/search, task plan, and computer use
 - Approval prompts, per-task “always allow”, sandbox modes, network control
@@ -21,8 +22,8 @@ model that produced them.
   `/skills`, `/plugins`, `/mcp`, `/remote`, `/status`, `/usage`, `/help`
 - Skills, plugin bundles, and stdio MCP servers
 - Local phone control with a token-protected web page and QR code
-- Session persistence, notifications, appearance controls, and a native
-  sidebar Settings window
+- Session persistence with archive, fork, rename, retry, and edit-and-resend
+- Notifications, appearance controls, and a native sidebar Settings window
 
 ## Build
 
@@ -54,8 +55,9 @@ Recording permissions.
 - Plugins live in `~/Library/Application Support/Talos/plugins`. A `plugin.json`
   can bundle skills and declare stdio MCP servers; plugin-bundled MCP is still
   experimental.
-- MCP servers are configured in Settings → MCP. Their tools are exposed to every
-  model as `mcp__server__tool`.
+- MCP servers are configured in Settings → MCP. Stdio and Streamable HTTP
+  endpoints are supported. Their tools are exposed to every model as
+  `mcp__server__tool`.
 
 ## Phone control
 

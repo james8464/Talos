@@ -3,9 +3,10 @@ import Foundation
 struct MCPServerConfig: Identifiable, Codable, Equatable, Sendable {
     var id = UUID()
     var name: String
-    var command: String
+    var command: String = ""
     var args: [String] = []
     var env: [String: String] = [:]
+    var url: String? = nil
     var enabled = true
 }
 
@@ -25,6 +26,21 @@ struct MCPTool: Identifiable, Hashable, Sendable {
     var promptDescription: String {
         let schema = inputSchema.count > 600 ? String(inputSchema.prefix(600)) + "…" : inputSchema
         return "\(description.isEmpty ? name : description) Arguments: \(schema)"
+    }
+
+    static func make(raw: [String: Any], config: MCPServerConfig) -> MCPTool? {
+        guard let name = raw["name"] as? String else { return nil }
+        let description = raw["description"] as? String ?? ""
+        let schemaObject = raw["inputSchema"] as? [String: Any] ?? [:]
+        let schemaData = try? JSONSerialization.data(withJSONObject: schemaObject, options: [.sortedKeys])
+        let schema = schemaData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        return MCPTool(
+            serverID: config.id,
+            serverName: config.name,
+            name: name,
+            description: description,
+            inputSchema: schema
+        )
     }
 }
 
@@ -108,20 +124,7 @@ actor MCPClient {
               let rawTools = result["tools"] as? [[String: Any]] else {
             throw MCPError.message("\(config.name) did not return a tools list.")
         }
-        return rawTools.compactMap { raw in
-            guard let name = raw["name"] as? String else { return nil }
-            let description = raw["description"] as? String ?? ""
-            let schemaObject = raw["inputSchema"] as? [String: Any] ?? [:]
-            let schemaData = try? JSONSerialization.data(withJSONObject: schemaObject, options: [.sortedKeys])
-            let schema = schemaData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-            return MCPTool(
-                serverID: config.id,
-                serverName: config.name,
-                name: name,
-                description: description,
-                inputSchema: schema
-            )
-        }
+        return rawTools.compactMap { MCPTool.make(raw: $0, config: config) }
     }
 
     func callTool(name: String, arguments: [String: Any]) async throws -> String {
@@ -238,8 +241,147 @@ actor MCPClient {
     }
 }
 
+actor MCPHTTPClient {
+    private let config: MCPServerConfig
+    private let endpoint: URL
+    private var sessionID: String?
+    private var nextID = 1
+
+    init(config: MCPServerConfig, endpoint: URL) {
+        self.config = config
+        self.endpoint = endpoint
+    }
+
+    func start() async throws {
+        let response = try await request("initialize", params: [
+            "protocolVersion": "2024-11-05",
+            "capabilities": [:],
+            "clientInfo": ["name": "Talos", "version": "0.4"],
+        ])
+        guard response?["result"] is [String: Any] else {
+            throw MCPError.message("\(config.name) rejected the MCP initialize handshake.")
+        }
+        try await notify("notifications/initialized")
+    }
+
+    func listTools() async throws -> [MCPTool] {
+        guard let response = try await request("tools/list"),
+              let result = response["result"] as? [String: Any],
+              let rawTools = result["tools"] as? [[String: Any]] else {
+            throw MCPError.message("\(config.name) did not return a tools list.")
+        }
+        return rawTools.compactMap { MCPTool.make(raw: $0, config: config) }
+    }
+
+    func callTool(name: String, arguments: [String: Any]) async throws -> String {
+        guard let response = try await request("tools/call", params: [
+            "name": name,
+            "arguments": arguments,
+        ]), let result = response["result"] as? [String: Any] else {
+            throw MCPError.message("No result from \(config.name).")
+        }
+        if let isError = result["isError"] as? Bool, isError {
+            throw MCPError.message(renderContent(result["content"]))
+        }
+        return renderContent(result["content"])
+    }
+
+    func stop() {}
+
+    private func notify(_ method: String) async throws {
+        _ = try await send(["jsonrpc": "2.0", "method": method])
+    }
+
+    private func request(_ method: String, params: [String: Any]? = nil) async throws -> [String: Any]? {
+        let id = nextID
+        nextID += 1
+        return try await send([
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": method,
+            "params": params ?? [:],
+        ])
+    }
+
+    private func send(_ object: [String: Any]) async throws -> [String: Any]? {
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json, text/event-stream", forHTTPHeaderField: "Accept")
+        request.setValue("2024-11-05", forHTTPHeaderField: "MCP-Protocol-Version")
+        if let sessionID {
+            request.setValue(sessionID, forHTTPHeaderField: "Mcp-Session-Id")
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: object)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw MCPError.message("\(config.name) returned no response.")
+        }
+        if let id = http.value(forHTTPHeaderField: "Mcp-Session-Id") {
+            sessionID = id
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw MCPError.message("\(config.name) answered \(http.statusCode).")
+        }
+        guard !data.isEmpty else { return nil }
+        let contentType = http.value(forHTTPHeaderField: "Content-Type") ?? ""
+        if contentType.contains("text/event-stream") {
+            let text = String(decoding: data, as: UTF8.self)
+            for line in text.components(separatedBy: "\n") {
+                guard line.hasPrefix("data:") else { continue }
+                let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                if let payloadData = payload.data(using: .utf8),
+                   let object = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any] {
+                    return object
+                }
+            }
+            throw MCPError.message("\(config.name) sent no JSON-RPC event.")
+        }
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    private func renderContent(_ raw: Any?) -> String {
+        guard let items = raw as? [[String: Any]] else {
+            return String(describing: raw ?? "No content")
+        }
+        return items.compactMap { item -> String? in
+            if let text = item["text"] as? String { return text }
+            if let resource = item["resource"] as? [String: Any],
+               let text = resource["text"] as? String { return text }
+            return nil
+        }.joined(separator: "\n")
+    }
+}
+
 actor MCPManager {
-    private var clients: [UUID: MCPClient] = [:]
+    private enum Connection: Sendable {
+        case stdio(MCPClient)
+        case http(MCPHTTPClient)
+
+        func stop() async {
+            switch self {
+            case .stdio(let client): await client.stop()
+            case .http(let client): await client.stop()
+            }
+        }
+
+        func listTools() async throws -> [MCPTool] {
+            switch self {
+            case .stdio(let client): return try await client.listTools()
+            case .http(let client): return try await client.listTools()
+            }
+        }
+
+        func callTool(name: String, arguments: [String: Any]) async throws -> String {
+            switch self {
+            case .stdio(let client): return try await client.callTool(name: name, arguments: arguments)
+            case .http(let client): return try await client.callTool(name: name, arguments: arguments)
+            }
+        }
+    }
+
+    private var clients: [UUID: Connection] = [:]
     private(set) var tools: [MCPTool] = []
 
     func connect(_ configs: [MCPServerConfig]) async -> (tools: [MCPTool], errors: [String]) {
@@ -250,16 +392,27 @@ actor MCPManager {
 
         var discovered: [MCPTool] = []
         var errors: [String] = []
-        for config in configs where config.enabled && !config.command.isEmpty {
-            let client = MCPClient(config: config)
+        for config in configs where config.enabled {
+            let hasURL = config.url?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            guard hasURL || !config.command.isEmpty else { continue }
             do {
-                try await client.start()
-                let serverTools = try await client.listTools()
-                clients[config.id] = client
+                let connection: Connection
+                let serverTools: [MCPTool]
+                if let rawURL = config.url, let url = URL(string: rawURL), hasURL {
+                    let client = MCPHTTPClient(config: config, endpoint: url)
+                    try await client.start()
+                    serverTools = try await client.listTools()
+                    connection = .http(client)
+                } else {
+                    let client = MCPClient(config: config)
+                    try await client.start()
+                    serverTools = try await client.listTools()
+                    connection = .stdio(client)
+                }
+                clients[config.id] = connection
                 discovered.append(contentsOf: serverTools)
             } catch {
                 errors.append("\(config.name): \(error.localizedDescription)")
-                await client.stop()
             }
         }
         tools = discovered

@@ -24,9 +24,10 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
   projects, usage, MCP, skills, remote
 - `Talos/Tools.swift` — sandboxed process execution, tools, prompt protocol
 - `Talos/Projects.swift` — projects, file tree, document writer
+- `Talos/Git.swift` and `GitPanel.swift` — status, diff, staging, commit
 - `Talos/Skills.swift` — SKILL.md discovery
 - `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
-- `Talos/MCP.swift` — stdio MCP client and tool bridge
+- `Talos/MCP.swift` — stdio and Streamable HTTP MCP client and tool bridge
 - `Talos/RemoteServer.swift` — local phone-control HTTP server
 - `Talos/SettingsView.swift` — sidebar Settings window
 

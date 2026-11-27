@@ -149,16 +149,17 @@ struct Session: Identifiable, Codable, Equatable {
     var plan: [PlanStep] = []
     var queue: [QueuedPrompt] = []
     var approvedTools: [String] = []
+    var archived = false
     var createdAt = Date()
     var updatedAt = Date()
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, projectPath, messages, plan, queue, approvedTools, createdAt, updatedAt
+        case id, title, projectPath, messages, plan, queue, approvedTools, archived, createdAt, updatedAt
     }
 
     init(id: UUID = UUID(), title: String, projectPath: String = "", messages: [ChatMessage] = [],
          plan: [PlanStep] = [], queue: [QueuedPrompt] = [], approvedTools: [String] = [],
-         createdAt: Date = Date(), updatedAt: Date = Date()) {
+         archived: Bool = false, createdAt: Date = Date(), updatedAt: Date = Date()) {
         self.id = id
         self.title = title
         self.projectPath = projectPath
@@ -166,6 +167,7 @@ struct Session: Identifiable, Codable, Equatable {
         self.plan = plan
         self.queue = queue
         self.approvedTools = approvedTools
+        self.archived = archived
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -179,6 +181,7 @@ struct Session: Identifiable, Codable, Equatable {
         plan = try container.decodeIfPresent([PlanStep].self, forKey: .plan) ?? []
         queue = try container.decodeIfPresent([QueuedPrompt].self, forKey: .queue) ?? []
         approvedTools = try container.decodeIfPresent([String].self, forKey: .approvedTools) ?? []
+        archived = try container.decodeIfPresent(Bool.self, forKey: .archived) ?? false
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
     }

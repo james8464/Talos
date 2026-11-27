@@ -20,9 +20,11 @@
 		4BB116C270D7CB0DC5499BD5 /* RemoteServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */; };
 		59EFBCD216961E06356D37D5 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70913AB772F308657E509F42 /* Providers.swift */; };
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
+		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
 		8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF7DCED466867A6BC71FB24 /* SettingsView.swift */; };
 		8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B5B87B005EEE76F31442B1 /* Tools.swift */; };
 		96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */; };
+		974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */; };
 		A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E3AB66594CCF5305513D55 /* Projects.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6301A0926D7044DADE1CB7C2 /* Talos.icns */; };
@@ -38,6 +40,7 @@
 		2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPersistence.swift; sourceTree = "<group>"; };
 		420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plugins.swift; sourceTree = "<group>"; };
 		57E3AB66594CCF5305513D55 /* Projects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Projects.swift; sourceTree = "<group>"; };
+		5952B2988ACA2B10007C9244 /* Git.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Git.swift; sourceTree = "<group>"; };
 		5C064999B0D1F92F7B32F537 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		5D2AC40CFA47F5E6168180BB /* TalosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosApp.swift; sourceTree = "<group>"; };
 		6301A0926D7044DADE1CB7C2 /* Talos.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Talos.icns; sourceTree = "<group>"; };
@@ -47,6 +50,7 @@
 		847BD0AAE243B78A20C79D30 /* MCP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCP.swift; sourceTree = "<group>"; };
 		88120A756923F2A3457A372B /* Skills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Skills.swift; sourceTree = "<group>"; };
 		98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalog.swift; sourceTree = "<group>"; };
+		9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitPanel.swift; sourceTree = "<group>"; };
 		AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		AD1122852660CD8181149806 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BD0D8CB4E3107DD1D9D04F0C /* Talos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Talos.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,6 +77,8 @@
 				C09A4D0139081FED1D948312 /* AppModel.swift */,
 				C0DA27C786B558AC4F245F39 /* Brand.swift */,
 				AD1122852660CD8181149806 /* ContentView.swift */,
+				5952B2988ACA2B10007C9244 /* Git.swift */,
+				9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */,
 				C7B210FBD6286CFA7711C157 /* Info.plist */,
 				EB1A617E407672D5729425D2 /* Keychain.swift */,
 				847BD0AAE243B78A20C79D30 /* MCP.swift */,
@@ -183,6 +189,8 @@
 				2D8A0471734DB5FDB9BC3292 /* AppModel.swift in Sources */,
 				D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
+				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,
+				974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */,
 				2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */,
 				6790212F8FC205B737DC983A /* MCP.swift in Sources */,
 				96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */,

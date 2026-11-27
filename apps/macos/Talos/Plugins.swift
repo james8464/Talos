@@ -75,14 +75,17 @@ final class PluginStore: ObservableObject {
             var servers: [MCPServerConfig] = []
             if let rawServers = raw["mcpServers"] as? [[String: Any]] {
                 for server in rawServers {
-                    guard let command = server["command"] as? String, !command.isEmpty else { continue }
+                    let command = server["command"] as? String ?? ""
+                    let url = server["url"] as? String
+                    guard !command.isEmpty || (url?.isEmpty == false) else { continue }
                     let args = (server["args"] as? [Any])?.compactMap { $0 as? String } ?? []
                     let env = (server["env"] as? [String: Any])?.compactMapValues { $0 as? String } ?? [:]
                     servers.append(MCPServerConfig(
                         name: server["name"] as? String ?? "MCP",
                         command: command,
                         args: args,
-                        env: env
+                        env: env,
+                        url: url
                     ))
                 }
             }

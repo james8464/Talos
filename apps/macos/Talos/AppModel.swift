@@ -45,6 +45,11 @@ final class AppModel: ObservableObject {
     @Published var currentProject: Project?
     @Published var mcpTools: [MCPTool] = []
     @Published var mcpStatus = "No MCP servers"
+    @Published var gitStatus = GitStatus()
+    @Published var showGitPanel = false
+    @Published var showArchived = false
+    @Published var renameTarget: Session?
+    @Published var pendingDraft: String?
 
     let settings = SettingsStore()
     let usage = UsageStore()
@@ -136,6 +141,7 @@ final class AppModel: ObservableObject {
             await refreshChoices()
             await refreshCapabilities()
             await reloadMCP()
+            await refreshGit()
         }
     }
 
@@ -173,10 +179,15 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func refreshGit() async {
+        gitStatus = await GitService.status(in: projectURL)
+    }
+
     func openProject(_ project: Project) {
         currentProject = projects.open(path: project.path)
         settings.workspacePath = project.path
         reloadSkills()
+        Task { await refreshGit() }
         if let latest = sessions
             .filter({ $0.projectPath == project.path })
             .max(by: { $0.updatedAt < $1.updatedAt }) {
@@ -201,12 +212,17 @@ final class AppModel: ObservableObject {
 
     var filteredSessions: [Session] {
         let projectPath = currentProject?.path ?? settings.workspacePath
-        let scoped = sessions.filter { $0.projectPath == projectPath }
+        let scoped = sessions.filter { $0.projectPath == projectPath && !$0.archived }
         guard !search.isEmpty else { return scoped }
         return scoped.filter {
             $0.title.localizedCaseInsensitiveContains(search) ||
             $0.preview.localizedCaseInsensitiveContains(search)
         }
+    }
+
+    var archivedSessions: [Session] {
+        let projectPath = currentProject?.path ?? settings.workspacePath
+        return sessions.filter { $0.projectPath == projectPath && $0.archived }
     }
 
     var selected: Session? {
@@ -254,9 +270,91 @@ final class AppModel: ObservableObject {
 
     func delete(_ id: UUID) {
         sessions.removeAll { $0.id == id }
-        if selectedID == id { selectedID = sessions.first?.id }
+        if selectedID == id { selectedID = filteredSessions.first?.id ?? sessions.first?.id }
         if sessions.isEmpty { newSession() }
         saveSessions()
+    }
+
+    func archive(_ id: UUID) {
+        guard let index = sessions.firstIndex(where: { $0.id == id }) else { return }
+        sessions[index].archived = true
+        sessions[index].updatedAt = Date()
+        if selectedID == id {
+            selectedID = filteredSessions.first?.id
+        }
+        saveSessions()
+    }
+
+    func unarchive(_ id: UUID) {
+        guard let index = sessions.firstIndex(where: { $0.id == id }) else { return }
+        sessions[index].archived = false
+        sessions[index].updatedAt = Date()
+        selectedID = id
+        saveSessions()
+    }
+
+    func beginRename(_ id: UUID) {
+        renameTarget = sessions.first { $0.id == id }
+    }
+
+    func commitRename(_ id: UUID, title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let index = sessions.firstIndex(where: { $0.id == id }) else { return }
+        sessions[index].title = trimmed
+        sessions[index].updatedAt = Date()
+        renameTarget = nil
+        saveSessions()
+    }
+
+    func fork(_ id: UUID) {
+        guard let source = sessions.first(where: { $0.id == id }) else { return }
+        let copiedMessages = source.messages.map { message in
+            ChatMessage(
+                role: message.role,
+                text: message.text,
+                isStreaming: false,
+                model: message.model,
+                toolName: message.toolName,
+                toolStatus: message.toolStatus,
+                attachmentPath: message.attachmentPath,
+                attachments: message.attachments
+            )
+        }
+        var fork = Session(
+            title: "\(source.title) fork",
+            projectPath: source.projectPath,
+            messages: copiedMessages,
+            plan: source.plan,
+            approvedTools: source.approvedTools
+        )
+        fork.updatedAt = Date()
+        sessions.insert(fork, at: 0)
+        selectedID = fork.id
+        saveSessions()
+    }
+
+    func editMessage(_ sessionID: UUID, _ messageID: UUID) {
+        guard !isStreaming,
+              let index = sessions.firstIndex(where: { $0.id == sessionID }),
+              let messageIndex = sessions[index].messages.firstIndex(where: { $0.id == messageID }),
+              sessions[index].messages[messageIndex].role == .user else { return }
+        let text = sessions[index].messages[messageIndex].text
+        sessions[index].messages.removeSubrange(messageIndex...)
+        sessions[index].updatedAt = Date()
+        pendingDraft = text
+        saveSessions()
+    }
+
+    func retryLastTurn() {
+        guard !isStreaming, let id = selectedID,
+              let index = sessions.firstIndex(where: { $0.id == id }) else { return }
+        guard let userIndex = sessions[index].messages.lastIndex(where: { $0.role == .user }) else { return }
+        let text = sessions[index].messages[userIndex].text
+        let attachments = sessions[index].messages[userIndex].attachments
+        sessions[index].messages.removeSubrange(userIndex...)
+        sessions[index].updatedAt = Date()
+        saveSessions()
+        send(text, attachments: attachments)
     }
 
     func clearHistory() {
@@ -612,6 +710,7 @@ final class AppModel: ObservableObject {
                 playCompletionFeedback()
                 startNextQueued(sessionID)
             }
+            Task { await refreshGit() }
         }
 
         for _ in 0..<settings.maxToolSteps {

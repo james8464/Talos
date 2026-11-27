@@ -13,11 +13,12 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Provider setup | Editable base URL, model, discovery, Keychain API keys |
 | Reasoning effort | Only options reported or supported by the selected model |
 | Response speed | Fast / Balanced / Thorough output budgets |
-| Chat | Streaming, stop, per-message model labels, copy |
+| Chat | Streaming, stop, per-message model labels, copy, retry, edit-and-resend |
 | Message queue | Send while streaming; queue strip, remove, clear, auto-consume |
 | Attachments | File picker, file/image chips, inline image previews |
 | Projects | Project switcher, recent projects, project-scoped tasks |
 | File browser | Lazy project tree, text/image preview, open/reveal, new file |
+| Git review | Branch/status, changed files, colored diff, stage all, commit |
 | Documents | `create_document` for md, txt, html, csv, json, rtf, docx |
 | Shell | Sandboxed zsh commands under workspace root |
 | Files | Read with line ranges, write, list, search |
@@ -35,10 +36,10 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/model`, `/queue`, `/skills`, `/plugins`, `/mcp`, `/remote`, `/status`, `/usage`, `/help` |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
-| MCP | Real stdio MCP client: initialize, tools/list, tools/call, enable/disable |
+| MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable |
 | Connectors | Any stdio MCP server, including connector-style servers |
 | Phone control | Token-protected local page, QR, send/stop/compact/status |
-| Sessions | Persisted history with backwards-compatible decoding |
+| Sessions | Persisted history with backwards-compatible decoding, archive, fork, rename, retry |
 | Appearance | System/light/dark, transcript font size, bronze brand tint |
 | Notifications | Completion sound and optional macOS notification |
 | Permissions | Accessibility and Screen Recording status plus request buttons |
@@ -49,7 +50,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 | Area | Current scope |
 | --- | --- |
-| MCP | stdio servers only; HTTP/SSE MCP transports are not connected yet |
+| MCP | stdio and Streamable HTTP; no MCP elicitation or MCP apps yet |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
 | Computer use | native CGEvent/AppKit actions; no browser-extension DOM control |
 | Images | displayed in-app; not yet sent as multimodal model input |
@@ -57,7 +58,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Usage | provider-reported where available, otherwise clearly marked estimated |
 | Sandbox | shell/file enforcement via `sandbox-exec`; no managed network proxy/domain allowlist |
 | Remote | local-network page only; no cloud relay or native mobile app |
-| Sessions | persist and restore; no archive/fork/resume picker yet |
+| Sessions | persist, archive, fork, rename, retry; no resume picker yet |
 
 ## Not yet
 
@@ -65,13 +66,13 @@ These are Codex features Talos does not claim to have:
 
 - Codex Cloud tasks and cloud apply
 - Subagents, Ultra/Max fan-out, multi-agent orchestration
-- Git worktrees, managed branches, one-click commit/review UI
+- Git worktrees and managed branches (diff review and commit are implemented)
 - Hooks and hook trust
 - Config profiles and managed/enterprise policy
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
 - Browser extension/Chrome control and full CDP access
-- MCP HTTP/SSE transport, MCP elicitation, MCP apps
+- MCP elicitation, MCP apps, and MCP OAuth
 - Plugin marketplaces and remote plugin catalogs
 - Auto-review subagent for approvals
 - Dictation/voice and menu-bar mode

@@ -807,6 +807,7 @@ private struct MCPSettingsView: View {
     @State private var name = ""
     @State private var command = ""
     @State private var arguments = ""
+    @State private var url = ""
 
     var body: some View {
         Form {
@@ -830,7 +831,7 @@ private struct MCPSettingsView: View {
                                 Task { await model.reloadMCP() }
                             }
                         ))
-                        Text(([server.command] + server.args).joined(separator: " "))
+                        Text(server.url ?? ([server.command] + server.args).joined(separator: " "))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -850,7 +851,9 @@ private struct MCPSettingsView: View {
             Section {
                 TextField("Name", text: $name)
                     .textFieldStyle(.roundedBorder)
-                TextField("Command", text: $command)
+                TextField("HTTP URL (optional)", text: $url)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Command (stdio)", text: $command)
                     .textFieldStyle(.roundedBorder)
                 TextField("Arguments", text: $arguments)
                     .textFieldStyle(.roundedBorder)
@@ -861,18 +864,20 @@ private struct MCPSettingsView: View {
                     settings.addMCPServer(MCPServerConfig(
                         name: name.isEmpty ? "MCP" : name,
                         command: command,
-                        args: values
+                        args: values,
+                        url: url.isEmpty ? nil : url
                     ))
                     name = ""
                     command = ""
                     arguments = ""
+                    url = ""
                     Task { await model.reloadMCP() }
                 }
-                .disabled(command.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(command.trimmingCharacters(in: .whitespaces).isEmpty && url.trimmingCharacters(in: .whitespaces).isEmpty)
             } header: {
-                Text("Add stdio server")
+                Text("Add server")
             } footer: {
-                Text("Talos launches stdio MCP servers with the command and arguments above. Their tools are offered to every model, so connector-style servers behave like native tools.")
+                Text("Talos supports stdio servers and Streamable HTTP MCP endpoints. Their tools are offered to every model, so connector-style servers behave like native tools.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

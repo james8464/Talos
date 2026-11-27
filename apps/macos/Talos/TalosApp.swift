@@ -33,6 +33,20 @@ struct TalosApp: App {
                 Button("Compact Conversation") { model.compactCurrentSession() }
                     .keyboardShortcut("k", modifiers: [.command, .shift])
                     .disabled(model.isStreaming)
+                Button("Review Changes…") { model.showGitPanel = true }
+                    .keyboardShortcut("g", modifiers: [.command, .shift])
+                Divider()
+                Button("Retry Last Turn") { model.retryLastTurn() }
+                    .disabled(model.isStreaming)
+                Button("Fork Task") {
+                    if let id = model.selectedID { model.fork(id) }
+                }
+                Button("Archive Task") {
+                    if let id = model.selectedID { model.archive(id) }
+                }
+                Button("Rename Task…") {
+                    if let id = model.selectedID { model.beginRename(id) }
+                }
             }
             CommandMenu("Model") {
                 Button("Choose Model…") { model.showModelPicker = true }
