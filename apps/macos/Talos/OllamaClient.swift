@@ -1,5 +1,11 @@
 import Foundation
 
+struct OllamaModelInfo: Equatable, Sendable {
+    let capabilities: [String]
+    let contextLength: Int?
+    let parameterSize: String?
+}
+
 struct LocalModel: Identifiable, Hashable {
     let name: String
     let size: Int64?
@@ -88,7 +94,34 @@ struct OllamaClient {
         }
     }
 
-    func stream(model: String, messages: [ChatMessage], settings: GenerationSettings) -> AsyncThrowingStream<String, Error> {
+    func show(model: String) async throws -> OllamaModelInfo {
+        var request = URLRequest(url: baseURL.appendingPathComponent("api/show"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 10
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["model": model])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw TalosError.message("Ollama could not describe \(model).")
+        }
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw TalosError.message("Ollama returned an unreadable model description.")
+        }
+        let capabilities = object["capabilities"] as? [String] ?? []
+        let details = object["details"] as? [String: Any]
+        let parameterSize = details?["parameter_size"] as? String
+        let modelInfo = object["model_info"] as? [String: Any] ?? [:]
+        let contextLength = modelInfo
+            .first { $0.key.lowercased().hasSuffix("context_length") }
+            .flatMap { $0.value as? Int }
+        return OllamaModelInfo(
+            capabilities: capabilities,
+            contextLength: contextLength,
+            parameterSize: parameterSize
+        )
+    }
+
+    func stream(model: String, messages: [ChatMessage], settings: GenerationSettings) -> AsyncThrowingStream<ModelStreamEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -101,14 +134,14 @@ struct OllamaClient {
                         "model": model,
                         "stream": true,
                         "keep_alive": settings.keepAlive,
-                        "messages": messages.map { ["role": $0.role.rawValue, "content": $0.text] },
+                        "messages": messages.map { ["role": $0.role.chatRole, "content": $0.text] },
                         "options": [
                             "temperature": settings.temperature,
                             "num_predict": settings.maxTokens,
                         ],
                     ]
                     if supportsThinking(model) {
-                        payload["think"] = settings.reasoning != .off
+                        payload["think"] = settings.reasoning == "on"
                     }
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
@@ -127,17 +160,28 @@ struct OllamaClient {
                             struct Message: Decodable { let content: String? }
                             let message: Message?
                             let done: Bool?
+                            let prompt_eval_count: Int?
+                            let eval_count: Int?
                         }
                         if let event = try? JSONDecoder().decode(Event.self, from: data) {
                             if let chunk = event.message?.content, !chunk.isEmpty {
                                 let visible = stripper.push(chunk)
-                                if !visible.isEmpty { continuation.yield(visible) }
+                                if !visible.isEmpty { continuation.yield(.text(visible)) }
                             }
-                            if event.done == true { break }
+                            if event.done == true {
+                                if let prompt = event.prompt_eval_count, let completion = event.eval_count {
+                                    continuation.yield(.usage(TokenUsage(
+                                        prompt: prompt,
+                                        completion: completion,
+                                        estimated: false
+                                    )))
+                                }
+                                break
+                            }
                         }
                     }
                     let tail = stripper.finish()
-                    if !tail.isEmpty { continuation.yield(tail) }
+                    if !tail.isEmpty { continuation.yield(.text(tail)) }
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)

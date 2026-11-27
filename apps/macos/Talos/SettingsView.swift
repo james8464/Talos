@@ -10,12 +10,18 @@ struct SettingsView: View {
                 .tabItem { Label("Models", systemImage: "cpu") }
             ProvidersSettingsView()
                 .tabItem { Label("Providers", systemImage: "key") }
+            ToolsSettingsView()
+                .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
+            AppearanceSettingsView()
+                .tabItem { Label("Appearance", systemImage: "paintbrush") }
+            UsageSettingsView()
+                .tabItem { Label("Usage", systemImage: "chart.bar.xaxis") }
             AdvancedSettingsView()
                 .tabItem { Label("Advanced", systemImage: "slider.horizontal.3") }
             AboutSettingsView()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 620, height: 640)
+        .frame(width: 760, height: 680)
     }
 }
 
@@ -54,14 +60,23 @@ private struct GeneralSettingsView: View {
             }
 
             Section("Reasoning") {
-                Picker("Reasoning effort", selection: $settings.reasoning) {
-                    ForEach(ReasoningEffort.allCases) { effort in
-                        Text(effort.title).tag(effort)
+                if model.modelCapabilities.reasoningOptions.isEmpty {
+                    Text(model.modelCapabilities.summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Picker("Reasoning", selection: Binding(
+                        get: { model.reasoningSelection ?? model.modelCapabilities.reasoningOptions[0].id },
+                        set: { model.setReasoning($0) }
+                    )) {
+                        ForEach(model.modelCapabilities.reasoningOptions) { option in
+                            Text(option.title).tag(option.id)
+                        }
                     }
+                    Text(selectedDetail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                Text(settings.reasoning.summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section("Response") {
@@ -79,9 +94,21 @@ private struct GeneralSettingsView: View {
             Section("Window") {
                 Toggle("Show details inspector", isOn: $model.showInspector)
             }
+
+            Section {
+                Text("Shell, file, web, plan, and computer tools are available with every model. Configure them in Tools.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private var selectedDetail: String {
+        model.modelCapabilities.reasoningOptions
+            .first(where: { $0.id == model.reasoningSelection })?
+            .detail ?? model.modelCapabilities.summary
     }
 }
 
@@ -89,8 +116,35 @@ private struct ModelsSettingsView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsStore
 
+    private var contextOverrideBinding: Binding<String> {
+        Binding(
+            get: {
+                settings.contextWindowOverride(for: model.choice).map(String.init) ?? ""
+            },
+            set: { value in
+                settings.setContextWindowOverride(Int(value.trimmingCharacters(in: .whitespaces)), for: model.choice)
+            }
+        )
+    }
+
     var body: some View {
         Form {
+            Section("Selected model") {
+                LabeledContent("Model", value: model.choice.display)
+                LabeledContent("Reasoning", value: model.reasoningTitle)
+                LabeledContent("Context window", value: model.contextLimit.map { $0.formatted() } ?? "Unknown")
+                LabeledContent("Context used", value: model.contextUsage.label)
+                Text(model.modelCapabilities.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("Context window override", text: contextOverrideBinding)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { Task { await model.refreshCapabilities() } }
+                Text("Leave empty to use the model's reported window.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Local") {
                 TextField("Server", text: $settings.localURL)
                     .textFieldStyle(.roundedBorder)
@@ -368,7 +422,281 @@ private struct ProviderKeySettings: View {
     }
 }
 
+private struct ToolsSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
+    @State private var accessibility = ToolPermission.accessibility
+    @State private var screenRecording = ToolPermission.screenRecording
+
+    var body: some View {
+        Form {
+            Section("Workspace") {
+                HStack(spacing: 10) {
+                    Text(settings.workspacePath)
+                        .font(.callout)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button("Choose…") { chooseWorkspace() }
+                }
+                Text("Relative paths resolve here and shell commands start here.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Approvals and sandbox") {
+                Picker("Approval policy", selection: $settings.approvalPolicy) {
+                    ForEach(ApprovalPolicy.allCases) { policy in
+                        Text(policy.title).tag(policy)
+                    }
+                }
+                Text(settings.approvalPolicy.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Picker("Sandbox", selection: $settings.sandboxMode) {
+                    ForEach(SandboxMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                Text(settings.sandboxMode.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Toggle("Allow network access for shell commands and web tools", isOn: $settings.networkAccess)
+                Stepper("Maximum tool steps: \(settings.maxToolSteps)", value: $settings.maxToolSteps, in: 1...24)
+            }
+
+            Section("Tool access") {
+                Toggle("Shell commands", isOn: $settings.enableShell)
+                Toggle("File reads and edits", isOn: $settings.enableFileEdits)
+                Toggle("Computer use", isOn: $settings.enableComputerUse)
+                Toggle("Web fetch and search", isOn: $settings.enableWeb)
+                Toggle("Task plans", isOn: $settings.enablePlan)
+                Text("These tools are provided by Talos and work with every model. The sandbox applies to shell and file tools.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("macOS permissions") {
+                permissionRow(
+                    "Accessibility",
+                    granted: accessibility,
+                    open: ToolPermission.openAccessibilitySettings
+                )
+                permissionRow(
+                    "Screen Recording",
+                    granted: screenRecording,
+                    open: ToolPermission.openScreenRecordingSettings
+                )
+                HStack {
+                    Button("Request Accessibility") {
+                        ToolPermission.requestAccessibility()
+                        refreshPermissions()
+                    }
+                    Button("Request Screen Recording") {
+                        ToolPermission.requestScreenRecording()
+                        refreshPermissions()
+                    }
+                }
+                Text("Computer use needs both permissions. Shell, file, web, and plan tools do not.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+        .onAppear { refreshPermissions() }
+    }
+
+    private func permissionRow(_ name: String, granted: Bool, open: @escaping () -> Void) -> some View {
+        HStack {
+            Label(name, systemImage: granted ? "checkmark.shield" : "exclamationmark.shield")
+            Spacer()
+            Text(granted ? "Granted" : "Not granted")
+                .font(.caption)
+                .foregroundStyle(granted ? .green : .secondary)
+            Button("Open Settings") { open() }
+                .font(.caption)
+        }
+    }
+
+    private func refreshPermissions() {
+        accessibility = ToolPermission.accessibility
+        screenRecording = ToolPermission.screenRecording
+    }
+
+    private func chooseWorkspace() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = URL(fileURLWithPath: settings.workspacePath, isDirectory: true)
+        if panel.runModal() == .OK, let url = panel.url {
+            settings.workspacePath = url.path
+        }
+    }
+}
+
+private struct AppearanceSettingsView: View {
+    @EnvironmentObject private var settings: SettingsStore
+
+    var body: some View {
+        Form {
+            Section("Appearance") {
+                Picker("Theme", selection: $settings.appearance) {
+                    ForEach(AppearanceMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                LabeledContent("Transcript size") {
+                    HStack(spacing: 10) {
+                        Slider(value: $settings.transcriptFontSize, in: 12...20, step: 1)
+                        Text(settings.transcriptFontSize, format: .number.precision(.fractionLength(0)))
+                            .monospacedDigit()
+                            .frame(width: 24, alignment: .trailing)
+                    }
+                }
+                Text("Applies to messages and tool output. Code stays monospaced.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Completion") {
+                Toggle("Play a sound when a task finishes", isOn: $settings.completionSound)
+                Toggle("Notify when the app is in the background", isOn: Binding(
+                    get: { settings.notifyOnFinish },
+                    set: { value in
+                        settings.notifyOnFinish = value
+                        if value {
+                            NotificationManager.shared.requestAuthorization()
+                        }
+                    }
+                ))
+                Text("Notifications use the macOS notification center. The app asks for permission the first time you enable them.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
+
+private struct UsageSettingsView: View {
+    @EnvironmentObject private var usage: UsageStore
+
+    var body: some View {
+        Form {
+            Section("Tokens") {
+                HStack(spacing: 18) {
+                    metric("Total", usage.totalTokens)
+                    metric("Prompt", usage.promptTokens)
+                    metric("Completion", usage.completionTokens)
+                }
+                if usage.hasEstimates {
+                    Text("Some counts are estimated from text length because the provider did not report usage.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Last 12 weeks") {
+                UsageHeatmap(totals: usage.dailyTotals(days: 84))
+                HStack(spacing: 5) {
+                    Text("Less")
+                    ForEach(1...5, id: \.self) { level in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Brand.bronze.opacity(0.12 + Double(level) * 0.17))
+                            .frame(width: 12, height: 12)
+                    }
+                    Text("More")
+                    Spacer()
+                    Text("\(TokenEstimator.format(usage.totalTokens)) total")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Section("By model") {
+                if usage.modelTotals.isEmpty {
+                    Text("No usage recorded yet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(Array(usage.modelTotals.enumerated()), id: \.offset) { _, entry in
+                        LabeledContent(entry.model, value: TokenEstimator.format(entry.tokens))
+                    }
+                }
+            }
+
+            Section {
+                Button("Clear Usage History", role: .destructive) {
+                    usage.clear()
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+
+    private func metric(_ title: String, _ value: Int) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(TokenEstimator.format(value))
+                .font(.title3.weight(.semibold))
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct UsageHeatmap: View {
+    let totals: [Date: Int]
+
+    private let weeks = 12
+
+    var body: some View {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let start = calendar.date(byAdding: .day, value: -(weeks * 7 - 1), to: today) ?? today
+        let weekday = calendar.component(.weekday, from: start)
+        let gridStart = calendar.date(byAdding: .day, value: -(weekday - 1), to: start) ?? start
+        let maxValue = totals.values.max() ?? 1
+
+        Grid(horizontalSpacing: 3, verticalSpacing: 3) {
+            ForEach(0..<7, id: \.self) { row in
+                GridRow {
+                    ForEach(0..<weeks, id: \.self) { column in
+                        let date = calendar.date(byAdding: .day, value: column * 7 + row, to: gridStart) ?? gridStart
+                        let day = calendar.startOfDay(for: date)
+                        let value = totals[day] ?? 0
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(shade(value: value, maxValue: maxValue, inRange: day >= start && day <= today))
+                            .frame(width: 13, height: 13)
+                            .help("\(day.formatted(date: .abbreviated, time: .omitted)): \(value) tokens")
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func shade(value: Int, maxValue: Int, inRange: Bool) -> Color {
+        guard inRange, value > 0, maxValue > 0 else {
+            return Color.secondary.opacity(0.08)
+        }
+        let fraction = Double(value) / Double(maxValue)
+        return Brand.bronze.opacity(0.15 + 0.85 * fraction)
+    }
+}
+
 private struct AdvancedSettingsView: View {
+    @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsStore
 
     var body: some View {
@@ -393,6 +721,35 @@ private struct AdvancedSettingsView: View {
                     Text("2 hours").tag("2h")
                 }
                 Text("Longer keeps avoid reloading a local model between messages.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Context") {
+                Toggle("Automatically compact long conversations", isOn: $settings.autoCompact)
+                LabeledContent("Compact at") {
+                    HStack(spacing: 10) {
+                        Slider(value: $settings.compactionThreshold, in: 0.5...0.95, step: 0.05)
+                        Text(settings.compactionThreshold, format: .percent.precision(.fractionLength(0)))
+                            .monospacedDigit()
+                            .frame(width: 38, alignment: .trailing)
+                    }
+                }
+                Text("When estimated context reaches this share of the model window, Talos summarizes older messages with the same model before continuing.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                LabeledContent("Current usage", value: model.contextUsage.label)
+                Button("Compact This Task Now") {
+                    model.compactCurrentSession()
+                }
+                .disabled(model.isStreaming)
+            }
+
+            Section("History") {
+                Button("Clear All Tasks", role: .destructive) {
+                    model.clearHistory()
+                }
+                Text("Deletes saved conversation history from this Mac. Provider keys and settings are kept.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -428,7 +785,7 @@ private struct AboutSettingsView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 420)
+                .frame(maxWidth: 440)
 
             HStack(spacing: 16) {
                 Link("Ollama", destination: URL(string: "https://ollama.com")!)
@@ -445,6 +802,6 @@ private struct AboutSettingsView: View {
     }
 
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2"
     }
 }

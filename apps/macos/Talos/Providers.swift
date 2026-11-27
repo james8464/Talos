@@ -1,6 +1,6 @@
 import Foundation
 
-enum Provider: String, CaseIterable, Identifiable {
+enum Provider: String, Codable, CaseIterable, Identifiable {
     case local
     case openAI
     case anthropic
@@ -140,7 +140,7 @@ struct OpenAICompatibleClient {
         return try JSONDecoder().decode(List.self, from: data).data.map(\.id)
     }
 
-    func stream(model: String, messages: [ChatTurn], settings: GenerationSettings) -> AsyncThrowingStream<String, Error> {
+    func stream(model: String, messages: [ChatTurn], settings: GenerationSettings) -> AsyncThrowingStream<ModelStreamEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -156,7 +156,7 @@ struct OpenAICompatibleClient {
                     var payload: [String: Any] = [
                         "model": model,
                         "stream": true,
-                        "messages": messages.map { ["role": $0.role.rawValue, "content": $0.text] },
+                        "messages": messages.map { ["role": $0.role.chatRole, "content": $0.text] },
                     ]
                     let reasoningModel = supportsReasoning(model)
                     let tokenKey = usesCompletionTokens && reasoningModel ? "max_completion_tokens" : "max_tokens"
@@ -164,8 +164,13 @@ struct OpenAICompatibleClient {
                     if sendsTemperature {
                         payload["temperature"] = settings.temperature
                     }
-                    if sendsReasoningEffort, reasoningModel, let effort = settings.reasoning.openAIValue {
+                    if sendsReasoningEffort, reasoningModel,
+                       let effort = settings.reasoning,
+                       ["low", "medium", "high"].contains(effort) {
                         payload["reasoning_effort"] = effort
+                    }
+                    if usesCompletionTokens {
+                        payload["stream_options"] = ["include_usage": true]
                     }
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
@@ -176,18 +181,32 @@ struct OpenAICompatibleClient {
                     guard http.statusCode == 200 else {
                         throw ProviderError.message("The provider answered \(http.statusCode). Check the API key and model.")
                     }
+                    var yieldedUsage = false
                     for try await line in bytes.lines {
                         if Task.isCancelled { break }
                         guard line.hasPrefix("data:") else { continue }
                         let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
                         if payload == "[DONE]" { break }
                         guard let data = payload.data(using: .utf8),
-                              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                              let choices = object["choices"] as? [[String: Any]],
+                              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                            continue
+                        }
+                        if !yieldedUsage,
+                           let usage = object["usage"] as? [String: Any],
+                           let prompt = usage["prompt_tokens"] as? Int,
+                           let completion = usage["completion_tokens"] as? Int {
+                            continuation.yield(.usage(TokenUsage(
+                                prompt: prompt,
+                                completion: completion,
+                                estimated: false
+                            )))
+                            yieldedUsage = true
+                        }
+                        guard let choices = object["choices"] as? [[String: Any]],
                               let delta = choices.first?["delta"] as? [String: Any],
                               let text = delta["content"] as? String,
                               !text.isEmpty else { continue }
-                        continuation.yield(text)
+                        continuation.yield(.text(text))
                     }
                     continuation.finish()
                 } catch {
@@ -200,7 +219,11 @@ struct OpenAICompatibleClient {
 
     private func supportsReasoning(_ model: String) -> Bool {
         let id = model.lowercased()
-        return id.hasPrefix("gpt-5") || id.hasPrefix("o1") || id.hasPrefix("o3") || id.hasPrefix("o4")
+        return id.hasPrefix("gpt-5")
+            || id.hasPrefix("gpt-6")
+            || id.hasPrefix("o1")
+            || id.hasPrefix("o3")
+            || id.hasPrefix("o4")
     }
 
     private var root: String {
@@ -235,7 +258,7 @@ struct AnthropicClient {
         return try JSONDecoder().decode(List.self, from: data).data.map(\.id)
     }
 
-    func stream(model: String, messages: [ChatTurn], settings: GenerationSettings) -> AsyncThrowingStream<String, Error> {
+    func stream(model: String, messages: [ChatTurn], settings: GenerationSettings) -> AsyncThrowingStream<ModelStreamEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -262,7 +285,9 @@ struct AnthropicClient {
                     if !system.isEmpty {
                         payload["system"] = system
                     }
-                    if let budget = settings.reasoning.anthropicBudget, supportsThinking(model) {
+                    if let rawBudget = settings.reasoning,
+                       let budget = Int(rawBudget),
+                       supportsThinking(model) {
                         payload["thinking"] = ["type": "enabled", "budget_tokens": budget]
                         payload["max_tokens"] = max(settings.maxTokens, budget + 1024)
                     } else {
@@ -277,18 +302,45 @@ struct AnthropicClient {
                     guard http.statusCode == 200 else {
                         throw ProviderError.message("Anthropic answered \(http.statusCode). Check the API key and model.")
                     }
+                    var promptTokens = 0
+                    var completionTokens = 0
                     for try await line in bytes.lines {
                         if Task.isCancelled { break }
                         guard line.hasPrefix("data:") else { continue }
                         let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
                         guard let data = payload.data(using: .utf8),
-                              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                              object["type"] as? String == "content_block_delta",
-                              let delta = object["delta"] as? [String: Any],
-                              delta["type"] as? String == "text_delta",
-                              let text = delta["text"] as? String,
-                              !text.isEmpty else { continue }
-                        continuation.yield(text)
+                              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                            continue
+                        }
+                        switch object["type"] as? String {
+                        case "message_start":
+                            if let message = object["message"] as? [String: Any],
+                               let usage = message["usage"] as? [String: Any],
+                               let input = usage["input_tokens"] as? Int {
+                                promptTokens = input
+                            }
+                        case "message_delta":
+                            if let usage = object["usage"] as? [String: Any],
+                               let output = usage["output_tokens"] as? Int {
+                                completionTokens = output
+                            }
+                        case "content_block_delta":
+                            if let delta = object["delta"] as? [String: Any],
+                               delta["type"] as? String == "text_delta",
+                               let text = delta["text"] as? String,
+                               !text.isEmpty {
+                                continuation.yield(.text(text))
+                            }
+                        default:
+                            break
+                        }
+                    }
+                    if promptTokens > 0 || completionTokens > 0 {
+                        continuation.yield(.usage(TokenUsage(
+                            prompt: promptTokens,
+                            completion: completionTokens,
+                            estimated: false
+                        )))
                     }
                     continuation.finish()
                 } catch {
