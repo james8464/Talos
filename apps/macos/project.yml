@@ -1,0 +1,43 @@
+name: Talos
+options:
+  bundleIdPrefix: app.talos
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGNING_REQUIRED: NO
+    ENABLE_HARDENED_RUNTIME: NO
+targets:
+  Talos:
+    type: application
+    platform: macOS
+    sources:
+      - path: Talos
+    info:
+      path: Talos/Info.plist
+      properties:
+        CFBundleDisplayName: Talos
+        CFBundleName: Talos
+        LSApplicationCategoryType: public.app-category.developer-tools
+        NSMicrophoneUsageDescription: Talos listens only when you enable it.
+        NSCameraUsageDescription: Talos looks only when you enable it.
+        NSHumanReadableCopyright: ""
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.macos
+        PRODUCT_NAME: Talos
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        COMBINE_HIDPI_IMAGES: YES
+schemes:
+  Talos:
+    build:
+      targets:
+        Talos: all
+    run:
+      config: Debug
