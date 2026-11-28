@@ -100,6 +100,10 @@ struct ContentView: View {
             MCPElicitationView(request: request)
                 .environmentObject(model)
         }
+        .sheet(item: $model.pendingHookTrust) { request in
+            HookTrustView(request: request)
+                .environmentObject(model)
+        }
     }
 }
 

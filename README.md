@@ -20,6 +20,9 @@ model that produced them.
   control (page reading, indexed actions, navigation, and screenshot OCR)
 - Delegated read-only subagents that work in a fresh context and return a
   report with the files and facts they found
+- Named config profiles that switch model, reasoning, sandbox, approvals, and tools
+- Event hooks for prompts, tools, and sessions, with command output, blocking,
+  added context, and explicit trust confirmation
 - Approval prompts, per-task “always allow”, sandbox modes, network control
 - Message queueing while a response is streaming, attachments, inline
   image/file previews, and native image input for vision models
@@ -29,8 +32,8 @@ model that produced them.
   `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`,
   `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/rewind`,
   `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
-  `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`,
-  `/browser`, `/worktree`, `/subagent`, `/todos`, `/help`
+  `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`,
+  `/mcp`, `/remote`, `/browser`, `/worktree`, `/subagent`, `/todos`, `/help`
 - Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in
   and interactive elicitation forms
 - Local phone control with a token-protected web page and QR code

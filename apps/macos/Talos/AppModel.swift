@@ -47,6 +47,8 @@ final class AppModel: ObservableObject {
     @Published var mcpStatus = "No MCP servers"
     @Published var mcpElicitation: MCPElicitationRequest?
     private var mcpElicitationContinuation: CheckedContinuation<MCPElicitationResponse, Never>?
+    @Published var pendingHookTrust: HookTrustRequest?
+    private var hookTrustContinuation: CheckedContinuation<HookTrustDecision, Never>?
     @Published var openCodeModels: [OpenCodeModel] = []
     @Published var gitStatus = GitStatus()
     @Published var showGitPanel = false
@@ -62,6 +64,8 @@ final class AppModel: ObservableObject {
     let projects = ProjectStore()
     let plugins = PluginStore()
     let skills = SkillStore()
+    let hooks = HookStore()
+    let profiles = ProfileStore()
     let mcp = MCPManager()
     let remote = RemoteServer()
     private let defaults = UserDefaults.standard
@@ -310,6 +314,8 @@ final class AppModel: ObservableObject {
         sessions.insert(session, at: 0)
         selectedID = session.id
         saveSessions()
+        let id = session.id
+        Task { await runSessionHooks(.sessionStart, sessionID: id) }
     }
 
     func delete(_ id: UUID) {
@@ -321,6 +327,7 @@ final class AppModel: ObservableObject {
 
     func archive(_ id: UUID) {
         guard let index = sessions.firstIndex(where: { $0.id == id }) else { return }
+        Task { await runSessionHooks(.sessionEnd, sessionID: id) }
         sessions[index].archived = true
         sessions[index].updatedAt = Date()
         if selectedID == id {
@@ -398,7 +405,7 @@ final class AppModel: ObservableObject {
         sessions[index].messages.removeSubrange(userIndex...)
         sessions[index].updatedAt = Date()
         saveSessions()
-        send(text, attachments: attachments)
+        Task { await submitWithHooks(text, attachments: attachments) }
     }
 
     func clearHistory() {
@@ -419,6 +426,153 @@ final class AppModel: ObservableObject {
     func setReasoning(_ value: String?) {
         reasoningSelection = value
         settings.setReasoning(value, for: choice)
+    }
+
+    func captureProfile(name: String = "Profile") -> AgentProfile {
+        AgentProfile(
+            name: name,
+            provider: choice.provider,
+            model: choice.id,
+            reasoning: reasoningSelection,
+            sandbox: settings.sandboxMode,
+            approval: settings.approvalPolicy,
+            network: settings.networkAccess,
+            speed: settings.speed,
+            enableShell: settings.enableShell,
+            enableFileEdits: settings.enableFileEdits,
+            enableComputerUse: settings.enableComputerUse,
+            enableWeb: settings.enableWeb,
+            enableBrowser: settings.enableBrowser,
+            enablePlan: settings.enablePlan
+        )
+    }
+
+    func applyProfile(_ profile: AgentProfile) {
+        if !profile.model.isEmpty {
+            let target = ModelChoice(provider: profile.provider, id: profile.model)
+            if !choices.contains(target) {
+                choices.append(target)
+            }
+            choose(target)
+        }
+        settings.sandboxMode = profile.sandbox
+        settings.approvalPolicy = profile.approval
+        settings.networkAccess = profile.network
+        settings.speed = profile.speed
+        settings.enableShell = profile.enableShell
+        settings.enableFileEdits = profile.enableFileEdits
+        settings.enableComputerUse = profile.enableComputerUse
+        settings.enableWeb = profile.enableWeb
+        settings.enableBrowser = profile.enableBrowser
+        settings.enablePlan = profile.enablePlan
+        if let reasoning = profile.reasoning, !reasoning.isEmpty {
+            reasoningSelection = reasoning
+            settings.setReasoning(reasoning, for: choice)
+        } else {
+            reasoningSelection = nil
+            settings.setReasoning(nil, for: choice)
+        }
+        profiles.markActive(profile)
+        Task { await refreshCapabilities() }
+    }
+
+    func clearActiveProfile() {
+        profiles.markActive(nil)
+    }
+
+    private func runHooks(
+        _ event: HookEvent,
+        tool: ToolCall? = nil,
+        toolResult: ToolResult? = nil,
+        sessionID: UUID
+    ) async -> HookSummary {
+        var summary = HookSummary()
+        for hook in hooks.matching(event: event, toolName: tool?.name) {
+            if !hook.trusted {
+                switch await requestHookTrust(hook, event: event) {
+                case .skip:
+                    hooks.record(hook, event: event, status: "Skipped (not trusted)", output: hook.command)
+                    continue
+                case .alwaysTrust:
+                    hooks.setTrusted(hook, true)
+                case .runOnce:
+                    break
+                }
+            }
+            let outcome = await HookRunner.run(
+                hook,
+                event: event,
+                workspace: projectURL,
+                sessionID: sessionID,
+                tool: tool,
+                toolResult: toolResult?.output
+            )
+            let status: String
+            if outcome.blocked {
+                status = "Blocked"
+            } else if outcome.timedOut {
+                status = "Timed out"
+            } else if outcome.exitCode != 0 {
+                status = "Exit \(outcome.exitCode)"
+            } else {
+                status = "OK"
+            }
+            hooks.record(hook, event: event, status: status, output: outcome.output)
+            if let context = outcome.context, !context.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                summary.contexts.append(context)
+            }
+            if outcome.blocked {
+                summary.blocked = true
+                summary.reason = outcome.blockReason
+                break
+            }
+        }
+        return summary
+    }
+
+    private func runSessionHooks(_ event: HookEvent, sessionID: UUID) async {
+        let summary = await runHooks(event, sessionID: sessionID)
+        guard !summary.contexts.isEmpty,
+              let index = sessions.firstIndex(where: { $0.id == sessionID }) else { return }
+        sessions[index].messages.append(
+            ChatMessage(
+                role: .assistant,
+                text: "Hook context:\n" + summary.contexts.joined(separator: "\n"),
+                model: "Hook"
+            )
+        )
+        sessions[index].updatedAt = Date()
+        saveSessions()
+    }
+
+    private func requestHookTrust(_ hook: HookDefinition, event: HookEvent) async -> HookTrustDecision {
+        if let existing = hookTrustContinuation {
+            existing.resume(returning: .skip)
+            hookTrustContinuation = nil
+        }
+        return await withCheckedContinuation { continuation in
+            hookTrustContinuation = continuation
+            pendingHookTrust = HookTrustRequest(hook: hook, event: event)
+        }
+    }
+
+    func resolveHookTrust(_ decision: HookTrustDecision) {
+        pendingHookTrust = nil
+        hookTrustContinuation?.resume(returning: decision)
+        hookTrustContinuation = nil
+    }
+
+    private func submitWithHooks(_ text: String, attachments: [String] = []) async {
+        let summary = await runHooks(.userPromptSubmit, sessionID: selectedID ?? UUID())
+        if summary.blocked {
+            error = summary.reason.map { "Blocked by hook: \($0)" } ?? "Blocked by a hook."
+            return
+        }
+        var prompt = text
+        if !summary.contexts.isEmpty {
+            prompt += "\n\nHook context:\n" + summary.contexts.joined(separator: "\n")
+        }
+        send(prompt, attachments: attachments)
     }
 
     func refreshChoices() async {
@@ -553,7 +707,7 @@ final class AppModel: ObservableObject {
         } else if isStreaming {
             enqueue(trimmed, attachments: attachments)
         } else {
-            send(trimmed, attachments: attachments)
+            Task { await submitWithHooks(trimmed, attachments: attachments) }
         }
     }
 
@@ -583,7 +737,7 @@ final class AppModel: ObservableObject {
               !sessions[index].queue.isEmpty else { return }
         let next = sessions[index].queue.removeFirst()
         saveSessions()
-        send(next.text, attachments: next.attachments)
+        Task { await submitWithHooks(next.text, attachments: next.attachments) }
     }
 
     func clearCurrentSession() {
@@ -632,6 +786,10 @@ final class AppModel: ObservableObject {
             openSettings(.tools)
         case "/providers":
             openSettings(.providers)
+        case "/profiles":
+            openSettings(.profiles)
+        case "/hooks":
+            openSettings(.hooks)
         case "/models":
             openSettings(.models)
         case "/queue":
@@ -839,7 +997,7 @@ final class AppModel: ObservableObject {
             \(String(diff.prefix(30_000)))
             ```
             """
-            send(prompt)
+            await submitWithHooks(prompt)
         }
     }
 
@@ -982,6 +1140,8 @@ final class AppModel: ObservableObject {
         Workspace: \(settings.workspacePath)
         Sandbox: \(settings.sandboxMode.title)
         Approvals: \(settings.approvalPolicy == .onRequest ? "On request" : "Never")
+        Profile: \(profiles.active?.name ?? "None")
+        Hooks: \(hooks.enabled.count) enabled
         Skills: \(skills.enabled.count)
         Plugins: \(plugins.enabled.count)
         MCP tools: \(mcpTools.count)
@@ -1091,13 +1251,37 @@ final class AppModel: ObservableObject {
                 }
                 setMessageText(sessionID, assistantID, parsed.cleaned)
 
+                let pre = await runHooks(.preToolUse, tool: parsed.call, sessionID: sessionID)
+                if pre.blocked {
+                    appendToolMessage(
+                        sessionID,
+                        call: parsed.call,
+                        result: .denied("Blocked by hook: \(pre.reason ?? "no reason given").")
+                    )
+                    continue
+                }
+
                 let approved = await requestApproval(for: parsed.call, sessionID: sessionID)
                 guard approved else {
                     appendToolMessage(sessionID, call: parsed.call, result: .denied("Denied by the user."))
                     continue
                 }
 
-                let result = await executeTool(parsed.call, sessionID: sessionID)
+                var result = await executeTool(parsed.call, sessionID: sessionID)
+                let post = await runHooks(
+                    .postToolUse,
+                    tool: parsed.call,
+                    toolResult: result,
+                    sessionID: sessionID
+                )
+                let contexts = pre.contexts + post.contexts
+                if !contexts.isEmpty {
+                    result = ToolResult(
+                        status: result.status,
+                        output: result.output + "\n\nHook context:\n" + contexts.joined(separator: "\n"),
+                        attachmentPath: result.attachmentPath
+                    )
+                }
                 appendToolMessage(sessionID, call: parsed.call, result: result)
             } catch {
                 if !Task.isCancelled {

@@ -303,6 +303,8 @@ enum SlashCommands {
         SlashCommand(id: "/models", detail: "Configure models"),
         SlashCommand(id: "/skills", detail: "List local skills"),
         SlashCommand(id: "/plugins", detail: "List local plugins"),
+        SlashCommand(id: "/profiles", detail: "Switch or edit config profiles"),
+        SlashCommand(id: "/hooks", detail: "Configure event hooks"),
         SlashCommand(id: "/mcp", detail: "List connected MCP tools"),
         SlashCommand(id: "/remote", detail: "Show the phone-control URL"),
         SlashCommand(id: "/browser", detail: "Read the front browser page"),
