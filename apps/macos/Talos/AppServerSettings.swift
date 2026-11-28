@@ -12,10 +12,13 @@ struct AppServerSettingsView: View {
                     get: { settings.appServerEnabled },
                     set: { model.setAppServerEnabled($0) }
                 ))
+                .accessibilityLabel("Enable the local app server")
                 TextField("Port", value: $settings.appServerPort, format: .number)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("App server port")
                     .disabled(settings.appServerEnabled)
                 Toggle("Allow connections from the local network", isOn: $settings.appServerAllowLAN)
+                    .accessibilityLabel("Allow connections from the local network")
                     .disabled(settings.appServerEnabled)
 
                 AppServerStatusView(server: model.appServer)

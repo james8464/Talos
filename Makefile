@@ -1,4 +1,4 @@
-.PHONY: build cli run project clean check ax-audit semantic-eval
+.PHONY: build cli run project clean check ax-audit semantic-eval localization-check localization-eval
 
 build:
 	cd apps/macos && xcodebuild -project Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath .build CODE_SIGNING_ALLOWED=NO build
@@ -14,6 +14,13 @@ project:
 
 clean:
 	rm -rf apps/macos/.build
+
+localization-check:
+	python3 apps/macos/Tools/localization_check.py
+
+localization-eval:
+	swiftc apps/macos/Tools/LocalizationEval/main.swift -o /tmp/talos-localization-eval
+	/tmp/talos-localization-eval
 
 semantic-eval:
 	swiftc -O apps/macos/Talos/SemanticIndex.swift apps/macos/Tools/SemanticEval/main.swift -o /tmp/talos-semantic-eval

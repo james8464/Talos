@@ -54,7 +54,9 @@ struct ChronicleSettingsView: View {
         Form {
             Section("Ambient suggestions") {
                 Toggle("Record local activity history", isOn: $settings.chronicleEnabled)
+                    .accessibilityLabel("Record local activity history")
                 Toggle("Generate ambient suggestions", isOn: $settings.chronicleSuggestionsEnabled)
+                    .accessibilityLabel("Generate ambient suggestions")
                     .disabled(!settings.chronicleEnabled)
                 Text("Chronicle stays on this Mac. It stores short activity summaries and rule-based suggestions only; nothing is sent to a server. Suggestions appear as a dismissible strip above the composer.")
                     .font(.caption)

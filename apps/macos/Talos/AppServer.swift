@@ -82,7 +82,7 @@ final class AppServer: ObservableObject {
     weak var host: AppServerHost?
 
     @Published private(set) var running = false
-    @Published private(set) var status = "Off"
+    @Published private(set) var status = String(localized: "Off")
     @Published private(set) var endpoint: String?
     private var listener: NWListener?
     private var port: UInt16 = 8790
@@ -127,7 +127,7 @@ final class AppServer: ObservableObject {
                         self.endpoint = nil
                     case .cancelled:
                         self.running = false
-                        self.status = "Off"
+                        self.status = String(localized: "Off")
                         self.endpoint = nil
                     default:
                         break
@@ -153,7 +153,7 @@ final class AppServer: ObservableObject {
         listener?.cancel()
         listener = nil
         running = false
-        status = "Off"
+        status = String(localized: "Off")
         endpoint = nil
         for client in clients.values {
             client.connection.cancel()

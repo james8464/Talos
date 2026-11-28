@@ -5230,6 +5230,36 @@
           }
         }
       }
+    },
+    "Never": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أبدًا"
+          }
+        }
+      }
+    },
+    "App Server Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مهمة خادم التطبيق"
+          }
+        }
+      }
+    },
+    "Starting…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ البدء…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -330,6 +330,7 @@ private struct ModelsSettingsView: View {
                     Text(LocalizedStringKey(model.modelCapabilities.supportsVision ? "Images" : "Text only"))
                 }
                 Toggle("Use provider token counters", isOn: $settings.exactProviderTokenCounting)
+                    .accessibilityLabel("Use provider token counters")
                     .onChange(of: settings.exactProviderTokenCounting) {
                         Task { await model.refreshCapabilities() }
                     }
@@ -347,6 +348,7 @@ private struct ModelsSettingsView: View {
                     Text("Send images and PDF pages").tag(Optional<Bool>.some(true))
                     Text("Text only").tag(Optional<Bool>.some(false))
                 }
+                .accessibilityLabel("Vision override")
                 Text("Use this for uncatalogued vision models whose metadata does not report image support.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -357,12 +359,14 @@ private struct ModelsSettingsView: View {
                     .foregroundStyle(.secondary)
                 TextField("Context window override", text: contextOverrideBinding)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Context window override")
                     .onSubmit { Task { await model.refreshCapabilities() } }
             }
 
             Section("Local") {
                 TextField("Server", text: $settings.localURL)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Server")
                 HStack {
                     Text(String(localized: "\(model.localModels.count) models found"))
                         .font(.caption)
@@ -908,9 +912,11 @@ private struct PluginsSettingsView: View {
             Section("Remote catalog") {
                 TextField("Catalog URL (HTTPS or localhost)", text: $settings.pluginCatalogURL)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Catalog URL")
                 TextField("Ed25519 public key (base64)", text: $settings.pluginCatalogPublicKey)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.caption, design: .monospaced))
+                    .accessibilityLabel("Ed25519 public key")
                 HStack {
                     LabeledContent("Status", value: model.plugins.remoteCatalogStatus)
                     Spacer()
@@ -1198,12 +1204,16 @@ private struct MCPSettingsView: View {
             Section {
                 TextField("Name", text: $name)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("MCP server name")
                 TextField("HTTP URL (optional)", text: $url)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("MCP HTTP URL")
                 TextField("Command (stdio)", text: $command)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("MCP command")
                 TextField("Arguments", text: $arguments)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("MCP arguments")
                 Button("Add Server") {
                     let values = arguments
                         .split(whereSeparator: { $0.isWhitespace })
@@ -1252,6 +1262,7 @@ private struct RemoteSettingsView: View {
                     get: { model.remote.enabled },
                     set: { model.remote.setEnabled($0) }
                 ))
+                .accessibilityLabel("Enable phone control")
 
                 HStack {
                     Text("Port")
@@ -1260,6 +1271,7 @@ private struct RemoteSettingsView: View {
                         set: { model.remote.port = $0 }
                     ), format: .number)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Phone control port")
                     .frame(width: 90)
                     Spacer()
                     Text(LocalizedStringKey(model.remote.running ? "Serving" : "Off"))
@@ -1633,6 +1645,7 @@ private struct AdvancedSettingsView: View {
                 LabeledContent("Temperature") {
                     HStack(spacing: 10) {
                         Slider(value: $settings.temperature, in: 0...1.5, step: 0.1)
+                            .accessibilityLabel("Temperature")
                         Text(settings.temperature, format: .number.precision(.fractionLength(1)))
                             .monospacedDigit()
                             .frame(width: 28, alignment: .trailing)
@@ -1650,6 +1663,7 @@ private struct AdvancedSettingsView: View {
                     Text("30 minutes").tag("30m")
                     Text("2 hours").tag("2h")
                 }
+                .accessibilityLabel("Keep local model loaded")
                 Text("Longer keeps avoid reloading a local model between messages.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -1657,9 +1671,11 @@ private struct AdvancedSettingsView: View {
 
             Section("Context") {
                 Toggle("Automatically compact long conversations", isOn: $settings.autoCompact)
+                    .accessibilityLabel("Automatically compact long conversations")
                 LabeledContent("Compact at") {
                     HStack(spacing: 10) {
                         Slider(value: $settings.compactionThreshold, in: 0.5...0.95, step: 0.05)
+                            .accessibilityLabel("Compact at")
                         Text(settings.compactionThreshold, format: .percent.precision(.fractionLength(0)))
                             .monospacedDigit()
                             .frame(width: 38, alignment: .trailing)
@@ -1678,6 +1694,7 @@ private struct AdvancedSettingsView: View {
             Section("Git") {
                 TextField("Worktree branch prefix", text: $settings.branchPrefix)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Worktree branch prefix")
                 Text("New worktrees use this prefix, for example talos/task.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

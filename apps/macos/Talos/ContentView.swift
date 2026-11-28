@@ -2811,14 +2811,18 @@ private struct Inspector: View {
                 if let branch = model.gitStatus.branch {
                     LabeledContent("Branch", value: branch)
                 }
-                LabeledContent("Changes", value: model.gitStatus.files.isEmpty ? "Clean" : "\(model.gitStatus.files.count)")
+                LabeledContent("Changes") {
+                    Text(model.gitStatus.files.isEmpty ? String(localized: "Clean") : "\(model.gitStatus.files.count)")
+                }
             }
 
             Section("Model") {
                 LabeledContent("Provider", value: model.choice.provider.title)
                 LabeledContent("Model", value: model.choice.id)
                 LabeledContent("Reasoning", value: model.reasoningTitle)
-                LabeledContent("Vision", value: model.modelCapabilities.supportsVision ? "Images" : "Text only")
+                LabeledContent("Vision") {
+                    Text(LocalizedStringKey(model.modelCapabilities.supportsVision ? "Images" : "Text only"))
+                }
                 LabeledContent("Context", value: model.contextUsage.label)
                 LabeledContent("Token counting", value: model.tokenizerLabel)
                 LabeledContent("Speed", value: settings.speed.title)
@@ -2852,7 +2856,9 @@ private struct Inspector: View {
                         .foregroundStyle(.secondary)
                 }
                 LabeledContent("Sandbox", value: settings.sandboxMode.title)
-                LabeledContent("Approvals", value: settings.approvalPolicy == .onRequest ? "On request" : "Never")
+                LabeledContent("Approvals") {
+                    Text(LocalizedStringKey(settings.approvalPolicy == .onRequest ? "On request" : "Never"))
+                }
             }
 
             Section("Index") {
@@ -2899,7 +2905,9 @@ private struct Inspector: View {
 
             Section("Task") {
                 LabeledContent("Messages", value: "\(model.selected?.messages.count ?? 0)")
-                LabeledContent("State", value: model.isStreaming ? "Running" : "Idle")
+                LabeledContent("State") {
+                    Text(LocalizedStringKey(model.isStreaming ? "Running" : "Idle"))
+                }
                 if let session = model.selected {
                     LabeledContent("Tokens", value: TokenEstimator.format(usage.tokens(for: session.id).total))
                     LabeledContent("Created") {

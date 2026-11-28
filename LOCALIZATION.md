@@ -68,17 +68,49 @@ Adding a language adds a new localization set; no source changes are required
 for strings that already use `Text`, `Button`, `Toggle`, `Picker`, or
 `accessibilityLabel` literals. Computed strings use `String(localized:)`.
 
+## Automated tests
+
+```sh
+make localization-check   # CI-safe String Catalog validation
+make localization-eval    # live Arabic AX traversal; needs Accessibility permission
+```
+
+`localization-check` verifies all 526 source keys have Arabic, Arabic script is
+present, and placeholders survive translation. CI runs this on every push.
+
+`localization-eval` launches the built app with `AppleLanguages=ar`, creates a
+fresh task, opens Settings, visits all 20 pages, and fails on:
+
+- app-owned English strings whose source key has an Arabic translation,
+- Settings pages that do not switch,
+- pages with fewer than two Arabic labels,
+- unlabeled interactive controls.
+
+Latest live result:
+
+```text
+MAIN arabic=167 english=0 unlabeled=0
+عام / المشاريع / النماذج / المزوّدون / الأدوات / التكوينات
+الخطافات / الذاكرة / السجل / السياسة / مهام السحابة / خادم التطبيق
+المهارات / الإضافات / MCP / التحكم عن بعد / المظهر / الاستخدام
+متقدم / حول
+all pages: english=0 unlabeled=0
+FAILURES: 0
+```
+
 ## Verification
 
 - Compiled catalog: `ar.lproj/Localizable.strings` present in the app bundle.
 - Arabic AX labels confirmed for sidebar, welcome, composer, inspector, and
   Settings (`مهمة جديدة`, `بحث في المهام`, `ماذا تريد أن تفعل؟`,
   `إرسال الرسالة`, `إيماءات لوحة التتبع`, `حجم نص المحادثة`).
+- Automated live traversal: main window Arabic labels 164, all 20 Settings
+  pages with zero UI-owned English and zero unlabeled controls.
 - AX audit with Arabic and Settings → Tools open: `APP_CONTROLS: 44`,
   `UNLABELED: 0`.
 - OCR of the Arabic Settings pane read: `النص`, `حجم نص المحادثة`,
   `الشريط الجانبي`, `إيماءات لوحة التتبع`, `السحب لليسار`, `السحب لليمين`,
   `السحب لأعلى`, `السحب لأسفل`.
 
-The catalog contains 523 keys. Arabic copy was authored for this project; a
+The catalog contains 526 keys. Arabic copy was authored for this project; a
 native-speaker review is still recommended before shipping broadly.

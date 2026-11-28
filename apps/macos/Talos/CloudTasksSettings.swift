@@ -14,10 +14,13 @@ struct CloudTasksSettingsView: View {
                     get: { settings.cloudServerEnabled },
                     set: { model.setCloudServerEnabled($0) }
                 ))
+                .accessibilityLabel("Enable the self-hosted task server")
                 TextField("Port", value: $settings.cloudPort, format: .number)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Task server port")
                     .disabled(settings.cloudServerEnabled)
                 Toggle("Allow connections from the local network", isOn: $settings.cloudAllowLAN)
+                    .accessibilityLabel("Allow connections from the local network")
                     .disabled(settings.cloudServerEnabled)
                 LabeledContent("Status", value: model.cloudServerStatus)
                 if let endpoint = model.cloudEndpoint {
@@ -51,6 +54,7 @@ struct CloudTasksSettingsView: View {
                         if enabled { model.startCloudWorker() } else { model.stopCloudWorker() }
                     }
                 ))
+                .accessibilityLabel("Run queued tasks on this Mac")
                 .disabled(model.cloudEndpoint == nil)
                 LabeledContent("Worker", value: model.cloudWorkerStatus)
                 Text("The worker claims one task at a time, creates an isolated git worktree, and runs the task with shell and file tools. Cancelling a task takes effect before it starts or when the worker finishes its current step.")
@@ -62,6 +66,7 @@ struct CloudTasksSettingsView: View {
                 TextEditor(text: $prompt)
                     .font(.body)
                     .frame(minHeight: 70)
+                    .accessibilityLabel("Cloud task prompt")
                     .overlay(alignment: .topLeading) {
                         if prompt.isEmpty {
                             Text("Describe the change to make in \(model.projectURL.lastPathComponent)…")

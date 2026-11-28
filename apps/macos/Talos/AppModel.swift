@@ -96,8 +96,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var policySignature = String(localized: "Not configured")
     @Published private(set) var policyError: String?
     @Published private(set) var cloudTasks: [CloudTask] = []
-    @Published private(set) var cloudServerStatus = "Off"
-    @Published private(set) var cloudWorkerStatus = "Off"
+    @Published private(set) var cloudServerStatus = String(localized: "Off")
+    @Published private(set) var cloudWorkerStatus = String(localized: "Off")
     @Published private(set) var cloudEndpoint: String?
     @Published private(set) var activeRunSessionID: UUID?
     @Published var editingMessage: MessageEditTarget?
@@ -549,7 +549,7 @@ final class AppModel: ObservableObject {
                 bindLAN: settings.cloudAllowLAN
             )
             cloudServer = server
-            cloudServerStatus = "Starting…"
+            cloudServerStatus = String(localized: "Starting…")
             Task {
                 do {
                     try await server.start()
@@ -563,12 +563,12 @@ final class AppModel: ObservableObject {
                 } catch {
                     server.stop()
                     cloudServer = nil
-                    cloudServerStatus = "Failed"
+                    cloudServerStatus = String(localized: "Failed")
                     self.error = "Cloud task server failed: \(error.localizedDescription)"
                 }
             }
         } catch {
-            cloudServerStatus = "Failed"
+            cloudServerStatus = String(localized: "Failed")
             self.error = "Cloud task server failed: \(error.localizedDescription)"
         }
         Task { await refreshCloudTasks() }
@@ -578,7 +578,7 @@ final class AppModel: ObservableObject {
         stopCloudWorker()
         cloudServer?.stop()
         cloudServer = nil
-        cloudServerStatus = "Off"
+        cloudServerStatus = String(localized: "Off")
         cloudEndpoint = nil
     }
 
@@ -604,7 +604,7 @@ final class AppModel: ObservableObject {
             }
         )
         cloudWorker = worker
-        cloudWorkerStatus = "Running"
+        cloudWorkerStatus = String(localized: "Running")
         settings.cloudRunLocally = true
         Task { await worker.start() }
     }
@@ -612,11 +612,11 @@ final class AppModel: ObservableObject {
     func stopCloudWorker() {
         guard let worker = cloudWorker else { return }
         cloudWorker = nil
-        cloudWorkerStatus = "Stopping…"
+        cloudWorkerStatus = String(localized: "Stopping…")
         settings.cloudRunLocally = false
         Task {
             await worker.stop()
-            cloudWorkerStatus = "Off"
+            cloudWorkerStatus = String(localized: "Off")
         }
     }
 
@@ -913,7 +913,7 @@ final class AppModel: ObservableObject {
     }
 
     func newSession() {
-        var session = Session(title: "New Task")
+        var session = Session(title: String(localized: "New Task"))
         session.projectPath = currentProject?.path ?? settings.workspacePath
         sessions.insert(session, at: 0)
         selectedID = session.id
@@ -3050,7 +3050,7 @@ extension AppModel: AppServerHost {
     func appServerCreateSession(title: String?) -> UUID? {
         var session = Session(title: title?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             ? title!
-            : "App Server Task")
+            : String(localized: "App Server Task"))
         session.projectPath = currentProject?.path ?? settings.workspacePath
         sessions.insert(session, at: 0)
         selectedID = session.id
