@@ -1,5 +1,28 @@
 import SwiftUI
 
+@MainActor
+final class WindowBridge {
+    static let shared = WindowBridge()
+    var openWindow: OpenWindowAction?
+
+    func openMainWindow() {
+        openWindow?(id: "secondary")
+    }
+}
+
+struct NewWindowCommands: Commands {
+    let model: AppModel
+
+    var body: some Commands {
+        CommandGroup(replacing: .newItem) {
+            Button("New Task") { model.newSession() }
+                .keyboardShortcut("n", modifiers: .command)
+            Button("New Window") { WindowBridge.shared.openMainWindow() }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+        }
+    }
+}
+
 final class TalosAppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         LSPManager.shared.stopAll()
@@ -13,8 +36,24 @@ struct TalosApp: App {
     @StateObject private var model = AppModel()
     @StateObject private var menuBar = MenuBarController()
 
+    @ViewBuilder
+    private var rootContent: some View {
+        ContentView()
+            .environmentObject(model)
+            .environmentObject(model.settings)
+            .environmentObject(model.usage)
+            .tint(Brand.bronze)
+            .frame(minWidth: 900, minHeight: 600)
+            .onAppear {
+                if let icon = Brand.icon {
+                    NSApp.applicationIconImage = icon
+                }
+                menuBar.configure(model: model, settings: model.settings)
+            }
+    }
+
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(model)
                 .environmentObject(model.settings)
@@ -28,13 +67,13 @@ struct TalosApp: App {
                     menuBar.configure(model: model, settings: model.settings)
                 }
         }
+        WindowGroup("Talos", id: "secondary") {
+            rootContent
+        }
         .defaultSize(width: 1200, height: 780)
         .windowToolbarStyle(.unified)
         .commands {
-            CommandGroup(replacing: .newItem) {
-                Button("New Task") { model.newSession() }
-                    .keyboardShortcut("n", modifiers: .command)
-            }
+            NewWindowCommands(model: model)
             CommandMenu("Task") {
                 Button("Quick Switch…") { model.showQuickSwitcher = true }
                     .keyboardShortcut("k", modifiers: .command)

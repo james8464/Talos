@@ -128,7 +128,8 @@ attachment thumbnails, a live context meter, and a streaming status bar with
 stop and context. Tool results appear as compact
 cards with expandable output, and the inspector shows semantic-index status
 with a rebuild action. Task deletion goes through the window UndoManager, so
-⌘Z restores a deleted task and ⇧⌘Z removes it again.
+⌘Z restores a deleted task and ⇧⌘Z removes it again. File > New Window
+(⇧⌘N) opens another standard window over the same task store.
 
 ## Semantic code search
 

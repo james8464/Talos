@@ -52,7 +52,8 @@ model that produced them.
   added context, and explicit trust confirmation
 - Audit log export as JSON with sessions, token usage, policy, and hook
   activity, from Settings → Usage or the `talos audit` CLI command
-- Undo and redo for task deletion through the standard window UndoManager
+- Multiple windows with File > New Window (⇧⌘N), plus undo and redo for task
+  deletion through the standard window UndoManager
 - Approval prompts with a parsed multi-file patch preview before edits are
   applied, per-task “always allow”, sandbox modes, network control
 - Message queueing while a response is streaming, attachments, inline

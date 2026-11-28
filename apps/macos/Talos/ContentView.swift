@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.openWindow) private var openWindow
     @State private var draft = ""
     @FocusState private var composerFocused: Bool
 
@@ -115,6 +116,9 @@ struct ContentView: View {
                 }
                 .help("Show or hide details (⌘⌥I)")
             }
+        }
+        .onAppear {
+            WindowBridge.shared.openWindow = openWindow
         }
         .alert("Request Failed", isPresented: Binding(
             get: { model.error != nil },

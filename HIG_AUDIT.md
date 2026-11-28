@@ -24,6 +24,8 @@ applicable to a single-user, local-first macOS model client.
 - Enlarged icon-only hit targets to at least 24×24 pt, and 28×28 pt for
   send/stop.
 - Added a Help menu and a shortcut/reference sheet (⌘?).
+- Added File > New Window (⇧⌘N), backed by a second standard WindowGroup;
+  verified as two independently resizable windows.
 - Added searchable Settings and image/PDF attachment thumbnails.
 
 ## Design fundamentals
@@ -75,7 +77,7 @@ applicable to a single-user, local-first macOS model client.
 | Managing accounts | Account management | ➖ | Provider keys only; no Talos account |
 | Managing notifications | Ask before notifying, respect settings | ✅ | Notification toggle requests authorization; macOS notification center |
 | Modality | One sheet at a time, clear dismissal | ✅ | One sheet per surface; approval sheet offers Deny plus Allow actions |
-| Multitasking | Support multiple tasks and windows | 🟡 | Tasks switch from the sidebar and ⌘[/⌘]; File > New Window is replaced by New Task |
+| Multitasking | Support multiple tasks and windows | ✅ | Tasks switch from the sidebar and ⌘[/⌘]; File > New Window (⇧⌘N) opens a second standard window, verified at 1200×780 alongside an independently resized 1000×688 window. Windows share the task store and current selection |
 | Offering help | Provide discoverable help | ✅ | Help menu (⌘?) with a shortcut/concept sheet and Settings link |
 | Onboarding | Teach in context, avoid forced tours | ✅ | Welcome screen with suggestions; no blocking onboarding |
 | Playing audio | Audio feedback conventions | ➖ | Only an optional completion sound |
@@ -249,7 +251,6 @@ applicable to a single-user, local-first macOS model client.
 ## Remaining partial items
 
 - Right-to-left layout has not been screenshot-tested.
-- File > New Window is not exposed; tasks replace windows.
 - Sidebar content is grouped but not user-customizable.
 - VoiceOver has structural labels but no full spoken walkthrough.
 - No recent-documents browser.
