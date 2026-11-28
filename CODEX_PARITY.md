@@ -79,10 +79,11 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Sandbox | shell/file enforcement via `sandbox-exec`; no managed network proxy/domain allowlist |
 | Remote | local-network page only; no cloud relay or native mobile app |
 | Cloud tasks | Self-hosted JSON task queue with a bearer-token HTTP worker protocol: enqueue/list/get/cancel/delete, claim, event logs, completion and failure, persisted tasks, isolated git worktrees, and a local worker that runs tasks with shell and file tools |
-| App server | Headless local JSON-RPC + SSE API with bearer auth: initialize, session create/list/get, prompt, cancel, pending approval, approval resolve, and live transcript/tool/approval/run events |
+| App server | Headless local JSON-RPC + SSE API with bearer auth: initialize, session create/list/get, prompt, cancel, pending approval, approval resolve, message retry/edit/fork, and live transcript/tool/approval/run events |
 | Menu bar | NSStatusItem quick panel with live ready/working/error status, model menu, context and queue state, New Task, Stop while running, Open Talos, Settings, and Quit |
 | Voice input | macOS Speech + AVAudioEngine live dictation with on-device preference, composer mic control, partial-transcript merging, permission status/request UI, and a 15s authorization timeout. Verified with a generated AIFF through file transcription and live microphone capture, including a recognized transcript in the composer |
 | Memory and goals | Persistent local memories and active goals injected into every system prompt; enabled/disabled state, goal status, add/edit/delete UI, `/memory`, and model-facing `remember` and `update_goal` tools |
+| Message lineage | Persisted `parentID`, `revisionOf`, and `retryOf` links; edit-and-resend, retry any selected assistant message, and fork from any message into a new session with `forkedFromSessionID` and `forkedFromMessageID`; context-menu actions and app-server methods |
 | Chronicle | Opt-in local activity history and rule-based ambient suggestions for repeated failures, completed runs, and working-tree changes; dedupe/cooldown, three-active cap, persisted dismiss/act state, composer banner, and Settings history/suggestion UI |
 | Sessions | persist, archive, fork, rename, retry; no resume picker yet |
 
@@ -91,7 +92,6 @@ scope. “Not yet” is deliberately not exposed as a working control.
 These are Codex features Talos does not claim to have:
 
 - Remote-control daemon and native mobile client
-- Automatic retry/edit/fork of individual messages
 
 The remaining list is intentionally explicit. Talos labels unimplemented tools
 as unavailable instead of showing non-working controls.

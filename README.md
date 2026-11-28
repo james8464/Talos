@@ -69,6 +69,7 @@ model that produced them.
   preference, permission handling, and verified live microphone transcription
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
+- Persisted message lineage with retry, edit, and fork for any selected message
 - Notifications, appearance controls, and a native sidebar Settings window
 
 ## Build

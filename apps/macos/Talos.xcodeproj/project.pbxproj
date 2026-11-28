@@ -31,6 +31,7 @@
 		5A14E9CF14B7A67B1070CDA6 /* CDPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7DBC90152307B91B738B5B /* CDPClient.swift */; };
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
+		7303483ABDE8FC03103598CA /* ConversationBranching.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85CFBCEEBB16E2023311980 /* ConversationBranching.swift */; };
 		7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */; };
 		7F75F76F4697C6ECB25A8018 /* TalosNativeHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 673871726683A02E29B248D2 /* TalosNativeHost.swift */; };
 		83E884CA68D2B9D51226A3C2 /* ProviderTokenCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6969EEA6748F0E53FBB946C5 /* ProviderTokenCounter.swift */; };
@@ -117,6 +118,7 @@
 		C74B895D153BF961B0B8100F /* AppServerSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServerSettings.swift; sourceTree = "<group>"; };
 		C7B210FBD6286CFA7711C157 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBrowser.swift; sourceTree = "<group>"; };
+		D85CFBCEEBB16E2023311980 /* ConversationBranching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationBranching.swift; sourceTree = "<group>"; };
 		DA482A89BCEA5B1F988307C3 /* MCPResourceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPResourceView.swift; sourceTree = "<group>"; };
 		DD45CF04EACBD4E18E45E631 /* Profiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profiles.swift; sourceTree = "<group>"; };
 		E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPSamplingView.swift; sourceTree = "<group>"; };
@@ -158,6 +160,7 @@
 				F34CE21CD9645365CB1B2156 /* CloudTasks.swift */,
 				218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */,
 				AD1122852660CD8181149806 /* ContentView.swift */,
+				D85CFBCEEBB16E2023311980 /* ConversationBranching.swift */,
 				F4ABA0BFD684271C01A0C014 /* DictationController.swift */,
 				08D44A0432C25F6647A1BE45 /* FanOut.swift */,
 				5952B2988ACA2B10007C9244 /* Git.swift */,
@@ -341,6 +344,7 @@
 				D142E21A2891D62B7C9C2750 /* CloudTasks.swift in Sources */,
 				7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
+				7303483ABDE8FC03103598CA /* ConversationBranching.swift in Sources */,
 				4C6CAC975259B683592739A9 /* DictationController.swift in Sources */,
 				AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */,
 				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,

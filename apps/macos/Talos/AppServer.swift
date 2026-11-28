@@ -10,6 +10,9 @@ struct AppServerMessage: Sendable {
     let isStreaming: Bool
     let createdAt: Date
     let attachments: [String]
+    let parentID: UUID?
+    let revisionOf: UUID?
+    let retryOf: UUID?
 }
 
 struct AppServerSession: Sendable {
@@ -18,6 +21,8 @@ struct AppServerSession: Sendable {
     let updatedAt: Date
     let archived: Bool
     let messages: [AppServerMessage]
+    let forkedFromSessionID: UUID?
+    let forkedFromMessageID: UUID?
 }
 
 struct AppServerApproval: Sendable {
@@ -36,6 +41,9 @@ protocol AppServerHost: AnyObject {
     func appServerPrompt(sessionID: UUID, text: String) -> Result<UUID, Error>
     func appServerCancel(sessionID: UUID) -> Bool
     func appServerResolveApproval(id: UUID, decision: String) -> Bool
+    func appServerRetryMessage(sessionID: UUID, messageID: UUID) async -> Result<UUID, Error>
+    func appServerEditMessage(sessionID: UUID, messageID: UUID, text: String) async -> Result<UUID, Error>
+    func appServerForkMessage(sessionID: UUID, messageID: UUID) -> Result<UUID, Error>
     func appServerInfo() -> [String: Any]
 }
 
@@ -193,7 +201,7 @@ final class AppServer: ObservableObject {
             let method = requestLine.first ?? "GET"
             let target = requestLine.count > 1 ? requestLine[1] : "/"
             Task { @MainActor in
-                self.route(method: method, target: target, headers: headers, body: body, connection: connection)
+                await self.route(method: method, target: target, headers: headers, body: body, connection: connection)
             }
         }
     }
@@ -204,7 +212,7 @@ final class AppServer: ObservableObject {
         headers: [String: String],
         body: Data,
         connection: NWConnection
-    ) {
+    ) async {
         let components = URLComponents(string: "http://localhost" + target)
         let path = components?.path ?? target
         let query = Dictionary(
@@ -243,7 +251,7 @@ final class AppServer: ObservableObject {
         }
         let id = request["id"]
         let params = request["params"] as? [String: Any] ?? [:]
-        let result = handleRPC(method: rpcMethod, params: params)
+        let result = await handleRPC(method: rpcMethod, params: params)
         let response: [String: Any]
         if let error = result.error {
             response = rpcError(id: id, code: -32000, message: error)
@@ -256,7 +264,7 @@ final class AppServer: ObservableObject {
     private func handleRPC(
         method: String,
         params: [String: Any]
-    ) -> (value: Any?, error: String?) {
+    ) async -> (value: Any?, error: String?) {
         guard let host else { return (nil, "The Talos host is not attached.") }
         switch method {
         case "initialize", "ping":
@@ -304,6 +312,46 @@ final class AppServer: ObservableObject {
                 "toolName": approval.toolName,
                 "summary": approval.summary,
             ], nil)
+        case "message.retry":
+            guard let sessionID = params["sessionId"] as? String,
+                  let sessionUUID = UUID(uuidString: sessionID),
+                  let messageID = params["messageId"] as? String,
+                  let messageUUID = UUID(uuidString: messageID) else {
+                return (nil, "sessionId and messageId are required.")
+            }
+            switch await host.appServerRetryMessage(sessionID: sessionUUID, messageID: messageUUID) {
+            case .success(let runID):
+                return (["sessionId": sessionID, "runId": runID.uuidString], nil)
+            case .failure(let error):
+                return (nil, error.localizedDescription)
+            }
+        case "message.edit":
+            guard let sessionID = params["sessionId"] as? String,
+                  let sessionUUID = UUID(uuidString: sessionID),
+                  let messageID = params["messageId"] as? String,
+                  let messageUUID = UUID(uuidString: messageID),
+                  let text = params["text"] as? String else {
+                return (nil, "sessionId, messageId, and text are required.")
+            }
+            switch await host.appServerEditMessage(sessionID: sessionUUID, messageID: messageUUID, text: text) {
+            case .success(let runID):
+                return (["sessionId": sessionID, "runId": runID.uuidString], nil)
+            case .failure(let error):
+                return (nil, error.localizedDescription)
+            }
+        case "message.fork":
+            guard let sessionID = params["sessionId"] as? String,
+                  let sessionUUID = UUID(uuidString: sessionID),
+                  let messageID = params["messageId"] as? String,
+                  let messageUUID = UUID(uuidString: messageID) else {
+                return (nil, "sessionId and messageId are required.")
+            }
+            switch host.appServerForkMessage(sessionID: sessionUUID, messageID: messageUUID) {
+            case .success(let newID):
+                return (["sessionId": newID.uuidString], nil)
+            case .failure(let error):
+                return (nil, error.localizedDescription)
+            }
         case "approval.resolve":
             guard let raw = params["approvalId"] as? String,
                   let id = UUID(uuidString: raw),
@@ -329,6 +377,8 @@ final class AppServer: ObservableObject {
 
     private func sessionDetail(_ session: AppServerSession) -> [String: Any] {
         var detail = sessionSummary(session)
+        detail["forkedFromSessionID"] = session.forkedFromSessionID?.uuidString ?? NSNull()
+        detail["forkedFromMessageID"] = session.forkedFromMessageID?.uuidString ?? NSNull()
         detail["messages"] = session.messages.map { message in
             [
                 "id": message.id.uuidString,
@@ -338,6 +388,9 @@ final class AppServer: ObservableObject {
                 "isStreaming": message.isStreaming,
                 "createdAt": ISO8601DateFormatter().string(from: message.createdAt),
                 "attachments": message.attachments,
+                "parentID": message.parentID?.uuidString ?? NSNull(),
+                "revisionOf": message.revisionOf?.uuidString ?? NSNull(),
+                "retryOf": message.retryOf?.uuidString ?? NSNull(),
             ]
         }
         return detail

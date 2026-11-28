@@ -79,15 +79,20 @@ struct ChatMessage: Identifiable, Codable, Equatable {
     var attachmentPath: String? = nil
     var attachments: [String] = []
     var createdAt = Date()
+    var parentID: UUID? = nil
+    var revisionOf: UUID? = nil
+    var retryOf: UUID? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id, role, text, isStreaming, model, toolName, toolStatus
         case attachmentPath, attachments, createdAt
+        case parentID, revisionOf, retryOf
     }
 
     init(id: UUID = UUID(), role: Role, text: String, isStreaming: Bool = false,
          model: String? = nil, toolName: String? = nil, toolStatus: ToolStatus? = nil,
-         attachmentPath: String? = nil, attachments: [String] = [], createdAt: Date = Date()) {
+         attachmentPath: String? = nil, attachments: [String] = [], createdAt: Date = Date(),
+         parentID: UUID? = nil, revisionOf: UUID? = nil, retryOf: UUID? = nil) {
         self.id = id
         self.role = role
         self.text = text
@@ -98,6 +103,9 @@ struct ChatMessage: Identifiable, Codable, Equatable {
         self.attachmentPath = attachmentPath
         self.attachments = attachments
         self.createdAt = createdAt
+        self.parentID = parentID
+        self.revisionOf = revisionOf
+        self.retryOf = retryOf
     }
 
     init(from decoder: Decoder) throws {
@@ -112,6 +120,9 @@ struct ChatMessage: Identifiable, Codable, Equatable {
         attachmentPath = try container.decodeIfPresent(String.self, forKey: .attachmentPath)
         attachments = try container.decodeIfPresent([String].self, forKey: .attachments) ?? []
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        parentID = try container.decodeIfPresent(UUID.self, forKey: .parentID)
+        revisionOf = try container.decodeIfPresent(UUID.self, forKey: .revisionOf)
+        retryOf = try container.decodeIfPresent(UUID.self, forKey: .retryOf)
     }
 }
 
@@ -152,14 +163,18 @@ struct Session: Identifiable, Codable, Equatable {
     var archived = false
     var createdAt = Date()
     var updatedAt = Date()
+    var forkedFromSessionID: UUID? = nil
+    var forkedFromMessageID: UUID? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id, title, projectPath, messages, plan, queue, approvedTools, archived, createdAt, updatedAt
+        case forkedFromSessionID, forkedFromMessageID
     }
 
     init(id: UUID = UUID(), title: String, projectPath: String = "", messages: [ChatMessage] = [],
          plan: [PlanStep] = [], queue: [QueuedPrompt] = [], approvedTools: [String] = [],
-         archived: Bool = false, createdAt: Date = Date(), updatedAt: Date = Date()) {
+         archived: Bool = false, createdAt: Date = Date(), updatedAt: Date = Date(),
+         forkedFromSessionID: UUID? = nil, forkedFromMessageID: UUID? = nil) {
         self.id = id
         self.title = title
         self.projectPath = projectPath
@@ -170,6 +185,8 @@ struct Session: Identifiable, Codable, Equatable {
         self.archived = archived
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.forkedFromSessionID = forkedFromSessionID
+        self.forkedFromMessageID = forkedFromMessageID
     }
 
     init(from decoder: Decoder) throws {
@@ -184,6 +201,8 @@ struct Session: Identifiable, Codable, Equatable {
         archived = try container.decodeIfPresent(Bool.self, forKey: .archived) ?? false
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
+        forkedFromSessionID = try container.decodeIfPresent(UUID.self, forKey: .forkedFromSessionID)
+        forkedFromMessageID = try container.decodeIfPresent(UUID.self, forKey: .forkedFromMessageID)
     }
 
     var preview: String {

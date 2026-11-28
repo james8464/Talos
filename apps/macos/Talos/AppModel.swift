@@ -3,6 +3,14 @@ import AppKit
 import Combine
 import CryptoKit
 
+struct MessageEditTarget: Identifiable {
+    let id = UUID()
+    let sessionID: UUID
+    let messageID: UUID
+    let text: String
+    let attachments: [String]
+}
+
 struct ApprovalRequest: Identifiable {
     let id = UUID()
     let toolName: String
@@ -87,6 +95,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var cloudWorkerStatus = "Off"
     @Published private(set) var cloudEndpoint: String?
     @Published private(set) var activeRunSessionID: UUID?
+    @Published var editingMessage: MessageEditTarget?
+    private var pendingAssistantRetryOf: UUID?
     @Published private(set) var providerContextTokens: Int?
     @Published private(set) var providerContextLabel: String?
     private var providerContextKey: String?
@@ -963,7 +973,8 @@ final class AppModel: ObservableObject {
             projectPath: source.projectPath,
             messages: copiedMessages,
             plan: source.plan,
-            approvedTools: source.approvedTools
+            approvedTools: source.approvedTools,
+            forkedFromSessionID: source.id
         )
         fork.updatedAt = Date()
         sessions.insert(fork, at: 0)
@@ -974,25 +985,140 @@ final class AppModel: ObservableObject {
     func editMessage(_ sessionID: UUID, _ messageID: UUID) {
         guard !isStreaming,
               let index = sessions.firstIndex(where: { $0.id == sessionID }),
-              let messageIndex = sessions[index].messages.firstIndex(where: { $0.id == messageID }),
-              sessions[index].messages[messageIndex].role == .user else { return }
-        let text = sessions[index].messages[messageIndex].text
-        sessions[index].messages.removeSubrange(messageIndex...)
+              let plan = ConversationBranching.edit(sessions[index].messages, messageID: messageID) else {
+            return
+        }
+        editingMessage = MessageEditTarget(
+            sessionID: sessionID,
+            messageID: messageID,
+            text: plan.user.text,
+            attachments: plan.user.attachments
+        )
+    }
+
+    func commitEditMessage(
+        _ target: MessageEditTarget,
+        text: String
+    ) async -> Result<UUID, Error> {
+        guard !isStreaming,
+              let index = sessions.firstIndex(where: { $0.id == target.sessionID }),
+              let plan = ConversationBranching.edit(sessions[index].messages, messageID: target.messageID) else {
+            error = "That message can no longer be edited."
+            return .failure(AppServerError.message("That message can no longer be edited."))
+        }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return .failure(AppServerError.message("The edited message is empty."))
+        }
+
+        let summary = await runHooks(.userPromptSubmit, sessionID: target.sessionID)
+        if summary.blocked {
+            let message = summary.reason.map { "Blocked by hook: \($0)" } ?? "Blocked by a hook."
+            error = message
+            return .failure(AppServerError.message(message))
+        }
+        var prompt = trimmed
+        if !summary.contexts.isEmpty {
+            prompt += "\n\nHook context:\n" + summary.contexts.joined(separator: "\n")
+        }
+
+        sessions[index].messages = plan.prefix
         sessions[index].updatedAt = Date()
-        pendingDraft = text
         saveSessions()
+        let result = startRun(
+            sessionID: target.sessionID,
+            text: prompt,
+            attachments: target.attachments,
+            revisionOf: target.messageID,
+            parentID: plan.parentID
+        )
+        if case .failure(let failure) = result {
+            error = failure.localizedDescription
+            return .failure(failure)
+        }
+        return result
+    }
+
+    func retryMessage(_ sessionID: UUID, _ messageID: UUID) async -> Result<UUID, Error> {
+        guard !isStreaming,
+              let index = sessions.firstIndex(where: { $0.id == sessionID }),
+              let plan = ConversationBranching.retry(sessions[index].messages, messageID: messageID) else {
+            let message = "Select an assistant message that follows a user message."
+            error = message
+            return .failure(AppServerError.message(message))
+        }
+        let summary = await runHooks(.userPromptSubmit, sessionID: sessionID)
+        if summary.blocked {
+            let message = summary.reason.map { "Blocked by hook: \($0)" } ?? "Blocked by a hook."
+            error = message
+            return .failure(AppServerError.message(message))
+        }
+        var prompt = plan.user.text
+        if !summary.contexts.isEmpty {
+            prompt += "\n\nHook context:\n" + summary.contexts.joined(separator: "\n")
+        }
+        sessions[index].messages = plan.prefix
+        sessions[index].updatedAt = Date()
+        saveSessions()
+        let result = startRun(
+            sessionID: sessionID,
+            text: prompt,
+            attachments: plan.user.attachments,
+            revisionOf: plan.user.id,
+            assistantRetryOf: plan.assistant.id,
+            parentID: plan.parentID
+        )
+        if case .failure(let failure) = result {
+            error = failure.localizedDescription
+            return .failure(failure)
+        }
+        return result
+    }
+
+    @discardableResult
+    func forkMessage(_ sessionID: UUID, _ messageID: UUID) -> Result<UUID, Error> {
+        guard let source = sessions.first(where: { $0.id == sessionID }),
+              let messages = ConversationBranching.fork(source.messages, messageID: messageID) else {
+            return .failure(AppServerError.message("Message not found."))
+        }
+        let copied = messages.map { message in
+            ChatMessage(
+                role: message.role,
+                text: message.text,
+                isStreaming: false,
+                model: message.model,
+                toolName: message.toolName,
+                toolStatus: message.toolStatus,
+                attachmentPath: message.attachmentPath,
+                attachments: message.attachments,
+                parentID: message.parentID,
+                revisionOf: message.revisionOf,
+                retryOf: message.retryOf
+            )
+        }
+        var fork = Session(
+            title: "\(source.title) branch",
+            projectPath: source.projectPath,
+            messages: copied,
+            plan: source.plan,
+            approvedTools: source.approvedTools,
+            forkedFromSessionID: source.id,
+            forkedFromMessageID: messageID
+        )
+        fork.updatedAt = Date()
+        sessions.insert(fork, at: 0)
+        selectedID = fork.id
+        saveSessions()
+        return .success(fork.id)
     }
 
     func retryLastTurn() {
         guard !isStreaming, let id = selectedID,
-              let index = sessions.firstIndex(where: { $0.id == id }) else { return }
-        guard let userIndex = sessions[index].messages.lastIndex(where: { $0.role == .user }) else { return }
-        let text = sessions[index].messages[userIndex].text
-        let attachments = sessions[index].messages[userIndex].attachments
-        sessions[index].messages.removeSubrange(userIndex...)
-        sessions[index].updatedAt = Date()
-        saveSessions()
-        Task { await submitWithHooks(text, attachments: attachments) }
+              let index = sessions.firstIndex(where: { $0.id == id }),
+              let assistant = sessions[index].messages.last(where: { $0.role == .assistant }) else {
+            return
+        }
+        Task { _ = await retryMessage(id, assistant.id) }
     }
 
     func clearHistory() {
@@ -1324,7 +1450,10 @@ final class AppModel: ObservableObject {
     func startRun(
         sessionID: UUID,
         text: String,
-        attachments: [String] = []
+        attachments: [String] = [],
+        revisionOf: UUID? = nil,
+        assistantRetryOf: UUID? = nil,
+        parentID: UUID? = nil
     ) -> Result<UUID, Error> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -1349,8 +1478,15 @@ final class AppModel: ObservableObject {
            sessions[index].title == "New Task" || sessions[index].title.isEmpty {
             sessions[index].title = String(trimmed.prefix(48))
         }
-        let message = ChatMessage(role: .user, text: trimmed, attachments: attachments)
+        let message = ChatMessage(
+            role: .user,
+            text: trimmed,
+            attachments: attachments,
+            parentID: parentID ?? sessions[index].messages.last?.id,
+            revisionOf: revisionOf
+        )
         sessions[index].messages.append(message)
+        pendingAssistantRetryOf = assistantRetryOf
         chronicleRecord(
             .prompt,
             summary: String(trimmed.prefix(180)),
@@ -1984,7 +2120,12 @@ final class AppModel: ObservableObject {
         guard let id = selectedID,
               let index = sessions.firstIndex(where: { $0.id == id }) else { return }
         sessions[index].messages.append(
-            ChatMessage(role: .assistant, text: text, model: "Command")
+            ChatMessage(
+                role: .assistant,
+                text: text,
+                model: "Command",
+                parentID: sessions[index].messages.last?.id
+            )
         )
         sessions[index].updatedAt = Date()
         saveSessions()
@@ -2073,8 +2214,17 @@ final class AppModel: ObservableObject {
             let history = sessions[index].messages
             let assistantID = UUID()
             sessions[index].messages.append(
-                ChatMessage(id: assistantID, role: .assistant, text: "", isStreaming: true, model: runChoice.display)
+                ChatMessage(
+                    id: assistantID,
+                    role: .assistant,
+                    text: "",
+                    isStreaming: true,
+                    model: runChoice.display,
+                    parentID: sessions[index].messages.last?.id,
+                    retryOf: pendingAssistantRetryOf
+                )
             )
+            pendingAssistantRetryOf = nil
             sessions[index].updatedAt = Date()
 
             do {
@@ -2758,7 +2908,8 @@ final class AppModel: ObservableObject {
                 text: result.output,
                 toolName: call.name,
                 toolStatus: result.status,
-                attachmentPath: result.attachmentPath
+                attachmentPath: result.attachmentPath,
+                parentID: sessions[index].messages.last?.id
             )
         )
         sessions[index].updatedAt = Date()
@@ -2794,9 +2945,14 @@ extension AppModel: AppServerHost {
                         toolName: message.toolName,
                         isStreaming: message.isStreaming,
                         createdAt: message.createdAt,
-                        attachments: message.attachments
+                        attachments: message.attachments,
+                        parentID: message.parentID,
+                        revisionOf: message.revisionOf,
+                        retryOf: message.retryOf
                     )
-                }
+                },
+                forkedFromSessionID: session.forkedFromSessionID,
+                forkedFromMessageID: session.forkedFromMessageID
             )
         }
     }
@@ -2832,6 +2988,30 @@ extension AppModel: AppServerHost {
 
     func appServerCancel(sessionID: UUID) -> Bool {
         cancelRun(sessionID: sessionID)
+    }
+
+    func appServerRetryMessage(sessionID: UUID, messageID: UUID) async -> Result<UUID, Error> {
+        await retryMessage(sessionID, messageID)
+    }
+
+    func appServerEditMessage(sessionID: UUID, messageID: UUID, text: String) async -> Result<UUID, Error> {
+        guard let message = sessions.first(where: { $0.id == sessionID })?
+            .messages.first(where: { $0.id == messageID }) else {
+            return .failure(AppServerError.message("Message not found."))
+        }
+        return await commitEditMessage(
+            MessageEditTarget(
+                sessionID: sessionID,
+                messageID: messageID,
+                text: message.text,
+                attachments: message.attachments
+            ),
+            text: text
+        )
+    }
+
+    func appServerForkMessage(sessionID: UUID, messageID: UUID) -> Result<UUID, Error> {
+        forkMessage(sessionID, messageID)
     }
 
     func appServerResolveApproval(id: UUID, decision: String) -> Bool {

@@ -114,6 +114,10 @@ struct ContentView: View {
             MCPSamplingView(request: request)
                 .environmentObject(model)
         }
+        .sheet(item: $model.editingMessage) { target in
+            MessageEditSheet(target: target)
+                .environmentObject(model)
+        }
         .sheet(item: $model.activeMCPApp) { app in
             MCPAppView(app: app)
                 .environmentObject(model)
@@ -959,8 +963,11 @@ private struct TaskView: View {
                                 model.editMessage(session.id, message.id)
                             } : nil,
                             onRetry: message.role == .assistant ? {
-                                model.retryLastTurn()
-                            } : nil
+                                Task { _ = await model.retryMessage(session.id, message.id) }
+                            } : nil,
+                            onFork: {
+                                model.forkMessage(session.id, message.id)
+                            }
                         )
                         .id(message.id)
                     }
@@ -996,6 +1003,7 @@ private struct MessageRow: View {
     let message: ChatMessage
     var onEdit: (() -> Void)? = nil
     var onRetry: (() -> Void)? = nil
+    var onFork: (() -> Void)? = nil
     @State private var hovering = false
 
     var body: some View {
@@ -1008,6 +1016,16 @@ private struct MessageRow: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                    if message.revisionOf != nil {
+                        Text("edited branch")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    if message.retryOf != nil {
+                        Text("retry branch")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                     Spacer()
                     if !message.text.isEmpty {
                         Button {
@@ -1049,10 +1067,13 @@ private struct MessageRow: View {
             .onHover { hovering = $0 }
             .contextMenu {
                 if let onEdit {
-                    Button("Edit and Resend") { onEdit() }
+                    Button("Edit and Resend…") { onEdit() }
                 }
                 if let onRetry {
-                    Button("Retry") { onRetry() }
+                    Button("Retry This Message") { onRetry() }
+                }
+                if let onFork {
+                    Button("Fork From Here") { onFork() }
                 }
                 if !message.text.isEmpty {
                     Button("Copy") { copy() }
@@ -1314,6 +1335,65 @@ private struct NewWorktreeSheet: View {
             }
             busy = false
         }
+    }
+}
+
+private struct MessageEditSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    let target: MessageEditTarget
+    @State private var text: String
+    @State private var busy = false
+    @State private var error: String?
+
+    init(target: MessageEditTarget) {
+        self.target = target
+        _text = State(initialValue: target.text)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Edit and Resend")
+                .font(.title3.weight(.semibold))
+            Text("The selected message and everything after it will be replaced by a new branch.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextEditor(text: $text)
+                .font(.body)
+                .frame(minHeight: 110)
+            if !target.attachments.isEmpty {
+                Text("\(target.attachments.count) attachment(s) kept")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let error {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                Button(busy ? "Sending…" : "Save and Resend") {
+                    busy = true
+                    error = nil
+                    Task {
+                        let result = await model.commitEditMessage(target, text: text)
+                        busy = false
+                        switch result {
+                        case .success:
+                            dismiss()
+                        case .failure(let failure):
+                            error = failure.localizedDescription
+                        }
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 620, height: 320)
     }
 }
 
