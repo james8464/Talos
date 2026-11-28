@@ -25,6 +25,18 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
 
+  TalosRemoteDaemon:
+    type: tool
+    platform: macOS
+    sources:
+      - path: RemoteDaemon
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.remotedaemon
+        PRODUCT_NAME: TalosRemoteDaemon
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
   Talos:
     type: application
     platform: macOS
@@ -55,5 +67,6 @@ schemes:
       targets:
         Talos: all
         TalosNativeHost: all
+        TalosRemoteDaemon: all
     run:
       config: Debug

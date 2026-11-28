@@ -77,7 +77,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Reasoning | provider-specific options only where the transport exposes them |
 | Usage | provider-reported where available, otherwise clearly marked estimated |
 | Sandbox | shell/file enforcement via `sandbox-exec`; no managed network proxy/domain allowlist |
-| Remote | local-network page only; no cloud relay or native mobile app |
+| Remote | In-app local-network page plus a headless `TalosRemoteDaemon` with token auth, mobile web UI, session create/select, prompt, stop, approval, and status proxying to the app server; no cloud relay or native mobile app |
 | Cloud tasks | Self-hosted JSON task queue with a bearer-token HTTP worker protocol: enqueue/list/get/cancel/delete, claim, event logs, completion and failure, persisted tasks, isolated git worktrees, and a local worker that runs tasks with shell and file tools |
 | App server | Headless local JSON-RPC + SSE API with bearer auth: initialize, session create/list/get, prompt, cancel, pending approval, approval resolve, message retry/edit/fork, and live transcript/tool/approval/run events |
 | Menu bar | NSStatusItem quick panel with live ready/working/error status, model menu, context and queue state, New Task, Stop while running, Open Talos, Settings, and Quit |
@@ -91,7 +91,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 These are Codex features Talos does not claim to have:
 
-- Remote-control daemon and native mobile client
+- Native iOS/Android client (the headless daemon and mobile web client are implemented)
 
 The remaining list is intentionally explicit. Talos labels unimplemented tools
 as unavailable instead of showing non-working controls.

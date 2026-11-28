@@ -35,6 +35,20 @@
                ReferencedContainer = "container:Talos.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A777D92A1B11DCDB6A6757B1"
+               BuildableName = "TalosRemoteDaemon"
+               BlueprintName = "TalosRemoteDaemon"
+               ReferencedContainer = "container:Talos.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
