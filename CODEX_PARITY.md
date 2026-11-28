@@ -36,7 +36,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Context | Capability/model/override window, live usage meter |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
-| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/policy`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
+| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/policy`, `/cloud`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
 | Fan-out | `fanout` tool and `/fanout` run multiple isolated read-only tasks concurrently with a configurable cap, per-task timeouts and usage, independent failures, and one report per task |
 | Auto-review | A read-only reviewer runs against the pending tool call, arguments, and working tree diff before an approval prompt; the sheet shows verdict, risk, reasons, and reviewer model |
@@ -70,13 +70,13 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Usage | provider-reported where available, otherwise clearly marked estimated |
 | Sandbox | shell/file enforcement via `sandbox-exec`; no managed network proxy/domain allowlist |
 | Remote | local-network page only; no cloud relay or native mobile app |
+| Cloud tasks | Self-hosted JSON task queue with a bearer-token HTTP worker protocol: enqueue/list/get/cancel/delete, claim, event logs, completion and failure, persisted tasks, isolated git worktrees, and a local worker that runs tasks with shell and file tools |
 | Sessions | persist, archive, fork, rename, retry; no resume picker yet |
 
 ## Not yet
 
 These are Codex features Talos does not claim to have:
 
-- Codex Cloud tasks and cloud apply
 - Nested subagents (parallel fan-out is implemented)
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client

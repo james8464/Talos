@@ -43,6 +43,8 @@ model that produced them.
 - Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in,
   interactive elicitation forms, approved model sampling, and sandboxed HTML
   MCP apps that can call their own server's tools
+- Self-hosted cloud tasks with an HTTP queue and worker protocol, cancellable
+  tasks, isolated worktrees, and an optional local worker
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
 - Notifications, appearance controls, and a native sidebar Settings window

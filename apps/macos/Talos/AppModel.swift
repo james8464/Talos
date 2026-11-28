@@ -71,6 +71,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var policySource: String?
     @Published private(set) var policySignature = "Not configured"
     @Published private(set) var policyError: String?
+    @Published private(set) var cloudTasks: [CloudTask] = []
+    @Published private(set) var cloudServerStatus = "Off"
+    @Published private(set) var cloudWorkerStatus = "Off"
+    @Published private(set) var cloudEndpoint: String?
     @Published var showWorktreeSheet = false
 
     let settings = SettingsStore()
@@ -82,6 +86,9 @@ final class AppModel: ObservableObject {
     let profiles = ProfileStore()
     let mcp = MCPManager()
     let remote = RemoteServer()
+    let cloudQueue = CloudTaskQueue()
+    private var cloudServer: CloudTaskHTTPServer?
+    private var cloudWorker: CloudTaskWorker?
     private let defaults = UserDefaults.standard
     private var runTask: Task<Void, Never>?
     private var approvalContinuation: CheckedContinuation<ApprovalDecision, Never>?
@@ -182,6 +189,8 @@ final class AppModel: ObservableObject {
             await refreshCapabilities()
             await reloadMCP()
             await refreshGit()
+            await refreshCloudTasks()
+            startCloudServicesIfNeeded()
         }
     }
 
@@ -424,6 +433,193 @@ final class AppModel: ObservableObject {
             let project = projects.open(path: url.path)
             openProject(project)
         }
+    }
+
+    func startCloudServicesIfNeeded() {
+        if settings.cloudServerEnabled || settings.cloudRunLocally {
+            startCloudServer()
+        }
+    }
+
+    func setCloudServerEnabled(_ enabled: Bool) {
+        settings.cloudServerEnabled = enabled
+        if enabled {
+            startCloudServer()
+        } else {
+            settings.cloudRunLocally = false
+            stopCloudWorker()
+            stopCloudServer()
+        }
+    }
+
+    func startCloudServer() {
+        guard cloudServer == nil else { return }
+        do {
+            let server = try CloudTaskHTTPServer(
+                queue: cloudQueue,
+                token: settings.cloudToken,
+                port: UInt16(min(max(settings.cloudPort, 1024), 65_535)),
+                bindLAN: settings.cloudAllowLAN
+            )
+            cloudServer = server
+            cloudServerStatus = "Starting…"
+            Task {
+                do {
+                    try await server.start()
+                    cloudEndpoint = "http://127.0.0.1:\(server.port)"
+                    cloudServerStatus = settings.cloudAllowLAN
+                        ? "Listening on all interfaces, port \(server.port)"
+                        : "Listening at \(cloudEndpoint ?? "")"
+                    if settings.cloudRunLocally {
+                        startCloudWorker()
+                    }
+                } catch {
+                    server.stop()
+                    cloudServer = nil
+                    cloudServerStatus = "Failed"
+                    self.error = "Cloud task server failed: \(error.localizedDescription)"
+                }
+            }
+        } catch {
+            cloudServerStatus = "Failed"
+            self.error = "Cloud task server failed: \(error.localizedDescription)"
+        }
+        Task { await refreshCloudTasks() }
+    }
+
+    func stopCloudServer() {
+        stopCloudWorker()
+        cloudServer?.stop()
+        cloudServer = nil
+        cloudServerStatus = "Off"
+        cloudEndpoint = nil
+    }
+
+    func startCloudWorker() {
+        guard cloudWorker == nil else { return }
+        guard cloudServer != nil,
+              let port = cloudServer?.port,
+              let baseURL = URL(string: "http://127.0.0.1:\(port)") else {
+            error = "Start the cloud task server before the local worker."
+            return
+        }
+        let transport = HTTPCloudTaskTransport(baseURL: baseURL, token: settings.cloudToken)
+        let worker = CloudTaskWorker(
+            transport: transport,
+            executor: { [weak self] task in
+                guard let self else {
+                    throw CloudTransportError.message("Talos is not available.")
+                }
+                return try await self.executeCloudTask(task)
+            },
+            onChange: { [weak self] in
+                await self?.refreshCloudTasks()
+            }
+        )
+        cloudWorker = worker
+        cloudWorkerStatus = "Running"
+        settings.cloudRunLocally = true
+        Task { await worker.start() }
+    }
+
+    func stopCloudWorker() {
+        guard let worker = cloudWorker else { return }
+        cloudWorker = nil
+        cloudWorkerStatus = "Stopping…"
+        settings.cloudRunLocally = false
+        Task {
+            await worker.stop()
+            cloudWorkerStatus = "Off"
+        }
+    }
+
+    func enqueueCloudTask(_ prompt: String) async -> CloudTask? {
+        let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let task = await cloudQueue.enqueue(
+            prompt: trimmed,
+            workspace: projectURL.path,
+            provider: choice.provider.rawValue,
+            model: choice.id
+        )
+        await refreshCloudTasks()
+        return task
+    }
+
+    func refreshCloudTasks() async {
+        cloudTasks = await cloudQueue.list()
+    }
+
+    func cancelCloudTask(_ id: UUID) async {
+        _ = await cloudQueue.cancel(id)
+        await refreshCloudTasks()
+    }
+
+    func removeCloudTask(_ id: UUID) async {
+        _ = await cloudQueue.remove(id)
+        await refreshCloudTasks()
+    }
+
+    private func executeCloudTask(_ task: CloudTask) async throws -> CloudTaskExecution {
+        let root = URL(fileURLWithPath: task.workspace, isDirectory: true)
+        let worktreeResult = await GitService.createWorktree(
+            in: root,
+            name: "cloud-\(task.id.uuidString.prefix(8))",
+            branchPrefix: "cloud/"
+        )
+        guard case .success(let worktree) = worktreeResult else {
+            if case .failure(let error) = worktreeResult {
+                throw CloudTransportError.message("Could not create an isolated worktree: \(error.localizedDescription)")
+            }
+            throw CloudTransportError.message("Could not create an isolated worktree.")
+        }
+
+        var generation = settings.generation(reasoning: reasoningSelection)
+        generation.allowImages = modelCapabilities.supportsVision
+        let runChoice = choice
+        let context = ToolContext(
+            workspace: worktree.path,
+            sandbox: .workspaceWrite,
+            network: settings.networkAccess,
+            enabledShell: true,
+            enabledFileEdits: true,
+            enabledComputerUse: false,
+            enabledWeb: settings.enableWeb,
+            enabledBrowser: false,
+            enabledPlan: true,
+            skills: skills.enabled,
+            mcpTools: []
+        )
+        let instructions = """
+        You are a cloud task worker running in an isolated git worktree.
+        Implement the task fully: inspect the repository, edit files, and run relevant tests or builds.
+        You may use shell and file tools inside the worktree. Do not ask for approval.
+        When you finish, give a concise summary of what changed and which checks passed or failed.
+        """
+        let engine = SubagentEngine(
+            label: task.title,
+            task: task.prompt,
+            maxSteps: 16,
+            context: context,
+            projectInstructions: projectInstructions,
+            instructions: instructions
+        ) { messages in
+            let (raw, used) = try await self.streamCompletion(
+                choice: runChoice,
+                messages: messages,
+                generation: generation
+            )
+            return (raw, used)
+        }
+        let outcome = try await engine.run()
+        let trace = outcome.steps.isEmpty
+            ? ""
+            : "\n\nTools:\n- " + outcome.steps.joined(separator: "\n- ")
+        return CloudTaskExecution(
+            result: outcome.summary + trace,
+            worktree: worktree.path,
+            branch: worktree.branch
+        )
     }
 
     func openWorktree(_ worktree: GitWorktreeInfo) {
@@ -1061,6 +1257,8 @@ final class AppModel: ObservableObject {
             openSettings(.profiles)
         case "/policy":
             openSettings(.policy)
+        case "/cloud", "/tasks":
+            openSettings(.cloud)
         case "/hooks":
             openSettings(.hooks)
         case "/models":

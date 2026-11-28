@@ -308,6 +308,7 @@ enum SlashCommands {
         SlashCommand(id: "/plugins", detail: "List local plugins"),
         SlashCommand(id: "/profiles", detail: "Switch or edit config profiles"),
         SlashCommand(id: "/policy", detail: "Show the managed policy"),
+        SlashCommand(id: "/cloud", detail: "Manage self-hosted cloud tasks"),
         SlashCommand(id: "/hooks", detail: "Configure event hooks"),
         SlashCommand(id: "/mcp", detail: "List connected MCP tools"),
         SlashCommand(id: "/remote", detail: "Show the phone-control URL"),

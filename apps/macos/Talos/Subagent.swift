@@ -37,6 +37,7 @@ struct SubagentEngine {
     let maxSteps: Int
     let context: ToolContext
     let projectInstructions: String?
+    var instructions: String? = nil
     let complete: @MainActor ([ChatMessage]) async throws -> (String, TokenUsage)
 
     func run() async throws -> SubagentOutcome {
@@ -97,12 +98,16 @@ struct SubagentEngine {
 
     private var systemPrompt: String {
         var prompt = ToolPrompt.system(context: context)
-        prompt += "\n\n" + """
-        You are a subagent. The parent agent delegated one focused task to you.
-        You share the workspace but not the parent's conversation.
-        You are read-only: inspect files, search, and use the web when it is enabled. You cannot edit files or run shell commands.
-        Do not ask for approval. When you have enough evidence, answer with a concise report: findings, exact file paths, and anything the parent should verify.
-        """
+        if let instructions {
+            prompt += "\n\n" + instructions
+        } else {
+            prompt += "\n\n" + """
+            You are a subagent. The parent agent delegated one focused task to you.
+            You share the workspace but not the parent's conversation.
+            You are read-only: inspect files, search, and use the web when it is enabled. You cannot edit files or run shell commands.
+            Do not ask for approval. When you have enough evidence, answer with a concise report: findings, exact file paths, and anything the parent should verify.
+            """
+        }
         if let projectInstructions {
             prompt += "\n\n" + projectInstructions
         }

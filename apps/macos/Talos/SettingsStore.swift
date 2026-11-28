@@ -148,6 +148,22 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var cloudServerEnabled: Bool {
+        didSet { defaults.set(cloudServerEnabled, forKey: "cloudServerEnabled") }
+    }
+    @Published var cloudPort: Int {
+        didSet { defaults.set(cloudPort, forKey: "cloudPort") }
+    }
+    @Published var cloudToken: String {
+        didSet { defaults.set(cloudToken, forKey: "cloudToken") }
+    }
+    @Published var cloudRunLocally: Bool {
+        didSet { defaults.set(cloudRunLocally, forKey: "cloudRunLocally") }
+    }
+    @Published var cloudAllowLAN: Bool {
+        didSet { defaults.set(cloudAllowLAN, forKey: "cloudAllowLAN") }
+    }
+
     @Published var appearance: AppearanceMode {
         didSet { defaults.set(appearance.rawValue, forKey: "appearance") }
     }
@@ -200,6 +216,18 @@ final class SettingsStore: ObservableObject {
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
         autoReviewTools = defaults.object(forKey: "autoReviewTools") as? Bool ?? true
 
+        cloudServerEnabled = defaults.bool(forKey: "cloudServerEnabled")
+        let storedPort = defaults.object(forKey: "cloudPort") as? Int ?? 8788
+        cloudPort = min(max(storedPort, 1024), 65_535)
+        let storedToken = defaults.string(forKey: "cloudToken") ?? ""
+        let resolvedToken = storedToken.isEmpty ? Self.newCloudToken() : storedToken
+        cloudToken = resolvedToken
+        if storedToken.isEmpty {
+            defaults.set(resolvedToken, forKey: "cloudToken")
+        }
+        cloudRunLocally = defaults.bool(forKey: "cloudRunLocally")
+        cloudAllowLAN = defaults.bool(forKey: "cloudAllowLAN")
+
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         let storedFont = defaults.object(forKey: "transcriptFontSize") as? Double ?? 14
         transcriptFontSize = min(max(storedFont, 12), 20)
@@ -220,6 +248,12 @@ final class SettingsStore: ObservableObject {
         }
 
         refreshKeys()
+    }
+
+    static func newCloudToken() -> String {
+        (UUID().uuidString + UUID().uuidString)
+            .replacingOccurrences(of: "-", with: "")
+            .lowercased()
     }
 
     func generation(reasoning: String?) -> GenerationSettings {

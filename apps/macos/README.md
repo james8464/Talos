@@ -40,6 +40,8 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Reviewer.swift` — read-only auto-review for approval prompts
 - `Talos/ManagedPolicy.swift` — signed/local managed policy loader and signature checks
 - `Talos/PolicySettings.swift` — read-only policy status pane
+- `Talos/CloudTasks.swift` — self-hosted queue, HTTP worker protocol, and local worker
+- `Talos/CloudTasksSettings.swift` — task server, worker, enqueue, and task list UI
 - `Talos/FanOut.swift` — bounded-concurrency read-only task fan-out
 - `Talos/WorktreePanel.swift` — worktree list, switch, merge, and cleanup UI
 - `Talos/AutomationSettings.swift` — profiles and hooks settings UI

@@ -25,6 +25,7 @@
 		59EFBCD216961E06356D37D5 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70913AB772F308657E509F42 /* Providers.swift */; };
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
+		7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */; };
 		8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF7DCED466867A6BC71FB24 /* SettingsView.swift */; };
 		8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B5B87B005EEE76F31442B1 /* Tools.swift */; };
 		96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */; };
@@ -43,6 +44,7 @@
 		C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */; };
 		CB37052B4F401B29A60DE5AC /* MCPSamplingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */; };
 		D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DA27C786B558AC4F245F39 /* Brand.swift */; };
+		D142E21A2891D62B7C9C2750 /* CloudTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34CE21CD9645365CB1B2156 /* CloudTasks.swift */; };
 		D343B0F24794835180D04C31 /* OpenCodeAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A2EC1118F5104E0CA50DAA /* OpenCodeAuth.swift */; };
 		DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */; };
 		E1E61F33240469D831267B5C /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE40BA2F2E62D3115E531DD /* UsageStore.swift */; };
@@ -53,6 +55,7 @@
 /* Begin PBXFileReference section */
 		01B5B87B005EEE76F31442B1 /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
 		08D44A0432C25F6647A1BE45 /* FanOut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FanOut.swift; sourceTree = "<group>"; };
+		218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTasksSettings.swift; sourceTree = "<group>"; };
 		23521B5CDB48331307D2ED62 /* Reviewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reviewer.swift; sourceTree = "<group>"; };
 		29612E0C17BE1D0D3A380FCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
@@ -93,6 +96,7 @@
 		EB1A617E407672D5729425D2 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		F062B95637FEC6883E592D35 /* ProviderEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderEditor.swift; sourceTree = "<group>"; };
 		F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationSettings.swift; sourceTree = "<group>"; };
+		F34CE21CD9645365CB1B2156 /* CloudTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTasks.swift; sourceTree = "<group>"; };
 		F93B3035FF733F0B8A5C4C32 /* Hooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hooks.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -112,6 +116,8 @@
 				F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */,
 				C0DA27C786B558AC4F245F39 /* Brand.swift */,
 				E7B85C1FB17725B76F534C9F /* Browser.swift */,
+				F34CE21CD9645365CB1B2156 /* CloudTasks.swift */,
+				218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */,
 				AD1122852660CD8181149806 /* ContentView.swift */,
 				08D44A0432C25F6647A1BE45 /* FanOut.swift */,
 				5952B2988ACA2B10007C9244 /* Git.swift */,
@@ -241,6 +247,8 @@
 				988C3C896907F0AFC6582F39 /* AutomationSettings.swift in Sources */,
 				D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */,
 				15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */,
+				D142E21A2891D62B7C9C2750 /* CloudTasks.swift in Sources */,
+				7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
 				AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */,
 				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,
