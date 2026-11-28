@@ -249,7 +249,7 @@ struct ProviderEditor: View {
                 return
             }
             found = ids.sorted()
-            notice = "\(ids.count) models found"
+            notice = String(localized: "\(ids.count) models found")
         } catch {
             notice = error.localizedDescription
         }

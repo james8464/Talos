@@ -60,9 +60,9 @@ Results:
 
 ## Localization
 
-`apps/macos/Talos/Localizable.xcstrings` now contains Arabic translations for
-the sidebar, welcome screen, composer, transcript states, inspector, Settings
-navigation, and the primary General, Appearance, Tools, and Usage controls.
+`apps/macos/Talos/Localizable.xcstrings` now contains 523 Arabic keys covering
+the sidebar, welcome screen, composer, transcript states, inspector, all
+Settings pages, and the main menus.
 Launching with `AppleLanguages (ar)` renders those surfaces in Arabic and
 mirrors the layout:
 
@@ -71,7 +71,7 @@ sidebar heading "اليوم"            x = 1319
 welcome "ماذا تريد أن تفعل؟"       x = 879
 send "إرسال الرسالة"              x = 462
 attach "إرفاق ملفات"              x = 1044
-AX_CONTROLS: 36  UNLABELED: 0
+AX_CONTROLS: 44  UNLABELED: 0
 ```
 
 Full details and coverage gaps are in `LOCALIZATION.md`.
@@ -103,9 +103,9 @@ unlabeled controls were 0 across the main window, Settings, and a live MCP app.
 
 ## Limitations
 
-- Arabic is the first non-English localization and covers the primary surfaces;
-  secondary Settings pages and some menu/provider metadata remain English
-  pending translation. The catalog supports adding them without code changes.
+- Arabic is the first non-English localization and covers all Settings pages
+  and menus. Provider/model identifiers, paths, technical tokens, and
+  user-generated content remain in English by design.
 - Arabic copy was authored for this project and should receive native-speaker
   review before broad distribution.
 - This is a structured review rather than a formal study with a diverse panel

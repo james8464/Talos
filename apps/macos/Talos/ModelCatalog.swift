@@ -14,7 +14,7 @@ enum ModelCatalog {
                 ReasoningOption(
                     id: effort,
                     title: effort.capitalized,
-                    detail: "OpenCode Go reasoning effort."
+                    detail: String(localized: "OpenCode Go reasoning effort.")
                 )
             }
             let defaultEffort = options.contains(where: { $0.id == "medium" })

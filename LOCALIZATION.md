@@ -7,7 +7,8 @@ ships Arabic as its first non-English localization. The catalog compiles into
 
 ## Coverage
 
-Arabic currently covers:
+Arabic currently covers **all Settings pages and the main menus**, in addition
+to the primary surfaces:
 
 - Sidebar: search prompt, New Task, date groups, archived controls, grouping
   menu, preview/count/archived toggles, project header copy, empty state.
@@ -19,15 +20,17 @@ Arabic currently covers:
   disclosure, plan controls, copy action.
 - Inspector: project, model, tools, index, task, and privacy labels plus
   enabled/disabled values.
-- Settings navigation and the primary General, Appearance, Tools, and Usage
-  controls: model and reasoning pickers, window toggles, transcript size,
-  sidebar grouping, trackpad gestures and action pickers, completion settings,
-  tool access toggles, usage metrics, audit export.
-- File menu commands and Task menu items covered by the catalog.
+- All Settings pages: General, Projects, Models, Providers, Tools, Profiles,
+  Hooks, Memory, Chronicle, Policy, Cloud Tasks, App Server, Skills, Plugins,
+  MCP, Remote, Appearance, Usage, Advanced, and About, including captions,
+  toggles, pickers, permission rows, statuses, and export controls.
+- File, Task, Model, View, and Help menu commands; Quick Switcher commands;
+  project, Git, worktree, GitHub, and recent-document surfaces.
 
-Provider names, model identifiers, session content, MCP tool names, and some
-secondary Settings pages remain in English by design or pending translation.
-The catalog infrastructure supports adding them without code changes.
+Provider names, model identifiers, session content, MCP tool names, file paths,
+and technical tokens such as `JSON-RPC` or `Authorization: Bearer` remain in
+English by design. The catalog supports further translation without code
+changes.
 
 ## Right-to-left
 
@@ -71,11 +74,11 @@ for strings that already use `Text`, `Button`, `Toggle`, `Picker`, or
 - Arabic AX labels confirmed for sidebar, welcome, composer, inspector, and
   Settings (`مهمة جديدة`, `بحث في المهام`, `ماذا تريد أن تفعل؟`,
   `إرسال الرسالة`, `إيماءات لوحة التتبع`, `حجم نص المحادثة`).
-- AX audit with Arabic and Settings open: `APP_CONTROLS: 36`,
+- AX audit with Arabic and Settings → Tools open: `APP_CONTROLS: 44`,
   `UNLABELED: 0`.
 - OCR of the Arabic Settings pane read: `النص`, `حجم نص المحادثة`,
   `الشريط الجانبي`, `إيماءات لوحة التتبع`, `السحب لليسار`, `السحب لليمين`,
   `السحب لأعلى`, `السحب لأسفل`.
 
-Arabic copy was authored for this project; a native-speaker review is still
-recommended before shipping broadly.
+The catalog contains 523 keys. Arabic copy was authored for this project; a
+native-speaker review is still recommended before shipping broadly.

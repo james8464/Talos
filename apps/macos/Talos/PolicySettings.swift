@@ -6,7 +6,9 @@ struct ManagedPolicySettingsView: View {
     var body: some View {
         Form {
             Section("Status") {
-                LabeledContent("Policy", value: model.managedPolicy == nil ? "Not configured" : "Applied")
+                LabeledContent("Policy") {
+                    Text(LocalizedStringKey(model.managedPolicy == nil ? "Not configured" : "Applied"))
+                }
                 if let source = model.policySource {
                     LabeledContent("Source") {
                         Text(source)

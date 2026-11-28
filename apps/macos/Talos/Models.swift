@@ -363,20 +363,20 @@ enum ResponseSpeed: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .fast: return "Fast"
-        case .balanced: return "Balanced"
-        case .thorough: return "Thorough"
+        case .fast: return String(localized: "Fast")
+        case .balanced: return String(localized: "Balanced")
+        case .thorough: return String(localized: "Thorough")
         }
     }
 
     var summary: String {
         switch self {
         case .fast:
-            return "Short answers with a small output budget. Quickest turnaround."
+            return String(localized: "Short answers with a small output budget. Quickest turnaround.")
         case .balanced:
-            return "The default output budget for most conversations."
+            return String(localized: "The default output budget for most conversations.")
         case .thorough:
-            return "Room for long answers, patches, and explanations."
+            return String(localized: "Room for long answers, patches, and explanations.")
         }
     }
 
@@ -397,17 +397,17 @@ enum ApprovalPolicy: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .onRequest: return "Ask before high-impact tools"
-        case .never: return "Never ask"
+        case .onRequest: return String(localized: "Ask before high-impact tools")
+        case .never: return String(localized: "Never ask")
         }
     }
 
     var summary: String {
         switch self {
         case .onRequest:
-            return "Running commands, editing files, and controlling the desktop require approval."
+            return String(localized: "Running commands, editing files, and controlling the desktop require approval.")
         case .never:
-            return "Tools run automatically inside the sandbox you choose."
+            return String(localized: "Tools run automatically inside the sandbox you choose.")
         }
     }
 }
@@ -421,20 +421,20 @@ enum SandboxMode: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .readOnly: return "Read only"
-        case .workspaceWrite: return "Workspace write"
-        case .fullAccess: return "Full access"
+        case .readOnly: return String(localized: "Read only")
+        case .workspaceWrite: return String(localized: "Workspace write")
+        case .fullAccess: return String(localized: "Full access")
         }
     }
 
     var summary: String {
         switch self {
         case .readOnly:
-            return "Read files and run read-only commands. Writes are blocked."
+            return String(localized: "Read files and run read-only commands. Writes are blocked.")
         case .workspaceWrite:
-            return "Read and write inside the workspace and temporary folders."
+            return String(localized: "Read and write inside the workspace and temporary folders.")
         case .fullAccess:
-            return "No filesystem sandbox. Only use this when you trust the task."
+            return String(localized: "No filesystem sandbox. Only use this when you trust the task.")
         }
     }
 }

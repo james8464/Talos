@@ -9,7 +9,7 @@ struct MemorySettingsView: View {
         Form {
             Section("Memories") {
                 HStack {
-                    Text("\(model.memories.memories.count) saved · injected into every task")
+                    Text(String(localized: "\(model.memories.memories.count) saved · injected into every task"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -32,7 +32,7 @@ struct MemorySettingsView: View {
 
             Section("Goals") {
                 HStack {
-                    Text("\(model.memories.activeGoals.count) active · \(model.memories.goals.count - model.memories.activeGoals.count) completed")
+                    Text(String(localized: "\(model.memories.activeGoals.count) active · \(model.memories.goals.count - model.memories.activeGoals.count) completed"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()

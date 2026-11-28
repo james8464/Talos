@@ -741,43 +741,45 @@ private struct QuickSwitcher: View {
         var list: [PaletteCommand] = [
             PaletteCommand(
                 id: "new",
-                title: "New Task",
-                detail: "Start a fresh task in this project",
+                title: String(localized: "New Task"),
+                detail: String(localized: "Start a fresh task in this project"),
                 symbol: "plus.circle",
                 shortcut: "⌘N"
             ) { model.newSession() },
             PaletteCommand(
                 id: "changes",
-                title: "Review Changes",
-                detail: "Open diffs, staging, commit, and pull requests",
+                title: String(localized: "Review Changes"),
+                detail: String(localized: "Open diffs, staging, commit, and pull requests"),
                 symbol: "arrow.triangle.branch",
                 shortcut: "⌘⇧G"
             ) { model.showGitPanel = true },
             PaletteCommand(
                 id: "worktrees",
-                title: "Manage Worktrees",
-                detail: "Create, switch, merge, or clean up task branches",
+                title: String(localized: "Manage Worktrees"),
+                detail: String(localized: "Create, switch, merge, or clean up task branches"),
                 symbol: "square.split.2x1",
                 shortcut: nil
             ) { model.showWorktrees = true },
             PaletteCommand(
                 id: "compact",
-                title: "Compact Conversation",
-                detail: "Summarize older messages to free context",
+                title: String(localized: "Compact Conversation"),
+                detail: String(localized: "Summarize older messages to free context"),
                 symbol: "arrow.down.right.and.arrow.up.left",
                 shortcut: "⌘⇧K"
             ) { model.compactCurrentSession() },
             PaletteCommand(
                 id: "inspector",
-                title: model.showInspector ? "Hide Details Inspector" : "Show Details Inspector",
-                detail: "Project, model, tools, plan, and token details",
+                title: model.showInspector
+                    ? String(localized: "Hide Details Inspector")
+                    : String(localized: "Show Details Inspector"),
+                detail: String(localized: "Project, model, tools, plan, and token details"),
                 symbol: "sidebar.right",
                 shortcut: "⌘⌥I"
             ) { model.showInspector.toggle() },
             PaletteCommand(
                 id: "settings",
-                title: "Settings",
-                detail: "Models, providers, tools, hooks, MCP, and policy",
+                title: String(localized: "Settings"),
+                detail: String(localized: "Models, providers, tools, hooks, MCP, and policy"),
                 symbol: "gearshape",
                 shortcut: "⌘,"
             ) { openSettings() },
@@ -891,8 +893,9 @@ private struct QuickSwitcher: View {
         }
     }
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title.uppercased())
+    private func sectionTitle(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .textCase(.uppercase)
             .font(.caption2.weight(.semibold))
             .foregroundStyle(.tertiary)
             .padding(.horizontal, 10)

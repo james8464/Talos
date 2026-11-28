@@ -39,7 +39,7 @@ struct CloudTasksSettingsView: View {
                         NSPasteboard.general.setString(settings.cloudToken, forType: .string)
                     }
                 }
-                Text("Workers authenticate with `Authorization: Bearer <token>`. The server is bound to localhost unless LAN access is enabled.")
+                Text("Workers authenticate with Authorization: Bearer <token>. The server is bound to localhost unless LAN access is enabled.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

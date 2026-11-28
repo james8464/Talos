@@ -55,7 +55,7 @@ final class PluginStore: ObservableObject {
     @Published private(set) var disabled: Set<String> = []
     @Published private(set) var catalogs: [PluginCatalog] = []
     @Published private(set) var installedPlugins: [InstalledPlugin] = []
-    @Published private(set) var remoteCatalogStatus = "Not configured"
+    @Published private(set) var remoteCatalogStatus = String(localized: "Not configured")
     @Published private(set) var remoteCatalogError: String?
 
     private var localCatalogs: [PluginCatalog] = []
@@ -216,7 +216,7 @@ final class PluginStore: ObservableObject {
             ? (environment["TALOS_PLUGIN_CATALOG_PUBLIC_KEY"] ?? "")
             : publicKeyBase64.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !rawURL.isEmpty else {
-            remoteCatalogStatus = "Not configured"
+            remoteCatalogStatus = String(localized: "Not configured")
             remoteCatalogError = nil
             remoteCatalogs = []
             mergeCatalogs()
@@ -225,7 +225,7 @@ final class PluginStore: ObservableObject {
         guard let url = URL(string: rawURL),
               let scheme = url.scheme?.lowercased(),
               scheme == "https" || (scheme == "http" && Self.isLoopback(url.host)) else {
-            remoteCatalogStatus = "Failed"
+            remoteCatalogStatus = String(localized: "Failed")
             remoteCatalogError = "Remote catalogs must use HTTPS (or HTTP on localhost)."
             return
         }
@@ -264,11 +264,11 @@ final class PluginStore: ObservableObject {
                 throw PluginError.message("The signed catalog payload is not valid.")
             }
             remoteCatalogs = list
-            remoteCatalogStatus = "Loaded \(list.reduce(0) { $0 + $1.plugins.count }) signed plugins"
+            remoteCatalogStatus = String(localized: "Loaded \(list.reduce(0) { $0 + $1.plugins.count }) signed plugins")
             remoteCatalogError = nil
             mergeCatalogs()
         } catch {
-            remoteCatalogStatus = "Failed"
+            remoteCatalogStatus = String(localized: "Failed")
             remoteCatalogError = error.localizedDescription
         }
     }

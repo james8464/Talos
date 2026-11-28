@@ -29,8 +29,8 @@ struct ContextUsage {
     }
 
     var label: String {
-        guard let limit else { return "Context unknown" }
-        return "\(TokenEstimator.format(used)) / \(TokenEstimator.format(limit)) context"
+        guard let limit else { return String(localized: "Context unknown") }
+        return String(localized: "\(TokenEstimator.format(used)) / \(TokenEstimator.format(limit)) context")
     }
 }
 
@@ -93,7 +93,7 @@ final class AppModel: ObservableObject {
     @Published var settingsSection: SettingsSection = .general
     @Published private(set) var managedPolicy: ManagedPolicy?
     @Published private(set) var policySource: String?
-    @Published private(set) var policySignature = "Not configured"
+    @Published private(set) var policySignature = String(localized: "Not configured")
     @Published private(set) var policyError: String?
     @Published private(set) var cloudTasks: [CloudTask] = []
     @Published private(set) var cloudServerStatus = "Off"
@@ -1465,7 +1465,8 @@ final class AppModel: ObservableObject {
             status = cloudCount > 0 ? "\(localError) · \(cloudCount) cloud ready" : localError
         } else {
             let localCount = localModels.count
-            status = "\(localCount) local" + (cloudCount > 0 ? " · \(cloudCount) cloud" : "")
+            status = String(localized: "\(localCount) local")
+                + (cloudCount > 0 ? String(localized: " · \(cloudCount) cloud") : "")
         }
 
         await refreshCapabilities()

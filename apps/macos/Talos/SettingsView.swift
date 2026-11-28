@@ -287,7 +287,9 @@ private struct GeneralSettingsView: View {
                 Text(settings.speed.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                LabeledContent("Output budget", value: "\(settings.speed.maxTokens) tokens")
+                LabeledContent("Output budget") {
+                    Text("\(settings.speed.maxTokens) tokens")
+                }
             }
 
             Section("Window") {
@@ -324,7 +326,9 @@ private struct ModelsSettingsView: View {
             Section("Selected model") {
                 LabeledContent("Model", value: model.choice.display)
                 LabeledContent("Reasoning", value: model.reasoningTitle)
-                LabeledContent("Vision", value: model.modelCapabilities.supportsVision ? "Images" : "Text only")
+                LabeledContent("Vision") {
+                    Text(LocalizedStringKey(model.modelCapabilities.supportsVision ? "Images" : "Text only"))
+                }
                 Toggle("Use provider token counters", isOn: $settings.exactProviderTokenCounting)
                     .onChange(of: settings.exactProviderTokenCounting) {
                         Task { await model.refreshCapabilities() }
@@ -360,7 +364,7 @@ private struct ModelsSettingsView: View {
                 TextField("Server", text: $settings.localURL)
                     .textFieldStyle(.roundedBorder)
                 HStack {
-                    Text("\(model.localModels.count) models found")
+                    Text(String(localized: "\(model.localModels.count) models found"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -412,7 +416,7 @@ private struct ModelsSettingsView: View {
                                 .lineLimit(1)
                         }
                         Spacer()
-                        Text(settings.savedKeys.contains(provider) ? "Ready" : "No key")
+                        Text(LocalizedStringKey(settings.savedKeys.contains(provider) ? "Ready" : "No key"))
                             .font(.caption)
                             .foregroundStyle(settings.savedKeys.contains(provider) ? Color.secondary : Color.orange)
                         Button("Configure…") {
@@ -514,7 +518,7 @@ private struct ProviderSettingsRow: View {
                 Spacer()
                 Text(status)
                     .font(.caption)
-                    .foregroundStyle(status == "Ready" ? Color.secondary : Color.orange)
+                    .foregroundStyle(status == String(localized: "Ready") ? Color.secondary : Color.orange)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -526,16 +530,18 @@ private struct ProviderSettingsRow: View {
 
     private var subtitle: String {
         if provider == .local {
-            return model.localModels.isEmpty ? "Ollama · offline" : "Ollama · \(model.localModels.count) models"
+            return model.localModels.isEmpty
+                ? String(localized: "Ollama · offline")
+                : String(localized: "Ollama · \(model.localModels.count) models")
         }
         return "\(settings.model(for: provider)) · \(settings.baseURL(for: provider))"
     }
 
     private var status: String {
         if provider == .local {
-            return model.localModels.isEmpty ? "Offline" : "Ready"
+            return model.localModels.isEmpty ? String(localized: "Offline") : String(localized: "Ready")
         }
-        return settings.savedKeys.contains(provider) ? "Ready" : "No key"
+        return settings.savedKeys.contains(provider) ? String(localized: "Ready") : String(localized: "No key")
     }
 }
 
@@ -640,6 +646,7 @@ private struct ToolsSettingsView: View {
                         Text(policy.title).tag(policy)
                     }
                 }
+                .accessibilityLabel("Approval policy")
                 .disabled(settings.managed?.approval != nil)
                 Text(settings.approvalPolicy.summary)
                     .font(.caption)
@@ -650,16 +657,19 @@ private struct ToolsSettingsView: View {
                         Text(mode.title).tag(mode)
                     }
                 }
+                .accessibilityLabel("Sandbox")
                 .disabled(settings.managed?.sandbox != nil)
                 Text(settings.sandboxMode.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 Toggle("Allow network access for shell commands and web tools", isOn: $settings.networkAccess)
+                    .accessibilityLabel("Allow network access for shell commands and web tools")
                     .disabled(settings.managed?.network != nil)
                 Stepper("Maximum tool steps: \(settings.maxToolSteps)", value: $settings.maxToolSteps, in: 1...24)
                     .disabled(settings.managed?.maxToolSteps != nil)
                 Toggle("Review high-impact tools before approval", isOn: $settings.autoReviewTools)
+                    .accessibilityLabel("Review high-impact tools before approval")
                     .disabled(settings.managed?.autoReview != nil)
                 Text("Runs a read-only reviewer in a separate context and shows its recommendation in the approval sheet.")
                     .font(.caption)
@@ -668,24 +678,32 @@ private struct ToolsSettingsView: View {
 
             Section("Tool access") {
                 Toggle("Shell commands", isOn: $settings.enableShell)
+                    .accessibilityLabel("Shell commands")
                     .disabled(settings.managed?.enableShell != nil)
                 Toggle("File reads and edits", isOn: $settings.enableFileEdits)
+                    .accessibilityLabel("File reads and edits")
                     .disabled(settings.managed?.enableFileEdits != nil)
                 Toggle("Computer use", isOn: $settings.enableComputerUse)
+                    .accessibilityLabel("Computer use")
                     .disabled(settings.managed?.enableComputerUse != nil)
                 Toggle("Browser control", isOn: $settings.enableBrowser)
+                    .accessibilityLabel("Browser control")
                     .disabled(settings.managed?.enableBrowser != nil)
                 Toggle("Web fetch and search", isOn: $settings.enableWeb)
+                    .accessibilityLabel("Web fetch and search")
                     .disabled(settings.managed?.enableWeb != nil)
                 Toggle("Task plans", isOn: $settings.enablePlan)
+                    .accessibilityLabel("Task plans")
                     .disabled(settings.managed?.enablePlan != nil)
                 Toggle("Language-server diagnostics and code actions", isOn: $settings.enableLSP)
+                    .accessibilityLabel("Language-server diagnostics and code actions")
                 Toggle("Semantic codebase search (on-device embeddings)", isOn: $settings.enableSemanticIndex)
+                    .accessibilityLabel("Semantic codebase search (on-device embeddings)")
                 Text("These tools are provided by Talos and work with every model. The sandbox applies to shell and file tools.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("Detected language servers: " + LSPManager.availability()
-                    .map { "\($0.0) \($0.1 ? "available" : "missing")" }
+                Text(String(localized: "Detected language servers: ") + LSPManager.availability()
+                    .map { "\($0.0) " + String(localized: $0.1 ? "available" : "missing") }
                     .joined(separator: " · "))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -695,6 +713,7 @@ private struct ToolsSettingsView: View {
             Section("Browser") {
                 TextField("Chrome DevTools endpoint", text: $settings.browserCDPEndpoint)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Chrome DevTools endpoint")
                 Text("For browser_cdp, start Chrome with --remote-debugging-port=9222 (or the port above) and keep a tab open. Accessibility control still works without it.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -749,9 +768,9 @@ private struct ToolsSettingsView: View {
 
     private func permissionRow(_ name: String, granted: Bool, open: @escaping () -> Void) -> some View {
         HStack {
-            Label(name, systemImage: granted ? "checkmark.shield" : "exclamationmark.shield")
+            Label(LocalizedStringKey(name), systemImage: granted ? "checkmark.shield" : "exclamationmark.shield")
             Spacer()
-            Text(granted ? "Granted" : "Not granted")
+            Text(LocalizedStringKey(granted ? "Granted" : "Not granted"))
                 .font(.caption)
                 .foregroundStyle(granted ? .green : .secondary)
             Button("Open Settings") { open() }
@@ -912,7 +931,7 @@ private struct PluginsSettingsView: View {
 
             Section {
                 HStack {
-                    Text("\(model.plugins.catalogs.reduce(0) { $0 + $1.plugins.count }) catalog plugins")
+                    Text(String(localized: "\(model.plugins.catalogs.reduce(0) { $0 + $1.plugins.count }) catalog plugins"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -921,7 +940,7 @@ private struct PluginsSettingsView: View {
                 }
 
                 if model.plugins.catalogs.isEmpty {
-                    Text("Add a catalog JSON file under \(model.plugins.catalogDirectory.path). Sources must be local plugin folders containing plugin.json.")
+                    Text(String(localized: "Add a catalog JSON file under \(model.plugins.catalogDirectory.path). Sources must be local plugin folders containing plugin.json."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1243,7 +1262,7 @@ private struct RemoteSettingsView: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 90)
                     Spacer()
-                    Text(model.remote.running ? "Serving" : "Off")
+                    Text(LocalizedStringKey(model.remote.running ? "Serving" : "Off"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1498,7 +1517,7 @@ private struct UsageSettingsView: View {
         }
     }
 
-    private func metric(_ title: String, _ value: Int) -> some View {
+    private func metric(_ title: LocalizedStringKey, _ value: Int) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.caption)
@@ -1623,7 +1642,9 @@ private struct AdvancedSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                LabeledContent("Max reply", value: "\(settings.speed.maxTokens) tokens")
+                LabeledContent("Max reply") {
+                    Text("\(settings.speed.maxTokens) tokens")
+                }
                 Picker("Keep local model loaded", selection: $settings.keepAlive) {
                     Text("5 minutes").tag("5m")
                     Text("30 minutes").tag("30m")

@@ -142,7 +142,7 @@ enum ManagedPolicyLoader {
         var fileResult = ManagedPolicyLoad(
             policy: nil,
             sourcePath: nil,
-            signatureStatus: "Not configured",
+            signatureStatus: String(localized: "Not configured"),
             error: nil
         )
         for path in candidatePaths where FileManager.default.fileExists(atPath: path) {
@@ -156,7 +156,7 @@ enum ManagedPolicyLoader {
             return ManagedPolicyLoad(
                 policy: nil,
                 sourcePath: "Managed preferences: \(preferences.domain)",
-                signatureStatus: "Managed preferences (MDM)",
+                signatureStatus: String(localized: "Managed preferences (MDM)"),
                 error: error
             )
         }
@@ -284,7 +284,7 @@ enum ManagedPolicyLoader {
             return ManagedPolicyLoad(
                 policy: nil,
                 sourcePath: url.path,
-                signatureStatus: "Unreadable",
+                signatureStatus: String(localized: "Unreadable"),
                 error: "Could not read \(url.path): \(error.localizedDescription)"
             )
         }
@@ -310,7 +310,7 @@ enum ManagedPolicyLoader {
             return ManagedPolicyLoad(
                 policy: policy,
                 sourcePath: url.path,
-                signatureStatus: "Signed (Ed25519)",
+                signatureStatus: String(localized: "Signed (Ed25519)"),
                 error: nil
             )
         }
@@ -321,7 +321,7 @@ enum ManagedPolicyLoader {
         return ManagedPolicyLoad(
             policy: policy,
             sourcePath: url.path,
-            signatureStatus: "Local file (unsigned)",
+            signatureStatus: String(localized: "Local file (unsigned)"),
             error: nil
         )
     }
@@ -330,7 +330,7 @@ enum ManagedPolicyLoader {
         ManagedPolicyLoad(
             policy: nil,
             sourcePath: url.path,
-            signatureStatus: "Rejected",
+            signatureStatus: String(localized: "Rejected"),
             error: message
         )
     }

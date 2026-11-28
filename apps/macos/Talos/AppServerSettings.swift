@@ -32,7 +32,7 @@ struct AppServerSettingsView: View {
                         NSPasteboard.general.setString(settings.appServerToken, forType: .string)
                     }
                 }
-                Text("Headless clients authenticate with `Authorization: Bearer <token>` or `?token=`. The server binds to localhost unless LAN access is enabled. Set `TALOS_APP_SERVER=1` to start it at launch for automation.")
+                Text("Headless clients authenticate with Authorization: Bearer <token> or ?token=. The server binds to localhost unless LAN access is enabled. Set TALOS_APP_SERVER=1 to start it at launch for automation.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
