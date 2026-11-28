@@ -1710,6 +1710,8 @@ final class AppModel: ObservableObject {
                     appendCommandMessage("Merge failed: \(error.localizedDescription)")
                 }
             }
+        case "/pr", "/pull-request":
+            showGitPanel = true
         case "/diff":
             showGitPanel = true
         case "/review":

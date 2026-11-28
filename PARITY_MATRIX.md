@@ -26,7 +26,7 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Approvals and sandbox | ✅ | ✅ | ✅ | ✅ | Approval policies, sandbox-exec, network gate |
 | Git diff/stage/commit | ✅ | ✅ | ✅ | ✅ | Changes panel and Git service |
 | Worktrees and branch lifecycle | ✅ | 🟡 | 🟡 | ✅ | Create, list, switch, merge, cleanup |
-| PR creation and review comments | ✅ | 🟡 | ✅ | ❌ | No GitHub App/PR API; shell `gh` only |
+| PR creation and review comments | ✅ | 🟡 | ✅ | ✅ | GitHub service reads `origin`, uses the `gh` CLI token or `GITHUB_TOKEN`, and supports draft PR creation, open-PR lookup, inline review comments, and review submit from the Changes panel; verified against live GitHub and a mock API |
 | LSP diagnostics and refactors | ❌ | ❌ | ✅ | ❌ | No language-server integration |
 | Inline autocomplete/Tab | ❌ | ❌ | ✅ | ❌ | Not an editor |
 | Semantic codebase index | 🟡 | ❌ | ✅ | ❌ | Uses file tree/ripgrep, no embeddings index |
@@ -76,6 +76,10 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 - **Native mobile UI actions** — `TalosMobileUITests.testSendStopAndApprove`
   passed on the iOS Simulator against a live daemon, covering send, stop, and
   allow-approval plus tool result.
+- **GitHub pull request workflow** — unit-level checks against a mock API passed,
+  and a live draft PR round-trip on `james8464/Talos` (create, lookup, inline
+  comment, review submit) passed; the verification PR and branch were then
+  deleted. The native panel rendered the live PR in the app.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   The largest remaining deltas are IDE/LSP/editor integration, PR review
   workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and

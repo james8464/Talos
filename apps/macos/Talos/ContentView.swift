@@ -79,9 +79,15 @@ struct ContentView: View {
                 .environmentObject(model.settings)
                 .environmentObject(model.usage)
         }
+        .task {
+            if ProcessInfo.processInfo.environment["TALOS_OPEN_GIT_PANEL"] == "1" {
+                model.showGitPanel = true
+            }
+        }
         .sheet(isPresented: $model.showGitPanel) {
             GitPanelView()
                 .environmentObject(model)
+                .environmentObject(model.settings)
         }
         .sheet(item: $model.renameTarget) { session in
             RenameSheet(session: session) { title in

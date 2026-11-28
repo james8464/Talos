@@ -320,6 +320,7 @@ enum SlashCommands {
         SlashCommand(id: "/worktrees", detail: "Manage worktrees and branches"),
         SlashCommand(id: "/merge", detail: "Merge a managed branch"),
         SlashCommand(id: "/diff", detail: "Open the changes panel"),
+        SlashCommand(id: "/pr", detail: "Create or review a GitHub pull request"),
         SlashCommand(id: "/review", detail: "Review working tree changes"),
         SlashCommand(id: "/subagent", detail: "Delegate a read-only research task"),
         SlashCommand(id: "/fanout", detail: "Run parallel read-only research tasks"),

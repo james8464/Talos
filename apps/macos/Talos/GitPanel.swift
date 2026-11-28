@@ -3,8 +3,10 @@ import AppKit
 
 struct GitPanelView: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showGitHub = false
     @State private var selected: GitChangedFile?
     @State private var diff = ""
     @State private var commitMessage = ""
@@ -128,11 +130,24 @@ struct GitPanelView: View {
         }
         .navigationTitle("Changes")
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Pull Request…") { showGitHub = true }
+            }
             ToolbarItem(placement: .cancellationAction) {
                 Button("Done") { dismiss() }
             }
         }
-        .onAppear { refresh() }
+        .sheet(isPresented: $showGitHub) {
+            GitHubPanel(initialPath: selected?.path)
+                .environmentObject(model)
+                .environmentObject(settings)
+        }
+        .onAppear {
+            refresh()
+            if ProcessInfo.processInfo.environment["TALOS_OPEN_GITHUB_PANEL"] == "1" {
+                showGitHub = true
+            }
+        }
         .onChange(of: selected) { _, file in
             guard let file else {
                 diff = ""

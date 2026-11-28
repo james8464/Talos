@@ -26,6 +26,8 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Tools.swift` — sandboxed process execution, tools, prompt protocol
 - `Talos/Projects.swift` — projects, file tree, document writer
 - `Talos/Git.swift` and `GitPanel.swift` — status, diff, staging, commit
+- `Talos/GitHubService.swift` and `GitHubPanel.swift` — pull request creation,
+  open-PR lookup, inline review comments, and review submission
 - `Talos/Skills.swift` — SKILL.md discovery
 - `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
 - `Talos/MCP.swift` — stdio and Streamable HTTP MCP client and tool bridge
@@ -105,6 +107,15 @@ automatic compaction is enabled, Talos summarizes older messages before the
 window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
+
+## GitHub pull requests
+
+Open Changes and choose **Pull Request…**. Talos reads the `origin` remote and
+authenticates with `GITHUB_TOKEN`, `GH_TOKEN`, or the token from `gh auth token`.
+You can push the current branch, create a draft or normal PR, browse the open PR
+for that branch, add inline review comments, and submit a comment, approval, or
+change request. Set `githubAPIBase` in Settings to point at GitHub Enterprise or
+a test fixture.
 
 ## Phone control
 

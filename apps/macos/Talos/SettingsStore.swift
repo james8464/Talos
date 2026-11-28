@@ -195,6 +195,9 @@ final class SettingsStore: ObservableObject {
     @Published var transcriptFontSize: Double {
         didSet { defaults.set(transcriptFontSize, forKey: "transcriptFontSize") }
     }
+    @Published var githubAPIBase: String {
+        didSet { defaults.set(githubAPIBase, forKey: "githubAPIBase") }
+    }
     @Published var exactProviderTokenCounting: Bool {
         didSet { defaults.set(exactProviderTokenCounting, forKey: "exactProviderTokenCounting") }
     }
@@ -281,6 +284,7 @@ final class SettingsStore: ObservableObject {
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         let storedFont = defaults.object(forKey: "transcriptFontSize") as? Double ?? 14
         transcriptFontSize = min(max(storedFont, 12), 20)
+        githubAPIBase = defaults.string(forKey: "githubAPIBase") ?? "https://api.github.com"
         exactProviderTokenCounting = defaults.object(forKey: "exactProviderTokenCounting") as? Bool ?? true
         chronicleEnabled = defaults.bool(forKey: "chronicleEnabled")
         chronicleSuggestionsEnabled = defaults.bool(forKey: "chronicleSuggestionsEnabled")

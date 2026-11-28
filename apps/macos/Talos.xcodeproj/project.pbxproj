@@ -41,10 +41,12 @@
 		8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B5B87B005EEE76F31442B1 /* Tools.swift */; };
 		8CA722B8374500133A8A585E /* AppServerSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74B895D153BF961B0B8100F /* AppServerSettings.swift */; };
 		91D29551CE36F03F46F1FBDF /* MemorySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E43F6139C6EA5473A00032 /* MemorySettings.swift */; };
+		93712C836782C1F3CD52AE6D /* GitHubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEB256A964F9C1DC758004A /* GitHubService.swift */; };
 		96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */; };
 		974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */; };
 		98060838BC265B011D427731 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDDFB389E2CD36304364711 /* ImageLoader.swift */; };
 		988C3C896907F0AFC6582F39 /* AutomationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */; };
+		9ABBE0D1D0A88436319A2C52 /* GitHubPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D7B5369AB80DF4C4702BAA /* GitHubPanel.swift */; };
 		9C3DFE20BF786F021F232AF6 /* PolicySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE7EF9CF0A2D361264A1F30 /* PolicySettings.swift */; };
 		A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E3AB66594CCF5305513D55 /* Projects.swift */; };
 		A77212AE158D591E2C7A23E0 /* OpenCodeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */; };
@@ -149,11 +151,13 @@
 		EB1A617E407672D5729425D2 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		EC986894EC2D21386D7A4EED /* PDFLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFLoader.swift; sourceTree = "<group>"; };
 		F062B95637FEC6883E592D35 /* ProviderEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderEditor.swift; sourceTree = "<group>"; };
+		F0D7B5369AB80DF4C4702BAA /* GitHubPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubPanel.swift; sourceTree = "<group>"; };
 		F1C257EFE71BB0978876FAC9 /* TalosMobile.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TalosMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationSettings.swift; sourceTree = "<group>"; };
 		F34CE21CD9645365CB1B2156 /* CloudTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTasks.swift; sourceTree = "<group>"; };
 		F4ABA0BFD684271C01A0C014 /* DictationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationController.swift; sourceTree = "<group>"; };
 		F93B3035FF733F0B8A5C4C32 /* Hooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hooks.swift; sourceTree = "<group>"; };
+		FCEB256A964F9C1DC758004A /* GitHubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubService.swift; sourceTree = "<group>"; };
 		FE7DBC90152307B91B738B5B /* CDPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CDPClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -196,6 +200,8 @@
 				F4ABA0BFD684271C01A0C014 /* DictationController.swift */,
 				08D44A0432C25F6647A1BE45 /* FanOut.swift */,
 				5952B2988ACA2B10007C9244 /* Git.swift */,
+				F0D7B5369AB80DF4C4702BAA /* GitHubPanel.swift */,
+				FCEB256A964F9C1DC758004A /* GitHubService.swift */,
 				9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */,
 				F93B3035FF733F0B8A5C4C32 /* Hooks.swift */,
 				6EDDFB389E2CD36304364711 /* ImageLoader.swift */,
@@ -502,6 +508,8 @@
 				4C6CAC975259B683592739A9 /* DictationController.swift in Sources */,
 				AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */,
 				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,
+				9ABBE0D1D0A88436319A2C52 /* GitHubPanel.swift in Sources */,
+				93712C836782C1F3CD52AE6D /* GitHubService.swift in Sources */,
 				974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */,
 				F1AC4D9267F5DBB627D6B457 /* Hooks.swift in Sources */,
 				98060838BC265B011D427731 /* ImageLoader.swift in Sources */,
