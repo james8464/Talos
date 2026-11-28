@@ -16,8 +16,8 @@ model that produced them.
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR)
 - Approval prompts, per-task “always allow”, sandbox modes, network control
-- Message queueing while a response is streaming, attachments, and inline
-  image/file previews
+- Message queueing while a response is streaming, attachments, inline
+  image/file previews, and native image input for vision models
 - Context-window accounting, automatic and manual conversation compaction
 - Token usage history with a 12-week heatmap and per-model totals
 - Slash commands including `/new`, `/clear`, `/compact`, `/stop`, `/retry`,

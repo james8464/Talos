@@ -10,6 +10,7 @@ enum ModelCatalog {
                 reasoningOptions: [],
                 defaultReasoning: nil,
                 contextWindow: nil,
+                supportsVision: openCodeSupportsVision(choice.id),
                 summary: "OpenCode Go uses its OpenAI-compatible chat endpoint. Reasoning controls depend on the selected model and are not exposed here."
             )
         case .openAI:
@@ -23,6 +24,7 @@ enum ModelCatalog {
                 reasoningOptions: [],
                 defaultReasoning: nil,
                 contextWindow: context,
+                supportsVision: id.contains("gemini"),
                 summary: "Gemini's OpenAI-compatible endpoint does not expose a reasoning control in this client."
             )
         }
@@ -40,6 +42,7 @@ enum ModelCatalog {
 
         let thinking = info.capabilities.contains("thinking")
         let tools = info.capabilities.contains("tools")
+        let vision = info.capabilities.contains("vision")
         let options: [ReasoningOption] = thinking
             ? [
                 ReasoningOption(id: "off", title: "Off", detail: "Answer without a thinking pass."),
@@ -50,6 +53,7 @@ enum ModelCatalog {
         var parts: [String] = []
         if thinking { parts.append("thinking") }
         if tools { parts.append("tool-aware") }
+        if vision { parts.append("vision") }
         if let context = info.contextLength {
             parts.append("\(context.formatted()) context")
         }
@@ -61,6 +65,7 @@ enum ModelCatalog {
             reasoningOptions: options,
             defaultReasoning: thinking ? "off" : nil,
             contextWindow: info.contextLength,
+            supportsVision: vision,
             summary: summary
         )
     }
@@ -77,6 +82,7 @@ enum ModelCatalog {
                 reasoningOptions: [],
                 defaultReasoning: nil,
                 contextWindow: openAIContextWindow(id),
+                supportsVision: openAISupportsVision(id),
                 summary: "This OpenAI model does not expose a reasoning control through Chat Completions."
             )
         }
@@ -88,6 +94,7 @@ enum ModelCatalog {
             ],
             defaultReasoning: "medium",
             contextWindow: openAIContextWindow(id),
+            supportsVision: openAISupportsVision(id),
             summary: "OpenAI reasoning effort is available for this model."
         )
     }
@@ -102,6 +109,7 @@ enum ModelCatalog {
                 reasoningOptions: [],
                 defaultReasoning: nil,
                 contextWindow: 200_000,
+                supportsVision: true,
                 summary: "This Claude model does not expose extended thinking."
             )
         }
@@ -114,6 +122,7 @@ enum ModelCatalog {
             ],
             defaultReasoning: "off",
             contextWindow: 200_000,
+            supportsVision: true,
             summary: "Anthropic extended thinking uses a token budget."
         )
     }
@@ -124,5 +133,23 @@ enum ModelCatalog {
         if id.hasPrefix("gpt-4o") { return 128_000 }
         if id.hasPrefix("o1") || id.hasPrefix("o3") || id.hasPrefix("o4") { return 200_000 }
         return nil
+    }
+
+    private static func openAISupportsVision(_ id: String) -> Bool {
+        id.hasPrefix("gpt-4o")
+            || id.hasPrefix("gpt-4.1")
+            || id.hasPrefix("gpt-5")
+            || id.hasPrefix("gpt-6")
+    }
+
+    private static func openCodeSupportsVision(_ id: String) -> Bool {
+        let value = id.lowercased()
+        return value.contains("vision")
+            || value.contains("omni")
+            || value.contains("gemini")
+            || value.contains("gpt-5")
+            || value.contains("gpt-6")
+            || value.contains("claude")
+            || value.contains("grok")
     }
 }

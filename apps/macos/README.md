@@ -58,6 +58,13 @@ Reasoning controls come from the selected model:
 
 No model gets a fake reasoning level.
 
+## Images
+
+Image attachments and tool screenshots are sent as native image blocks to
+models whose capabilities include vision. Ollama discovery reads the `vision`
+capability; OpenCode, OpenAI, Anthropic, and Gemini use known model families.
+Text-only models receive the file paths and any OCR text instead.
+
 ## Context and usage
 
 Context usage is estimated from the prompt and shown beside the composer. When

@@ -208,6 +208,7 @@ private struct ModelsSettingsView: View {
             Section("Selected model") {
                 LabeledContent("Model", value: model.choice.display)
                 LabeledContent("Reasoning", value: model.reasoningTitle)
+                LabeledContent("Vision", value: model.modelCapabilities.supportsVision ? "Images" : "Text only")
                 LabeledContent("Context window", value: model.contextLimit.map { $0.formatted() } ?? "Unknown")
                 LabeledContent("Context used", value: model.contextUsage.label)
                 Text(model.modelCapabilities.summary)

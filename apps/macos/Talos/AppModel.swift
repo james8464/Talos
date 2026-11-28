@@ -1025,11 +1025,17 @@ final class AppModel: ObservableObject {
             .filter { $0.role != .system && !($0.role == .assistant && $0.text.isEmpty) }
             .map { message in
                 if message.role == .tool {
+                    var attachments = message.attachments
+                    if let path = message.attachmentPath, !attachments.contains(path) {
+                        attachments.append(path)
+                    }
                     return ChatMessage(
                         role: .tool,
                         text: "Tool result (\(message.toolName ?? "tool")):\n\(message.text)",
                         toolName: message.toolName,
-                        toolStatus: message.toolStatus
+                        toolStatus: message.toolStatus,
+                        attachmentPath: message.attachmentPath,
+                        attachments: attachments
                     )
                 }
                 if message.role == .user, !message.attachments.isEmpty {
@@ -1042,7 +1048,8 @@ final class AppModel: ObservableObject {
                 return message
             }
         let turns = [system] + normalized
-        let generation = settings.generation(reasoning: reasoningSelection)
+        var generation = settings.generation(reasoning: reasoningSelection)
+        generation.allowImages = modelCapabilities.supportsVision
 
         let (raw, reportedUsage) = try await streamCompletion(
             choice: choice,
@@ -1079,11 +1086,12 @@ final class AppModel: ObservableObject {
                 usesCompletionTokens: false,
                 sendsTemperature: true,
                 sendsReasoningEffort: false,
+                sendsImages: modelCapabilities.supportsVision,
                 isOpenCode: true,
                 openCodeSession: openCodeSessionID
             ).stream(
                 model: choice.id,
-                messages: messages.map { ChatTurn(role: $0.role, text: $0.text) },
+                messages: messages.map { ChatTurn(role: $0.role, text: $0.text, attachments: $0.attachments) },
                 settings: generation
             )
         case .openAI:
@@ -1092,10 +1100,11 @@ final class AppModel: ObservableObject {
                 apiKey: settings.key(for: .openAI) ?? "",
                 usesCompletionTokens: true,
                 sendsTemperature: false,
-                sendsReasoningEffort: true
+                sendsReasoningEffort: true,
+                sendsImages: modelCapabilities.supportsVision
             ).stream(
                 model: choice.id,
-                messages: messages.map { ChatTurn(role: $0.role, text: $0.text) },
+                messages: messages.map { ChatTurn(role: $0.role, text: $0.text, attachments: $0.attachments) },
                 settings: generation
             )
         case .gemini:
@@ -1104,19 +1113,21 @@ final class AppModel: ObservableObject {
                 apiKey: settings.key(for: .gemini) ?? "",
                 usesCompletionTokens: false,
                 sendsTemperature: true,
-                sendsReasoningEffort: false
+                sendsReasoningEffort: false,
+                sendsImages: modelCapabilities.supportsVision
             ).stream(
                 model: choice.id,
-                messages: messages.map { ChatTurn(role: $0.role, text: $0.text) },
+                messages: messages.map { ChatTurn(role: $0.role, text: $0.text, attachments: $0.attachments) },
                 settings: generation
             )
         case .anthropic:
             stream = AnthropicClient(
                 baseURL: settings.anthropicBase,
-                apiKey: settings.key(for: .anthropic) ?? ""
+                apiKey: settings.key(for: .anthropic) ?? "",
+                sendsImages: modelCapabilities.supportsVision
             ).stream(
                 model: choice.id,
-                messages: messages.map { ChatTurn(role: $0.role, text: $0.text) },
+                messages: messages.map { ChatTurn(role: $0.role, text: $0.text, attachments: $0.attachments) },
                 settings: generation
             )
         }

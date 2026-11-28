@@ -1252,6 +1252,7 @@ private struct Inspector: View {
                 LabeledContent("Provider", value: model.choice.provider.title)
                 LabeledContent("Model", value: model.choice.id)
                 LabeledContent("Reasoning", value: model.reasoningTitle)
+                LabeledContent("Vision", value: model.modelCapabilities.supportsVision ? "Images" : "Text only")
                 LabeledContent("Context", value: model.contextUsage.label)
                 LabeledContent("Speed", value: settings.speed.title)
                 LabeledContent("Endpoint") {

@@ -16,7 +16,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Response speed | Fast / Balanced / Thorough output budgets |
 | Chat | Streaming, stop, per-message model labels, copy, retry, edit-and-resend |
 | Message queue | Send while streaming; queue strip, remove, clear, auto-consume |
-| Attachments | File picker, file/image chips, inline image previews |
+| Attachments | File picker, file/image chips, inline image previews, native image blocks sent to vision models |
 | Projects | Project switcher, recent projects, project-scoped tasks |
 | File browser | Lazy project tree, text/image preview, open/reveal, new file |
 | Git review | Branch/status, changed files, colored diff, stage all, commit |
@@ -55,7 +55,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | MCP | stdio and Streamable HTTP; no MCP elicitation or MCP apps yet |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
 | Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
-| Images | displayed in-app; not yet sent as multimodal model input |
+| Images | attachments and tool screenshots are sent as native image blocks to models identified as vision-capable; PDF input is not yet supported |
 | Reasoning | provider-specific options only where the transport exposes them |
 | Usage | provider-reported where available, otherwise clearly marked estimated |
 | Sandbox | shell/file enforcement via `sandbox-exec`; no managed network proxy/domain allowlist |
@@ -79,7 +79,7 @@ These are Codex features Talos does not claim to have:
 - Auto-review subagent for approvals
 - Dictation/voice and menu-bar mode
 - Exact tokenizer-based accounting; Talos uses reported counts plus estimates
-- Image/PDF input to multimodal models
+- PDF input and image input for uncatalogued vision models
 - Automatic retry/edit/fork of individual messages
 
 The remaining list is intentionally explicit. Talos labels unimplemented tools

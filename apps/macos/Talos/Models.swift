@@ -207,6 +207,7 @@ struct ModelCapabilities: Equatable {
     var reasoningOptions: [ReasoningOption] = []
     var defaultReasoning: String?
     var contextWindow: Int?
+    var supportsVision = false
     var summary: String = "Reasoning not exposed by this model."
 
     static let none = ModelCapabilities()
@@ -217,6 +218,7 @@ struct GenerationSettings {
     var maxTokens: Int
     var reasoning: String?
     var keepAlive: String
+    var allowImages = false
 }
 
 struct TokenUsage: Codable, Equatable, Sendable {

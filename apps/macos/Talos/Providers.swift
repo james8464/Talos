@@ -110,6 +110,7 @@ struct ModelChoice: Identifiable, Hashable {
 struct ChatTurn {
     let role: Role
     let text: String
+    var attachments: [String] = []
 }
 
 enum ProviderError: LocalizedError {
@@ -129,6 +130,7 @@ struct OpenAICompatibleClient {
     var usesCompletionTokens = false
     var sendsTemperature = false
     var sendsReasoningEffort = false
+    var sendsImages = false
     var isOpenCode = false
     var openCodeSession: String? = nil
 
@@ -169,7 +171,7 @@ struct OpenAICompatibleClient {
                     var payload: [String: Any] = [
                         "model": model,
                         "stream": true,
-                        "messages": messages.map { ["role": $0.role.chatRole, "content": $0.text] },
+                        "messages": payloadMessages(messages),
                     ]
                     let reasoningModel = supportsReasoning(model)
                     let tokenKey = usesCompletionTokens && reasoningModel ? "max_completion_tokens" : "max_tokens"
@@ -239,6 +241,30 @@ struct OpenAICompatibleClient {
             || id.hasPrefix("o4")
     }
 
+    private func payloadMessages(_ messages: [ChatTurn]) -> [[String: Any]] {
+        messages.map { message in
+            let role = message.role.chatRole
+            if sendsImages,
+               message.role == .user || message.role == .tool,
+               !message.attachments.isEmpty {
+                let images = ImageLoader.load(paths: message.attachments)
+                if !images.isEmpty {
+                    var parts: [[String: Any]] = [
+                        ["type": "text", "text": message.text.isEmpty ? " " : message.text],
+                    ]
+                    for image in images {
+                        parts.append([
+                            "type": "image_url",
+                            "image_url": ["url": "data:\(image.mediaType);base64,\(image.base64)"],
+                        ])
+                    }
+                    return ["role": role, "content": parts]
+                }
+            }
+            return ["role": role, "content": message.text]
+        }
+    }
+
     private func applyHeaders(to request: inout URLRequest, accept: String) {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue(accept, forHTTPHeaderField: "Accept")
@@ -259,6 +285,7 @@ struct OpenAICompatibleClient {
 struct AnthropicClient {
     let baseURL: String
     let apiKey: String
+    var sendsImages = false
 
     func models() async throws -> [String] {
         guard let url = URL(string: root + "/v1/models") else {
@@ -297,8 +324,7 @@ struct AnthropicClient {
                     request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
                     let system = messages.first(where: { $0.role == .system })?.text ?? ""
-                    let turns = messages.filter { $0.role != .system }
-                        .map { ["role": $0.role == .assistant ? "assistant" : "user", "content": $0.text] }
+                    let turns = payloadMessages(messages)
 
                     var payload: [String: Any] = [
                         "model": model,
@@ -372,6 +398,32 @@ struct AnthropicClient {
                 }
             }
             continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func payloadMessages(_ messages: [ChatTurn]) -> [[String: Any]] {
+        messages.filter { $0.role != .system }.map { message in
+            let role = message.role == .assistant ? "assistant" : "user"
+            if sendsImages, message.role != .assistant, !message.attachments.isEmpty {
+                let images = ImageLoader.load(paths: message.attachments)
+                if !images.isEmpty {
+                    var blocks: [[String: Any]] = [
+                        ["type": "text", "text": message.text.isEmpty ? " " : message.text],
+                    ]
+                    for image in images {
+                        blocks.append([
+                            "type": "image",
+                            "source": [
+                                "type": "base64",
+                                "media_type": image.mediaType,
+                                "data": image.base64,
+                            ],
+                        ])
+                    }
+                    return ["role": role, "content": blocks]
+                }
+            }
+            return ["role": role, "content": message.text]
         }
     }
 

@@ -130,11 +130,24 @@ struct OllamaClient {
                     request.timeoutInterval = 600
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
+                    let messagePayload = messages.map { message -> [String: Any] in
+                        var value: [String: Any] = [
+                            "role": message.role.chatRole,
+                            "content": message.text,
+                        ]
+                        if settings.allowImages, message.role == .user || message.role == .tool {
+                            let images = ImageLoader.ollamaBase64(paths: message.attachments)
+                            if !images.isEmpty {
+                                value["images"] = images
+                            }
+                        }
+                        return value
+                    }
                     var payload: [String: Any] = [
                         "model": model,
                         "stream": true,
                         "keep_alive": settings.keepAlive,
-                        "messages": messages.map { ["role": $0.role.chatRole, "content": $0.text] },
+                        "messages": messagePayload,
                         "options": [
                             "temperature": settings.temperature,
                             "num_predict": settings.maxTokens,

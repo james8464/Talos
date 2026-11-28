@@ -26,6 +26,7 @@
 		8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B5B87B005EEE76F31442B1 /* Tools.swift */; };
 		96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */; };
 		974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */; };
+		98060838BC265B011D427731 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDDFB389E2CD36304364711 /* ImageLoader.swift */; };
 		A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E3AB66594CCF5305513D55 /* Projects.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6301A0926D7044DADE1CB7C2 /* Talos.icns */; };
@@ -47,6 +48,7 @@
 		5C064999B0D1F92F7B32F537 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		5D2AC40CFA47F5E6168180BB /* TalosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosApp.swift; sourceTree = "<group>"; };
 		6301A0926D7044DADE1CB7C2 /* Talos.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Talos.icns; sourceTree = "<group>"; };
+		6EDDFB389E2CD36304364711 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
 		70913AB772F308657E509F42 /* Providers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		7DF7DCED466867A6BC71FB24 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -86,6 +88,7 @@
 				AD1122852660CD8181149806 /* ContentView.swift */,
 				5952B2988ACA2B10007C9244 /* Git.swift */,
 				9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */,
+				6EDDFB389E2CD36304364711 /* ImageLoader.swift */,
 				C7B210FBD6286CFA7711C157 /* Info.plist */,
 				EB1A617E407672D5729425D2 /* Keychain.swift */,
 				847BD0AAE243B78A20C79D30 /* MCP.swift */,
@@ -201,6 +204,7 @@
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
 				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,
 				974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */,
+				98060838BC265B011D427731 /* ImageLoader.swift in Sources */,
 				2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */,
 				6790212F8FC205B737DC983A /* MCP.swift in Sources */,
 				96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */,
