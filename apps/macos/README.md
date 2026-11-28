@@ -28,6 +28,8 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Git.swift` and `GitPanel.swift` — status, diff, staging, commit
 - `Talos/GitHubService.swift` and `GitHubPanel.swift` — pull request creation,
   open-PR lookup, inline review comments, and review submission
+- `Talos/LSPService.swift` and `DiagnosticsPanel.swift` — language-server
+  JSON-RPC client, diagnostics, symbols, code actions, and formatting
 - `Talos/Skills.swift` — SKILL.md discovery
 - `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
 - `Talos/MCP.swift` — stdio and Streamable HTTP MCP client and tool bridge
@@ -107,6 +109,18 @@ automatic compaction is enabled, Talos summarizes older messages before the
 window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
+
+## Language servers
+
+Talos starts the appropriate language server on demand and exposes it to models
+as the `lsp` tool: `diagnostics`, `symbols`, `code_actions`,
+`apply_code_action`, and `format`. Sources are supported for Swift
+(`sourcekit-lsp`), C/C++/Objective-C (`clangd`), and TypeScript, Python, Go,
+Rust, and JSON when the matching server is installed.
+
+Changes → **Diagnostics** checks every changed file and lists errors and
+warnings with file, line, and source. Applying code actions and formatting
+require the usual approval.
 
 ## GitHub pull requests
 

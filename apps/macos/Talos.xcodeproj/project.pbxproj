@@ -30,6 +30,7 @@
 		59658A002CFD99897E1466DF /* MCPResourceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA482A89BCEA5B1F988307C3 /* MCPResourceView.swift */; };
 		59EFBCD216961E06356D37D5 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70913AB772F308657E509F42 /* Providers.swift */; };
 		5A14E9CF14B7A67B1070CDA6 /* CDPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7DBC90152307B91B738B5B /* CDPClient.swift */; };
+		5F0452CA07207E579213E584 /* LSPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761A8AA8BA11DD8257D24497 /* LSPService.swift */; };
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
 		7303483ABDE8FC03103598CA /* ConversationBranching.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85CFBCEEBB16E2023311980 /* ConversationBranching.swift */; };
@@ -49,6 +50,7 @@
 		9ABBE0D1D0A88436319A2C52 /* GitHubPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D7B5369AB80DF4C4702BAA /* GitHubPanel.swift */; };
 		9C3DFE20BF786F021F232AF6 /* PolicySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE7EF9CF0A2D361264A1F30 /* PolicySettings.swift */; };
 		A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E3AB66594CCF5305513D55 /* Projects.swift */; };
+		A70F07D70B95F893AFCD86B2 /* DiagnosticsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346734DE5EB28B6B1ED54671 /* DiagnosticsPanel.swift */; };
 		A77212AE158D591E2C7A23E0 /* OpenCodeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */; };
 		AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D44A0432C25F6647A1BE45 /* FanOut.swift */; };
 		B4378BD8385BB6D9F453D8D1 /* TalosMobileApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08CE26F73E0FB579C380729 /* TalosMobileApp.swift */; };
@@ -96,6 +98,7 @@
 		29816AA9A9DFB0CBFA35EE85 /* Tokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokenizer.swift; sourceTree = "<group>"; };
 		2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
 		2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPersistence.swift; sourceTree = "<group>"; };
+		346734DE5EB28B6B1ED54671 /* DiagnosticsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsPanel.swift; sourceTree = "<group>"; };
 		3C2A35D82393F85F067D06A9 /* Subagent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subagent.swift; sourceTree = "<group>"; };
 		3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPElicitationView.swift; sourceTree = "<group>"; };
 		41F9D7D9C4D566C212125A12 /* ManagedPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedPolicy.swift; sourceTree = "<group>"; };
@@ -116,6 +119,7 @@
 		6EDDFB389E2CD36304364711 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
 		70913AB772F308657E509F42 /* Providers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
 		752940EB53B173AED8964FF2 /* TalosNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = TalosNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
+		761A8AA8BA11DD8257D24497 /* LSPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LSPService.swift; sourceTree = "<group>"; };
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		78051C8FEB42854A3967C6FF /* RemoteClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteClient.swift; sourceTree = "<group>"; };
 		7DF7DCED466867A6BC71FB24 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -197,6 +201,7 @@
 				218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */,
 				AD1122852660CD8181149806 /* ContentView.swift */,
 				D85CFBCEEBB16E2023311980 /* ConversationBranching.swift */,
+				346734DE5EB28B6B1ED54671 /* DiagnosticsPanel.swift */,
 				F4ABA0BFD684271C01A0C014 /* DictationController.swift */,
 				08D44A0432C25F6647A1BE45 /* FanOut.swift */,
 				5952B2988ACA2B10007C9244 /* Git.swift */,
@@ -207,6 +212,7 @@
 				6EDDFB389E2CD36304364711 /* ImageLoader.swift */,
 				C7B210FBD6286CFA7711C157 /* Info.plist */,
 				EB1A617E407672D5729425D2 /* Keychain.swift */,
+				761A8AA8BA11DD8257D24497 /* LSPService.swift */,
 				41F9D7D9C4D566C212125A12 /* ManagedPolicy.swift */,
 				847BD0AAE243B78A20C79D30 /* MCP.swift */,
 				663E1E4E42478C07BD4DC2D2 /* MCPAppView.swift */,
@@ -505,6 +511,7 @@
 				7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
 				7303483ABDE8FC03103598CA /* ConversationBranching.swift in Sources */,
+				A70F07D70B95F893AFCD86B2 /* DiagnosticsPanel.swift in Sources */,
 				4C6CAC975259B683592739A9 /* DictationController.swift in Sources */,
 				AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */,
 				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,
@@ -514,6 +521,7 @@
 				F1AC4D9267F5DBB627D6B457 /* Hooks.swift in Sources */,
 				98060838BC265B011D427731 /* ImageLoader.swift in Sources */,
 				2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */,
+				5F0452CA07207E579213E584 /* LSPService.swift in Sources */,
 				6790212F8FC205B737DC983A /* MCP.swift in Sources */,
 				C3CF9D5095F5C13BC4366D46 /* MCPAppView.swift in Sources */,
 				C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */,

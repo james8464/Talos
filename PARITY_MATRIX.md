@@ -27,7 +27,7 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Git diff/stage/commit | ✅ | ✅ | ✅ | ✅ | Changes panel and Git service |
 | Worktrees and branch lifecycle | ✅ | 🟡 | 🟡 | ✅ | Create, list, switch, merge, cleanup |
 | PR creation and review comments | ✅ | 🟡 | ✅ | ✅ | GitHub service reads `origin`, uses the `gh` CLI token or `GITHUB_TOKEN`, and supports draft PR creation, open-PR lookup, inline review comments, and review submit from the Changes panel; verified against live GitHub and a mock API |
-| LSP diagnostics and refactors | ❌ | ❌ | ✅ | ❌ | No language-server integration |
+| LSP diagnostics and refactors | ❌ | ❌ | ✅ | ✅ | JSON-RPC client for `sourcekit-lsp`, `clangd`, and installed TypeScript/Python/Go/Rust/JSON servers: diagnostics, document symbols, code actions with workspace-edit application, and formatting; model tool plus a Diagnostics panel in Changes; verified live against sourcekit-lsp and clangd |
 | Inline autocomplete/Tab | ❌ | ❌ | ✅ | ❌ | Not an editor |
 | Semantic codebase index | 🟡 | ❌ | ✅ | ❌ | Uses file tree/ripgrep, no embeddings index |
 | Debugger integration | ❌ | ❌ | ✅ | ❌ | No debug adapter |
@@ -80,6 +80,11 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
   and a live draft PR round-trip on `james8464/Talos` (create, lookup, inline
   comment, review submit) passed; the verification PR and branch were then
   deleted. The native panel rendered the live PR in the app.
+- **Language servers** — `sourcekit-lsp` and `clangd` both returned diagnostics,
+  symbols, quick fixes, and applied edits in tests; the tool path was exercised
+  through a live model session and the native Diagnostics panel showed the same
+  errors. TypeScript, Python, Go, Rust, and JSON servers are supported when
+  their executables are installed but were not present on this machine.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   The largest remaining deltas are IDE/LSP/editor integration, PR review
   workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and

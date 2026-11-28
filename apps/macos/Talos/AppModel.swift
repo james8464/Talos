@@ -2872,7 +2872,8 @@ final class AppModel: ObservableObject {
             enabledPlan: settings.enablePlan,
             skills: skills.enabled,
             mcpTools: mcpTools,
-            cdpEndpoint: settings.browserCDPEndpoint
+            cdpEndpoint: settings.browserCDPEndpoint,
+            enabledLSP: settings.enableLSP
         )
     }
 

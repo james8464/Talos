@@ -7,6 +7,7 @@ struct GitPanelView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showGitHub = false
+    @State private var showDiagnostics = false
     @State private var selected: GitChangedFile?
     @State private var diff = ""
     @State private var commitMessage = ""
@@ -131,11 +132,18 @@ struct GitPanelView: View {
         .navigationTitle("Changes")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                Button("Diagnostics") { showDiagnostics = true }
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button("Pull Request…") { showGitHub = true }
             }
             ToolbarItem(placement: .cancellationAction) {
                 Button("Done") { dismiss() }
             }
+        }
+        .sheet(isPresented: $showDiagnostics) {
+            DiagnosticsPanel()
+                .environmentObject(model)
         }
         .sheet(isPresented: $showGitHub) {
             GitHubPanel(initialPath: selected?.path)
@@ -146,6 +154,9 @@ struct GitPanelView: View {
             refresh()
             if ProcessInfo.processInfo.environment["TALOS_OPEN_GITHUB_PANEL"] == "1" {
                 showGitHub = true
+            }
+            if ProcessInfo.processInfo.environment["TALOS_OPEN_DIAGNOSTICS"] == "1" {
+                showDiagnostics = true
             }
         }
         .onChange(of: selected) { _, file in

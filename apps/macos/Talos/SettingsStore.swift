@@ -139,6 +139,9 @@ final class SettingsStore: ObservableObject {
             defaults.set(enablePlan, forKey: "enablePlan")
         }
     }
+    @Published var enableLSP: Bool {
+        didSet { defaults.set(enableLSP, forKey: "enableLSP") }
+    }
     @Published var pluginCatalogURL: String {
         didSet { defaults.set(pluginCatalogURL, forKey: "pluginCatalogURL") }
     }
@@ -254,6 +257,7 @@ final class SettingsStore: ObservableObject {
         enableWeb = defaults.object(forKey: "enableWeb") as? Bool ?? true
         enableBrowser = defaults.object(forKey: "enableBrowser") as? Bool ?? true
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
+        enableLSP = defaults.object(forKey: "enableLSP") as? Bool ?? true
         pluginCatalogURL = defaults.string(forKey: "pluginCatalogURL") ?? ""
         pluginCatalogPublicKey = defaults.string(forKey: "pluginCatalogPublicKey") ?? ""
         appServerEnabled = defaults.bool(forKey: "appServerEnabled")

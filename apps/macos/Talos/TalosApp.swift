@@ -1,7 +1,14 @@
 import SwiftUI
 
+final class TalosAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillTerminate(_ notification: Notification) {
+        LSPManager.shared.stopAll()
+    }
+}
+
 @main
 struct TalosApp: App {
+    @NSApplicationDelegateAdaptor(TalosAppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
     @StateObject private var menuBar = MenuBarController()
 

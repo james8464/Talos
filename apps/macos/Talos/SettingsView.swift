@@ -605,9 +605,16 @@ private struct ToolsSettingsView: View {
                     .disabled(settings.managed?.enableWeb != nil)
                 Toggle("Task plans", isOn: $settings.enablePlan)
                     .disabled(settings.managed?.enablePlan != nil)
+                Toggle("Language-server diagnostics and code actions", isOn: $settings.enableLSP)
                 Text("These tools are provided by Talos and work with every model. The sandbox applies to shell and file tools.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Text("Detected language servers: " + LSPManager.availability()
+                    .map { "\($0.0) \($0.1 ? "available" : "missing")" }
+                    .joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
             }
 
             Section("Browser") {

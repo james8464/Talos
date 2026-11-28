@@ -162,6 +162,7 @@ struct ToolContext: Sendable {
     var readOnly = false
     var allowNestedAgents = false
     var cdpEndpoint = "http://127.0.0.1:9222"
+    var enabledLSP = true
     let maxOutputCharacters = 30_000
 }
 
@@ -256,6 +257,9 @@ enum ToolPrompt {
             lines.append("- browser: {\"action\":\"read\"|\"click\"|\"type\"|\"navigate\"|\"screenshot\"|\"key\"|\"scroll\"|\"back\"|\"forward\"|\"reload\", ...} Control the front Safari or Chrome window. Run read before click/type; read returns page text and indexed elements. click takes index; type takes index and text; navigate takes url; screenshot returns OCR text; key takes key.")
             lines.append("- browser_cdp: {\"action\":\"status\"|\"read\"|\"navigate\"|\"eval\"|\"click\"|\"type\"|\"screenshot\", ...} Control Chrome through the DevTools Protocol when Chrome runs with --remote-debugging-port. read returns page text and selectors; click takes selector or text; type takes selector and text; eval takes a JavaScript expression; navigate takes url.")
         }
+        if context.enabledLSP {
+            lines.append("- lsp: {\"action\":\"diagnostics\",\"path\":\".\"} Run a real language server. actions: diagnostics (file or directory), symbols (file), code_actions (file, line, character), apply_code_action (file, line, title), format (file). Use diagnostics after edits instead of guessing whether code compiles. Use code_actions at a diagnostic position to find fixes and refactors, then apply_code_action.")
+        }
         if context.enabledPlan {
             lines.append("- update_plan: {\"steps\":[{\"title\":\"...\",\"status\":\"pending\"|\"in_progress\"|\"completed\"}]} Replace the task plan.")
         }
@@ -336,6 +340,9 @@ struct ToolRunner: Sendable {
         case "browser_cdp":
             let action = call.string("action") ?? ""
             return !["read", "screenshot", "status"].contains(action)
+        case "lsp":
+            let action = call.string("action") ?? ""
+            return ["apply_code_action", "format"].contains(action)
         default:
             return false
         }
@@ -371,6 +378,8 @@ struct ToolRunner: Sendable {
             return await runBrowser(call)
         case "browser_cdp":
             return await runBrowserCDP(call)
+        case "lsp":
+            return await runLSP(call)
         default:
             return .fail("Unknown tool '\(call.name)'.")
         }
@@ -608,6 +617,137 @@ struct ToolRunner: Sendable {
     }
 
     @MainActor
+    private func runLSP(_ call: ToolCall) async -> ToolResult {
+        guard context.enabledLSP else {
+            return .fail("Language-server tools are disabled in Settings.")
+        }
+        let action = (call.string("action") ?? "diagnostics").lowercased()
+        let rawPath = call.string("path") ?? call.string("file") ?? "."
+        let url = resolve(rawPath)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            return .fail("No file or directory at \(url.path).")
+        }
+        switch action {
+        case "diagnostics":
+            let paths: [String]
+            if isDirectory.boolValue {
+                paths = await LSPManager.shared.candidateFiles(
+                    in: url,
+                    limit: min(max(call.int("limit") ?? 25, 1), 100)
+                )
+            } else {
+                paths = [url.path]
+            }
+            guard !paths.isEmpty else {
+                return .ok("No source files with a configured language server under \(url.path).")
+            }
+            let result = await LSPManager.shared.diagnostics(
+                paths: paths,
+                timeout: Double(min(max(call.int("timeout_seconds") ?? 12, 3), 60))
+            )
+            var lines: [String] = []
+            let byFile = Dictionary(grouping: result.results, by: \.path)
+            for path in paths {
+                let rows = (byFile[path] ?? []).sorted { ($0.line, $0.column) < ($1.line, $1.column) }
+                guard !rows.isEmpty else { continue }
+                lines.append("\(path):")
+                for row in rows {
+                    let source = row.source.map { " [\($0)]" } ?? ""
+                    let code = row.code.map { " (\($0))" } ?? ""
+                    lines.append(
+                        "  \(row.line):\(row.column) \(row.severityLabel): \(row.message)\(source)\(code)"
+                    )
+                }
+            }
+            let errors = result.results.filter { $0.severity == 1 }.count
+            let warnings = result.results.filter { $0.severity == 2 }.count
+            var summary = "Checked \(paths.count) file\(paths.count == 1 ? "" : "s"): "
+            summary += "\(errors) error\(errors == 1 ? "" : "s"), \(warnings) warning\(warnings == 1 ? "" : "s"), "
+            summary += "\(result.results.count) diagnostic\(result.results.count == 1 ? "" : "s")."
+            if !result.failures.isEmpty {
+                summary += "\nCould not check:\n" + result.failures.joined(separator: "\n")
+            }
+            if lines.isEmpty {
+                return .ok(summary + "\nNo diagnostics.")
+            }
+            return .ok(summary + "\n\n" + lines.joined(separator: "\n"))
+        case "symbols":
+            guard !isDirectory.boolValue else { return .fail("symbols requires a file path.") }
+            do {
+                let symbols = try await LSPManager.shared.symbols(path: url.path)
+                guard !symbols.isEmpty else { return .ok("No symbols reported for \(url.path).") }
+                let body = symbols.map { symbol in
+                    let detail = symbol.detail.map { " — \($0)" } ?? ""
+                    return "\(symbol.line):\(symbol.column) \(symbol.kind) \(symbol.name)\(detail)"
+                }.joined(separator: "\n")
+                return .ok("\(symbols.count) symbols in \(url.path)\n\(body)")
+            } catch {
+                return .fail(error.localizedDescription)
+            }
+        case "code_actions":
+            guard !isDirectory.boolValue else { return .fail("code_actions requires a file path.") }
+            let line = call.int("line") ?? 1
+            let character = call.int("character") ?? 1
+            do {
+                let actions = try await LSPManager.shared.codeActions(
+                    path: url.path,
+                    line: line,
+                    character: character
+                )
+                guard !actions.isEmpty else {
+                    return .ok("No code actions at \(url.path):\(line):\(character).")
+                }
+                let body = actions.map { action in
+                    let kind = action.kind.map { " [\($0)]" } ?? ""
+                    let edit = action.hasEdit ? "" : " (no edit; editor command only)"
+                    return "\(action.index + 1). \(action.title)\(kind)\(edit)"
+                }.joined(separator: "\n")
+                return .ok("\(actions.count) code actions at \(url.path):\(line):\(character)\n\(body)")
+            } catch {
+                return .fail(error.localizedDescription)
+            }
+        case "apply_code_action", "apply":
+            guard context.enabledFileEdits, !context.readOnly else {
+                return .fail("Applying code actions is disabled in Settings.")
+            }
+            guard !isDirectory.boolValue else { return .fail("apply_code_action requires a file path.") }
+            guard let title = call.string("title"), !title.isEmpty else {
+                return .fail("apply_code_action requires a title from code_actions.")
+            }
+            do {
+                try ensureWriteAllowed(url)
+                let result = try await LSPManager.shared.applyCodeAction(
+                    path: url.path,
+                    line: call.int("line") ?? 1,
+                    character: call.int("character") ?? 1,
+                    title: title
+                )
+                let files = result.changedFiles.isEmpty ? "no files" : result.changedFiles.joined(separator: "\n")
+                return .ok("Applied '\(result.title)': \(result.editCount) edit\(result.editCount == 1 ? "" : "s").\n\(files)")
+            } catch {
+                return .fail(error.localizedDescription)
+            }
+        case "format":
+            guard context.enabledFileEdits, !context.readOnly else {
+                return .fail("Formatting is disabled in Settings.")
+            }
+            guard !isDirectory.boolValue else { return .fail("format requires a file path.") }
+            do {
+                try ensureWriteAllowed(url)
+                let result = try await LSPManager.shared.format(path: url.path)
+                if result.editCount == 0 {
+                    return .ok("No formatting changes for \(url.path).")
+                }
+                return .ok("Formatted \(url.path) with \(result.editCount) edit\(result.editCount == 1 ? "" : "s").")
+            } catch {
+                return .fail(error.localizedDescription)
+            }
+        default:
+            return .fail("Unknown lsp action '\(action)'. Use diagnostics, symbols, code_actions, apply_code_action, or format.")
+        }
+    }
+
     private func runComputer(_ call: ToolCall) async -> ToolResult {
         guard context.enabledComputerUse else { return .fail("Computer use is disabled in Settings.") }
         guard let action = call.string("action"), !action.isEmpty else {
