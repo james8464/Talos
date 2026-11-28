@@ -33,7 +33,7 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Debugger integration | ❌ | ❌ | ✅ | ❌ | No debug adapter |
 | Multi-file apply preview | ✅ | ✅ | ✅ | 🟡 | Edits and diffs exist; no staged multi-file apply UI |
 | IDE extensions | ✅ | ✅ | ✅ (IDE) | ❌ | App/server/daemon only |
-| Headless chat CLI | ✅ | ✅ | 🟡 | 🟡 | App server, remote daemon, and native host; no `talos chat` CLI |
+| Headless chat CLI | ✅ | ✅ | 🟡 | ✅ | `talos` CLI over the app server: info, sessions, new, send with SSE streaming, interactive/stdin chat, show, stop, approvals, approve/deny, `--json`, `--no-stream`, and `--yes`; verified live end to end |
 | **Tools and desktop** | | | | | |
 | Web fetch/search | ✅ | ✅ | ✅ | ✅ | Network-gated tools |
 | Browser automation | 🟡 | 🟡 | ✅ | ✅ | Safari accessibility, Chrome CDP, packaged extension |
@@ -85,6 +85,10 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
   through a live model session and the native Diagnostics panel showed the same
   errors. TypeScript, Python, Go, Rust, and JSON servers are supported when
   their executables are installed but were not present on this machine.
+- **Headless CLI** — `TalosCLI` was exercised against a live app server for
+  info, session listing and creation, streamed prompts, interactive and stdin
+  chat, stop, approval listing, approval allow/deny, non-streaming replies,
+  JSON output, and authentication failures.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   The largest remaining deltas are IDE/LSP/editor integration, PR review
   workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and

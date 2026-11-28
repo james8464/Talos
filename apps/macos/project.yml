@@ -66,6 +66,19 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
 
+  TalosCLI:
+    type: tool
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: CLI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.cli
+        PRODUCT_NAME: talos
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
   TalosRemoteDaemon:
     type: tool
     platform: macOS
@@ -103,6 +116,12 @@ targets:
         CURRENT_PROJECT_VERSION: "3"
         COMBINE_HIDPI_IMAGES: YES
 schemes:
+  TalosCLI:
+    build:
+      targets:
+        TalosCLI: all
+    run:
+      config: Debug
   TalosMobile:
     build:
       targets:
@@ -120,5 +139,6 @@ schemes:
         Talos: all
         TalosNativeHost: all
         TalosRemoteDaemon: all
+        TalosCLI: all
     run:
       config: Debug

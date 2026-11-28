@@ -29,6 +29,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6C4D3C16B445F0A76547C33B"
+               BuildableName = "TalosCLI"
+               BlueprintName = "TalosCLI"
+               ReferencedContainer = "container:Talos.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "FF936BCDB05967105F87A46B"
                BuildableName = "TalosNativeHost"
                BlueprintName = "TalosNativeHost"

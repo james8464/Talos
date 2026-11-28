@@ -20,6 +20,8 @@ model that produced them.
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR),
   plus Chrome DevTools Protocol control with DOM selectors and JavaScript
+- A headless `talos` CLI that drives the app server: sessions, streamed
+  prompts, stop, and approvals, with JSON output for scripts
 - Language-server diagnostics, symbols, quick fixes and refactors, and
   formatting through `sourcekit-lsp`, `clangd`, and other installed servers,
   exposed to every model and in the Changes panel

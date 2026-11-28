@@ -30,6 +30,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
   open-PR lookup, inline review comments, and review submission
 - `Talos/LSPService.swift` and `DiagnosticsPanel.swift` — language-server
   JSON-RPC client, diagnostics, symbols, code actions, and formatting
+- `CLI/TalosCLI.swift` — headless `talos` client for the app server
 - `Talos/Skills.swift` — SKILL.md discovery
 - `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
 - `Talos/MCP.swift` — stdio and Streamable HTTP MCP client and tool bridge
@@ -109,6 +110,29 @@ automatic compaction is enabled, Talos summarizes older messages before the
 window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
+
+## Headless CLI
+
+Build the CLI with `xcodebuild -scheme TalosCLI` (or `make cli`). The binary is
+`.build/Build/Products/Debug/talos`.
+
+```sh
+export TALOS_APP_SERVER_URL=http://127.0.0.1:8790
+export TALOS_APP_SERVER_TOKEN=…
+
+talos info
+talos sessions
+talos chat --title "Fix the failing test"
+talos send <session-id> "Summarize the diff" --yes
+talos stop <session-id>
+talos approvals
+talos approve <approval-id>
+```
+
+`send` and `chat` stream replies over SSE and prompt for tool approvals when
+stdin is a terminal. Use `--yes` to auto-allow, `--json` for scripts, and
+`--no-stream` to poll for the final reply. Exit codes: `0` success, `1` runtime
+error, `2` usage or authentication error, `130` interrupted.
 
 ## Language servers
 
