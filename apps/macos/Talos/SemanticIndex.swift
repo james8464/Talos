@@ -1,5 +1,6 @@
 import Foundation
 import NaturalLanguage
+import CryptoKit
 
 struct SemanticChunk: Sendable {
     let path: String
@@ -22,6 +23,7 @@ struct SemanticIndexStatus: Sendable {
     let workspace: String
     let files: Int
     let chunks: Int
+    let cachedFiles: Int
     let builtAt: Date?
     let embedding: String
     let isStale: Bool
@@ -56,6 +58,25 @@ actor SemanticIndex {
         var files: [String: FileState]
         var builtAt: Date
         var fingerprint: String
+        var cachedFiles: Int
+    }
+
+    private struct CachedChunk: Codable {
+        let startLine: Int
+        let endLine: Int
+        let text: String
+        let vector: [Float]
+    }
+
+    private struct CachedFile: Codable {
+        let modified: Date
+        let size: Int
+        let chunks: [CachedChunk]
+    }
+
+    private struct DiskCache: Codable {
+        let version: Int
+        let files: [String: CachedFile]
     }
 
     private var indexes: [String: WorkspaceIndex] = [:]
@@ -79,6 +100,7 @@ actor SemanticIndex {
                 workspace: root.path,
                 files: 0,
                 chunks: 0,
+                cachedFiles: 0,
                 builtAt: nil,
                 embedding: "unavailable",
                 isStale: false
@@ -91,6 +113,7 @@ actor SemanticIndex {
                 workspace: key,
                 files: index.files.count,
                 chunks: index.chunks.count,
+                cachedFiles: index.cachedFiles,
                 builtAt: index.builtAt,
                 embedding: "NLEmbedding.sentence · 512-d",
                 isStale: stale
@@ -100,6 +123,7 @@ actor SemanticIndex {
             workspace: key,
             files: 0,
             chunks: 0,
+            cachedFiles: 0,
             builtAt: nil,
             embedding: "NLEmbedding.sentence · 512-d",
             isStale: false
@@ -133,7 +157,7 @@ actor SemanticIndex {
         let root = workspace.resolvingSymlinksInPath().standardizedFileURL
         try await build(root: root, force: false)
         let key = root.path
-        let index = indexes[key] ?? WorkspaceIndex(chunks: [], files: [:], builtAt: Date(), fingerprint: "")
+        let index = indexes[key] ?? WorkspaceIndex(chunks: [], files: [:], builtAt: Date(), fingerprint: "", cachedFiles: 0)
         let queryFloats = queryVector.map(Float.init)
         var prefix = pathPrefix?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if prefix.hasPrefix("./") { prefix.removeFirst(2) }
@@ -177,12 +201,15 @@ actor SemanticIndex {
             workspace: key,
             files: index.files.count,
             chunks: index.chunks.count,
+            cachedFiles: index.cachedFiles,
             builtAt: index.builtAt,
             embedding: "NLEmbedding.sentence · 512-d",
             isStale: false
         )
         return (Array(hits), status)
     }
+
+    private static let cacheVersion = 1
 
     private func build(root: URL, force: Bool) async throws {
         guard embedding != nil else {
@@ -196,18 +223,49 @@ actor SemanticIndex {
                 return
             }
         }
+        let cachedEntries = force ? [:] : loadCache(for: key)
         let candidates = candidateFiles(in: root)
         var chunks: [SemanticChunk] = []
         var files: [String: FileState] = [:]
+        var diskEntries: [String: CachedFile] = [:]
+        var reusedFiles = 0
+
         for url in candidates {
             guard let attributes = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
                   let modified = attributes.contentModificationDate,
                   let size = attributes.fileSize, size <= 300_000 else { continue }
+            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
+
+            if !force,
+               let cached = cachedEntries[relative],
+               cached.size == size,
+               abs(cached.modified.timeIntervalSince(modified)) <= 0.5,
+               !cached.chunks.isEmpty {
+                let loaded = cached.chunks.map { chunk in
+                    SemanticChunk(
+                        path: relative,
+                        startLine: chunk.startLine,
+                        endLine: chunk.endLine,
+                        text: chunk.text,
+                        vector: chunk.vector,
+                        tokens: Self.tokens(relative + "\n" + chunk.text)
+                    )
+                }
+                chunks.append(contentsOf: loaded)
+                files[relative] = FileState(
+                    modified: cached.modified,
+                    size: cached.size,
+                    chunkCount: loaded.count
+                )
+                diskEntries[relative] = cached
+                reusedFiles += 1
+                continue
+            }
+
             guard let data = try? Data(contentsOf: url),
                   !data.contains(0),
                   let text = String(data: data, encoding: .utf8),
                   !text.isEmpty else { continue }
-            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
             let fileChunks = chunk(
                 text: text,
                 path: relative,
@@ -220,7 +278,20 @@ actor SemanticIndex {
                 size: size,
                 chunkCount: fileChunks.count
             )
+            diskEntries[relative] = CachedFile(
+                modified: modified,
+                size: size,
+                chunks: fileChunks.map {
+                    CachedChunk(
+                        startLine: $0.startLine,
+                        endLine: $0.endLine,
+                        text: $0.text,
+                        vector: $0.vector
+                    )
+                }
+            )
         }
+
         var hasher = Hasher()
         for (path, state) in files.sorted(by: { $0.key < $1.key }) {
             hasher.combine(path)
@@ -231,8 +302,57 @@ actor SemanticIndex {
             chunks: chunks,
             files: files,
             builtAt: Date(),
-            fingerprint: String(hasher.finalize())
+            fingerprint: String(hasher.finalize()),
+            cachedFiles: reusedFiles
         )
+        saveCache(diskEntries, for: key)
+    }
+
+    private var cacheDirectory: URL {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return support
+            .appendingPathComponent("Talos", isDirectory: true)
+            .appendingPathComponent("semantic-index", isDirectory: true)
+    }
+
+    private func cacheURL(for workspace: String) -> URL {
+        let digest = SHA256.hash(data: Data(workspace.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+        return cacheDirectory.appendingPathComponent(digest + ".plist")
+    }
+
+    private func loadCache(for workspace: String) -> [String: CachedFile] {
+        guard let data = try? Data(contentsOf: cacheURL(for: workspace)),
+              let cache = try? PropertyListDecoder().decode(DiskCache.self, from: data),
+              cache.version == Self.cacheVersion else {
+            return [:]
+        }
+        return cache.files
+    }
+
+    private func saveCache(_ files: [String: CachedFile], for workspace: String) {
+        guard !files.isEmpty else { return }
+        let cache = DiskCache(version: Self.cacheVersion, files: files)
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = .binary
+        guard let data = try? encoder.encode(cache) else { return }
+        do {
+            try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+            try? FileManager.default.setAttributes(
+                [.posixPermissions: 0o700],
+                ofItemAtPath: cacheDirectory.path
+            )
+            let fileURL = cacheURL(for: workspace)
+            try data.write(to: fileURL, options: .atomic)
+            try? FileManager.default.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: fileURL.path
+            )
+        } catch {
+            // The cache is best-effort; a search still works without it.
+        }
     }
 
     private func needsRebuild(root: URL, index: WorkspaceIndex) async throws -> Bool {

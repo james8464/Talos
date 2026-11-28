@@ -41,6 +41,10 @@ applicable to a single-user, local-first macOS model client.
 - Documented the on-device semantic index end to end in
   [`SEMANTIC_INDEX.md`](SEMANTIC_INDEX.md): data flow, privacy, measured
   performance, fallbacks, and limitations.
+- Added a persisted per-file vector cache to the semantic index: unchanged
+  files load from disk and only changed files re-embed. Talos workspace startup
+  dropped from 66.4 s to 0.9 s (93 files/972 chunks); one changed file now takes
+  1.3 s.
 - Added configurable two-finger trackpad gestures with persisted action
   mappings, an optional Option-key gate, and keyboard/menu equivalents. Live
   verification: left/right switched tasks, up opened Quick Switch, and down
@@ -263,7 +267,7 @@ applicable to a single-user, local-first macOS model client.
 | iMessage apps and stickers | ➖ | Not an iMessage app |
 | Live Photos | ➖ | No photo library |
 | Mac Catalyst | ➖ | Native AppKit/SwiftUI app |
-| Machine learning | ✅ | On-device `NLEmbedding` sentence index with no network access; performance measured (3 files/3 chunks: 60 ms build; 90 files/953 chunks: 62.9 s cold, 19 ms warm, 185 MB peak) and fallbacks/limits documented in `SEMANTIC_INDEX.md` |
+| Machine learning | ✅ | On-device `NLEmbedding` sentence index with no network access and a persisted per-file vector cache. Measured 93 files/972 chunks: 66.4 s first-ever build, 0.9 s cached launch, 1.3 s after one file changed, 19 ms warm query; fallbacks, privacy, cache path, and limits documented in `SEMANTIC_INDEX.md` |
 | Maps | ➖ | No maps |
 | NFC | ➖ | No NFC |
 | Photo editing | ➖ | Attachments are not edited |

@@ -655,6 +655,7 @@ struct ToolRunner: Sendable {
                     "Workspace: \(status.workspace)",
                     "Embedding: \(status.embedding)",
                     "Files: \(status.files) · Chunks: \(status.chunks)",
+                    "Cached vectors: \(status.cachedFiles) file\(status.cachedFiles == 1 ? "" : "s")",
                 ]
                 if let builtAt = status.builtAt {
                     lines.append("Built: \(builtAt.formatted(date: .abbreviated, time: .standard))")

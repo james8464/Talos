@@ -2847,6 +2847,7 @@ private struct Inspector: View {
                              : "\(status.chunks) chunks · \(status.files) files")
                             .foregroundStyle(.secondary)
                     }
+                    LabeledContent("Cached vectors", value: "\(status.cachedFiles) file\(status.cachedFiles == 1 ? "" : "s")")
                     if status.isStale {
                         Text("Stale — rebuild to include recent edits.")
                             .font(.caption)
