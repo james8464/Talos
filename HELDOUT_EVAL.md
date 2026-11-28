@@ -150,20 +150,20 @@ The menu-bar pass skips the Apple menu, whose recent-item commands
 (“Messages”, “Clear Menu”) belong to the system, and checks the app’s own menus.
 
 ```text
-MAIN arabic=177 english=0 unlabeled=0
+MAIN arabic=178 english=0 unlabeled=0
 MENUBAR arabic=98 english=0 items=106
-SURFACE Rename Task arabic=180 english=0 unlabeled=0
-SURFACE Delete Task arabic=181 english=0 unlabeled=0
-SURFACE Quick Switcher arabic=190 english=0 unlabeled=0
-SURFACE Help arabic=198 english=0 unlabeled=0
-SURFACE Project Browser arabic=180 english=0 unlabeled=0
-SURFACE Git Panel arabic=189 english=0 unlabeled=0
-SURFACE Approval Sheet arabic=181 english=0 unlabeled=0
-SURFACE MCP Elicitation arabic=183 english=0 unlabeled=0
-SURFACE MCP Sampling arabic=182 english=0 unlabeled=0
-SURFACE Recent Documents arabic=181 english=0 unlabeled=0
-SURFACE Provider Editor arabic=189 english=0 unlabeled=0
-SURFACE Worktree Sheet arabic=183 english=0 unlabeled=0
+SURFACE Rename Task arabic=181 english=0 unlabeled=0
+SURFACE Delete Task arabic=182 english=0 unlabeled=0
+SURFACE Quick Switcher arabic=191 english=0 unlabeled=0
+SURFACE Help arabic=199 english=0 unlabeled=0
+SURFACE Project Browser arabic=181 english=0 unlabeled=0
+SURFACE Git Panel arabic=190 english=0 unlabeled=0
+SURFACE Approval Sheet arabic=182 english=0 unlabeled=0
+SURFACE MCP Elicitation arabic=184 english=0 unlabeled=0
+SURFACE MCP Sampling arabic=183 english=0 unlabeled=0
+SURFACE Recent Documents arabic=182 english=0 unlabeled=0
+SURFACE Provider Editor arabic=190 english=0 unlabeled=0
+SURFACE Worktree Sheet arabic=184 english=0 unlabeled=0
 20 Settings pages: english=0 unlabeled=0
 FAILURES: 0
 ```

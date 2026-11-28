@@ -107,12 +107,20 @@ pages. It fails on:
 Latest live result:
 
 ```text
-MAIN arabic=177 english=0 unlabeled=0
-SURFACE Quick Switcher arabic=188 english=0 unlabeled=0
-SURFACE Help arabic=196 english=0 unlabeled=0
-SURFACE Project Browser arabic=178 english=0 unlabeled=0
-SURFACE Git Panel arabic=187 english=0 unlabeled=0
-SURFACE Worktree Sheet arabic=181 english=0 unlabeled=0
+MAIN arabic=178 english=0 unlabeled=0
+MENUBAR arabic=98 english=0 items=106
+SURFACE Rename Task arabic=181 english=0 unlabeled=0
+SURFACE Delete Task arabic=182 english=0 unlabeled=0
+SURFACE Quick Switcher arabic=191 english=0 unlabeled=0
+SURFACE Help arabic=199 english=0 unlabeled=0
+SURFACE Project Browser arabic=181 english=0 unlabeled=0
+SURFACE Git Panel arabic=190 english=0 unlabeled=0
+SURFACE Approval Sheet arabic=182 english=0 unlabeled=0
+SURFACE MCP Elicitation arabic=184 english=0 unlabeled=0
+SURFACE MCP Sampling arabic=183 english=0 unlabeled=0
+SURFACE Recent Documents arabic=182 english=0 unlabeled=0
+SURFACE Provider Editor arabic=190 english=0 unlabeled=0
+SURFACE Worktree Sheet arabic=184 english=0 unlabeled=0
 عام / المشاريع / النماذج / المزوّدون / الأدوات / التكوينات
 الخطافات / الذاكرة / السجل / السياسة / مهام السحابة / خادم التطبيق
 المهارات / الإضافات / MCP / التحكم عن بعد / المظهر / الاستخدام
@@ -127,7 +135,7 @@ FAILURES: 0
 - Arabic AX labels confirmed for sidebar, welcome, composer, inspector, and
   Settings (`مهمة جديدة`, `بحث في المهام`, `ماذا تريد أن تفعل؟`,
   `إرسال الرسالة`, `إيماءات لوحة التتبع`, `حجم نص المحادثة`).
-- Automated live traversal: main window Arabic labels 177, 98 Arabic menu-bar
+- Automated live traversal: main window Arabic labels 178, 98 Arabic menu-bar
   labels, twelve dialogs/sheets, and all 20 Settings pages with zero UI-owned
   English and zero unlabeled controls.
 - AX audit with Arabic and Settings → Tools open: `APP_CONTROLS: 44`,

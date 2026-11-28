@@ -2238,6 +2238,50 @@ final class AppModel: ObservableObject {
         continuation?.resume(returning: decision)
     }
 
+    #if DEBUG
+    /// Deterministic presentation seams for the live localization traversal.
+    func presentDebugSurface(_ name: String) {
+        switch name {
+        case "approval":
+            pendingApproval = ApprovalRequest(
+                toolName: "shell",
+                summary: "rm -rf build",
+                sessionID: selectedID
+            )
+        case "elicitation":
+            mcpElicitation = MCPElicitationRequest(
+                serverName: "demo-server",
+                message: "Choose the branch to deploy.",
+                fields: [
+                    MCPElicitationField(
+                        name: "deploy-branch",
+                        title: "deploy-branch",
+                        detail: "Server-supplied field",
+                        kind: .string,
+                        required: true,
+                        defaultValue: "main"
+                    )
+                ]
+            )
+        case "sampling":
+            pendingSampling = MCPSamplingRequest(
+                serverName: "demo-server",
+                messages: [MCPSamplingMessage(role: "user", text: "Summarize the plan.", images: [])],
+                systemPrompt: nil,
+                maxTokens: 128,
+                temperature: nil,
+                modelHints: nil
+            )
+        case "recent":
+            showRecentDocuments = true
+        case "provider":
+            editingProvider = .openAI
+        default:
+            break
+        }
+    }
+    #endif
+
     func saveSessions() {
         SessionPersistence.save(sessions: sessions, selectedID: selectedID)
     }
