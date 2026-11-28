@@ -26,6 +26,9 @@ applicable to a single-user, local-first macOS model client.
 - Added a Help menu and a shortcut/reference sheet (⌘?).
 - Added File > New Window (⇧⌘N), backed by a second standard WindowGroup;
   verified as two independently resizable windows.
+- Verified right-to-left layout with a forced RTL pass: sidebar, detail,
+  inspector, composer, quick switcher, and modal sheets mirror correctly, and
+  tool output stays left-to-right for code and paths.
 - Added searchable Settings and image/PDF attachment thumbnails.
 
 ## Design fundamentals
@@ -54,7 +57,7 @@ applicable to a single-user, local-first macOS model client.
 | Materials | Use materials purposefully and respect Reduce Transparency | ✅ | Materials used for chrome/status; solid fallback when Reduce Transparency is on |
 | Motion | Purposeful, optional motion | ✅ | Motion limited to scroll/collapse/status; skipped under Reduce Motion |
 | Privacy | Local-first data, explicit provider disclosure | ✅ | Sessions/index/usage local; keys in Keychain; provider privacy note in Inspector |
-| Right to left | Leading/trailing layout, mirrored controls | 🟡 | All layouts use leading/trailing and system controls; no RTL screenshot test |
+| Right to left | Leading/trailing layout, mirrored controls | ✅ | Forced-RTL verification: sidebar moved to the right edge (x=1308), detail/welcome to the left (x=807), composer mirrored (send x=462, attach x=1044), inspector moved left (x=305), quick switcher and sheets mirrored. Tool output is pinned LTR. UI strings remain English pending localization |
 | SF Symbols | System symbols, correct variants | ✅ | No custom bitmaps for controls; symbol weights match surrounding text |
 | Spatial layout | Spatial computing layout | ➖ | Not a visionOS app |
 | Typography | System fonts, text styles, monospaced digits | ✅ | Semantic styles in key surfaces, monospaced tool output, monospaced digits for metrics |
@@ -250,7 +253,6 @@ applicable to a single-user, local-first macOS model client.
 
 ## Remaining partial items
 
-- Right-to-left layout has not been screenshot-tested.
 - Sidebar content is grouped but not user-customizable.
 - VoiceOver has structural labels but no full spoken walkthrough.
 - No recent-documents browser.

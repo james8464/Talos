@@ -6,6 +6,7 @@ struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.undoManager) private var undoManager
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.layoutDirection) private var layoutDirection
     @State private var draft = ""
     @FocusState private var composerFocused: Bool
 
@@ -120,6 +121,7 @@ struct ContentView: View {
         .onAppear {
             WindowBridge.shared.openWindow = openWindow
         }
+        .environment(\.layoutDirection, resolvedLayoutDirection)
         .alert("Request Failed", isPresented: Binding(
             get: { model.error != nil },
             set: { if !$0 { model.error = nil } }
@@ -153,15 +155,18 @@ struct ContentView: View {
             }
             .environmentObject(model)
             .environmentObject(model.settings)
+            .environment(\.layoutDirection, resolvedLayoutDirection)
         }
         .sheet(isPresented: $model.showHelp) {
             HelpView()
                 .environmentObject(model)
+                .environment(\.layoutDirection, resolvedLayoutDirection)
         }
         .sheet(isPresented: $model.showQuickSwitcher) {
             QuickSwitcher()
                 .environmentObject(model)
                 .environmentObject(model.settings)
+                .environment(\.layoutDirection, resolvedLayoutDirection)
         }
         .sheet(isPresented: $model.showProjectBrowser) {
             ProjectBrowserView()
@@ -217,6 +222,14 @@ struct ContentView: View {
         .sheet(item: $model.activeMCPApp) { app in
             MCPAppView(app: app)
                 .environmentObject(model)
+        }
+    }
+
+    private var resolvedLayoutDirection: LayoutDirection {
+        switch ProcessInfo.processInfo.environment["TALOS_LAYOUT_DIRECTION"]?.lowercased() {
+        case "rtl": return .rightToLeft
+        case "ltr": return .leftToRight
+        default: return layoutDirection
         }
     }
 }
@@ -1977,6 +1990,7 @@ private struct ToolCard: View {
                         .font(.system(size: max(11, settings.transcriptFontSize - 1), design: .monospaced))
                         .lineSpacing(1)
                         .textSelection(.enabled)
+                        .environment(\.layoutDirection, .leftToRight)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(8)
                         .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
