@@ -63,13 +63,44 @@ private extension String {
     }
 }
 
+struct MCPResource: Identifiable, Hashable, Sendable {
+    let serverID: UUID
+    let serverName: String
+    let uri: String
+    let name: String
+    let description: String
+    let mimeType: String?
+
+    var id: String { "\(serverID.uuidString)|\(uri)" }
+
+    var isImage: Bool {
+        (mimeType ?? "").lowercased().hasPrefix("image/")
+    }
+}
+
+struct MCPResourceTemplate: Identifiable, Hashable, Sendable {
+    let serverID: UUID
+    let serverName: String
+    let uriTemplate: String
+    let name: String
+    let description: String
+    let mimeType: String?
+
+    var id: String { "\(serverID.uuidString)|\(uriTemplate)" }
+}
+
 struct MCPResourceContent: Sendable {
     let uri: String
     let mimeType: String?
     let text: String?
+    let blob: Data?
 
     var isHTML: Bool {
         (mimeType ?? "").lowercased().contains("html")
+    }
+
+    var byteCount: Int {
+        text.map { $0.utf8.count } ?? blob?.count ?? 0
     }
 }
 
@@ -862,6 +893,44 @@ actor MCPClient {
         return renderContent(result["content"])
     }
 
+    func listResources() async throws -> [MCPResource] {
+        let response = try await request("resources/list")
+        guard let result = response["result"] as? [String: Any],
+              let raw = result["resources"] as? [[String: Any]] else {
+            return []
+        }
+        return raw.compactMap { item in
+            guard let uri = item["uri"] as? String else { return nil }
+            return MCPResource(
+                serverID: config.id,
+                serverName: config.name,
+                uri: uri,
+                name: item["name"] as? String ?? uri,
+                description: item["description"] as? String ?? "",
+                mimeType: item["mimeType"] as? String
+            )
+        }
+    }
+
+    func listResourceTemplates() async throws -> [MCPResourceTemplate] {
+        let response = try await request("resources/templates/list")
+        guard let result = response["result"] as? [String: Any],
+              let raw = result["resourceTemplates"] as? [[String: Any]] else {
+            return []
+        }
+        return raw.compactMap { item in
+            guard let template = item["uriTemplate"] as? String else { return nil }
+            return MCPResourceTemplate(
+                serverID: config.id,
+                serverName: config.name,
+                uriTemplate: template,
+                name: item["name"] as? String ?? template,
+                description: item["description"] as? String ?? "",
+                mimeType: item["mimeType"] as? String
+            )
+        }
+    }
+
     func readResource(uri: String) async throws -> MCPResourceContent {
         let response = try await request("resources/read", params: ["uri": uri])
         guard let result = response["result"] as? [String: Any],
@@ -870,14 +939,18 @@ actor MCPClient {
             throw MCPError.message("\(config.name) returned no resource content.")
         }
         var text = first["text"] as? String
-        if text == nil, let blob = first["blob"] as? String,
-           let data = Data(base64Encoded: blob) {
-            text = String(data: data, encoding: .utf8)
+        var blobData: Data?
+        if let blob = first["blob"] as? String, let data = Data(base64Encoded: blob) {
+            blobData = data
+            if text == nil {
+                text = String(data: data, encoding: .utf8)
+            }
         }
         return MCPResourceContent(
             uri: first["uri"] as? String ?? uri,
             mimeType: first["mimeType"] as? String,
-            text: text
+            text: text,
+            blob: blobData
         )
     }
 
@@ -1117,6 +1190,44 @@ actor MCPHTTPClient {
         return renderContent(result["content"])
     }
 
+    func listResources() async throws -> [MCPResource] {
+        guard let response = try await request("resources/list"),
+              let result = response["result"] as? [String: Any],
+              let raw = result["resources"] as? [[String: Any]] else {
+            return []
+        }
+        return raw.compactMap { item in
+            guard let uri = item["uri"] as? String else { return nil }
+            return MCPResource(
+                serverID: config.id,
+                serverName: config.name,
+                uri: uri,
+                name: item["name"] as? String ?? uri,
+                description: item["description"] as? String ?? "",
+                mimeType: item["mimeType"] as? String
+            )
+        }
+    }
+
+    func listResourceTemplates() async throws -> [MCPResourceTemplate] {
+        guard let response = try await request("resources/templates/list"),
+              let result = response["result"] as? [String: Any],
+              let raw = result["resourceTemplates"] as? [[String: Any]] else {
+            return []
+        }
+        return raw.compactMap { item in
+            guard let template = item["uriTemplate"] as? String else { return nil }
+            return MCPResourceTemplate(
+                serverID: config.id,
+                serverName: config.name,
+                uriTemplate: template,
+                name: item["name"] as? String ?? template,
+                description: item["description"] as? String ?? "",
+                mimeType: item["mimeType"] as? String
+            )
+        }
+    }
+
     func readResource(uri: String) async throws -> MCPResourceContent {
         guard let response = try await request("resources/read", params: ["uri": uri]),
               let result = response["result"] as? [String: Any],
@@ -1125,14 +1236,18 @@ actor MCPHTTPClient {
             throw MCPError.message("\(config.name) returned no resource content.")
         }
         var text = first["text"] as? String
-        if text == nil, let blob = first["blob"] as? String,
-           let data = Data(base64Encoded: blob) {
-            text = String(data: data, encoding: .utf8)
+        var blobData: Data?
+        if let blob = first["blob"] as? String, let data = Data(base64Encoded: blob) {
+            blobData = data
+            if text == nil {
+                text = String(data: data, encoding: .utf8)
+            }
         }
         return MCPResourceContent(
             uri: first["uri"] as? String ?? uri,
             mimeType: first["mimeType"] as? String,
-            text: text
+            text: text,
+            blob: blobData
         )
     }
 
@@ -1345,10 +1460,26 @@ actor MCPManager {
             case .http(let client): return try await client.readResource(uri: uri)
             }
         }
+
+        func listResources() async throws -> [MCPResource] {
+            switch self {
+            case .stdio(let client): return try await client.listResources()
+            case .http(let client): return try await client.listResources()
+            }
+        }
+
+        func listResourceTemplates() async throws -> [MCPResourceTemplate] {
+            switch self {
+            case .stdio(let client): return try await client.listResourceTemplates()
+            case .http(let client): return try await client.listResourceTemplates()
+            }
+        }
     }
 
     private var clients: [UUID: Connection] = [:]
     private(set) var tools: [MCPTool] = []
+    private(set) var resources: [MCPResource] = []
+    private(set) var resourceTemplates: [MCPResourceTemplate] = []
     private let elicit = MCPElicitationBroker()
     private let sampling = MCPSamplingBroker()
 
@@ -1360,20 +1491,26 @@ actor MCPManager {
         await sampling.set(handler)
     }
 
-    func connect(_ configs: [MCPServerConfig]) async -> (tools: [MCPTool], errors: [String]) {
+    func connect(_ configs: [MCPServerConfig]) async -> (
+        tools: [MCPTool],
+        resources: [MCPResource],
+        templates: [MCPResourceTemplate],
+        errors: [String]
+    ) {
         for client in clients.values {
             await client.stop()
         }
         clients.removeAll()
 
         var discovered: [MCPTool] = []
+        var discoveredResources: [MCPResource] = []
+        var discoveredTemplates: [MCPResourceTemplate] = []
         var errors: [String] = []
         for config in configs where config.enabled {
             let hasURL = config.url?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             guard hasURL || !config.command.isEmpty else { continue }
             do {
                 let connection: Connection
-                let serverTools: [MCPTool]
                 if let rawURL = config.url, let url = URL(string: rawURL), hasURL {
                     let client = MCPHTTPClient(
                         config: config,
@@ -1383,27 +1520,42 @@ actor MCPManager {
                         oauth: MCPOAuthClient(serverName: config.name)
                     )
                     try await client.start()
-                    serverTools = try await client.listTools()
                     connection = .http(client)
                 } else {
                     let client = MCPClient(config: config, elicit: elicit, sampling: sampling)
                     try await client.start()
-                    serverTools = try await client.listTools()
                     connection = .stdio(client)
                 }
                 clients[config.id] = connection
-                discovered.append(contentsOf: serverTools)
+                discovered.append(contentsOf: (try? await connection.listTools()) ?? [])
+                discoveredResources.append(contentsOf: (try? await connection.listResources()) ?? [])
+                discoveredTemplates.append(contentsOf: (try? await connection.listResourceTemplates()) ?? [])
             } catch {
                 errors.append("\(config.name): \(error.localizedDescription)")
             }
         }
         tools = discovered
-        return (discovered, errors)
+        resources = discoveredResources
+        resourceTemplates = discoveredTemplates
+        return (discovered, discoveredResources, discoveredTemplates, errors)
+    }
+
+    func refreshResources() async -> ([MCPResource], [MCPResourceTemplate]) {
+        var discovered: [MCPResource] = []
+        var templates: [MCPResourceTemplate] = []
+        for client in clients.values {
+            discovered.append(contentsOf: (try? await client.listResources()) ?? [])
+            templates.append(contentsOf: (try? await client.listResourceTemplates()) ?? [])
+        }
+        resources = discovered
+        resourceTemplates = templates
+        return (discovered, templates)
     }
 
     func readResource(uri: String) async -> Result<MCPResourceContent, Error> {
-        guard let tool = tools.first(where: { $0.uiResourceUri == uri }),
-              let client = clients[tool.serverID] else {
+        let serverID = tools.first(where: { $0.uiResourceUri == uri })?.serverID
+            ?? resources.first(where: { $0.uri == uri })?.serverID
+        guard let serverID, let client = clients[serverID] else {
             return .failure(MCPError.message("No connected server advertises \(uri)."))
         }
         do {
@@ -1431,5 +1583,7 @@ actor MCPManager {
         }
         clients.removeAll()
         tools = []
+        resources = []
+        resourceTemplates = []
     }
 }

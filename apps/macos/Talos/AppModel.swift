@@ -44,6 +44,8 @@ final class AppModel: ObservableObject {
     @Published var showProjectBrowser = false
     @Published var currentProject: Project?
     @Published var mcpTools: [MCPTool] = []
+    @Published var mcpResources: [MCPResource] = []
+    @Published var mcpResourceTemplates: [MCPResourceTemplate] = []
     @Published var mcpStatus = "No MCP servers"
     @Published var mcpElicitation: MCPElicitationRequest?
     @Published var activeMCPApp: MCPUIApp?
@@ -225,17 +227,34 @@ final class AppModel: ObservableObject {
         }
         guard !configured.isEmpty else {
             mcpTools = []
+            mcpResources = []
+            mcpResourceTemplates = []
             mcpStatus = "No MCP servers"
             return
         }
         mcpStatus = "Connecting…"
         let result = await mcp.connect(configured)
         mcpTools = result.tools
+        mcpResources = result.resources
+        mcpResourceTemplates = result.templates
         if result.errors.isEmpty {
-            mcpStatus = result.tools.isEmpty ? "No MCP tools" : "\(result.tools.count) MCP tools"
+            mcpStatus = result.tools.isEmpty && result.resources.isEmpty
+                ? "No MCP tools or resources"
+                : "\(result.tools.count) tools · \(result.resources.count) resources"
         } else {
             mcpStatus = result.errors.joined(separator: " · ")
         }
+    }
+
+    func refreshMCPResources() async {
+        let result = await mcp.refreshResources()
+        mcpResources = result.0
+        mcpResourceTemplates = result.1
+        mcpStatus = "\(mcpTools.count) tools · \(result.0.count) resources · \(result.1.count) templates"
+    }
+
+    func readMCPResource(uri: String) async -> Result<MCPResourceContent, Error> {
+        await mcp.readResource(uri: uri)
     }
 
     func refreshGit() async {
@@ -1576,7 +1595,7 @@ final class AppModel: ObservableObject {
             "Ollama: \(status)",
             "Selected: \(choice.display) · reasoning \(reasoningTitle)",
             "Context: \(contextUsage.label)",
-            "MCP: \(mcpStatus) · \(mcpTools.count) tools",
+            "MCP: \(mcpStatus) · \(mcpTools.count) tools · \(mcpResources.count) resources",
             "Skills: \(skills.enabled.count) enabled",
             "Plugins: \(plugins.enabled.count) enabled",
             "Git: \(git.branch ?? "no repository") · \(git.files.count) changed",

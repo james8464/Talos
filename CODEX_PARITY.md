@@ -45,9 +45,10 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Managed policy | Loads an Ed25519-signed envelope or a local policy from managed paths/`TALOS_POLICY_FILE`; locks provider, model, reasoning, sandbox, approval, network, tool toggles, hook list, and MCP server list; read-only Policy pane with source, signature status, and locked values |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
-| MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable, elicitation forms, OAuth discovery + dynamic registration + PKCE + refresh |
+| MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, resources/list, resources/templates/list, resources/read, enable/disable, elicitation forms, OAuth discovery + dynamic registration + PKCE + refresh |
 | MCP sampling | `sampling/createMessage` is bridged to the active model with an approval sheet showing the server, prompt, system prompt, token/temperature limits, and image count; per-server session approval is supported |
 | MCP apps | Tool `_meta.ui.resourceUri` and `_meta.ui/resourceUri` are read, `resources/read` fetches text or base64 HTML, and a sandboxed WKWebView renders it with a scoped `window.talos.callTool` bridge to the owning server |
+| MCP resources | Standalone `resources/list` and `resources/templates/list` discovery with a read-only browser in MCP settings; the reader shows text, images from base64 blobs, MIME type, byte count, copy, and per-resource reload |
 | Connectors | Any stdio MCP server, including connector-style servers |
 | Phone control | Token-protected local page, QR, send/stop/compact/status |
 | Sessions | Persisted history with backwards-compatible decoding, archive, fork, rename, retry |
@@ -61,7 +62,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 | Area | Current scope |
 | --- | --- |
-| MCP | stdio and Streamable HTTP; elicitation, OAuth, sampling, and tool-linked MCP apps are implemented; there is no standalone resource/app browser yet |
+| MCP | stdio and Streamable HTTP; elicitation, OAuth, sampling, standalone resource browsing, and tool-linked MCP apps are implemented; app launch remains tool-linked |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
 | OpenCode Go | all advertised models with a chat-completions, Responses, or Anthropic Messages endpoint are routed; other transports are filtered out |
 | Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
@@ -81,7 +82,6 @@ These are Codex features Talos does not claim to have:
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
 - Browser extension/Chrome control and full CDP access
-- Standalone MCP resource browsing outside tool-linked apps
 - Plugin marketplaces and remote plugin catalogs
 - Dictation/voice and menu-bar mode
 - Exact tokenizer-based accounting; Talos uses reported counts plus estimates

@@ -747,6 +747,7 @@ private struct MCPSettingsView: View {
     @State private var command = ""
     @State private var arguments = ""
     @State private var url = ""
+    @State private var selectedResource: MCPResource?
 
     var body: some View {
         Form {
@@ -794,6 +795,76 @@ private struct MCPSettingsView: View {
                 .disabled(settings.managedMCPLocked)
             }
 
+            Section("Resources") {
+                HStack {
+                    Text("\(model.mcpResources.count) resources · \(model.mcpResourceTemplates.count) templates")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Refresh") {
+                        Task { await model.refreshMCPResources() }
+                    }
+                }
+
+                if model.mcpResources.isEmpty {
+                    Text("This server set exposes no standalone resources.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(model.mcpResources) { resource in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: resource.isImage ? "photo" : "doc.text")
+                            .foregroundStyle(.tint)
+                            .frame(width: 18)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(resource.name)
+                                .font(.callout.weight(.medium))
+                            Text(resource.uri)
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            if !resource.description.isEmpty {
+                                Text(resource.description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
+                        }
+                        Spacer()
+                        if let mime = resource.mimeType {
+                            Text(mime)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Button("Open") { selectedResource = resource }
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                if !model.mcpResourceTemplates.isEmpty {
+                    DisclosureGroup("Resource templates") {
+                        ForEach(model.mcpResourceTemplates) { template in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(template.name)
+                                    .font(.callout)
+                                Text(template.uriTemplate)
+                                    .font(.system(.caption2, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                                if !template.description.isEmpty {
+                                    Text(template.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                }
+            }
+
             Section {
                 TextField("Name", text: $name)
                     .textFieldStyle(.roundedBorder)
@@ -834,6 +905,10 @@ private struct MCPSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+        .sheet(item: $selectedResource) { resource in
+            MCPResourceView(resource: resource)
+                .environmentObject(model)
+        }
     }
 }
 

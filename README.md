@@ -41,8 +41,9 @@ model that produced them.
   `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`,
   `/todos`, `/help`
 - Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in,
-  interactive elicitation forms, approved model sampling, and sandboxed HTML
-  MCP apps that can call their own server's tools
+  interactive elicitation forms, approved model sampling, a read-only resource
+  browser with templates, and sandboxed HTML MCP apps that can call their own
+  server's tools
 - Self-hosted cloud tasks with an HTTP queue and worker protocol, cancellable
   tasks, isolated worktrees, and an optional local worker
 - Local phone control with a token-protected web page and QR code
