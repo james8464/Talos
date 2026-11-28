@@ -88,6 +88,7 @@ final class AppModel: ObservableObject {
     let skills = SkillStore()
     let hooks = HookStore()
     let profiles = ProfileStore()
+    let memories = MemoryStore()
     let mcp = MCPManager()
     let remote = RemoteServer()
     let cloudQueue = CloudTaskQueue()
@@ -1491,7 +1492,9 @@ final class AppModel: ObservableObject {
             initializeAgentsFile()
         case "/resume":
             resumeSummary()
-        case "/memory", "/instructions":
+        case "/memory":
+            openSettings(.memory)
+        case "/instructions":
             showProjectMemory()
         case "/browser":
             let result = BrowserController.shared.read()
@@ -1561,6 +1564,9 @@ final class AppModel: ObservableObject {
 
     private func systemPrompt() -> String {
         var prompt = ToolPrompt.system(context: toolContext())
+        if let memory = memories.contextSection {
+            prompt += "\n\n" + memory
+        }
         if let projectInstructions {
             prompt += "\n\n" + projectInstructions
         }
@@ -1771,6 +1777,7 @@ final class AppModel: ObservableObject {
         Sandbox: \(settings.sandboxMode.title)
         Approvals: \(settings.approvalPolicy == .onRequest ? "On request" : "Never")
         Profile: \(profiles.active?.name ?? "None")
+        Memories: \(memories.memories.count) · Goals: \(memories.activeGoals.count) active
         Policy: \(managedPolicy?.title ?? "None")
         Hooks: \(hooks.enabled.count) enabled
         Auto-review: \(settings.autoReviewTools ? "On" : "Off")
@@ -2276,6 +2283,12 @@ final class AppModel: ObservableObject {
         if call.name == "update_plan" {
             return updatePlan(call, sessionID: sessionID)
         }
+        if call.name == "remember" {
+            return remember(call)
+        }
+        if call.name == "update_goal" {
+            return updateGoal(call)
+        }
         if call.name == "subagent" {
             return await runSubagent(call, sessionID: sessionID)
         }
@@ -2292,6 +2305,49 @@ final class AppModel: ObservableObject {
             }
         }
         return await ToolRunner(context: toolContext()).run(call)
+    }
+
+    private func remember(_ call: ToolCall) -> ToolResult {
+        let text = (call.string("text") ?? call.string("memory") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            return .fail("remember requires text.")
+        }
+        guard let item = memories.add(kind: .memory, text: text) else {
+            return .fail("Could not save the memory.")
+        }
+        return .ok("Saved memory: \(item.text)")
+    }
+
+    private func updateGoal(_ call: ToolCall) -> ToolResult {
+        let text = (call.string("text") ?? call.string("goal") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            return .fail("update_goal requires text.")
+        }
+        let rawStatus = (call.string("status") ?? "active").lowercased()
+        if rawStatus == "remove" || rawStatus == "delete" {
+            if let existing = memories.goals.first(where: {
+                $0.text.caseInsensitiveCompare(text) == .orderedSame
+            }) {
+                memories.remove(existing)
+                return .ok("Removed goal: \(existing.text)")
+            }
+            return .fail("No matching goal.")
+        }
+        let status: GoalStatus = rawStatus == "completed" || rawStatus == "done"
+            ? .completed
+            : .active
+        if let existing = memories.goals.first(where: {
+            $0.text.caseInsensitiveCompare(text) == .orderedSame
+        }) {
+            memories.setGoalStatus(existing, status)
+            return .ok("Goal is now \(status.title.lowercased()): \(existing.text)")
+        }
+        guard let item = memories.add(kind: .goal, text: text, goalStatus: status) else {
+            return .fail("Could not save the goal.")
+        }
+        return .ok("Saved \(status.title.lowercased()) goal: \(item.text)")
     }
 
     private func runSubagent(

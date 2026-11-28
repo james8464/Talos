@@ -114,6 +114,10 @@ struct ToolCall: Sendable {
             return [string("action") ?? "cdp", string("url") ?? string("text") ?? string("selector")].compactMap { $0 }.joined(separator: " ")
         case "update_plan":
             return "Update the task plan"
+        case "remember":
+            return string("text") ?? "Save a memory"
+        case "update_goal":
+            return string("text") ?? string("goal") ?? "Update a goal"
         case "subagent":
             return string("label") ?? string("task") ?? "Delegate a subagent"
         case "fanout":
@@ -254,6 +258,10 @@ enum ToolPrompt {
         }
         if context.enabledPlan {
             lines.append("- update_plan: {\"steps\":[{\"title\":\"...\",\"status\":\"pending\"|\"in_progress\"|\"completed\"}]} Replace the task plan.")
+        }
+        if !context.readOnly {
+            lines.append("- remember: {\"text\":\"...\"} Save a durable user preference or fact for future tasks.")
+            lines.append("- update_goal: {\"text\":\"...\",\"status\":\"active\"|\"completed\"|\"remove\"} Create, complete, or remove a durable goal.")
         }
         if !context.readOnly || context.allowNestedAgents {
             lines.append("- subagent: {\"task\":\"...\",\"label\":\"...\",\"max_steps\":8} Delegate focused research to a fresh read-only context. It returns a report with the files and facts it found. Nested delegation is allowed up to two levels. Use it for broad exploration, reviews, or questions that would clutter this conversation.")

@@ -49,6 +49,8 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/AppServer.swift` — headless JSON-RPC and SSE app-server transport
 - `Talos/AppServerSettings.swift` — app-server configuration and API reference
 - `Talos/MenuBarController.swift` — NSStatusItem quick panel and window/settings actions
+- `Talos/MemoryStore.swift` — persistent memories and goals
+- `Talos/MemorySettings.swift` — memory and goal editor
 - `Talos/FanOut.swift` — bounded-concurrency read-only task fan-out
 - `Talos/WorktreePanel.swift` — worktree list, switch, merge, and cleanup UI
 - `Talos/AutomationSettings.swift` — profiles and hooks settings UI

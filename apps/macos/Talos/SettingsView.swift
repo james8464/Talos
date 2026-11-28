@@ -41,6 +41,8 @@ struct SettingsView: View {
             ProfilesSettingsView()
         case .hooks:
             HooksSettingsView()
+        case .memory:
+            MemorySettingsView()
         case .policy:
             ManagedPolicySettingsView()
         case .cloud:
@@ -75,6 +77,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case tools
     case profiles
     case hooks
+    case memory
     case policy
     case cloud
     case appServer
@@ -98,6 +101,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .tools: return "Tools"
         case .profiles: return "Profiles"
         case .hooks: return "Hooks"
+        case .memory: return "Memory"
         case .policy: return "Policy"
         case .cloud: return "Cloud Tasks"
         case .appServer: return "App Server"
@@ -121,6 +125,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .tools: return "wrench.and.screwdriver"
         case .profiles: return "person.crop.rectangle.stack"
         case .hooks: return "bolt.badge.clock"
+        case .memory: return "brain"
         case .policy: return "checkmark.shield"
         case .cloud: return "cloud"
         case .appServer: return "server.rack"

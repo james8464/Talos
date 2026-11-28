@@ -77,13 +77,14 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Cloud tasks | Self-hosted JSON task queue with a bearer-token HTTP worker protocol: enqueue/list/get/cancel/delete, claim, event logs, completion and failure, persisted tasks, isolated git worktrees, and a local worker that runs tasks with shell and file tools |
 | App server | Headless local JSON-RPC + SSE API with bearer auth: initialize, session create/list/get, prompt, cancel, pending approval, approval resolve, and live transcript/tool/approval/run events |
 | Menu bar | NSStatusItem quick panel with live ready/working/error status, model menu, context and queue state, New Task, Stop while running, Open Talos, Settings, and Quit |
+| Memory and goals | Persistent local memories and active goals injected into every system prompt; enabled/disabled state, goal status, add/edit/delete UI, `/memory`, and model-facing `remember` and `update_goal` tools |
 | Sessions | persist, archive, fork, rename, retry; no resume picker yet |
 
 ## Not yet
 
 These are Codex features Talos does not claim to have:
 
-- Memories, goals, Chronicle, ambient suggestions
+- Chronicle and ambient suggestions
 - Remote-control daemon and native mobile client
 - Packaged browser extension with native messaging
 - Plugin marketplaces and remote plugin catalogs
