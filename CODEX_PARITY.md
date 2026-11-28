@@ -40,7 +40,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
-| MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable |
+| MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable, elicitation forms, OAuth discovery + dynamic registration + PKCE + refresh |
 | Connectors | Any stdio MCP server, including connector-style servers |
 | Phone control | Token-protected local page, QR, send/stop/compact/status |
 | Sessions | Persisted history with backwards-compatible decoding, archive, fork, rename, retry |
@@ -54,7 +54,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 | Area | Current scope |
 | --- | --- |
-| MCP | stdio and Streamable HTTP; no MCP elicitation or MCP apps yet |
+| MCP | stdio and Streamable HTTP; elicitation and OAuth are implemented; MCP apps and server-initiated sampling are not |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
 | OpenCode Go | all advertised models with a chat-completions, Responses, or Anthropic Messages endpoint are routed; other transports are filtered out |
 | Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
@@ -77,7 +77,7 @@ These are Codex features Talos does not claim to have:
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
 - Browser extension/Chrome control and full CDP access
-- MCP elicitation, MCP apps, and MCP OAuth
+- MCP apps and server-initiated sampling
 - Plugin marketplaces and remote plugin catalogs
 - Auto-review subagent for approvals
 - Dictation/voice and menu-bar mode

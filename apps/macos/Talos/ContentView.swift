@@ -96,6 +96,10 @@ struct ContentView: View {
                 .environmentObject(model)
                 .environmentObject(model.settings)
         }
+        .sheet(item: $model.mcpElicitation) { request in
+            MCPElicitationView(request: request)
+                .environmentObject(model)
+        }
     }
 }
 

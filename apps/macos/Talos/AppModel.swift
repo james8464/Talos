@@ -45,6 +45,8 @@ final class AppModel: ObservableObject {
     @Published var currentProject: Project?
     @Published var mcpTools: [MCPTool] = []
     @Published var mcpStatus = "No MCP servers"
+    @Published var mcpElicitation: MCPElicitationRequest?
+    private var mcpElicitationContinuation: CheckedContinuation<MCPElicitationResponse, Never>?
     @Published var openCodeModels: [OpenCodeModel] = []
     @Published var gitStatus = GitStatus()
     @Published var showGitPanel = false
@@ -169,6 +171,10 @@ final class AppModel: ObservableObject {
 
     func reloadMCP() async {
         let configured = settings.mcpServers + plugins.enabledMCPServers
+        await mcp.setElicitationHandler { [weak self] request in
+            guard let self else { return .decline }
+            return await self.promptForElicitation(request)
+        }
         guard !configured.isEmpty else {
             mcpTools = []
             mcpStatus = "No MCP servers"
@@ -186,6 +192,23 @@ final class AppModel: ObservableObject {
 
     func refreshGit() async {
         gitStatus = await GitService.status(in: projectURL)
+    }
+
+    private func promptForElicitation(_ request: MCPElicitationRequest) async -> MCPElicitationResponse {
+        if let existing = mcpElicitationContinuation {
+            existing.resume(returning: .cancel)
+            mcpElicitationContinuation = nil
+        }
+        return await withCheckedContinuation { continuation in
+            mcpElicitationContinuation = continuation
+            mcpElicitation = request
+        }
+    }
+
+    func answerElicitation(_ response: MCPElicitationResponse) {
+        mcpElicitation = nil
+        mcpElicitationContinuation?.resume(returning: response)
+        mcpElicitationContinuation = nil
     }
 
     func openProject(_ project: Project) {

@@ -1,4 +1,7 @@
 import Foundation
+import AppKit
+import CryptoKit
+import Network
 
 struct MCPServerConfig: Identifiable, Codable, Equatable, Sendable {
     var id = UUID()
@@ -54,6 +57,583 @@ private extension String {
     }
 }
 
+enum MCPElicitationKind: Equatable, Sendable {
+    case string
+    case number
+    case integer
+    case boolean
+    case choice([String])
+}
+
+struct MCPElicitationField: Identifiable, Equatable, Sendable {
+    let name: String
+    let title: String
+    let detail: String?
+    let kind: MCPElicitationKind
+    let required: Bool
+    let defaultValue: String?
+
+    var id: String { name }
+}
+
+struct MCPElicitationRequest: Identifiable, Equatable, Sendable {
+    let id = UUID()
+    let serverName: String
+    let message: String
+    let fields: [MCPElicitationField]
+
+    static func make(serverName: String, params: [String: Any]) -> MCPElicitationRequest? {
+        let message = params["message"] as? String ?? "The MCP server needs more information."
+        guard let schema = params["requestedSchema"] as? [String: Any],
+              let properties = schema["properties"] as? [String: Any] else {
+            return MCPElicitationRequest(serverName: serverName, message: message, fields: [])
+        }
+        let required = Set(schema["required"] as? [String] ?? [])
+        let fields = properties.keys.sorted().compactMap { key -> MCPElicitationField? in
+            guard let raw = properties[key] as? [String: Any] else { return nil }
+            let type = raw["type"] as? String ?? "string"
+            let kind: MCPElicitationKind
+            if let choices = raw["enum"] as? [String] {
+                kind = .choice(choices)
+            } else {
+                switch type {
+                case "number": kind = .number
+                case "integer": kind = .integer
+                case "boolean": kind = .boolean
+                default: kind = .string
+                }
+            }
+            let defaultText: String?
+            if let value = raw["default"] as? String {
+                defaultText = value
+            } else if let value = raw["default"] as? NSNumber {
+                defaultText = value.stringValue
+            } else {
+                defaultText = nil
+            }
+            return MCPElicitationField(
+                name: key,
+                title: raw["title"] as? String ?? key,
+                detail: raw["description"] as? String,
+                kind: kind,
+                required: required.contains(key),
+                defaultValue: defaultText
+            )
+        }
+        return MCPElicitationRequest(serverName: serverName, message: message, fields: fields)
+    }
+}
+
+enum MCPElicitationAction: String, Sendable {
+    case accept
+    case decline
+    case cancel
+}
+
+struct MCPElicitationResponse: Sendable {
+    var action: MCPElicitationAction
+    var content: [String: String] = [:]
+
+    static let decline = MCPElicitationResponse(action: .decline)
+    static let cancel = MCPElicitationResponse(action: .cancel)
+
+    /// Converts the string values collected by the UI into the JSON types the
+    /// server's schema declares.
+    func jsonContent(fields: [MCPElicitationField]) -> [String: Any] {
+        guard action == .accept else { return [:] }
+        var result: [String: Any] = [:]
+        for field in fields {
+            guard let raw = content[field.name] else { continue }
+            switch field.kind {
+            case .number:
+                if let value = Double(raw) { result[field.name] = value }
+            case .integer:
+                if let value = Int(raw) { result[field.name] = value }
+            case .boolean:
+                result[field.name] = ["true", "yes", "1"].contains(raw.lowercased())
+            case .string, .choice:
+                result[field.name] = raw
+            }
+        }
+        return result
+    }
+}
+
+
+typealias MCPElicitationHandler = @Sendable (MCPElicitationRequest) async -> MCPElicitationResponse
+
+// MARK: - OAuth
+
+struct MCPOAuthTokens: Codable, Sendable {
+    var accessToken: String
+    var refreshToken: String?
+    var expiresAt: Date?
+    var tokenEndpoint: String
+    var clientID: String
+    var resource: String
+}
+
+protocol MCPTokenStore: Sendable {
+    func load(key: String) -> MCPOAuthTokens?
+    func save(_ tokens: MCPOAuthTokens, for key: String)
+    func delete(key: String)
+}
+
+struct KeychainMCPTokenStore: MCPTokenStore {
+    func load(key: String) -> MCPOAuthTokens? {
+        guard let raw = Keychain.read(account: "mcp-oauth-\(key)"),
+              let data = raw.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(MCPOAuthTokens.self, from: data)
+    }
+
+    func save(_ tokens: MCPOAuthTokens, for key: String) {
+        guard let data = try? JSONEncoder().encode(tokens),
+              let raw = String(data: data, encoding: .utf8) else { return }
+        try? Keychain.save(raw, account: "mcp-oauth-\(key)")
+    }
+
+    func delete(key: String) {
+        Keychain.delete(account: "mcp-oauth-\(key)")
+    }
+}
+
+enum PKCE {
+    static func verifier() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return Data(bytes).base64URLEncodedString()
+    }
+
+    static func challenge(for verifier: String) -> String {
+        let digest = SHA256.hash(data: Data(verifier.utf8))
+        return Data(digest).base64URLEncodedString()
+    }
+}
+
+private extension Data {
+    func base64URLEncodedString() -> String {
+        base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+}
+
+/// Minimal loopback HTTP listener for the OAuth authorization response.
+final class OAuthCallbackServer: @unchecked Sendable {
+    private let listener: NWListener
+    private let queue = DispatchQueue(label: "app.talos.mcp.oauth.callback")
+    private var continuation: CheckedContinuation<URL, Error>?
+    private var readyContinuation: CheckedContinuation<Void, Error>?
+    private var connection: NWConnection?
+    private(set) var port: UInt16?
+
+    init() throws {
+        let parameters = NWParameters.tcp
+        parameters.allowLocalEndpointReuse = true
+        listener = try NWListener(using: parameters, on: .any)
+    }
+
+    var redirectURI: String {
+        "http://127.0.0.1:\(port ?? 0)/callback"
+    }
+
+    func start() async throws {
+        listener.stateUpdateHandler = { [weak self] state in
+            guard let self else { return }
+            switch state {
+            case .ready:
+                self.port = self.listener.port?.rawValue
+                self.readyContinuation?.resume()
+                self.readyContinuation = nil
+            case .failed(let error):
+                self.readyContinuation?.resume(throwing: error)
+                self.readyContinuation = nil
+                self.continuation?.resume(throwing: error)
+                self.continuation = nil
+            default:
+                break
+            }
+        }
+        listener.newConnectionHandler = { [weak self] connection in
+            self?.accept(connection)
+        }
+        listener.start(queue: queue)
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            readyContinuation = continuation
+        }
+    }
+
+    func waitForCallback() async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func cancel() {
+        listener.cancel()
+        connection?.cancel()
+        continuation?.resume(throwing: MCPError.message("OAuth was cancelled."))
+        continuation = nil
+        readyContinuation?.resume(throwing: MCPError.message("OAuth was cancelled."))
+        readyContinuation = nil
+    }
+
+    private func accept(_ connection: NWConnection) {
+        self.connection = connection
+        connection.start(queue: queue)
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, _, _ in
+            guard let self else { return }
+            let request = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+            let target = request
+                .components(separatedBy: "\r\n")
+                .first?
+                .components(separatedBy: " ")
+                .dropFirst()
+                .first
+            let url = target.flatMap { URL(string: "http://127.0.0.1" + $0) }
+            let body = "<html><body style='font-family:-apple-system;padding:40px'><h2>Talos is connected</h2><p>You can close this window.</p></body></html>"
+            let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
+            connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in
+                connection.cancel()
+            })
+            if let url, let continuation = self.continuation {
+                self.continuation = nil
+                continuation.resume(returning: url)
+            } else {
+                self.continuation?.resume(throwing: MCPError.message("OAuth returned an unreadable callback."))
+                self.continuation = nil
+            }
+        }
+    }
+}
+
+actor MCPOAuthClient {
+    typealias Browser = @Sendable (URL) async -> URL?
+
+    private struct Metadata: Sendable {
+        let authorizationEndpoint: URL
+        let tokenEndpoint: URL
+        let registrationEndpoint: URL?
+    }
+
+    private let serverName: String
+    private let store: MCPTokenStore
+    private let browser: Browser?
+    private var cache: [String: MCPOAuthTokens] = [:]
+
+    init(
+        serverName: String,
+        store: MCPTokenStore = KeychainMCPTokenStore(),
+        browser: Browser? = nil
+    ) {
+        self.serverName = serverName
+        self.store = store
+        self.browser = browser
+    }
+
+    func cachedToken(for resource: URL) async -> String? {
+        let key = resource.absoluteString
+        let tokens = cache[key] ?? store.load(key: key)
+        guard let tokens else { return nil }
+        cache[key] = tokens
+        if let expires = tokens.expiresAt, expires.timeIntervalSinceNow < 60 {
+            return try? await refresh(tokens, key: key).accessToken
+        }
+        return tokens.accessToken
+    }
+
+    func authorize(resource: URL, challenge: String?) async throws -> String {
+        let key = resource.absoluteString
+        if let tokens = cache[key] ?? store.load(key: key) {
+            if let expires = tokens.expiresAt, expires.timeIntervalSinceNow >= 60 {
+                return tokens.accessToken
+            }
+            if (try? await refresh(tokens, key: key)) != nil {
+                return cache[key]?.accessToken ?? tokens.accessToken
+            }
+        }
+
+        let metadata = try await discover(resource: resource, challenge: challenge)
+        let callback = try OAuthCallbackServer()
+        try await callback.start()
+        defer { callback.cancel() }
+
+        let redirectURI = callback.redirectURI
+        let clientID = try await register(metadata: metadata, redirectURI: redirectURI)
+        let verifier = PKCE.verifier()
+        let state = PKCE.verifier()
+
+        guard var components = URLComponents(url: metadata.authorizationEndpoint, resolvingAgainstBaseURL: false) else {
+            throw MCPError.message("\(serverName) returned an invalid authorization endpoint.")
+        }
+        var items = components.queryItems ?? []
+        items.append(contentsOf: [
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "client_id", value: clientID),
+            URLQueryItem(name: "redirect_uri", value: redirectURI),
+            URLQueryItem(name: "code_challenge", value: PKCE.challenge(for: verifier)),
+            URLQueryItem(name: "code_challenge_method", value: "S256"),
+            URLQueryItem(name: "state", value: state),
+            URLQueryItem(name: "resource", value: resource.absoluteString),
+        ])
+        components.queryItems = items
+        guard let authorizationURL = components.url else {
+            throw MCPError.message("Could not build the authorization URL.")
+        }
+
+        let callbackURL: URL?
+        if let browser {
+            callbackURL = await browser(authorizationURL)
+        } else {
+            await MainActor.run {
+                NSWorkspace.shared.open(authorizationURL)
+            }
+            callbackURL = try await callback.waitForCallback()
+        }
+        guard let callbackURL,
+              let returned = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false) else {
+            throw MCPError.message("OAuth was cancelled.")
+        }
+        let parameters = Dictionary(
+            uniqueKeysWithValues: (returned.queryItems ?? []).map { ($0.name, $0.value ?? "") }
+        )
+        if let error = parameters["error"] {
+            throw MCPError.message("OAuth failed: \(error).")
+        }
+        guard parameters["state"] == state else {
+            throw MCPError.message("OAuth state did not match.")
+        }
+        guard let code = parameters["code"] else {
+            throw MCPError.message("OAuth returned no authorization code.")
+        }
+
+        var tokens = try await exchange(
+            code: code,
+            verifier: verifier,
+            redirectURI: redirectURI,
+            clientID: clientID,
+            tokenEndpoint: metadata.tokenEndpoint,
+            resource: resource,
+            previous: nil
+        )
+        tokens.resource = resource.absoluteString
+        cache[key] = tokens
+        store.save(tokens, for: key)
+        return tokens.accessToken
+    }
+
+    private func refresh(_ tokens: MCPOAuthTokens, key: String) async throws -> MCPOAuthTokens {
+        guard let refreshToken = tokens.refreshToken,
+              let endpoint = URL(string: tokens.tokenEndpoint) else {
+            throw MCPError.message("The MCP token expired and cannot be refreshed.")
+        }
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = form([
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken,
+            "client_id": tokens.clientID,
+            "resource": tokens.resource,
+        ])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data, label: "token refresh")
+        var updated = try parseTokens(data, fallbackClientID: tokens.clientID, endpoint: endpoint.absoluteString)
+        updated.resource = tokens.resource
+        if updated.refreshToken == nil { updated.refreshToken = tokens.refreshToken }
+        cache[key] = updated
+        store.save(updated, for: key)
+        return updated
+    }
+
+    private func discover(resource: URL, challenge: String?) async throws -> Metadata {
+        var candidates: [URL] = []
+        if let metadataURL = Self.resourceMetadataURL(from: challenge) {
+            candidates.append(metadataURL)
+        }
+        if let scheme = resource.scheme, let host = resource.host {
+            var base = URLComponents()
+            base.scheme = scheme
+            base.host = host
+            if let port = resource.port { base.port = port }
+            let trimmedPath = resource.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            let suffix = trimmedPath.isEmpty ? "" : "/" + trimmedPath
+            if let standard = URL(string: "\(scheme)://\(host)\(resource.port.map { ":\($0)" } ?? "")/.well-known/oauth-protected-resource\(suffix)") {
+                candidates.append(standard)
+            }
+            if let plain = URL(string: "\(scheme)://\(host)\(resource.port.map { ":\($0)" } ?? "")/.well-known/oauth-protected-resource") {
+                candidates.append(plain)
+            }
+        }
+
+        var authorizationServers: [URL] = []
+        for candidate in candidates {
+            guard let object = try? await fetchJSON(candidate) else { continue }
+            authorizationServers = (object["authorization_servers"] as? [String] ?? [])
+                .compactMap(URL.init(string:))
+            if !authorizationServers.isEmpty { break }
+        }
+        if authorizationServers.isEmpty, let scheme = resource.scheme, let host = resource.host {
+            var components = URLComponents()
+            components.scheme = scheme
+            components.host = host
+            components.port = resource.port
+            if let url = components.url { authorizationServers = [url] }
+        }
+        guard let issuer = authorizationServers.first else {
+            throw MCPError.message("\(serverName) did not publish an OAuth authorization server.")
+        }
+
+        var metadataCandidates: [URL] = []
+        let issuerText = issuer.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        metadataCandidates.append(URL(string: issuerText + "/.well-known/oauth-authorization-server")!)
+        metadataCandidates.append(URL(string: issuerText + "/.well-known/openid-configuration")!)
+        if let path = issuer.path.isEmpty ? nil : issuer.path {
+            metadataCandidates.append(URL(string: "\(issuer.scheme ?? "https")://\(issuer.host ?? "")/.well-known/oauth-authorization-server\(path)")!)
+        }
+
+        for candidate in metadataCandidates {
+            guard let object = try? await fetchJSON(candidate),
+                  let authorization = object["authorization_endpoint"] as? String,
+                  let authorizationURL = URL(string: authorization),
+                  let token = object["token_endpoint"] as? String,
+                  let tokenURL = URL(string: token) else { continue }
+            return Metadata(
+                authorizationEndpoint: authorizationURL,
+                tokenEndpoint: tokenURL,
+                registrationEndpoint: (object["registration_endpoint"] as? String).flatMap(URL.init(string:))
+            )
+        }
+        throw MCPError.message("\(serverName) did not publish usable OAuth metadata.")
+    }
+
+    private func register(metadata: Metadata, redirectURI: String) async throws -> String {
+        guard let endpoint = metadata.registrationEndpoint else {
+            throw MCPError.message("\(serverName) requires OAuth but does not support dynamic client registration.")
+        }
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "client_name": "Talos",
+            "redirect_uris": [redirectURI],
+            "grant_types": ["authorization_code", "refresh_token"],
+            "response_types": ["code"],
+            "token_endpoint_auth_method": "none",
+        ])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data, label: "client registration")
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let clientID = object["client_id"] as? String else {
+            throw MCPError.message("\(serverName) returned no OAuth client ID.")
+        }
+        return clientID
+    }
+
+    private func exchange(
+        code: String,
+        verifier: String,
+        redirectURI: String,
+        clientID: String,
+        tokenEndpoint: URL,
+        resource: URL,
+        previous: MCPOAuthTokens?
+    ) async throws -> MCPOAuthTokens {
+        var request = URLRequest(url: tokenEndpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = form([
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": redirectURI,
+            "client_id": clientID,
+            "code_verifier": verifier,
+            "resource": resource.absoluteString,
+        ])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data, label: "token exchange")
+        return try parseTokens(data, fallbackClientID: clientID, endpoint: tokenEndpoint.absoluteString)
+    }
+
+    private func parseTokens(_ data: Data, fallbackClientID: String, endpoint: String) throws -> MCPOAuthTokens {
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let access = object["access_token"] as? String else {
+            throw MCPError.message("\(serverName) returned no OAuth access token.")
+        }
+        let expires = (object["expires_in"] as? NSNumber).map {
+            Date().addingTimeInterval($0.doubleValue)
+        }
+        return MCPOAuthTokens(
+            accessToken: access,
+            refreshToken: object["refresh_token"] as? String,
+            expiresAt: expires,
+            tokenEndpoint: object["token_endpoint"] as? String ?? endpoint,
+            clientID: object["client_id"] as? String ?? fallbackClientID,
+            resource: ""
+        )
+    }
+
+    private func fetchJSON(_ url: URL) async throws -> [String: Any] {
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response, data: data, label: url.path)
+        return (try JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    private func validate(_ response: URLResponse, data: Data, label: String) throws {
+        guard let http = response as? HTTPURLResponse else {
+            throw MCPError.message("\(serverName) returned no response during \(label).")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            let body = String(decoding: data, as: UTF8.self)
+            let clipped = body.count > 400 ? String(body.prefix(400)) : body
+            throw MCPError.message("\(serverName) OAuth \(label) failed with \(http.statusCode). \(clipped)")
+        }
+    }
+
+    private func form(_ values: [String: String]) -> Data {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
+        let text = values.map { key, value in
+            let encoded = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+            return "\(key)=\(encoded)"
+        }.joined(separator: "&")
+        return Data(text.utf8)
+    }
+
+    private static func resourceMetadataURL(from challenge: String?) -> URL? {
+        guard let challenge else { return nil }
+        guard let range = challenge.range(of: #"resource_metadata="([^"]+)""#, options: .regularExpression) else {
+            return nil
+        }
+        let match = String(challenge[range])
+        let value = match
+            .replacingOccurrences(of: "resource_metadata=", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+        return URL(string: value)
+    }
+}
+
+/// Holds the current elicitation handler so a running connection always sees
+/// the newest UI bridge instead of the handler captured at connect time.
+actor MCPElicitationBroker {
+    private var handler: MCPElicitationHandler?
+
+    func set(_ handler: MCPElicitationHandler?) {
+        self.handler = handler
+    }
+
+    func handle(_ request: MCPElicitationRequest) async -> MCPElicitationResponse {
+        guard let handler else { return .decline }
+        return await handler(request)
+    }
+}
+
+
 enum MCPError: LocalizedError {
     case message(String)
 
@@ -66,6 +646,7 @@ enum MCPError: LocalizedError {
 
 actor MCPClient {
     private let config: MCPServerConfig
+    private let elicit: MCPElicitationBroker?
     private var process: Process?
     private var input: FileHandle?
     private var output: FileHandle?
@@ -74,8 +655,9 @@ actor MCPClient {
     private var nextID = 1
     private var stopped = false
 
-    init(config: MCPServerConfig) {
+    init(config: MCPServerConfig, elicit: MCPElicitationBroker? = nil) {
         self.config = config
+        self.elicit = elicit
     }
 
     deinit {
@@ -109,8 +691,8 @@ actor MCPClient {
 
         let response = try await request("initialize", params: [
             "protocolVersion": "2024-11-05",
-            "capabilities": [:],
-            "clientInfo": ["name": "Talos", "version": "0.3"],
+            "capabilities": ["elicitation": [:]],
+            "clientInfo": ["name": "Talos", "version": "0.5"],
         ])
         guard response["result"] is [String: Any] else {
             throw MCPError.message("\(config.name) rejected the MCP initialize handshake.")
@@ -214,6 +796,19 @@ actor MCPClient {
             for try await line in output.bytes.lines {
                 guard !line.isEmpty, let data = line.data(using: .utf8) else { continue }
                 guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+                if let method = object["method"] as? String {
+                    if let rawID = object["id"] as? NSNumber {
+                        let params = object["params"] as? [String: Any] ?? [:]
+                        Task { [weak self] in
+                            await self?.handleServerRequest(
+                                id: rawID.intValue,
+                                method: method,
+                                params: params
+                            )
+                        }
+                    }
+                    continue
+                }
                 if let rawID = object["id"] as? NSNumber {
                     let id = rawID.intValue
                     if let continuation = pending.removeValue(forKey: id) {
@@ -232,6 +827,41 @@ actor MCPClient {
         failPending(MCPError.message("MCP server \(config.name) closed its output."))
     }
 
+    private func handleServerRequest(id: Int, method: String, params: [String: Any]) async {
+        switch method {
+        case "elicitation/create":
+            let request = MCPElicitationRequest.make(serverName: config.name, params: params)
+            let response: MCPElicitationResponse
+            if let request, let elicit {
+                response = await elicit.handle(request)
+            } else {
+                response = .decline
+            }
+            let content = request.map { response.jsonContent(fields: $0.fields) } ?? [:]
+            try? sendResult(id: id, result: [
+                "action": response.action.rawValue,
+                "content": content,
+            ])
+        case "ping":
+            try? sendResult(id: id, result: [:])
+        case "roots/list":
+            try? sendResult(id: id, result: ["roots": []])
+        default:
+            try? sendResult(id: id, error: [
+                "code": -32601,
+                "message": "Talos does not support \(method).",
+            ])
+        }
+    }
+
+    private func sendResult(id: Int, result: [String: Any]) throws {
+        try send(["jsonrpc": "2.0", "id": id, "result": result])
+    }
+
+    private func sendResult(id: Int, error: [String: Any]) throws {
+        try send(["jsonrpc": "2.0", "id": id, "error": error])
+    }
+
     private func failPending(_ error: Error) {
         let continuations = pending.values
         pending.removeAll()
@@ -244,19 +874,29 @@ actor MCPClient {
 actor MCPHTTPClient {
     private let config: MCPServerConfig
     private let endpoint: URL
+    private let elicit: MCPElicitationBroker?
+    private let oauth: MCPOAuthClient?
     private var sessionID: String?
+    private var accessToken: String?
     private var nextID = 1
 
-    init(config: MCPServerConfig, endpoint: URL) {
+    init(
+        config: MCPServerConfig,
+        endpoint: URL,
+        elicit: MCPElicitationBroker? = nil,
+        oauth: MCPOAuthClient? = nil
+    ) {
         self.config = config
         self.endpoint = endpoint
+        self.elicit = elicit
+        self.oauth = oauth
     }
 
     func start() async throws {
         let response = try await request("initialize", params: [
             "protocolVersion": "2024-11-05",
-            "capabilities": [:],
-            "clientInfo": ["name": "Talos", "version": "0.4"],
+            "capabilities": ["elicitation": [:]],
+            "clientInfo": ["name": "Talos", "version": "0.5"],
         ])
         guard response?["result"] is [String: Any] else {
             throw MCPError.message("\(config.name) rejected the MCP initialize handshake.")
@@ -303,7 +943,10 @@ actor MCPHTTPClient {
         ])
     }
 
-    private func send(_ object: [String: Any]) async throws -> [String: Any]? {
+    private func perform(
+        _ object: [String: Any],
+        token: String?
+    ) async throws -> (Data, HTTPURLResponse) {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.timeoutInterval = 30
@@ -313,10 +956,28 @@ actor MCPHTTPClient {
         if let sessionID {
             request.setValue(sessionID, forHTTPHeaderField: "Mcp-Session-Id")
         }
+        if let token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: object)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw MCPError.message("\(config.name) returned no response.")
+        }
+        return (data, http)
+    }
+
+    private func send(_ object: [String: Any]) async throws -> [String: Any]? {
+        var token = accessToken
+        if token == nil, let oauth {
+            token = await oauth.cachedToken(for: endpoint)
+        }
+        var (data, http) = try await perform(object, token: token)
+        if http.statusCode == 401, let oauth {
+            let challenge = http.value(forHTTPHeaderField: "WWW-Authenticate")
+            token = try await oauth.authorize(resource: endpoint, challenge: challenge)
+            accessToken = token
+            (data, http) = try await perform(object, token: token)
         }
         if let id = http.value(forHTTPHeaderField: "Mcp-Session-Id") {
             sessionID = id
@@ -328,17 +989,64 @@ actor MCPHTTPClient {
         let contentType = http.value(forHTTPHeaderField: "Content-Type") ?? ""
         if contentType.contains("text/event-stream") {
             let text = String(decoding: data, as: UTF8.self)
+            let requestID = object["id"] as? Int
+            var events: [[String: Any]] = []
             for line in text.components(separatedBy: "\n") {
                 guard line.hasPrefix("data:") else { continue }
                 let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
                 if let payloadData = payload.data(using: .utf8),
-                   let object = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any] {
-                    return object
+                   let event = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any] {
+                    events.append(event)
+                }
+            }
+            for event in events {
+                if let method = event["method"] as? String,
+                   let rawID = event["id"] as? NSNumber {
+                    await handleServerRequest(
+                        id: rawID.intValue,
+                        method: method,
+                        params: event["params"] as? [String: Any] ?? [:]
+                    )
+                    continue
+                }
+                if let rawID = event["id"] as? NSNumber {
+                    if requestID == nil || rawID.intValue == requestID {
+                        return event
+                    }
                 }
             }
             throw MCPError.message("\(config.name) sent no JSON-RPC event.")
         }
         return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    private func handleServerRequest(id: Int, method: String, params: [String: Any]) async {
+        switch method {
+        case "elicitation/create":
+            let request = MCPElicitationRequest.make(serverName: config.name, params: params)
+            let response: MCPElicitationResponse
+            if let request, let elicit {
+                response = await elicit.handle(request)
+            } else {
+                response = .decline
+            }
+            let content = request.map { response.jsonContent(fields: $0.fields) } ?? [:]
+            try? await send([
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": ["action": response.action.rawValue, "content": content],
+            ])
+        case "ping":
+            try? await send(["jsonrpc": "2.0", "id": id, "result": [:]])
+        case "roots/list":
+            try? await send(["jsonrpc": "2.0", "id": id, "result": ["roots": []]])
+        default:
+            try? await send([
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": ["code": -32601, "message": "Talos does not support \(method)."],
+            ])
+        }
     }
 
     private func renderContent(_ raw: Any?) -> String {
@@ -383,6 +1091,11 @@ actor MCPManager {
 
     private var clients: [UUID: Connection] = [:]
     private(set) var tools: [MCPTool] = []
+    private let elicit = MCPElicitationBroker()
+
+    func setElicitationHandler(_ handler: MCPElicitationHandler?) async {
+        await elicit.set(handler)
+    }
 
     func connect(_ configs: [MCPServerConfig]) async -> (tools: [MCPTool], errors: [String]) {
         for client in clients.values {
@@ -399,12 +1112,17 @@ actor MCPManager {
                 let connection: Connection
                 let serverTools: [MCPTool]
                 if let rawURL = config.url, let url = URL(string: rawURL), hasURL {
-                    let client = MCPHTTPClient(config: config, endpoint: url)
+                    let client = MCPHTTPClient(
+                        config: config,
+                        endpoint: url,
+                        elicit: elicit,
+                        oauth: MCPOAuthClient(serverName: config.name)
+                    )
                     try await client.start()
                     serverTools = try await client.listTools()
                     connection = .http(client)
                 } else {
-                    let client = MCPClient(config: config)
+                    let client = MCPClient(config: config, elicit: elicit)
                     try await client.start()
                     serverTools = try await client.listTools()
                     connection = .stdio(client)

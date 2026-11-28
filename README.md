@@ -31,7 +31,8 @@ model that produced them.
   `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
   `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`,
   `/browser`, `/worktree`, `/subagent`, `/todos`, `/help`
-- Skills, plugin bundles, and stdio MCP servers
+- Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in
+  and interactive elicitation forms
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
 - Notifications, appearance controls, and a native sidebar Settings window
