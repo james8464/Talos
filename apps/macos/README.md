@@ -127,7 +127,8 @@ a guided welcome screen, a collapsible plan strip, a composer with image and PDF
 attachment thumbnails, a live context meter, and a streaming status bar with
 stop and context. Tool results appear as compact
 cards with expandable output, and the inspector shows semantic-index status
-with a rebuild action.
+with a rebuild action. Task deletion goes through the window UndoManager, so
+⌘Z restores a deleted task and ⇧⌘Z removes it again.
 
 ## Semantic code search
 

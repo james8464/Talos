@@ -16,7 +16,8 @@ applicable to a single-user, local-first macOS model client.
   alternative path.
 - Respect Reduce Motion and Reduce Transparency: material backgrounds fall back
   to solid colors and scroll/collapse animations are skipped.
-- Added a confirmation dialog for irreversible task deletion.
+- Added a confirmation dialog for task deletion, then wired deletion into the
+  window UndoManager so ⌘Z restores the task and ⇧⌘Z deletes it again.
 - Resolved the duplicate ⌘K shortcut (Quick Switch vs. Choose Model), which now
   uses ⌘⇧M.
 - Moved key text to semantic system styles instead of fixed point sizes.
@@ -84,7 +85,7 @@ applicable to a single-user, local-first macOS model client.
 | Ratings and reviews | Rating prompts | ➖ | No ratings |
 | Searching | Primary search, clear scope, live results | ✅ | Sidebar task search, ⌘K switcher, searchable Settings, live filtering |
 | Settings | Standard Settings window, ⌘, minimal options | ✅ | Settings scene, searchable sidebar, defaults, follows system settings |
-| Undo and redo | Standard undo; confirm irreversible actions | 🟡 | Text undo is standard and deletion is confirmed; no custom undo for task deletion |
+| Undo and redo | Standard undo/redo; confirm irreversible actions | ✅ | Text undo is standard; task deletion is confirmed and registered with the window UndoManager. Verified live: ⌘Z restored the task (50→51), Shift-⌘Z deleted it again (51→50), ⌘Z restored it again |
 | Workouts | Workout-specific patterns | ➖ | Not a fitness app |
 
 ## Components
@@ -249,7 +250,6 @@ applicable to a single-user, local-first macOS model client.
 
 - Right-to-left layout has not been screenshot-tested.
 - File > New Window is not exposed; tasks replace windows.
-- Task deletion has confirmation but no custom undo.
 - Sidebar content is grouped but not user-customizable.
 - VoiceOver has structural labels but no full spoken walkthrough.
 - No recent-documents browser.

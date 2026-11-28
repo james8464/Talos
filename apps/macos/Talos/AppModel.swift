@@ -941,6 +941,17 @@ final class AppModel: ObservableObject {
         deleteCandidate = nil
     }
 
+    func restoreDeleted(_ session: Session, at index: Int) {
+        guard !sessions.contains(where: { $0.id == session.id }) else {
+            selectedID = session.id
+            return
+        }
+        let position = min(max(index, 0), sessions.count)
+        sessions.insert(session, at: position)
+        selectedID = session.id
+        saveSessions()
+    }
+
     func delete(_ id: UUID) {
         sessions.removeAll { $0.id == id }
         if selectedID == id { selectedID = filteredSessions.first?.id ?? sessions.first?.id }

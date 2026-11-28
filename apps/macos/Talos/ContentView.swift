@@ -4,8 +4,47 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.undoManager) private var undoManager
     @State private var draft = ""
     @FocusState private var composerFocused: Bool
+
+    private func registerDeletionUndo(_ session: Session, at index: Int) {
+        guard let manager = undoManager ?? NSApp.keyWindow?.undoManager else { return }
+        Self.registerDeletionHistory(
+            model: model,
+            manager: manager,
+            session: session,
+            index: index,
+            restoring: true
+        )
+    }
+
+    private static func registerDeletionHistory(
+        model: AppModel,
+        manager: UndoManager,
+        session: Session,
+        index: Int,
+        restoring: Bool
+    ) {
+        manager.registerUndo(withTarget: model) { target in
+            MainActor.assumeIsolated {
+                if restoring {
+                    target.restoreDeleted(session, at: index)
+                } else {
+                    target.delete(session.id)
+                }
+                manager.setActionName("Delete Task")
+                registerDeletionHistory(
+                    model: target,
+                    manager: manager,
+                    session: session,
+                    index: index,
+                    restoring: !restoring
+                )
+            }
+        }
+        manager.setActionName("Delete Task")
+    }
 
     var body: some View {
         NavigationSplitView(columnVisibility: $model.columnVisibility) {
@@ -93,7 +132,13 @@ struct ContentView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button("Delete", role: .destructive) { model.confirmDelete() }
+            Button("Delete", role: .destructive) {
+                if let session = model.deleteCandidate {
+                    let index = model.sessions.firstIndex(where: { $0.id == session.id }) ?? 0
+                    registerDeletionUndo(session, at: index)
+                }
+                model.confirmDelete()
+            }
             Button("Cancel", role: .cancel) { model.deleteCandidate = nil }
         } message: {
             Text("This removes the task and its messages. This cannot be undone.")
