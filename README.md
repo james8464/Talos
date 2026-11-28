@@ -51,6 +51,8 @@ model that produced them.
   server's tools
 - Self-hosted cloud tasks with an HTTP queue and worker protocol, cancellable
   tasks, isolated worktrees, and an optional local worker
+- A headless local JSON-RPC + SSE app server for sessions, prompts, approvals,
+  cancellation, and live transcript events
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
 - Notifications, appearance controls, and a native sidebar Settings window

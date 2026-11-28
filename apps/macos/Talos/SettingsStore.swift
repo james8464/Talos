@@ -138,6 +138,19 @@ final class SettingsStore: ObservableObject {
             defaults.set(enablePlan, forKey: "enablePlan")
         }
     }
+    @Published var appServerEnabled: Bool {
+        didSet { defaults.set(appServerEnabled, forKey: "appServerEnabled") }
+    }
+    @Published var appServerPort: Int {
+        didSet { defaults.set(appServerPort, forKey: "appServerPort") }
+    }
+    @Published var appServerToken: String {
+        didSet { defaults.set(appServerToken, forKey: "appServerToken") }
+    }
+    @Published var appServerAllowLAN: Bool {
+        didSet { defaults.set(appServerAllowLAN, forKey: "appServerAllowLAN") }
+    }
+
     @Published var browserCDPEndpoint: String {
         didSet { defaults.set(browserCDPEndpoint, forKey: "browserCDPEndpoint") }
     }
@@ -218,6 +231,16 @@ final class SettingsStore: ObservableObject {
         enableWeb = defaults.object(forKey: "enableWeb") as? Bool ?? true
         enableBrowser = defaults.object(forKey: "enableBrowser") as? Bool ?? true
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
+        appServerEnabled = defaults.bool(forKey: "appServerEnabled")
+        let storedAppPort = defaults.object(forKey: "appServerPort") as? Int ?? 8790
+        appServerPort = min(max(storedAppPort, 1024), 65_535)
+        let storedAppToken = defaults.string(forKey: "appServerToken") ?? ""
+        let resolvedAppToken = storedAppToken.isEmpty ? Self.newCloudToken() : storedAppToken
+        appServerToken = resolvedAppToken
+        if storedAppToken.isEmpty {
+            defaults.set(resolvedAppToken, forKey: "appServerToken")
+        }
+        appServerAllowLAN = defaults.bool(forKey: "appServerAllowLAN")
         browserCDPEndpoint = defaults.string(forKey: "browserCDPEndpoint") ?? "http://127.0.0.1:9222"
         autoReviewTools = defaults.object(forKey: "autoReviewTools") as? Bool ?? true
 

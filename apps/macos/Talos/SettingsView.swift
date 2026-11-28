@@ -45,6 +45,8 @@ struct SettingsView: View {
             ManagedPolicySettingsView()
         case .cloud:
             CloudTasksSettingsView()
+        case .appServer:
+            AppServerSettingsView()
         case .skills:
             SkillsSettingsView()
         case .plugins:
@@ -75,6 +77,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case hooks
     case policy
     case cloud
+    case appServer
     case skills
     case plugins
     case mcp
@@ -97,6 +100,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .hooks: return "Hooks"
         case .policy: return "Policy"
         case .cloud: return "Cloud Tasks"
+        case .appServer: return "App Server"
         case .skills: return "Skills"
         case .plugins: return "Plugins"
         case .mcp: return "MCP"
@@ -119,6 +123,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .hooks: return "bolt.badge.clock"
         case .policy: return "checkmark.shield"
         case .cloud: return "cloud"
+        case .appServer: return "server.rack"
         case .skills: return "sparkles"
         case .plugins: return "puzzlepiece.extension"
         case .mcp: return "point.3.connected.trianglepath.dotted"

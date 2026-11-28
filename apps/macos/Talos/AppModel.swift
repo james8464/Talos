@@ -5,6 +5,7 @@ struct ApprovalRequest: Identifiable {
     let id = UUID()
     let toolName: String
     let summary: String
+    let sessionID: UUID?
 }
 
 struct ContextUsage {
@@ -77,6 +78,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var cloudServerStatus = "Off"
     @Published private(set) var cloudWorkerStatus = "Off"
     @Published private(set) var cloudEndpoint: String?
+    @Published private(set) var activeRunSessionID: UUID?
     @Published var showWorktreeSheet = false
 
     let settings = SettingsStore()
@@ -89,6 +91,7 @@ final class AppModel: ObservableObject {
     let mcp = MCPManager()
     let remote = RemoteServer()
     let cloudQueue = CloudTaskQueue()
+    let appServer = AppServer()
     private var cloudServer: CloudTaskHTTPServer?
     private var cloudWorker: CloudTaskWorker?
     private let defaults = UserDefaults.standard
@@ -97,6 +100,7 @@ final class AppModel: ObservableObject {
     private let openCodeSessionID = UUID().uuidString
 
     init() {
+        appServer.host = self
         let loadedPolicy = ManagedPolicyLoader.load()
         managedPolicy = loadedPolicy.policy
         policySource = loadedPolicy.sourcePath
@@ -193,6 +197,7 @@ final class AppModel: ObservableObject {
             await refreshGit()
             await refreshCloudTasks()
             startCloudServicesIfNeeded()
+            startAppServerIfConfigured()
         }
     }
 
@@ -1172,16 +1177,34 @@ final class AppModel: ObservableObject {
     }
 
     func send(_ text: String, attachments: [String] = []) {
+        guard let id = selectedID else { return }
+        let result = startRun(sessionID: id, text: text, attachments: attachments)
+        if case .failure(let error) = result {
+            self.error = error.localizedDescription
+        }
+    }
+
+    @discardableResult
+    func startRun(
+        sessionID: UUID,
+        text: String,
+        attachments: [String] = []
+    ) -> Result<UUID, Error> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !isStreaming, let id = selectedID,
-              let index = sessions.firstIndex(where: { $0.id == id }) else { return }
+        guard !trimmed.isEmpty else {
+            return .failure(AppServerError.message("A prompt is required."))
+        }
+        guard !isStreaming else {
+            return .failure(AppServerError.message("A run is already active."))
+        }
+        guard let index = sessions.firstIndex(where: { $0.id == sessionID }) else {
+            return .failure(AppServerError.message("Session not found."))
+        }
         guard choices.contains(choice) else {
-            error = "Choose a model before sending."
-            return
+            return .failure(AppServerError.message("Choose a model before sending."))
         }
         if choice.provider != .local, settings.key(for: choice.provider) == nil {
-            error = "Add an API key for \(choice.provider.title) in Settings."
-            return
+            return .failure(AppServerError.message("Add an API key for \(choice.provider.title) in Settings."))
         }
         error = nil
 
@@ -1189,15 +1212,61 @@ final class AppModel: ObservableObject {
         if isFirstMessage {
             sessions[index].title = String(trimmed.prefix(48))
         }
-        sessions[index].messages.append(
-            ChatMessage(role: .user, text: trimmed, attachments: attachments)
-        )
+        let message = ChatMessage(role: .user, text: trimmed, attachments: attachments)
+        sessions[index].messages.append(message)
         sessions[index].updatedAt = Date()
         isStreaming = true
+        activeRunSessionID = sessionID
 
         let runChoice = choice
         runTask = Task { [weak self] in
-            await self?.runLoop(sessionID: id, choice: runChoice)
+            await self?.runLoop(sessionID: sessionID, choice: runChoice)
+        }
+        return .success(message.id)
+    }
+
+    func cancelRun(sessionID: UUID) -> Bool {
+        guard isStreaming, activeRunSessionID == sessionID else { return false }
+        runTask?.cancel()
+        runTask = nil
+        isStreaming = false
+        activeRunSessionID = nil
+        if let index = sessions.firstIndex(where: { $0.id == sessionID }),
+           var last = sessions[index].messages.last,
+           last.isStreaming {
+            last.text = last.text.isEmpty ? "Stopped." : last.text
+            last.isStreaming = false
+            sessions[index].messages[sessions[index].messages.count - 1] = last
+        }
+        saveSessions()
+        return true
+    }
+
+    func setAppServerEnabled(_ enabled: Bool) {
+        settings.appServerEnabled = enabled
+        if enabled {
+            startAppServer()
+        } else {
+            appServer.stop()
+        }
+    }
+
+    func startAppServer() {
+        appServer.start(
+            port: settings.appServerPort,
+            token: settings.appServerToken,
+            bindLAN: settings.appServerAllowLAN
+        )
+    }
+
+    func startAppServerIfConfigured() {
+        let environment = ProcessInfo.processInfo.environment
+        if environment["TALOS_APP_SERVER"] == "1" {
+            let port = Int(environment["TALOS_APP_SERVER_PORT"] ?? "") ?? settings.appServerPort
+            let token = environment["TALOS_APP_SERVER_TOKEN"] ?? settings.appServerToken
+            appServer.start(port: port, token: token, bindLAN: false)
+        } else if settings.appServerEnabled {
+            startAppServer()
         }
     }
 
@@ -1262,6 +1331,9 @@ final class AppModel: ObservableObject {
             guard let self else { return }
             await compactSession(sessionID: id, choice: runChoice)
             isStreaming = false
+            if activeRunSessionID == id {
+                activeRunSessionID = nil
+            }
             runTask = nil
             saveSessions()
         }
@@ -1294,6 +1366,8 @@ final class AppModel: ObservableObject {
             openSettings(.policy)
         case "/cloud", "/tasks":
             openSettings(.cloud)
+        case "/app-server", "/appserver":
+            openSettings(.appServer)
         case "/hooks":
             openSettings(.hooks)
         case "/models":
@@ -1741,6 +1815,7 @@ final class AppModel: ObservableObject {
         resolveApproval(.deny)
         runTask?.cancel()
         runTask = nil
+        activeRunSessionID = nil
         if let id = selectedID,
            let index = sessions.firstIndex(where: { $0.id == id }),
            var last = sessions[index].messages.last,
@@ -1772,6 +1847,9 @@ final class AppModel: ObservableObject {
         defer {
             let wasCancelled = Task.isCancelled
             isStreaming = false
+            if activeRunSessionID == sessionID {
+                activeRunSessionID = nil
+            }
             runTask = nil
             saveSessions()
             if !wasCancelled {
@@ -2170,7 +2248,11 @@ final class AppModel: ObservableObject {
                 existing.resume(returning: .deny)
             }
             approvalContinuation = continuation
-            pendingApproval = ApprovalRequest(toolName: call.name, summary: call.summary)
+            pendingApproval = ApprovalRequest(
+                toolName: call.name,
+                summary: call.summary,
+                sessionID: sessionID
+            )
         }
         approvalReviewTask?.cancel()
         approvalReviewTask = nil
@@ -2436,5 +2518,93 @@ final class AppModel: ObservableObject {
             title: session.title,
             body: session.preview.isEmpty ? "Task finished." : session.preview
         )
+    }
+}
+
+
+extension AppModel: AppServerHost {
+    func appServerSessions() -> [AppServerSession] {
+        sessions.map { session in
+            AppServerSession(
+                id: session.id,
+                title: session.title,
+                updatedAt: session.updatedAt,
+                archived: session.archived,
+                messages: session.messages.map { message in
+                    AppServerMessage(
+                        id: message.id,
+                        role: message.role.rawValue,
+                        text: message.text,
+                        toolName: message.toolName,
+                        isStreaming: message.isStreaming,
+                        createdAt: message.createdAt,
+                        attachments: message.attachments
+                    )
+                }
+            )
+        }
+    }
+
+    func appServerActiveSession() -> UUID? {
+        activeRunSessionID
+    }
+
+    func appServerPendingApproval() -> AppServerApproval? {
+        guard let approval = pendingApproval else { return nil }
+        return AppServerApproval(
+            id: approval.id,
+            sessionID: approval.sessionID,
+            toolName: approval.toolName,
+            summary: approval.summary
+        )
+    }
+
+    func appServerCreateSession(title: String?) -> UUID? {
+        var session = Session(title: title?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            ? title!
+            : "App Server Task")
+        session.projectPath = currentProject?.path ?? settings.workspacePath
+        sessions.insert(session, at: 0)
+        saveSessions()
+        return session.id
+    }
+
+    func appServerPrompt(sessionID: UUID, text: String) -> Result<UUID, Error> {
+        startRun(sessionID: sessionID, text: text)
+    }
+
+    func appServerCancel(sessionID: UUID) -> Bool {
+        cancelRun(sessionID: sessionID)
+    }
+
+    func appServerResolveApproval(id: UUID, decision: String) -> Bool {
+        guard pendingApproval?.id == id else { return false }
+        let resolved: ApprovalDecision
+        switch decision.lowercased() {
+        case "allow", "allowonce", "once", "approve":
+            resolved = .allowOnce
+        case "allowforall", "allowfortask", "always", "trust":
+            resolved = .allowForTask
+        case "deny", "reject", "cancel":
+            resolved = .deny
+        default:
+            return false
+        }
+        resolveApproval(resolved)
+        return true
+    }
+
+    func appServerInfo() -> [String: Any] {
+        [
+            "server": "talos",
+            "protocol": "json-rpc/sse",
+            "version": "1.0",
+            "model": choice.display,
+            "workspace": projectURL.path,
+            "streaming": isStreaming,
+            "sessionId": activeRunSessionID?.uuidString ?? NSNull(),
+            "approvalPolicy": settings.approvalPolicy.rawValue,
+            "sandbox": settings.sandboxMode.rawValue,
+        ]
     }
 }

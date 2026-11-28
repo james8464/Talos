@@ -37,7 +37,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Context | Capability/model/override window, live usage meter, exact tokenizer counts for supported families |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
 | Usage | Reported provider tokens, exact cl100k/o200k BPE fallback for supported OpenAI/OpenCode GPT families, character estimate elsewhere, 12-week heatmap, per-model totals |
-| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/policy`, `/cloud`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
+| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/policy`, `/cloud`, `/app-server`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
 | Nested subagents | Children can delegate again while under an explicit depth limit of 2 (parent → child → grandchild); deeper calls are blocked, every level keeps its own read-only context, and nested delegation is only advertised while allowed |
 | Fan-out | `fanout` tool and `/fanout` run multiple isolated read-only tasks concurrently with a configurable cap, per-task timeouts and usage, independent failures, and one report per task |
@@ -75,6 +75,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Sandbox | shell/file enforcement via `sandbox-exec`; no managed network proxy/domain allowlist |
 | Remote | local-network page only; no cloud relay or native mobile app |
 | Cloud tasks | Self-hosted JSON task queue with a bearer-token HTTP worker protocol: enqueue/list/get/cancel/delete, claim, event logs, completion and failure, persisted tasks, isolated git worktrees, and a local worker that runs tasks with shell and file tools |
+| App server | Headless local JSON-RPC + SSE API with bearer auth: initialize, session create/list/get, prompt, cancel, pending approval, approval resolve, and live transcript/tool/approval/run events |
 | Sessions | persist, archive, fork, rename, retry; no resume picker yet |
 
 ## Not yet
@@ -82,7 +83,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 These are Codex features Talos does not claim to have:
 
 - Memories, goals, Chronicle, ambient suggestions
-- App-server, remote-control daemon, mobile native client
+- Remote-control daemon and native mobile client
 - Packaged browser extension with native messaging
 - Plugin marketplaces and remote plugin catalogs
 - Dictation/voice and menu-bar mode
