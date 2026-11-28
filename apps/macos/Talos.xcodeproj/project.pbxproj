@@ -54,6 +54,7 @@
 		D142E21A2891D62B7C9C2750 /* CloudTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34CE21CD9645365CB1B2156 /* CloudTasks.swift */; };
 		D343B0F24794835180D04C31 /* OpenCodeAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A2EC1118F5104E0CA50DAA /* OpenCodeAuth.swift */; };
 		DA085E19377ECC10955BA207 /* PDFLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC986894EC2D21386D7A4EED /* PDFLoader.swift */; };
+		DAE891B0817F2171A2F78428 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8438786D61796CA99F3ACF3F /* MenuBarController.swift */; };
 		DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */; };
 		E1E61F33240469D831267B5C /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE40BA2F2E62D3115E531DD /* UsageStore.swift */; };
 		E5879A7092FDF72C69872296 /* ProviderEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F062B95637FEC6883E592D35 /* ProviderEditor.swift */; };
@@ -85,6 +86,7 @@
 		70913AB772F308657E509F42 /* Providers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		7DF7DCED466867A6BC71FB24 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		8438786D61796CA99F3ACF3F /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		847BD0AAE243B78A20C79D30 /* MCP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCP.swift; sourceTree = "<group>"; };
 		88120A756923F2A3457A372B /* Skills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Skills.swift; sourceTree = "<group>"; };
 		8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeCatalog.swift; sourceTree = "<group>"; };
@@ -151,6 +153,7 @@
 				3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */,
 				DA482A89BCEA5B1F988307C3 /* MCPResourceView.swift */,
 				E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */,
+				8438786D61796CA99F3ACF3F /* MenuBarController.swift */,
 				98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */,
 				29612E0C17BE1D0D3A380FCA /* Models.swift */,
 				AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */,
@@ -291,6 +294,7 @@
 				59658A002CFD99897E1466DF /* MCPResourceView.swift in Sources */,
 				CB37052B4F401B29A60DE5AC /* MCPSamplingView.swift in Sources */,
 				C4C6F1449E2E7429CC8B1B36 /* ManagedPolicy.swift in Sources */,
+				DAE891B0817F2171A2F78428 /* MenuBarController.swift in Sources */,
 				96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */,
 				3F2A669C71F9ABF065D9BA97 /* Models.swift in Sources */,
 				0358BE42AA67F81EF744796C /* NotificationManager.swift in Sources */,

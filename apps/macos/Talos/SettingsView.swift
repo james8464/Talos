@@ -210,6 +210,7 @@ private struct GeneralSettingsView: View {
 
             Section("Window") {
                 Toggle("Show details inspector", isOn: $model.showInspector)
+                Toggle("Show Talos in the menu bar", isOn: $settings.menuBarEnabled)
             }
 
             Section {

@@ -53,6 +53,8 @@ model that produced them.
   tasks, isolated worktrees, and an optional local worker
 - A headless local JSON-RPC + SSE app server for sessions, prompts, approvals,
   cancellation, and live transcript events
+- A menu-bar quick panel for status, model switching, new tasks, stop, and
+  opening the main window
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
 - Notifications, appearance controls, and a native sidebar Settings window

@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct TalosApp: App {
     @StateObject private var model = AppModel()
+    @StateObject private var menuBar = MenuBarController()
 
     var body: some Scene {
         WindowGroup {
@@ -17,6 +18,7 @@ struct TalosApp: App {
                     if let icon = Brand.icon {
                         NSApp.applicationIconImage = icon
                     }
+                    menuBar.configure(model: model, settings: model.settings)
                 }
         }
         .defaultSize(width: 1200, height: 780)

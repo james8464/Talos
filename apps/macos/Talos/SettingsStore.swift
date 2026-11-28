@@ -187,6 +187,9 @@ final class SettingsStore: ObservableObject {
     @Published var transcriptFontSize: Double {
         didSet { defaults.set(transcriptFontSize, forKey: "transcriptFontSize") }
     }
+    @Published var menuBarEnabled: Bool {
+        didSet { defaults.set(menuBarEnabled, forKey: "menuBarEnabled") }
+    }
     @Published var notifyOnFinish: Bool {
         didSet { defaults.set(notifyOnFinish, forKey: "notifyOnFinish") }
     }
@@ -259,6 +262,7 @@ final class SettingsStore: ObservableObject {
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         let storedFont = defaults.object(forKey: "transcriptFontSize") as? Double ?? 14
         transcriptFontSize = min(max(storedFont, 12), 20)
+        menuBarEnabled = defaults.object(forKey: "menuBarEnabled") as? Bool ?? true
         notifyOnFinish = defaults.bool(forKey: "notifyOnFinish")
         completionSound = defaults.object(forKey: "completionSound") as? Bool ?? true
 
