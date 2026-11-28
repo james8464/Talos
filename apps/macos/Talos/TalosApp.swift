@@ -20,7 +20,6 @@ struct TalosApp: App {
                 .environmentObject(model.settings)
                 .environmentObject(model.usage)
                 .tint(Brand.bronze)
-                .preferredColorScheme(colorScheme)
                 .frame(minWidth: 900, minHeight: 600)
                 .onAppear {
                     if let icon = Brand.icon {
@@ -65,10 +64,17 @@ struct TalosApp: App {
                 Button("Rename Task…") {
                     if let id = model.selectedID { model.beginRename(id) }
                 }
+                Button("Delete Task…", role: .destructive) {
+                    if let id = model.selectedID { model.requestDelete(id) }
+                }
+            }
+            CommandGroup(replacing: .help) {
+                Button("Talos Help") { model.showHelp = true }
+                    .keyboardShortcut("?", modifiers: .command)
             }
             CommandMenu("Model") {
                 Button("Choose Model…") { model.showModelPicker = true }
-                    .keyboardShortcut("k", modifiers: .command)
+                    .keyboardShortcut("m", modifiers: [.command, .shift])
                 SettingsLink { Text("Model Settings…") }
             }
             CommandGroup(after: .sidebar) {
@@ -89,15 +95,7 @@ struct TalosApp: App {
                 .environmentObject(model.settings)
                 .environmentObject(model.usage)
                 .tint(Brand.bronze)
-                .preferredColorScheme(colorScheme)
         }
     }
 
-    private var colorScheme: ColorScheme? {
-        switch model.settings.appearance {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
-        }
-    }
 }

@@ -85,12 +85,29 @@ struct ContentView: View {
         } message: {
             Text(model.error ?? "")
         }
+        .confirmationDialog(
+            "Delete “\(model.deleteCandidate?.title ?? "Task")”?",
+            isPresented: Binding(
+                get: { model.deleteCandidate != nil },
+                set: { if !$0 { model.deleteCandidate = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) { model.confirmDelete() }
+            Button("Cancel", role: .cancel) { model.deleteCandidate = nil }
+        } message: {
+            Text("This removes the task and its messages. This cannot be undone.")
+        }
         .sheet(item: $model.pendingApproval) { request in
             ApprovalSheet(request: request) { decision in
                 model.resolveApproval(decision)
             }
             .environmentObject(model)
             .environmentObject(model.settings)
+        }
+        .sheet(isPresented: $model.showHelp) {
+            HelpView()
+                .environmentObject(model)
         }
         .sheet(isPresented: $model.showQuickSwitcher) {
             QuickSwitcher()
@@ -264,7 +281,7 @@ private struct Sidebar: View {
             HStack(alignment: .center, spacing: 8) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(model.currentProject?.name ?? "Talos")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.headline)
                         .lineLimit(1)
                     if let branch = model.gitStatus.branch {
                         Label(branch, systemImage: "arrow.triangle.branch")
@@ -283,6 +300,8 @@ private struct Sidebar: View {
                 } label: {
                     Image(systemName: "square.and.pencil")
                         .font(.system(size: 14, weight: .medium))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
                 .help("New Task (⌘N)")
@@ -299,7 +318,7 @@ private struct Sidebar: View {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(Brand.bronze)
                     Text("New Task")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.body.weight(.medium))
                     Spacer()
                     Text("⌘N")
                         .font(.caption2)
@@ -437,7 +456,7 @@ private struct SidebarRow: View {
                         .accessibilityLabel("Running")
                 }
                 Text(session.title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.body.weight(.medium))
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 Text(session.updatedAt, style: .relative)
@@ -464,10 +483,105 @@ private struct SidebarRow: View {
     }
 }
 
+private struct HelpView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openSettings) private var openSettings
+
+    private let shortcuts: [(String, String)] = [
+        ("New task", "⌘N"),
+        ("Quick switch", "⌘K"),
+        ("Next / previous task", "⌘] / ⌘["),
+        ("Send message", "Return"),
+        ("Stop response", "⌘."),
+        ("Compact conversation", "⌘⇧K"),
+        ("Review changes", "⌘⇧G"),
+        ("Choose model", "⌘⇧M"),
+        ("Show / hide inspector", "⌘⌥I"),
+        ("Settings", "⌘,"),
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Talos Help", systemImage: "questionmark.circle")
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    section(
+                        "Getting started",
+                        text: "Create a task, choose a model, and describe the outcome. Talos gives the model real tools on this Mac and asks before high-impact actions."
+                    )
+                    section(
+                        "Files and attachments",
+                        text: "Attach files with the paperclip or by dragging them onto the composer. Images and PDFs are sent to vision-capable models."
+                    )
+                    section(
+                        "Approvals",
+                        text: "Shell commands, edits, terminal input, browser actions, and computer control require approval unless you allow them for the task. Patches show a per-file preview before they apply."
+                    )
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Keyboard shortcuts")
+                            .font(.headline)
+                        ForEach(shortcuts, id: \.0) { pair in
+                            HStack {
+                                Text(pair.0)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(pair.1)
+                                    .font(.system(.callout, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .font(.callout)
+                        }
+                    }
+
+                    section(
+                        "Privacy",
+                        text: "Sessions, usage, and the semantic index stay on this Mac. Provider keys live in the macOS Keychain. Only prompts and attachments go to the model provider you choose."
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            HStack {
+                Button("Open Settings…") {
+                    dismiss()
+                    openSettings()
+                }
+                Spacer()
+                Text("Talos 1.0")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(20)
+        .frame(width: 560, height: 560)
+    }
+
+    private func section(_ title: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.headline)
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 private struct QuickSwitcher: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     @State private var query = ""
     @State private var hovered: String?
@@ -566,7 +680,7 @@ private struct QuickSwitcher: View {
                     .foregroundStyle(.secondary)
                 TextField("Search tasks and commands", text: $query)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 15))
+                    .font(.title3)
                     .focused($searchFocused)
                     .onSubmit(openFirst)
                 if !query.isEmpty {
@@ -642,7 +756,7 @@ private struct QuickSwitcher: View {
             .frame(maxHeight: 500)
         }
         .frame(width: 580)
-        .background(.ultraThickMaterial)
+        .background(reduceTransparency ? AnyShapeStyle(Color(nsColor: .windowBackgroundColor)) : AnyShapeStyle(.ultraThickMaterial))
         .onExitCommand { dismiss() }
         .onAppear {
             DispatchQueue.main.async { searchFocused = true }
@@ -673,7 +787,7 @@ private struct QuickSwitcher: View {
                 .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.body.weight(.medium))
                     .lineLimit(1)
                 if !detail.isEmpty {
                     Text(detail)
@@ -941,6 +1055,8 @@ private struct ProviderButton: View {
             showing.toggle()
         } label: {
             Image(systemName: model.choice.provider == .local ? "server.rack" : "key")
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
         .foregroundStyle(.secondary)
@@ -1052,6 +1168,9 @@ private struct ComposerView: View {
     @State private var importing = false
     @StateObject private var dictation = DictationController()
     @State private var dictationBase = ""
+    @State private var dropTargeted = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var canSend: Bool {
         !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1158,6 +1277,8 @@ private struct ComposerView: View {
                         importing = true
                     } label: {
                         Image(systemName: "paperclip")
+                            .frame(width: 26, height: 26)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.borderless)
                     .foregroundStyle(.secondary)
@@ -1168,6 +1289,8 @@ private struct ComposerView: View {
                         toggleDictation()
                     } label: {
                         Image(systemName: dictation.isRecording ? "mic.fill" : "mic")
+                            .frame(width: 26, height: 26)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.borderless)
                     .foregroundStyle(dictation.isRecording ? Color.red : Color.secondary)
@@ -1191,14 +1314,35 @@ private struct ComposerView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(
-                        composerFocused.wrappedValue ? Brand.bronze.opacity(0.55) : Color(nsColor: .separatorColor),
-                        lineWidth: composerFocused.wrappedValue ? 1.5 : 1
+                        dropTargeted
+                            ? Brand.bronze
+                            : (composerFocused.wrappedValue ? Brand.bronze.opacity(0.55) : Color(nsColor: .separatorColor)),
+                        lineWidth: dropTargeted ? 2 : (composerFocused.wrappedValue ? 1.5 : 1)
                     )
             )
-            .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+            .shadow(color: reduceTransparency ? .clear : .black.opacity(0.06), radius: 10, y: 4)
+            .overlay(alignment: .top) {
+                if dropTargeted {
+                    Label("Drop files to attach", systemImage: "paperclip")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.regularMaterial, in: Capsule())
+                        .padding(6)
+                        .transition(.opacity)
+                }
+            }
+            .dropDestination(for: URL.self) { urls, _ in
+                let files = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
+                let new = files.filter { !attachments.contains($0) }
+                attachments.append(contentsOf: new)
+                return !new.isEmpty
+            } isTargeted: { value in
+                dropTargeted = value
+            }
             .padding(.horizontal, 24)
             .padding(.top, 12)
-            .animation(.easeOut(duration: 0.15), value: composerFocused.wrappedValue)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: composerFocused.wrappedValue)
 
             HStack(spacing: 4) {
                 Image(systemName: model.choice.provider == .local ? "desktopcomputer" : "cloud")
@@ -1264,7 +1408,7 @@ private struct ComposerView: View {
                     ZStack {
                         Circle()
                             .strokeBorder(Color.secondary.opacity(0.45), lineWidth: 1)
-                            .frame(width: 26, height: 26)
+                            .frame(width: 28, height: 28)
                         Image(systemName: "stop.fill")
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.secondary)
@@ -1281,7 +1425,7 @@ private struct ComposerView: View {
                 ZStack {
                     Circle()
                         .fill(canSend ? Brand.bronze : Color.secondary.opacity(0.18))
-                        .frame(width: 26, height: 26)
+                        .frame(width: 28, height: 28)
                     Image(systemName: model.isStreaming ? "text.badge.plus" : "arrow.up")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(canSend ? Color.white : Color.secondary)
@@ -1472,6 +1616,8 @@ private struct AttachmentPill: View {
 
 private struct TaskView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     let session: Session
     @Binding var draft: String
     var composerFocused: FocusState<Bool>.Binding
@@ -1505,7 +1651,7 @@ private struct TaskView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 7)
-                .background(.thinMaterial)
+                .background(reduceTransparency ? AnyShapeStyle(Color(nsColor: .controlBackgroundColor)) : AnyShapeStyle(.thinMaterial))
                 Divider()
             }
             AmbientSuggestionBar()
@@ -1564,7 +1710,10 @@ private struct TaskView: View {
                 }
             }
             .onChange(of: session.messages.last?.text) {
-                if let id = session.messages.last?.id {
+                guard let id = session.messages.last?.id else { return }
+                if reduceMotion {
+                    proxy.scrollTo(id, anchor: .bottom)
+                } else {
                     withAnimation(.easeOut(duration: 0.15)) {
                         proxy.scrollTo(id, anchor: .bottom)
                     }
@@ -1885,6 +2034,8 @@ private struct AttachmentPreview: View {
 }
 
 private struct PlanStrip: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     let plan: [PlanStep]
     @State private var expanded = false
 
@@ -1914,13 +2065,19 @@ private struct PlanStrip: View {
                 }
                 Spacer()
                 Button {
-                    withAnimation(.easeInOut(duration: 0.16)) {
+                    if reduceMotion {
                         expanded.toggle()
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.16)) {
+                            expanded.toggle()
+                        }
                     }
                 } label: {
                     Image(systemName: expanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(.secondary)
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(expanded ? "Collapse plan" : "Expand plan")
@@ -1950,7 +2107,10 @@ private struct PlanStrip: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(reduceTransparency ? AnyShapeStyle(Color(nsColor: .controlBackgroundColor)) : AnyShapeStyle(.thinMaterial))
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 1)
@@ -2024,11 +2184,10 @@ private struct EmptyTask: View {
                 .frame(width: 52, height: 52)
 
                 Text("What should we build?")
-                    .font(.system(size: 30, weight: .semibold, design: .rounded))
-                    .tracking(-0.4)
+                    .font(.system(.largeTitle, design: .rounded).weight(.semibold))
 
                 Text("Talos gives any model real tools on this Mac: shell, a persistent terminal, files, patches, browser, LSP, MCP, subagents, and the desktop.")
-                    .font(.system(size: 14))
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 560, alignment: .leading)

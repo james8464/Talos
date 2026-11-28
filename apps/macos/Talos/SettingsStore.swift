@@ -195,9 +195,6 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(cloudAllowLAN, forKey: "cloudAllowLAN") }
     }
 
-    @Published var appearance: AppearanceMode {
-        didSet { defaults.set(appearance.rawValue, forKey: "appearance") }
-    }
     @Published var transcriptFontSize: Double {
         didSet { defaults.set(transcriptFontSize, forKey: "transcriptFontSize") }
     }
@@ -289,7 +286,6 @@ final class SettingsStore: ObservableObject {
         cloudRunLocally = defaults.bool(forKey: "cloudRunLocally")
         cloudAllowLAN = defaults.bool(forKey: "cloudAllowLAN")
 
-        appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         let storedFont = defaults.object(forKey: "transcriptFontSize") as? Double ?? 14
         transcriptFontSize = min(max(storedFont, 12), 20)
         githubAPIBase = defaults.string(forKey: "githubAPIBase") ?? "https://api.github.com"

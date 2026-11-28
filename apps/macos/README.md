@@ -117,6 +117,10 @@ heatmap.
 
 ## Interface
 
+The interface is audited against Apple's published Human Interface Guidelines;
+see [`HIG_AUDIT.md`](../../HIG_AUDIT.md) for the page-by-page checklist and the
+remaining partial items.
+
 The main window uses a task-first layout: a date-grouped sidebar with a model
 status footer, a ⌘K quick switcher for tasks and commands, searchable Settings,
 a guided welcome screen, a collapsible plan strip, a composer with image and PDF

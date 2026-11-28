@@ -153,7 +153,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .remote:
             return ["phone", "remote", "qr", "daemon", "mobile"]
         case .appearance:
-            return ["theme", "color", "font", "transcript", "dark", "light", "accent"]
+            return ["font", "transcript", "text size", "messages", "notifications", "sound"]
         case .usage:
             return ["tokens", "cost", "usage", "audit", "export", "context", "history"]
         case .advanced:
@@ -1329,12 +1329,7 @@ private struct AppearanceSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Appearance") {
-                Picker("Theme", selection: $settings.appearance) {
-                    ForEach(AppearanceMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
-                }
+            Section("Text") {
                 LabeledContent("Transcript size") {
                     HStack(spacing: 10) {
                         Slider(value: $settings.transcriptFontSize, in: 12...20, step: 1)

@@ -83,6 +83,8 @@ final class AppModel: ObservableObject {
     @Published var showGitPanel = false
     @Published var showWorktrees = false
     @Published var showQuickSwitcher = false
+    @Published var deleteCandidate: Session?
+    @Published var showHelp = false
     @Published var showArchived = false
     @Published var renameTarget: Session?
     @Published var pendingDraft: String?
@@ -927,6 +929,16 @@ final class AppModel: ObservableObject {
         } else {
             self.selectedID = rows.first?.id
         }
+    }
+
+    func requestDelete(_ id: UUID) {
+        deleteCandidate = sessions.first(where: { $0.id == id })
+    }
+
+    func confirmDelete() {
+        guard let id = deleteCandidate?.id else { return }
+        delete(id)
+        deleteCandidate = nil
     }
 
     func delete(_ id: UUID) {

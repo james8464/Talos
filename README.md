@@ -7,6 +7,7 @@ model that produced them.
 ## What is included
 
 - See [`PARITY_MATRIX.md`](PARITY_MATRIX.md) for the cross-tool feature audit
+  and [`HIG_AUDIT.md`](HIG_AUDIT.md) for the Apple Human Interface Guidelines audit
 - Local models through Ollama, plus OpenCode Go, OpenAI, Anthropic, and Google Gemini
 - OpenCode Go subscription import from the local OpenCode login, with live
   context, vision, and reasoning metadata; chat-completions, Responses, and
