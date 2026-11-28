@@ -32,7 +32,7 @@ model that produced them.
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR),
   plus Chrome DevTools Protocol control with DOM selectors and JavaScript
-- On-device semantic code search (`search_codebase`) using Apple sentence
+- On-device semantic code search (`search_codebase`) using Apple word
   embeddings plus lexical ranking and a persisted per-file vector cache; see
   [`SEMANTIC_INDEX.md`](SEMANTIC_INDEX.md) for data flow, privacy, cache path,
   performance, and limits

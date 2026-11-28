@@ -39,7 +39,7 @@ enum SemanticIndexError: LocalizedError {
     }
 }
 
-/// Local semantic search over the workspace using Apple's on-device sentence
+/// Local semantic search over the workspace using averaged Apple on-device word
 /// embeddings. No network service, model download, or API key is involved.
 ///
 /// Data flow, privacy, performance, fallbacks, and limits are documented in
@@ -80,7 +80,7 @@ actor SemanticIndex {
     }
 
     private var indexes: [String: WorkspaceIndex] = [:]
-    private let embedding = NLEmbedding.sentenceEmbedding(for: .english)
+    private let embedding = NLEmbedding.wordEmbedding(for: .english)
     private let supportedExtensions: Set<String> = [
         "swift", "m", "mm", "c", "h", "cc", "cpp", "cxx", "hpp", "hh",
         "py", "pyi", "js", "jsx", "ts", "tsx", "go", "rs", "java", "kt",
@@ -115,7 +115,7 @@ actor SemanticIndex {
                 chunks: index.chunks.count,
                 cachedFiles: index.cachedFiles,
                 builtAt: index.builtAt,
-                embedding: "NLEmbedding.sentence · 512-d",
+                embedding: Self.embeddingName(embedding),
                 isStale: stale
             )
         }
@@ -125,7 +125,7 @@ actor SemanticIndex {
             chunks: 0,
             cachedFiles: 0,
             builtAt: nil,
-            embedding: "NLEmbedding.sentence · 512-d",
+            embedding: Self.embeddingName(embedding),
             isStale: false
         )
     }
@@ -148,17 +148,17 @@ actor SemanticIndex {
         }
         guard let embedding else {
             throw SemanticIndexError.message(
-                "On-device sentence embeddings are unavailable for this language. Use search_files instead."
+                "On-device word embeddings are unavailable for this language. Use search_files instead."
             )
         }
-        guard let queryVector = embedding.vector(for: trimmed) else {
+        guard let queryVector = Self.embeddingVector(for: trimmed, embedding: embedding) else {
             throw SemanticIndexError.message("Could not embed the query.")
         }
         let root = workspace.resolvingSymlinksInPath().standardizedFileURL
         try await build(root: root, force: false)
         let key = root.path
         let index = indexes[key] ?? WorkspaceIndex(chunks: [], files: [:], builtAt: Date(), fingerprint: "", cachedFiles: 0)
-        let queryFloats = queryVector.map(Float.init)
+        let queryFloats = queryVector
         var prefix = pathPrefix?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if prefix.hasPrefix("./") { prefix.removeFirst(2) }
         if prefix == "." { prefix = "" }
@@ -203,18 +203,18 @@ actor SemanticIndex {
             chunks: index.chunks.count,
             cachedFiles: index.cachedFiles,
             builtAt: index.builtAt,
-            embedding: "NLEmbedding.sentence · 512-d",
+            embedding: Self.embeddingName(embedding),
             isStale: false
         )
         return (Array(hits), status)
     }
 
-    private static let cacheVersion = 1
+    private static let cacheVersion = 2
 
     private func build(root: URL, force: Bool) async throws {
         guard embedding != nil else {
             throw SemanticIndexError.message(
-                "On-device sentence embeddings are unavailable. Use search_files instead."
+                "On-device word embeddings are unavailable. Use search_files instead."
             )
         }
         let key = root.path
@@ -413,13 +413,13 @@ actor SemanticIndex {
                 let meaningful = body.trimmingCharacters(in: .whitespacesAndNewlines)
                 if meaningful.count >= 40,
                    meaningful.contains(where: { $0.isLetter }),
-                   let vector = embedding.vector(for: path + "\n" + String(body.prefix(1_500))) {
+                   let vector = Self.embeddingVector(for: path + "\n" + String(body.prefix(1_500)), embedding: embedding) {
                     chunks.append(SemanticChunk(
                         path: path,
                         startLine: start + 1,
                         endLine: end,
                         text: meaningful,
-                        vector: vector.map(Float.init),
+                        vector: vector,
                         tokens: Self.tokens(path + "\n" + meaningful)
                     ))
                 }
@@ -428,6 +428,68 @@ actor SemanticIndex {
             start += max(window - overlap, 1)
         }
         return chunks
+    }
+
+    static func embeddingName(_ embedding: NLEmbedding?) -> String {
+        guard let embedding else { return "unavailable" }
+        return "NLEmbedding.word · \(embedding.dimension)-d"
+    }
+
+    /// Word embeddings are averaged across the chunk. Unlike sentence
+    /// embeddings, this is safe to call repeatedly, has no per-sentence neural
+    /// inference cost, and keeps the first-ever index build in seconds.
+    static func embeddingVector(for text: String, embedding: NLEmbedding) -> [Float]? {
+        var sum = [Float](repeating: 0, count: embedding.dimension)
+        var count = 0
+        for token in embeddingTokens(text) {
+            guard let vector = embedding.vector(for: token), vector.count == embedding.dimension else { continue }
+            for index in vector.indices {
+                sum[index] += Float(vector[index])
+            }
+            count += 1
+        }
+        guard count > 0 else { return nil }
+        return sum.map { $0 / Float(count) }
+    }
+
+    static func embeddingTokens(_ text: String) -> [String] {
+        var output: [String] = []
+        var run = ""
+        func add(_ raw: String) {
+            let lowered = raw.lowercased()
+            if lowered.count >= 2, lowered.contains(where: { $0.isLetter }) {
+                output.append(lowered)
+            }
+        }
+        func flush() {
+            guard !run.isEmpty else { return }
+            add(run)
+            var piece = ""
+            let characters = Array(run)
+            for index in characters.indices {
+                let character = characters[index]
+                let previous = index > 0 ? characters[index - 1] : nil
+                if character.isUppercase,
+                   let previous,
+                   previous.isLowercase || previous.isNumber,
+                   !piece.isEmpty {
+                    add(piece)
+                    piece = ""
+                }
+                piece.append(character)
+            }
+            add(piece)
+            run = ""
+        }
+        for character in text {
+            if character.isLetter || character.isNumber {
+                run.append(character)
+            } else {
+                flush()
+            }
+        }
+        flush()
+        return output
     }
 
     private static let stopWords: Set<String> = [

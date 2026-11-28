@@ -178,10 +178,10 @@ clear them. Missing files stay visible with a Missing badge and Open disabled.
 Full data-flow, privacy, performance, fallback, and limitation details are in
 [`SEMANTIC_INDEX.md`](../../SEMANTIC_INDEX.md).
 
-`search_codebase` indexes the workspace with Apple's on-device sentence
+`search_codebase` indexes the workspace with averaged Apple on-device word
 embeddings and ranks chunks with a lexical boost, so conceptual queries work
-without exact identifiers. The index is cached per workspace and rebuilt when
-files change. Actions: a normal search, `status`, and `rebuild`.
+without exact identifiers. Vectors are cached per workspace and only changed
+files re-embed. Actions: a normal search, `status`, and `rebuild`.
 
 ## Persistent terminal
 

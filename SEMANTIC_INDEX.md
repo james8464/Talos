@@ -17,10 +17,11 @@ performance, fallback behavior, and limitations.
    to 90 chunks per file. Chunks shorter than 40 meaningful characters or
    without a letter are skipped. Each chunk keeps its path and start/end line.
 4. **Embedding.** The chunk is embedded locally with
-   `NLEmbedding.sentenceEmbedding(for: .english)` (512 dimensions). The embedded
-   text is the relative path plus the first 1,500 characters of the chunk, so
-   filenames can contribute to relevance. A stemmed lexical token set is stored
-   alongside the vector.
+   `NLEmbedding.wordEmbedding(for: .english)` (300 dimensions). Tokens are
+   camel-case split, lowercased, looked up individually, and averaged into one
+   chunk vector. The embedded text is the relative path plus the first 1,500
+   characters of the chunk, so filenames can contribute to relevance. A
+   stemmed lexical token set is stored alongside the vector.
 5. **Caching.** Vectors live in an actor-isolated, in-memory index keyed by the
    resolved workspace path. They are also persisted per file in a binary plist
    at `~/Library/Application Support/Talos/semantic-index/<sha256>.plist`, where
@@ -66,16 +67,17 @@ Mac (`/usr/bin/time -l`):
 
 | Workspace / state | Files | Chunks | Startup | Warm query | Cached files | Peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Small sample, first run | 3 | 3 | 142 ms | 17 ms | 0 | 54 MB |
-| Small sample, cached launch | 3 | 3 | 17 ms | 17 ms | 3 | 40 MB |
-| Talos repository, first run | 93 | 972 | 66.4 s | 19 ms | 0 | 185 MB |
-| Talos repository, cached launch | 93 | 972 | 0.9 s | 19 ms | 93 | 118 MB |
-| Talos repository, one file changed | 93 | 972 | 1.3 s | 19 ms | 92 | 167 MB |
+| Small sample, first run | 3 | 3 | 250 ms | 20 ms | 0 | 21 MB |
+| Small sample, cached launch | 3 | 3 | 20 ms | 20 ms | 3 | 21 MB |
+| Talos repository, first run | 93 | 975 | 7.3 s | 20 ms | 0 | 65 MB |
+| Talos repository, cached launch | 93 | 975 | 0.6 s | 20 ms | 93 | 65 MB |
+| Talos repository, one file changed | 93 | 975 | 0.69 s | 20 ms | 92 | 68 MB |
 
-- Embedding dominates the first-ever build: roughly 68 ms per chunk in the
-  Talos repository. The cache turns a 66.4 s launch into a 0.9 s launch and a
-  one-file edit into 1.3 s.
-- The Talos cache is 6.9 MB for 93 files / 972 chunks.
+- Word-vector lookup and averaging replaced per-sentence neural inference:
+  first-ever indexing dropped from 66.4 s to 7.3 s, and peak memory from
+  185 MB to 65 MB.
+- The cache turns a 7.3 s launch into 0.6 s and a one-file edit into 0.69 s.
+- The Talos cache is 4.8 MB for 93 files / 975 chunks.
 - The build runs on a `SemanticIndex` actor, so it does not block the UI thread,
   but a tool call waits for the build before returning its first result.
 - The inspector shows “Rebuilding…” during an explicit rebuild and reports the
@@ -101,15 +103,20 @@ Mac (`/usr/bin/time -l`):
 
 ## Limitations
 
-- The sentence model is English and general-purpose, not trained on code.
-  Identifiers and comments work better than dense syntax; the lexical and path
-  terms compensate but do not make it a compiler-aware index.
+- The word model is English and general-purpose, not trained on code.
+  Averaging static word vectors ignores word order and sentence context, so
+  nuanced phrasing depends more on the lexical and path terms. This is the
+  speed/quality tradeoff; ranking checks are in `SEMANTIC_INDEX.md` history and
+  the test suite.
+- Word lookups cover vocabulary that exists in the model; unknown identifiers
+  still contribute through the lexical score.
 - Fixed 40-line windows can split functions, types, or markdown sections. The
   embedded text is truncated to 1,500 characters.
 - Caps: 700 files, 300 KB per file, 90 chunks per file. Very large monorepos are
   sampled, not fully indexed.
-- The first-ever index for a workspace still costs the full embedding time;
-  persistence accelerates later launches and changed-file updates only.
+- The first-ever index for a workspace still costs the full build (7.3 s for
+  the Talos corpus); persistence accelerates later launches and changed-file
+  updates only.
 - The cache is local per workspace, not shared across workspaces, and grows
   with the indexed text. It is not compressed.
 - Stale detection compares file count/size/mtime. A same-size edit within the
