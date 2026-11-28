@@ -21,6 +21,29 @@ PATTERN = re.compile(
     r'Stepper|Menu|Link|navigationTitle|help|accessibilityLabel|'
     r'accessibilityHint|confirmationDialog|alert)\s*\(\s*"((?:[^"\\]|\\.)*)"'
 )
+# Conditional and fallback titles bypass LocalizedStringKey when the ternary or
+# nil-coalescing expression evaluates to String.
+CONDITIONAL = re.compile(
+    r'\b(Text|Button|Label|Toggle|Picker|Section|LabeledContent|Menu|Link|'
+    r'accessibilityLabel|help)\s*\(\s*(?!LocalizedStringKey\b)[^()\n]*\?\s*'
+    r'"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"'
+)
+FALLBACK = re.compile(
+    r'\b(Text|Button|Label|Toggle|Picker|Section|LabeledContent|Menu|Link|'
+    r'accessibilityLabel|help)\s*\(\s*(?!LocalizedStringKey\b)[^)\n]*\?\?\s*'
+    r'"((?:[^"\\]|\\.)*)"'
+)
+LOCALIZED = re.compile(
+    r'(?:String\(localized:|LocalizedStringKey\()\s*"((?:[^"\\]|\\.)*)"'
+)
+LOCALIZED_CONDITIONAL = re.compile(
+    r'LocalizedStringKey\(\s*[^()\n]*\?\s*"((?:[^"\\]|\\.)*)"\s*:\s*'
+    r'"((?:[^"\\]|\\.)*)"'
+)
+LOCALIZED_TERNARY = re.compile(
+    r'\?\s*String\(localized:\s*"((?:[^"\\]|\\.)*)"\s*\)\s*:\s*'
+    r'String\(localized:\s*"((?:[^"\\]|\\.)*)"\s*\)'
+)
 BRAND = re.compile(r'^(?:Talos(?: \d[\d.]*)?|MCP|Git|GitHub|Ollama|OpenAI|Anthropic|Gemini|'
                    r'OpenCode Go|macOS|iOS|API|HTTP|HTTPS|URL|SSE|JSON|JSON-RPC|'
                    r'Ed25519|SHA-256|base64|PDF|esc|Chrome|Safari|Finder|Keychain)$')
@@ -41,8 +64,23 @@ for path in sorted(ROOT.rglob("*.swift")):
     if path.name in {"Localizable.xcstrings"}:
         continue
     text = path.read_text(encoding="utf-8")
+    literals: list[tuple[str, int]] = []
     for match in PATTERN.finditer(text):
-        literal = match.group(1)
+        literals.append((match.group(1), match.start()))
+    for match in CONDITIONAL.finditer(text):
+        literals.append((match.group(2), match.start()))
+        literals.append((match.group(3), match.start()))
+    for match in FALLBACK.finditer(text):
+        literals.append((match.group(2), match.start()))
+    for match in LOCALIZED.finditer(text):
+        literals.append((match.group(1), match.start()))
+    for match in LOCALIZED_CONDITIONAL.finditer(text):
+        literals.append((match.group(1), match.start()))
+        literals.append((match.group(2), match.start()))
+    for match in LOCALIZED_TERNARY.finditer(text):
+        literals.append((match.group(1), match.start()))
+        literals.append((match.group(2), match.start()))
+    for literal, offset in literals:
         if "\\(" in literal:
             continue
         # Swift applies escape sequences before the string becomes a lookup key.
@@ -55,7 +93,7 @@ for path in sorted(ROOT.rglob("*.swift")):
             continue
         seen.add(literal)
         if not has_arabic(literal):
-            line = text[: match.start()].count("\n") + 1
+            line = text[:offset].count("\n") + 1
             missing.append((str(path.relative_to(REPO)), line, literal))
 
 print(f"UI_LITERALS: {len(seen)}")

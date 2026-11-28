@@ -2306,10 +2306,11 @@ final class AppModel: ObservableObject {
                     sessionID: sessionID
                 )
                 finishMessage(sessionID, assistantID)
-                guard let parsed = ToolParser.extractAll(from: raw), !parsed.calls.isEmpty else {
+                let parsed = ToolParser.extractAll(from: raw)
+                setMessageText(sessionID, assistantID, parsed.cleaned)
+                guard !parsed.calls.isEmpty else {
                     break
                 }
-                setMessageText(sessionID, assistantID, parsed.cleaned)
 
                 for call in parsed.calls.prefix(8) {
                     if Task.isCancelled { return }

@@ -60,7 +60,7 @@ Results:
 
 ## Localization
 
-`apps/macos/Talos/Localizable.xcstrings` contains 654 Arabic keys covering the
+`apps/macos/Talos/Localizable.xcstrings` contains 683 Arabic keys covering the
 sidebar, welcome screen, composer, transcript states, inspector, all Settings
 pages, and the main menus. A CI catalog validator, a held-out source scan for unlocalized
 UI literals, and a live Arabic AX traversal (`make localization-check`,

@@ -82,7 +82,7 @@ struct CloudTasksSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button(busy ? "Enqueueing…" : "Enqueue Task") {
+                    Button(LocalizedStringKey(busy ? "Enqueueing…" : "Enqueue Task")) {
                         busy = true
                         Task {
                             _ = await model.enqueueCloudTask(prompt)

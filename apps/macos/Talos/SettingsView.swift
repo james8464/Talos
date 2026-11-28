@@ -558,7 +558,7 @@ private struct ProjectsSettingsView: View {
             Section("Current project") {
                 HStack(spacing: 10) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(model.currentProject?.name ?? "Project")
+                        Text(model.currentProject?.name ?? String(localized: "Project"))
                             .font(.headline)
                         Text(model.projectURL.path)
                             .font(.caption)

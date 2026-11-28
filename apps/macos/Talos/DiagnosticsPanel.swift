@@ -31,7 +31,7 @@ struct DiagnosticsPanel: View {
                 Label("Diagnostics", systemImage: "stethoscope")
                     .font(.title3.weight(.semibold))
                 Spacer()
-                Button(busy ? "Checking…" : "Check Changed Files") { run() }
+                Button(LocalizedStringKey(busy ? "Checking…" : "Check Changed Files")) { run() }
                     .disabled(busy || files.isEmpty)
                 Button("Done") { dismiss() }
                     .keyboardShortcut(.cancelAction)

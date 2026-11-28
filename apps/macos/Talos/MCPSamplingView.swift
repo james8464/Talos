@@ -22,7 +22,7 @@ struct MCPSamplingView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             ScrollView {
-                Text(request.promptPreview.isEmpty ? "No prompt text." : request.promptPreview)
+                Text(request.promptPreview.isEmpty ? String(localized: "No prompt text.") : request.promptPreview)
                     .font(.system(.caption, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)

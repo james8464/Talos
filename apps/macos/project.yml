@@ -66,6 +66,22 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
 
+  TalosTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Talos
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.macos.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Talos.app/Contents/MacOS/Talos"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
   TalosCLI:
     type: tool
     platform: macOS
@@ -116,6 +132,16 @@ targets:
         CURRENT_PROJECT_VERSION: "3"
         COMBINE_HIDPI_IMAGES: YES
 schemes:
+  TalosTests:
+    build:
+      targets:
+        Talos: all
+        TalosTests: [test]
+    test:
+      config: Debug
+      targets:
+        - TalosTests
+
   TalosCLI:
     build:
       targets:

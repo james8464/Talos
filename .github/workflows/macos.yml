@@ -16,8 +16,8 @@ jobs:
         run: make localization-check
       - name: Check localization coverage
         run: make localization-coverage
-      - name: Build Talos
-        run: xcodebuild -project apps/macos/Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO build
+      - name: Build and test Talos
+        run: make check
       - name: Evaluate semantic search
         run: make semantic-eval
       - name: Evaluate held-out semantic search

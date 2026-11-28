@@ -47,10 +47,12 @@ struct GitHubPanel: View {
 
             Form {
                 Section("Repository") {
-                    LabeledContent("Remote", value: repository?.fullName ?? "Detecting…")
+                    LabeledContent("Remote", value: repository?.fullName ?? String(localized: "Detecting…"))
                     LabeledContent("Branch", value: branch.isEmpty ? "—" : branch)
                     LabeledContent("Default base", value: defaultBranch)
-                    LabeledContent("Authentication", value: tokenAvailable ? "gh CLI token" : "Not available")
+                    LabeledContent("Authentication") {
+                        Text(LocalizedStringKey(tokenAvailable ? "gh CLI token" : "Not available"))
+                    }
                     if !tokenAvailable {
                         Text("Run `gh auth login` or set GITHUB_TOKEN before creating pull requests.")
                             .font(.caption)

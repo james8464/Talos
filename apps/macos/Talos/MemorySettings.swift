@@ -97,7 +97,7 @@ struct MemorySettingsView: View {
                 HStack(spacing: 8) {
                     Text(item.kind.title)
                     if item.kind == .goal {
-                        Text(item.goalStatus?.title ?? "Active")
+                        Text(item.goalStatus?.title ?? String(localized: "Active"))
                     }
                     if !item.enabled {
                         Text("off")
@@ -123,7 +123,7 @@ struct MemorySettingsView: View {
                 set: { model.memories.setEnabled(item, $0) }
             ))
             .labelsHidden()
-            .help(item.enabled ? "Included in prompts" : "Not included in prompts")
+            .help(item.enabled ? String(localized: "Included in prompts") : String(localized: "Not included in prompts"))
             Button("Edit") {
                 isNew = false
                 editing = item
@@ -155,7 +155,7 @@ private struct MemoryEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(isNew ? "New \(draft.kind.title)" : "Edit \(draft.kind.title)")
+            Text(LocalizedStringKey(isNew ? "New \(draft.kind.title)" : "Edit \(draft.kind.title)"))
                 .font(.title3.weight(.semibold))
 
             Form {

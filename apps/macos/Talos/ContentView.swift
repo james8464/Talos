@@ -271,7 +271,7 @@ private struct ProjectMenu: View {
                 NSWorkspace.shared.activateFileViewerSelecting([model.projectURL])
             }
         } label: {
-            Label(model.currentProject?.name ?? "Project", systemImage: "folder")
+            Label(model.currentProject?.name ?? String(localized: "Project"), systemImage: "folder")
         }
         .help(model.projectURL.path)
     }
@@ -543,7 +543,7 @@ private struct Sidebar: View {
                         .font(.caption)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    Text(model.isStreaming ? "Working…" : model.status)
+                    Text(model.isStreaming ? String(localized: "Working…") : model.status)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -617,16 +617,16 @@ private struct HelpView: View {
     @Environment(\.openSettings) private var openSettings
 
     private let shortcuts: [(String, String)] = [
-        ("New task", "⌘N"),
-        ("Quick switch", "⌘K"),
-        ("Next / previous task", "⌘] / ⌘["),
-        ("Send message", "Return"),
-        ("Stop response", "⌘."),
-        ("Compact conversation", "⌘⇧K"),
-        ("Review changes", "⌘⇧G"),
-        ("Choose model", "⌘⇧M"),
-        ("Show / hide inspector", "⌘⌥I"),
-        ("Settings", "⌘,"),
+        (String(localized: "New task"), "⌘N"),
+        (String(localized: "Quick switch"), "⌘K"),
+        (String(localized: "Next / previous task"), "⌘] / ⌘["),
+        (String(localized: "Send message"), "Return"),
+        (String(localized: "Stop response"), "⌘."),
+        (String(localized: "Compact conversation"), "⌘⇧K"),
+        (String(localized: "Review changes"), "⌘⇧G"),
+        (String(localized: "Choose model"), "⌘⇧M"),
+        (String(localized: "Show / hide inspector"), "⌘⌥I"),
+        (String(localized: "Settings"), "⌘,"),
     ]
 
     var body: some View {
@@ -693,7 +693,7 @@ private struct HelpView: View {
         .frame(width: 560, height: 560)
     }
 
-    private func section(_ title: String, text: String) -> some View {
+    private func section(_ title: LocalizedStringKey, text: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(title)
                 .font(.headline)
@@ -1425,8 +1425,8 @@ private struct ComposerView: View {
                     }
                     .buttonStyle(.borderless)
                     .foregroundStyle(dictation.isRecording ? Color.red : Color.secondary)
-                    .help(dictation.isRecording ? "Stop dictation" : "Dictate a message")
-                    .accessibilityLabel(dictation.isRecording ? "Stop dictation" : "Start dictation")
+                    .help(dictation.isRecording ? String(localized: "Stop dictation") : String(localized: "Dictate a message"))
+                    .accessibilityLabel(dictation.isRecording ? String(localized: "Stop dictation") : String(localized: "Start dictation"))
 
                     ModelPickerButton()
                     Divider().frame(height: 12)
@@ -1570,8 +1570,8 @@ private struct ComposerView: View {
             }
             .buttonStyle(.plain)
             .disabled(!canSend)
-            .help(model.isStreaming ? "Queue message (Return)" : "Send (Return)")
-            .accessibilityLabel(model.isStreaming ? "Queue message" : "Send message")
+            .help(model.isStreaming ? String(localized: "Queue message (Return)") : String(localized: "Send (Return)"))
+            .accessibilityLabel(model.isStreaming ? String(localized: "Queue message") : String(localized: "Send message"))
         }
     }
 
@@ -2045,7 +2045,7 @@ private struct ToolCard: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 22, height: 22)
                     .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                Text(message.toolName ?? "Tool")
+                Text(message.toolName ?? String(localized: "Tool"))
                     .font(.callout.weight(.semibold))
                 Spacer()
                 Label(statusTitle, systemImage: statusSymbol)
@@ -2072,7 +2072,7 @@ private struct ToolCard: View {
                         .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .padding(.top, 4)
                 } label: {
-                    Text(expanded ? "Hide output" : "Show output")
+                    Text(LocalizedStringKey(expanded ? "Hide output" : "Show output"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -2219,7 +2219,7 @@ private struct PlanStrip: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(expanded ? "Collapse plan" : "Expand plan")
+                .accessibilityLabel(expanded ? String(localized: "Collapse plan") : String(localized: "Expand plan"))
             }
 
             ProgressView(value: Double(completed), total: Double(max(plan.count, 1)))
@@ -2399,7 +2399,7 @@ private struct EmptyTask: View {
             .frame(maxWidth: 620)
 
             HStack(spacing: 8) {
-                Label(model.currentProject?.name ?? "Workspace", systemImage: "folder")
+                Label(model.currentProject?.name ?? String(localized: "Workspace"), systemImage: "folder")
                 Text("·")
                 Text(model.choice.display)
                 Text("·")
@@ -2478,7 +2478,7 @@ private struct NewWorktreeSheet: View {
             HStack {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
-                Button(busy ? "Creating…" : "Create Worktree") { create() }
+                Button(LocalizedStringKey(busy ? "Creating…" : "Create Worktree")) { create() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(busy)
             }
@@ -2538,7 +2538,7 @@ private struct MessageEditSheet: View {
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
-                Button(busy ? "Sending…" : "Save and Resend") {
+                Button(LocalizedStringKey(busy ? "Sending…" : "Save and Resend")) {
                     busy = true
                     error = nil
                     Task {
@@ -2827,7 +2827,7 @@ private struct Inspector: View {
                 LabeledContent("Token counting", value: model.tokenizerLabel)
                 LabeledContent("Speed", value: settings.speed.title)
                 LabeledContent("Endpoint") {
-                    Text(model.choice.provider == .local ? "This Mac" : "Cloud")
+                    Text(LocalizedStringKey(model.choice.provider == .local ? "This Mac" : "Cloud"))
                         .foregroundStyle(.secondary)
                 }
                 if model.choice.provider != .local {
@@ -2883,7 +2883,7 @@ private struct Inspector: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Button(indexBusy ? "Rebuilding…" : "Rebuild Index") {
+                Button(LocalizedStringKey(indexBusy ? "Rebuilding…" : "Rebuild Index")) {
                     rebuildIndex()
                 }
                 .disabled(indexBusy)

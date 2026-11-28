@@ -90,7 +90,7 @@ private struct ProfileEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(isNew ? "New Profile" : "Edit Profile")
+            Text(LocalizedStringKey(isNew ? "New Profile" : "Edit Profile"))
                 .font(.title3.weight(.semibold))
 
             Form {
@@ -307,7 +307,7 @@ private struct HookEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(isNew ? "New Hook" : "Edit Hook")
+            Text(LocalizedStringKey(isNew ? "New Hook" : "Edit Hook"))
                 .font(.title3.weight(.semibold))
 
             Form {

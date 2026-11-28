@@ -20,7 +20,7 @@ struct GitPanelView: View {
                 HStack {
                     Image(systemName: "arrow.triangle.branch")
                         .foregroundStyle(.secondary)
-                    Text(model.gitStatus.branch ?? "No repository")
+                    Text(model.gitStatus.branch ?? String(localized: "No repository"))
                         .font(.headline)
                         .lineLimit(1)
                     Spacer()
@@ -74,7 +74,7 @@ struct GitPanelView: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    Text(selected?.path ?? "Diff")
+                    Text(selected?.path ?? String(localized: "Diff"))
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .lineLimit(1)
                         .truncationMode(.middle)

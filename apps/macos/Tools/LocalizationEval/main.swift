@@ -204,7 +204,7 @@ func collect(_ root: AXUIElement, page: String) -> (arabic: Int, english: Int, u
 
         if interactiveRoles.contains(role) {
             let subrole = string(element, "AXSubrole") ?? ""
-            if !systemSubroles.contains(subrole) {
+            if !systemSubroles.contains(subrole) && role != "AXDisclosureTriangle" {
                 let name = string(element, kAXTitleAttribute)
                     ?? string(element, kAXDescriptionAttribute)
                     ?? string(element, kAXHelpAttribute)
@@ -235,6 +235,152 @@ if let main = mainWindows.first {
     print("MAIN arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
 } else {
     violations.append(Violation(page: "Main", message: "No main window"))
+}
+
+// Sheets and panels outside Settings. These are held-out surfaces: the
+// Settings traversal below does not reach them, and the source scan cannot
+// prove that a sheet actually renders Arabic at runtime.
+func mainWindow() -> AXUIElement? {
+    windows(appElement).first { window in
+        let title = string(window, kAXTitleAttribute) ?? ""
+        return !pageTitles.contains { normalized($0) == normalized(title) }
+    }
+}
+
+func findElement(_ root: AXUIElement, _ depth: Int = 0, matching: (AXUIElement) -> Bool) -> AXUIElement? {
+    guard depth < 60 else { return nil }
+    if matching(root) { return root }
+    for child in children(root) {
+        if let found = findElement(child, depth + 1, matching: matching) { return found }
+    }
+    return nil
+}
+
+func press(_ element: AXUIElement) {
+    AXUIElementPerformAction(element, kAXPressAction as CFString)
+}
+
+func button(_ title: String) -> AXUIElement? {
+    guard let window = mainWindow() else { return nil }
+    return findElement(window) { element in
+        guard string(element, kAXRoleAttribute) == "AXButton" else { return false }
+        let name = string(element, kAXTitleAttribute)
+            ?? string(element, kAXDescriptionAttribute)
+            ?? string(element, kAXHelpAttribute)
+        return name.map { normalized($0) == normalized(title) } ?? false
+    }
+}
+
+func dismissSheet() {
+    for title in ["تم", "إغلاق"] {
+        if let target = button(title) {
+            press(target)
+            usleep(700_000)
+            return
+        }
+    }
+    key(53, flags: []) // esc
+    usleep(700_000)
+}
+
+func checkSurface(_ name: String, required: [String]) {
+    guard let window = mainWindow() else {
+        violations.append(Violation(page: name, message: "No main window for surface"))
+        return
+    }
+    let result = collect(window, page: name)
+    let missing = required.filter { value in !result.labels.contains { $0.contains(value) } }
+    if !missing.isEmpty {
+        violations.append(Violation(page: name, message: "Missing Arabic labels: \(missing.joined(separator: ", "))"))
+    }
+    if result.arabic < 3 {
+        violations.append(Violation(page: name, message: "Too few Arabic labels: \(result.arabic)"))
+    }
+    print("SURFACE \(name) arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
+}
+
+func menuItem(matching title: String) -> (AXUIElement) -> Bool {
+    return { element in
+        guard string(element, kAXRoleAttribute) == "AXMenuItem" else { return false }
+        let name = string(element, kAXTitleAttribute) ?? string(element, kAXDescriptionAttribute) ?? ""
+        return normalized(name).contains(normalized(title))
+    }
+}
+
+func pressMenuItem(_ title: String) -> Bool {
+    // Toolbar menus (the project menu owns New Worktree).
+    if let window = mainWindow() {
+        for menu in findAllElements(window, matching: { string($0, kAXRoleAttribute) == "AXMenuButton" }) {
+            press(menu)
+            usleep(450_000)
+            if let item = findElement(appElement, matching: menuItem(matching: title)) {
+                press(item)
+                return true
+            }
+            key(53, flags: [])
+            usleep(200_000)
+        }
+    }
+    // Menu bar commands (Help lives here).
+    guard let menuBar = children(appElement).first(where: { string($0, kAXRoleAttribute) == "AXMenuBar" }) else {
+        return false
+    }
+    for barItem in children(menuBar) {
+        press(barItem)
+        usleep(350_000)
+        if let item = findElement(appElement, matching: menuItem(matching: title)) {
+            press(item)
+            return true
+        }
+        key(53, flags: [])
+        usleep(200_000)
+    }
+    return false
+}
+
+func findAllElements(_ root: AXUIElement, _ depth: Int = 0, matching: (AXUIElement) -> Bool) -> [AXUIElement] {
+    guard depth < 60 else { return [] }
+    var found: [AXUIElement] = matching(root) ? [root] : []
+    for child in children(root) {
+        found.append(contentsOf: findAllElements(child, depth + 1, matching: matching))
+    }
+    return found
+}
+
+// Quick Switcher (⌘K)
+key(40, flags: .maskCommand)
+usleep(900_000)
+checkSurface("Quick Switcher", required: ["مهمة جديدة", "مراجعة التغييرات", "الإعدادات"])
+dismissSheet()
+
+// Help sheet through the Help menu.
+if pressMenuItem("مساعدة Talos") {
+    usleep(900_000)
+    checkSurface("Help", required: ["البدء"])
+    dismissSheet()
+} else {
+    violations.append(Violation(page: "Help", message: "Could not open from the Help menu"))
+}
+
+// Project browser (⌘⇧O)
+key(31, flags: [.maskCommand, .maskShift])
+usleep(1_200_000)
+checkSurface("Project Browser", required: ["ملف جديد"])
+dismissSheet()
+
+// Git panel (⌘⇧G)
+key(5, flags: [.maskCommand, .maskShift])
+usleep(1_000_000)
+checkSurface("Git Panel", required: ["التزام", "تحديث"])
+dismissSheet()
+
+// Worktree sheet through the project menu.
+if pressMenuItem("شجرة عمل جديدة…") {
+    usleep(1_000_000)
+    checkSurface("Worktree Sheet", required: ["اسم شجرة العمل", "إنشاء شجرة عمل"])
+    dismissSheet()
+} else {
+    violations.append(Violation(page: "Worktree Sheet", message: "Could not open from the project menu"))
 }
 
 // Open Settings.

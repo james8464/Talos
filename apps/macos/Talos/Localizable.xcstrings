@@ -3476,7 +3476,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "مضمّن في المطالبات"
+            "value": "مشمول في الطلبات"
           }
         }
       }
@@ -3486,7 +3486,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "غير مضمّن في المطالبات"
+            "value": "غير مشمول في الطلبات"
           }
         }
       }
@@ -6537,6 +6537,296 @@
           "stringUnit": {
             "state": "translated",
             "value": "مقفل"
+          }
+        }
+      }
+    },
+    "Quick switch": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبديل سريع"
+          }
+        }
+      }
+    },
+    "Next / previous task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المهمة التالية / السابقة"
+          }
+        }
+      }
+    },
+    "Compact conversation": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضغط المحادثة"
+          }
+        }
+      }
+    },
+    "Review changes": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مراجعة التغييرات"
+          }
+        }
+      }
+    },
+    "Choose model": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختيار النموذج"
+          }
+        }
+      }
+    },
+    "Show / hide inspector": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار / إخفاء المفتش"
+          }
+        }
+      }
+    },
+    "Getting started": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البدء"
+          }
+        }
+      }
+    },
+    "Files and attachments": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الملفات والمرفقات"
+          }
+        }
+      }
+    },
+    "Create a task, choose a model, and describe the outcome. Talos gives the model real tools on this Mac and asks before high-impact actions.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنشئ مهمة، واختر نموذجًا، وصف النتيجة. يمنح Talos النموذج أدوات حقيقية على هذا الـ Mac ويسأل قبل الإجراءات عالية التأثير."
+          }
+        }
+      }
+    },
+    "Attach files with the paperclip or by dragging them onto the composer. Images and PDFs are sent to vision-capable models.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أرفق الملفات بمشبك الورق أو بسحبها إلى محرّر الرسائل. تُرسل الصور وملفات PDF إلى النماذج الداعمة للرؤية."
+          }
+        }
+      }
+    },
+    "Shell commands, edits, terminal input, browser actions, and computer control require approval unless you allow them for the task. Patches show a per-file preview before they apply.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتطلب أوامر الصدفة والتعديلات وإدخال الطرفية وإجراءات المتصفح والتحكم بالحاسوب موافقة، ما لم تسمح بها للمهمة. تعرض الرقع معاينة لكل ملف قبل تطبيقها."
+          }
+        }
+      }
+    },
+    "Sessions, usage, and the semantic index stay on this Mac. Provider keys live in the macOS Keychain. Only prompts and attachments go to the model provider you choose.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبقى الجلسات والاستخدام والفهرس الدلالي على هذا الـ Mac. تعيش مفاتيح المزوّدين في Keychain على macOS. تُرسل الطلبات والمرفقات فقط إلى مزوّد النموذج الذي تختاره."
+          }
+        }
+      }
+    },
+    "Create Worktree": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إنشاء شجرة عمل"
+          }
+        }
+      }
+    },
+    "Creating…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الإنشاء…"
+          }
+        }
+      }
+    },
+    "Tool": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أداة"
+          }
+        }
+      }
+    },
+    "Dictate a message": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إملاء رسالة"
+          }
+        }
+      }
+    },
+    "Queue message (Return)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وضع الرسالة في قائمة الانتظار (Return)"
+          }
+        }
+      }
+    },
+    "Send (Return)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال (Return)"
+          }
+        }
+      }
+    },
+    "Sending…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الإرسال…"
+          }
+        }
+      }
+    },
+    "Save and Resend": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حفظ وإعادة إرسال"
+          }
+        }
+      }
+    },
+    "Rebuilding…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ إعادة البناء…"
+          }
+        }
+      }
+    },
+    "Checking…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الفحص…"
+          }
+        }
+      }
+    },
+    "Check Changed Files": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فحص الملفات المعدّلة"
+          }
+        }
+      }
+    },
+    "gh CLI token": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رمز gh CLI"
+          }
+        }
+      }
+    },
+    "Not available": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غير متاح"
+          }
+        }
+      }
+    },
+    "No prompt text.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يوجد نص للطلب."
+          }
+        }
+      }
+    },
+    "New %@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جديد %@"
+          }
+        }
+      }
+    },
+    "Edit %@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعديل %@"
+          }
+        }
+      }
+    },
+    "Assistant": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المساعد"
           }
         }
       }

@@ -68,6 +68,29 @@ with hand-written relevance sets. It is a regression guard, not an independent
 benchmark. `NLEmbedding` is a general English word model, so identifier-heavy
 queries remain weaker than exact `search_files` or LSP lookup.
 
+## Tool-call parser unit tests
+
+`apps/macos/Tests/ToolParserTests.swift` adds a macOS unit-test target
+(`TalosTests`) and runs through `make test` (`make check` runs the app build and
+the tests). Nine tests cover:
+
+- DeepSeek DSML `invoke`/`parameter` tags, including `string="false"` values,
+  numbers, booleans, and XML entities;
+- multiple DSML invokes in one wrapper;
+- `<tool>` and `<tool_call name="…">` XML wrappers;
+- multiple calls of mixed syntax in textual order;
+- missing-name inference for `read_file`, `search_files`, `shell`,
+  `apply_patch`, `list_files`, `write_file`, and `update_plan`;
+- malformed ```tool fences are stripped from the visible reply;
+- illustrative ```json blocks are preserved, not executed;
+- a ```json block with a `command` field but no `name` is **not** executed;
+- plain text stays unchanged and `extract` returns nil.
+
+```text
+Executed 9 tests, with 0 failures
+** TEST SUCCEEDED **
+```
+
 ## Arabic localization
 
 `make localization-coverage` is a held-out source scan: it walks every SwiftUI
@@ -79,9 +102,9 @@ brand names, key caps, and technical tokens.
 
 | Check | Before | After |
 | --- | ---: | ---: |
-| UI literals found | 486 | 483 (brand/key exclusions) |
+| UI literals found | 486 | 618 |
 | Missing Arabic | 131 | 0 |
-| Catalog keys | 526 | 654 |
+| Catalog keys | 526 | 683 |
 
 The 131 missing strings included the menu-bar menu, approval sheet, worktree
 sheet, GitHub panel, MCP app/elicitation/sampling views, Chronicle controls,
@@ -89,12 +112,31 @@ recent documents, diagnostics panel, policy empty state, project browser, and
 most accessibility labels added in the previous pass. All were translated and
 added to `Localizable.xcstrings`.
 
-Live traversal (`make localization-eval`) then launched with
-`AppleLanguages=ar`, created a task, opened Settings, visited all 20 pages, and
-reported:
+The scan was then extended to wrapped and conditional forms. That found a
+second class of bugs: strings that **had** Arabic catalog entries but rendered
+English because SwiftUI treated the expression as `String` instead of
+`LocalizedStringKey`. Examples:
+
+- `HelpView` passed `String` parameters to `section(_:text:)`, and built its
+  shortcut rows from raw tuple literals, so the whole Help sheet stayed English.
+- `Text(isNew ? "New Profile" : "Edit Profile")` and similar conditional titles.
+- `Text(branch ?? "No repository")`, `Text(selected?.path ?? "Diff")`.
+- `.help(recording ? "Stop dictation" : "Dictate a message")`.
+
+These now use `LocalizedStringKey(...)` or `String(localized:)`, and the source
+scanner checks wrapped literals as well. The catalog grew to 683 keys.
+
+Live traversal (`make localization-eval`) now launches with `AppleLanguages=ar`,
+creates a task, opens five non-Settings surfaces, then opens Settings and visits
+all 20 pages:
 
 ```text
-MAIN arabic=133 english=0 unlabeled=0
+MAIN arabic=174 english=0 unlabeled=0
+SURFACE Quick Switcher arabic=187 english=0 unlabeled=0
+SURFACE Help arabic=195 english=0 unlabeled=0
+SURFACE Project Browser arabic=177 english=0 unlabeled=0
+SURFACE Git Panel arabic=186 english=0 unlabeled=0
+SURFACE Worktree Sheet arabic=180 english=0 unlabeled=0
 20 Settings pages: english=0 unlabeled=0
 FAILURES: 0
 ```
@@ -150,7 +192,11 @@ failure surfaced to the user rather than silently executed.
 
 ## Open evidence gaps
 
-- No native-speaker Arabic review.
+- No native-speaker Arabic review. The live traversal covers the main window,
+  five panels/sheets, and all Settings pages, but not every dialog.
+- Some display-only strings passed as `String` to `LabeledContent` values or
+  custom helpers may still bypass localization; the source scan covers the
+  known SwiftUI constructors, not arbitrary function parameters.
 - No Claude Code or Cursor CLI comparison on this machine.
 - Four parity tasks are too few to claim general behavioural parity.
 - The semantic set is authored, not independently labelled.

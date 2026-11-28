@@ -61,11 +61,14 @@ struct SubagentEngine {
                 estimated: usage.estimated || used.estimated
             )
 
-            guard let parsed = ToolParser.extractAll(from: raw), !parsed.calls.isEmpty else {
+            let parsed = ToolParser.extractAll(from: raw)
+            guard !parsed.calls.isEmpty else {
                 return SubagentOutcome(
                     label: label,
                     task: task,
-                    summary: raw.trimmingCharacters(in: .whitespacesAndNewlines),
+                    summary: parsed.cleaned.isEmpty
+                        ? raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                        : parsed.cleaned,
                     steps: steps,
                     usage: usage,
                     hitStepLimit: false

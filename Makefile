@@ -1,10 +1,13 @@
-.PHONY: build cli run project clean check ax-audit semantic-eval semantic-heldout localization-check localization-coverage localization-eval
+.PHONY: build cli test run project clean check ax-audit semantic-eval semantic-heldout localization-check localization-coverage localization-eval
 
 build:
 	cd apps/macos && xcodebuild -project Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath .build CODE_SIGNING_ALLOWED=NO build
 
 cli:
 	cd apps/macos && xcodebuild -project Talos.xcodeproj -scheme TalosCLI -configuration Debug -derivedDataPath .build CODE_SIGNING_ALLOWED=NO build
+
+test:
+	cd apps/macos && xcodebuild test -project Talos.xcodeproj -scheme TalosTests -configuration Debug -derivedDataPath .build CODE_SIGNING_ALLOWED=NO
 
 run: build
 	open apps/macos/.build/Build/Products/Debug/Talos.app
@@ -37,4 +40,4 @@ ax-audit:
 	swiftc apps/macos/Tools/AXAudit.swift -o /tmp/talos-ax-audit
 	/tmp/talos-ax-audit $$(pgrep -f "Talos.app/Contents/MacOS/Talos" | head -1)
 
-check: build
+check: build test
