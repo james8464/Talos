@@ -26,6 +26,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Files | Read with line ranges, write, list, search |
 | Patches | Unified diff through `git apply` with `patch` fallback |
 | Computer use | Screenshot, frontmost app, windows, click, type, keys, scroll, activate app, open URL |
+| Browser CDP | `browser_cdp` talks to Chrome's DevTools Protocol for status, page read with selectors, navigation, JavaScript evaluation, click by selector/text, typing, and PNG screenshots; endpoint configurable, mutating actions approval-gated |
 | Browser | Safari/Chrome accessibility page reading, indexed click/type, navigation, back/forward/reload, screenshot OCR; verified live against Safari and example.com |
 | Web | Fetch and search, gated by network setting |
 | Plan | `update_plan` with inspector progress |
@@ -66,7 +67,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | MCP | stdio and Streamable HTTP; elicitation, OAuth, sampling, standalone resource browsing, and tool-linked MCP apps are implemented; app launch remains tool-linked |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
 | OpenCode Go | all advertised models with a chat-completions, Responses, or Anthropic Messages endpoint are routed; other transports are filtered out |
-| Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
+| Computer use | native CGEvent/AppKit actions; browser control offers accessibility/OCR and optional Chrome CDP rather than a packaged browser extension |
 | Images | attachments and tool screenshots are sent as native image blocks to models identified as vision-capable |
 | PDF input | PDF attachments are text-extracted for every model and rendered page-by-page for vision models (8 pages, 16-image cap); image-only PDFs work through page rendering |
 | Reasoning | provider-specific options only where the transport exposes them |
@@ -82,7 +83,7 @@ These are Codex features Talos does not claim to have:
 
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
-- Browser extension/Chrome control and full CDP access
+- Packaged browser extension with native messaging
 - Plugin marketplaces and remote plugin catalogs
 - Dictation/voice and menu-bar mode
 - Exact tokenizer-based accounting; Talos uses reported counts plus estimates

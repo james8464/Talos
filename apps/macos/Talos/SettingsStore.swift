@@ -138,6 +138,10 @@ final class SettingsStore: ObservableObject {
             defaults.set(enablePlan, forKey: "enablePlan")
         }
     }
+    @Published var browserCDPEndpoint: String {
+        didSet { defaults.set(browserCDPEndpoint, forKey: "browserCDPEndpoint") }
+    }
+
     @Published var autoReviewTools: Bool {
         didSet {
             if let forced = managed?.autoReview, autoReviewTools != forced {
@@ -214,6 +218,7 @@ final class SettingsStore: ObservableObject {
         enableWeb = defaults.object(forKey: "enableWeb") as? Bool ?? true
         enableBrowser = defaults.object(forKey: "enableBrowser") as? Bool ?? true
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
+        browserCDPEndpoint = defaults.string(forKey: "browserCDPEndpoint") ?? "http://127.0.0.1:9222"
         autoReviewTools = defaults.object(forKey: "autoReviewTools") as? Bool ?? true
 
         cloudServerEnabled = defaults.bool(forKey: "cloudServerEnabled")

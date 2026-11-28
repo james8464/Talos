@@ -30,6 +30,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
 - `Talos/MCP.swift` — stdio and Streamable HTTP MCP client and tool bridge
 - `Talos/Browser.swift` — Safari/Chrome accessibility control and screenshot OCR
+- `Talos/CDPClient.swift` — Chrome DevTools Protocol client for DOM control and screenshots
 - `Talos/Subagent.swift` — isolated read-only child task loop and report
 - `Talos/PDFLoader.swift` — PDF text extraction and page rendering for vision
 - `Talos/MCP.swift` — stdio/HTTP MCP, OAuth, and elicitation

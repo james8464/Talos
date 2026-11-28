@@ -17,7 +17,8 @@ model that produced them.
   manager that creates, switches, merges, and cleans up task branches
 - Tools that work with every model: shell, file read/write, patch, file search,
   document creation, web fetch/search, task plan, computer use, and browser
-  control (page reading, indexed actions, navigation, and screenshot OCR)
+  control (page reading, indexed actions, navigation, and screenshot OCR),
+  plus Chrome DevTools Protocol control with DOM selectors and JavaScript
 - Delegated read-only subagents that work in a fresh context and return a
   report with the files and facts they found, including nested delegation to
   a bounded depth with isolated contexts

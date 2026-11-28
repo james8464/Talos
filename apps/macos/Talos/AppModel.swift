@@ -2338,7 +2338,8 @@ final class AppModel: ObservableObject {
             enabledBrowser: settings.enableBrowser,
             enabledPlan: settings.enablePlan,
             skills: skills.enabled,
-            mcpTools: mcpTools
+            mcpTools: mcpTools,
+            cdpEndpoint: settings.browserCDPEndpoint
         )
     }
 

@@ -571,6 +571,14 @@ private struct ToolsSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Browser") {
+                TextField("Chrome DevTools endpoint", text: $settings.browserCDPEndpoint)
+                    .textFieldStyle(.roundedBorder)
+                Text("For browser_cdp, start Chrome with --remote-debugging-port=9222 (or the port above) and keep a tab open. Accessibility control still works without it.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("macOS permissions") {
                 permissionRow(
                     "Accessibility",

@@ -110,6 +110,8 @@ struct ToolCall: Sendable {
             return string("query") ?? "Search the web"
         case "browser":
             return [string("action") ?? "browser", string("url")].compactMap { $0 }.joined(separator: " ")
+        case "browser_cdp":
+            return [string("action") ?? "cdp", string("url") ?? string("text") ?? string("selector")].compactMap { $0 }.joined(separator: " ")
         case "update_plan":
             return "Update the task plan"
         case "subagent":
@@ -155,6 +157,7 @@ struct ToolContext: Sendable {
     let mcpTools: [MCPTool]
     var readOnly = false
     var allowNestedAgents = false
+    var cdpEndpoint = "http://127.0.0.1:9222"
     let maxOutputCharacters = 30_000
 }
 
@@ -247,6 +250,7 @@ enum ToolPrompt {
         }
         if context.enabledBrowser {
             lines.append("- browser: {\"action\":\"read\"|\"click\"|\"type\"|\"navigate\"|\"screenshot\"|\"key\"|\"scroll\"|\"back\"|\"forward\"|\"reload\", ...} Control the front Safari or Chrome window. Run read before click/type; read returns page text and indexed elements. click takes index; type takes index and text; navigate takes url; screenshot returns OCR text; key takes key.")
+            lines.append("- browser_cdp: {\"action\":\"status\"|\"read\"|\"navigate\"|\"eval\"|\"click\"|\"type\"|\"screenshot\", ...} Control Chrome through the DevTools Protocol when Chrome runs with --remote-debugging-port. read returns page text and selectors; click takes selector or text; type takes selector and text; eval takes a JavaScript expression; navigate takes url.")
         }
         if context.enabledPlan {
             lines.append("- update_plan: {\"steps\":[{\"title\":\"...\",\"status\":\"pending\"|\"in_progress\"|\"completed\"}]} Replace the task plan.")
@@ -321,6 +325,9 @@ struct ToolRunner: Sendable {
         case "browser":
             let action = call.string("action") ?? ""
             return !["read", "screenshot"].contains(action)
+        case "browser_cdp":
+            let action = call.string("action") ?? ""
+            return !["read", "screenshot", "status"].contains(action)
         default:
             return false
         }
@@ -354,6 +361,8 @@ struct ToolRunner: Sendable {
             return await webSearch(call)
         case "browser":
             return await runBrowser(call)
+        case "browser_cdp":
+            return await runBrowserCDP(call)
         default:
             return .fail("Unknown tool '\(call.name)'.")
         }
@@ -731,6 +740,27 @@ struct ToolRunner: Sendable {
 
         default:
             return .fail("Unknown computer action '\(action)'.")
+        }
+    }
+
+    @MainActor
+    private func runBrowserCDP(_ call: ToolCall) async -> ToolResult {
+        guard context.enabledBrowser else {
+            return .fail("Browser control is disabled in Settings.")
+        }
+        let action = call.string("action") ?? "read"
+        do {
+            let result = try await CDPController.shared.perform(
+                action: action,
+                endpoint: context.cdpEndpoint,
+                url: call.string("url"),
+                expression: call.string("expression"),
+                selector: call.string("selector"),
+                text: call.string("text")
+            )
+            return .ok(result.output, attachment: result.attachment)
+        } catch {
+            return .fail(error.localizedDescription)
         }
     }
 
