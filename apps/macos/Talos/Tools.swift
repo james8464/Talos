@@ -108,6 +108,8 @@ struct ToolCall: Sendable {
             return string("url") ?? "Fetch a URL"
         case "web_search":
             return string("query") ?? "Search the web"
+        case "browser":
+            return [string("action") ?? "browser", string("url")].compactMap { $0 }.joined(separator: " ")
         case "update_plan":
             return "Update the task plan"
         default:
@@ -142,6 +144,7 @@ struct ToolContext: Sendable {
     let enabledFileEdits: Bool
     let enabledComputerUse: Bool
     let enabledWeb: Bool
+    let enabledBrowser: Bool
     let enabledPlan: Bool
     let skills: [Skill]
     let mcpTools: [MCPTool]
@@ -230,6 +233,9 @@ enum ToolPrompt {
             lines.append("- web_fetch: {\"url\":\"https://...\"} Fetch a page as text.")
             lines.append("- web_search: {\"query\":\"...\"} Search the web.")
         }
+        if context.enabledBrowser {
+            lines.append("- browser: {\"action\":\"read\"|\"click\"|\"type\"|\"navigate\"|\"screenshot\"|\"key\"|\"scroll\"|\"back\"|\"forward\"|\"reload\", ...} Control the front Safari or Chrome window. Run read before click/type; read returns page text and indexed elements. click takes index; type takes index and text; navigate takes url; screenshot returns OCR text; key takes key.")
+        }
         if context.enabledPlan {
             lines.append("- update_plan: {\"steps\":[{\"title\":\"...\",\"status\":\"pending\"|\"in_progress\"|\"completed\"}]} Replace the task plan.")
         }
@@ -294,6 +300,9 @@ struct ToolRunner: Sendable {
         case "computer":
             let action = call.string("action") ?? ""
             return !["screenshot", "frontmost_app", "list_windows"].contains(action)
+        case "browser":
+            let action = call.string("action") ?? ""
+            return !["read", "screenshot"].contains(action)
         default:
             return false
         }
@@ -325,6 +334,8 @@ struct ToolRunner: Sendable {
             return await webFetch(call)
         case "web_search":
             return await webSearch(call)
+        case "browser":
+            return await runBrowser(call)
         default:
             return .fail("Unknown tool '\(call.name)'.")
         }
@@ -702,6 +713,61 @@ struct ToolRunner: Sendable {
 
         default:
             return .fail("Unknown computer action '\(action)'.")
+        }
+    }
+
+    @MainActor
+    private func runBrowser(_ call: ToolCall) async -> ToolResult {
+        guard context.enabledBrowser else { return .fail("Browser control is disabled in Settings.") }
+        guard let action = call.string("action"), !action.isEmpty else {
+            return .fail("browser requires an action.")
+        }
+        switch action {
+        case "read":
+            return BrowserController.shared.read()
+        case "click":
+            guard let index = call.int("index") else {
+                return .fail("browser click requires index. Run browser read first.")
+            }
+            return BrowserController.shared.click(index: index)
+        case "type":
+            guard let index = call.int("index"), let text = call.string("text") else {
+                return .fail("browser type requires index and text.")
+            }
+            return BrowserController.shared.type(index: index, text: text)
+        case "navigate":
+            guard let raw = call.string("url"), let url = URL(string: raw) else {
+                return .fail("browser navigate requires a URL.")
+            }
+            return await BrowserController.shared.navigate(to: url)
+        case "screenshot":
+            return await BrowserController.shared.screenshot()
+        case "key":
+            guard let key = call.string("key") else { return .fail("browser key requires key.") }
+            return await runComputer(ToolCall(name: "computer", arguments: [
+                "action": .string("key"),
+                "key": .string(key),
+            ]))
+        case "scroll":
+            return await runComputer(ToolCall(name: "computer", arguments: [
+                "action": .string("scroll"),
+                "dx": .number(Double(call.int("dx") ?? 0)),
+                "dy": .number(Double(call.int("dy") ?? 0)),
+            ]))
+        case "back":
+            return await runComputer(ToolCall(name: "computer", arguments: [
+                "action": .string("key"), "key": .string("cmd+["),
+            ]))
+        case "forward":
+            return await runComputer(ToolCall(name: "computer", arguments: [
+                "action": .string("key"), "key": .string("cmd+]"),
+            ]))
+        case "reload":
+            return await runComputer(ToolCall(name: "computer", arguments: [
+                "action": .string("key"), "key": .string("cmd+r"),
+            ]))
+        default:
+            return .fail("Unknown browser action '\(action)'.")
         }
     }
 

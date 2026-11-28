@@ -9,7 +9,7 @@ tools work regardless of which model is selected.
 - Xcode 16 or later
 - [Ollama](https://ollama.com) for local models
 - OpenCode Go, OpenAI, Anthropic, or Google Gemini credentials for hosted models
-- OpenCode Go detects the local OpenCode sign-in; other providers use API keys
+- OpenCode Go imports the local OpenCode OAuth access token via `opencode auth export`; other providers use API keys
 
 ## Build and run
 
@@ -29,6 +29,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Skills.swift` — SKILL.md discovery
 - `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
 - `Talos/MCP.swift` — stdio and Streamable HTTP MCP client and tool bridge
+- `Talos/Browser.swift` — Safari/Chrome accessibility control and screenshot OCR
 - `Talos/RemoteServer.swift` — local phone-control HTTP server
 - `Talos/SettingsView.swift` — sidebar Settings window
 
@@ -36,9 +37,9 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 
 `shell`, `read_file`, `write_file`, `list_files`, `search_files`,
 `apply_patch`, `create_document`, `view_image`, `computer`, `web_fetch`,
-`web_search`, `update_plan`, `read_skill`, and MCP tools. The model calls them
-through a fenced `tool` block, so even models without native function calling
-can use them.
+`web_search`, `browser`, `update_plan`, `read_skill`, and MCP tools. The model
+calls them through a fenced `tool` block, so even models without native
+function calling can use them.
 
 Approval and sandbox behavior is configured in Settings → Tools. The shell tool
 uses `/usr/bin/sandbox-exec`; read-only and workspace-write modes deny writes

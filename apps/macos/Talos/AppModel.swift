@@ -613,6 +613,9 @@ final class AppModel: ObservableObject {
             resumeSummary()
         case "/memory", "/instructions":
             showProjectMemory()
+        case "/browser":
+            let result = BrowserController.shared.read()
+            appendCommandMessage(result.output)
         case "/add-dir":
             appendCommandMessage("Use Projects → Open Folder… to switch the workspace. Additional writable roots are not implemented yet.")
         case "/status":
@@ -1279,6 +1282,7 @@ final class AppModel: ObservableObject {
             enabledFileEdits: settings.enableFileEdits,
             enabledComputerUse: settings.enableComputerUse,
             enabledWeb: settings.enableWeb,
+            enabledBrowser: settings.enableBrowser,
             enabledPlan: settings.enablePlan,
             skills: skills.enabled,
             mcpTools: mcpTools

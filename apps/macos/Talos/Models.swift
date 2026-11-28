@@ -301,6 +301,7 @@ enum SlashCommands {
         SlashCommand(id: "/plugins", detail: "List local plugins"),
         SlashCommand(id: "/mcp", detail: "List connected MCP tools"),
         SlashCommand(id: "/remote", detail: "Show the phone-control URL"),
+        SlashCommand(id: "/browser", detail: "Read the front browser page"),
         SlashCommand(id: "/todos", detail: "Show the current plan"),
         SlashCommand(id: "/help", detail: "Show commands"),
     ]

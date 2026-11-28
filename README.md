@@ -13,7 +13,8 @@ model that produced them.
 - Project switcher, project-scoped tasks, a file browser with previews, and a
   Git changes panel with colored diffs, staging, and commit
 - Tools that work with every model: shell, file read/write, patch, file search,
-  document creation, web fetch/search, task plan, and computer use
+  document creation, web fetch/search, task plan, computer use, and browser
+  control (page reading, indexed actions, navigation, and screenshot OCR)
 - Approval prompts, per-task “always allow”, sandbox modes, network control
 - Message queueing while a response is streaming, attachments, and inline
   image/file previews
@@ -23,8 +24,8 @@ model that produced them.
   `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`,
   `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/rewind`,
   `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
-  `/providers`, `/models`, `/skills`,
-  `/plugins`, `/mcp`, `/remote`, `/todos`, `/help`
+  `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`,
+  `/browser`, `/todos`, `/help`
 - Skills, plugin bundles, and stdio MCP servers
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend

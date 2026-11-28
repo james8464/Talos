@@ -521,6 +521,7 @@ private struct ToolsSettingsView: View {
                 Toggle("Shell commands", isOn: $settings.enableShell)
                 Toggle("File reads and edits", isOn: $settings.enableFileEdits)
                 Toggle("Computer use", isOn: $settings.enableComputerUse)
+                Toggle("Browser control", isOn: $settings.enableBrowser)
                 Toggle("Web fetch and search", isOn: $settings.enableWeb)
                 Toggle("Task plans", isOn: $settings.enablePlan)
                 Text("These tools are provided by Talos and work with every model. The sandbox applies to shell and file tools.")

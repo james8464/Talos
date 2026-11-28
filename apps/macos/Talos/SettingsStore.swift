@@ -55,6 +55,7 @@ final class SettingsStore: ObservableObject {
     @Published var enableFileEdits: Bool { didSet { defaults.set(enableFileEdits, forKey: "enableFileEdits") } }
     @Published var enableComputerUse: Bool { didSet { defaults.set(enableComputerUse, forKey: "enableComputerUse") } }
     @Published var enableWeb: Bool { didSet { defaults.set(enableWeb, forKey: "enableWeb") } }
+    @Published var enableBrowser: Bool { didSet { defaults.set(enableBrowser, forKey: "enableBrowser") } }
     @Published var enablePlan: Bool { didSet { defaults.set(enablePlan, forKey: "enablePlan") } }
 
     @Published var appearance: AppearanceMode {
@@ -104,6 +105,7 @@ final class SettingsStore: ObservableObject {
         enableFileEdits = defaults.object(forKey: "enableFileEdits") as? Bool ?? true
         enableComputerUse = defaults.object(forKey: "enableComputerUse") as? Bool ?? true
         enableWeb = defaults.object(forKey: "enableWeb") as? Bool ?? true
+        enableBrowser = defaults.object(forKey: "enableBrowser") as? Bool ?? true
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
 
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system

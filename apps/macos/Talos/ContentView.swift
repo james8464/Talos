@@ -1078,6 +1078,7 @@ private struct ToolCard: View {
         case "apply_patch": return "doc.badge.gearshape"
         case "computer": return "cursorarrow.rays"
         case "web_fetch", "web_search": return "safari"
+        case "browser": return "globe"
         case "view_image": return "photo"
         case "update_plan": return "checklist"
         default: return "wrench.and.screwdriver"
@@ -1272,6 +1273,7 @@ private struct Inspector: View {
                 toolRow("Shell", symbol: "terminal", enabled: settings.enableShell)
                 toolRow("File edits", symbol: "doc.badge.gearshape", enabled: settings.enableFileEdits)
                 toolRow("Computer use", symbol: "cursorarrow.rays", enabled: settings.enableComputerUse)
+                toolRow("Browser", symbol: "globe", enabled: settings.enableBrowser)
                 toolRow("Web", symbol: "safari", enabled: settings.enableWeb)
                 toolRow("Plan", symbol: "checklist", enabled: settings.enablePlan)
                 LabeledContent("Workspace") {

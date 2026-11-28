@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0358BE42AA67F81EF744796C /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */; };
+		15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B85C1FB17725B76F534C9F /* Browser.swift */; };
 		15F2A611B24AC0D4E15BBB04 /* Plugins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */; };
 		2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88120A756923F2A3457A372B /* Skills.swift */; };
 		2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1A617E407672D5729425D2 /* Keychain.swift */; };
@@ -62,6 +63,7 @@
 		C0DA27C786B558AC4F245F39 /* Brand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brand.swift; sourceTree = "<group>"; };
 		C7B210FBD6286CFA7711C157 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBrowser.swift; sourceTree = "<group>"; };
+		E7B85C1FB17725B76F534C9F /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
 		EB1A617E407672D5729425D2 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		F062B95637FEC6883E592D35 /* ProviderEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderEditor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -80,6 +82,7 @@
 			children = (
 				C09A4D0139081FED1D948312 /* AppModel.swift */,
 				C0DA27C786B558AC4F245F39 /* Brand.swift */,
+				E7B85C1FB17725B76F534C9F /* Browser.swift */,
 				AD1122852660CD8181149806 /* ContentView.swift */,
 				5952B2988ACA2B10007C9244 /* Git.swift */,
 				9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */,
@@ -194,6 +197,7 @@
 			files = (
 				2D8A0471734DB5FDB9BC3292 /* AppModel.swift in Sources */,
 				D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */,
+				15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
 				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,
 				974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */,
