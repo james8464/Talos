@@ -1347,7 +1347,7 @@ private struct ComposerView: View {
                     )
                 }
 
-                TextField("Ask Talos to build, fix, or explain…", text: $draft, axis: .vertical)
+                TextField("Ask Talos anything…", text: $draft, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.body)
                     .lineLimit(1...12)
@@ -2306,7 +2306,7 @@ private struct EmptyTask: View {
                 }
                 .frame(width: 52, height: 52)
 
-                Text("What should we build?")
+                Text("What would you like to do?")
                     .font(.system(.largeTitle, design: .rounded).weight(.semibold))
 
                 Text("Talos gives any model real tools on this Mac: shell, a persistent terminal, files, patches, browser, LSP, MCP, subagents, and the desktop.")

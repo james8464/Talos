@@ -45,6 +45,11 @@ applicable to a single-user, local-first macOS model client.
   mappings, an optional Option-key gate, and keyboard/menu equivalents. Live
   verification: left/right switched tasks, up opened Quick Switch, and down
   toggled the inspector.
+- Completed an inclusion review across Arabic/Hebrew/Chinese/Japanese/emoji/
+  combining-accent content, long unbroken titles, mixed-script composer input,
+  Reduce Motion/Transparency, Increase Contrast, RTL, and VoiceOver. Removed
+  build-assumptive welcome/composer wording. Recorded in
+  [`INCLUSION_AUDIT.md`](INCLUSION_AUDIT.md).
 - Hardened the MCP web view: nonpersistent store, main-frame-only bridge,
   same-origin iframe sandboxing, blocked file/data/javascript navigation,
   external links only in the browser, no downloads or automatic windows, media
@@ -72,7 +77,7 @@ applicable to a single-user, local-first macOS model client.
 | Icons | Use SF Symbols consistently | ✅ | SF Symbols throughout, consistent weights and scales |
 | Images | Show meaningful image content, provide alternatives | ✅ | Image attachments render thumbnails; filenames serve as textual alternatives |
 | Immersive experiences | Spatial/immersive UI | ➖ | Not a spatial app |
-| Inclusion | Avoid assumptions and stereotypes | 🟡 | Plain, neutral language and no inferred user traits; no formal diverse-user study |
+| Inclusion | Avoid assumptions and stereotypes | ✅ | Removed build-assumptive wording (“What would you like to do?”, “Ask Talos anything…”); verified Arabic, Hebrew, Chinese, Japanese, emoji, combining accents, long unbroken titles, mixed-script composer input, RTL, Reduce Motion/Transparency, Increase Contrast, and VoiceOver labels. UI strings remain English-only; structured review, not a formal external study. See `INCLUSION_AUDIT.md` |
 | Layout | Resizable layouts, comfortable density, margins | ✅ | NavigationSplitView, resizable window (min 900×600), 24–32 pt content margins, 760 pt transcript measure |
 | Materials | Use materials purposefully and respect Reduce Transparency | ✅ | Materials used for chrome/status; solid fallback when Reduce Transparency is on |
 | Motion | Purposeful, optional motion | ✅ | Motion limited to scroll/collapse/status; skipped under Reduce Motion |

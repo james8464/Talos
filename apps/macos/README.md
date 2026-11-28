@@ -132,7 +132,9 @@ remaining partial items.
 
 VoiceOver labels are audited with `make ax-audit`, and the spoken walkthrough
 of the main window, Settings, and an MCP app is recorded in
-[`VOICEOVER_AUDIT.md`](../../VOICEOVER_AUDIT.md).
+[`VOICEOVER_AUDIT.md`](../../VOICEOVER_AUDIT.md). Multilingual, long-content,
+and accessibility-setting review is in
+[`INCLUSION_AUDIT.md`](../../INCLUSION_AUDIT.md).
 
 To verify right-to-left layout, launch with
 `TALOS_LAYOUT_DIRECTION=rtl` (or `ltr`) to force the direction without changing
