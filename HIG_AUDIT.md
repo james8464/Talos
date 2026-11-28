@@ -35,6 +35,10 @@ applicable to a single-user, local-first macOS model client.
   with open, reveal, remove, clear, missing-file handling, and relative dates.
 - Replaced the custom usage heatmap with Swift Charts: labeled axes, an average
   rule, peak/average context, and an accessibility description.
+- Hardened the MCP web view: nonpersistent store, main-frame-only bridge,
+  same-origin iframe sandboxing, blocked file/data/javascript navigation,
+  external links only in the browser, no downloads or automatic windows, media
+  user-action requirements, accessible web-view label, and loading/error states.
 - Added searchable Settings and image/PDF attachment thumbnails.
 
 ## Design fundamentals
@@ -108,7 +112,7 @@ applicable to a single-user, local-first macOS model client.
 | Charts | ✅ | Settings → Usage uses the Swift Charts framework with `BarMark`, `RuleMark`, axis formatting, and accessible marks |
 | Image views | ✅ | Attachment thumbnails and image previews preserve aspect ratio |
 | Text views | ✅ | Transcript uses selectable text with semantic styles |
-| Web views | 🟡 | MCP apps use a sandboxed WKWebView with a tool bridge |
+| Web views | ✅ | MCP apps run in a nonpersistent WKWebView with a main-frame-only bridge, per-server tool scoping, iframe sandboxing without `allow-same-origin`, blocked file/data/javascript navigation, external opens only for http(s)/mailto, no downloads or automatic windows, user-action media, an AX label, and loading/error states. Live audit app proved bridge success, iframe isolation, and blocked file navigation |
 
 ### Layout and organization
 

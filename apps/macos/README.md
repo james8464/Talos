@@ -136,6 +136,15 @@ with a rebuild action. Task deletion goes through the window UndoManager, so
 ⌘Z restores a deleted task and ⇧⌘Z removes it again. File > New Window
 (⇧⌘N) opens another standard window over the same task store.
 
+## MCP app sandbox
+
+MCP apps run in a `WKWebView` with a nonpersistent data store and a
+main-frame-only `talos` bridge. Tool calls are restricted to the app's server,
+same-origin iframes are re-sandboxed without `allow-same-origin`, file/data/
+javascript navigation is blocked, http(s)/mailto links open in the browser, and
+downloads, automatic windows, AirPlay, and fullscreen are disabled. The header
+labels the view as sandboxed, and loading/error states are explicit.
+
 ## Usage charts
 
 Settings → Usage renders the last 12 weeks of tokens with Swift Charts: labeled
