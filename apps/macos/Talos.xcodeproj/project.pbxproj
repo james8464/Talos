@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0358BE42AA67F81EF744796C /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */; };
+		076F808FEA9D6F814F74091B /* RecentDocuments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B60B628401DD1C3EF24B9D /* RecentDocuments.swift */; };
 		097751808748B85CF6F8E7AC /* Profiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD45CF04EACBD4E18E45E631 /* Profiles.swift */; };
 		15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B85C1FB17725B76F534C9F /* Browser.swift */; };
 		15F2A611B24AC0D4E15BBB04 /* Plugins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */; };
@@ -57,6 +58,7 @@
 		A70F07D70B95F893AFCD86B2 /* DiagnosticsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346734DE5EB28B6B1ED54671 /* DiagnosticsPanel.swift */; };
 		A77212AE158D591E2C7A23E0 /* OpenCodeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */; };
 		AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D44A0432C25F6647A1BE45 /* FanOut.swift */; };
+		B1D53771A35A9B495495D491 /* RecentDocumentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66AEC5CC4308B071980B6F47 /* RecentDocumentsView.swift */; };
 		B4378BD8385BB6D9F453D8D1 /* TalosMobileApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08CE26F73E0FB579C380729 /* TalosMobileApp.swift */; };
 		B5FB8F8CBAA739DBFACE35A3 /* WorktreePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B196A39265E01E042AADBA90 /* WorktreePanel.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
@@ -119,7 +121,9 @@
 		62BDCF0B9C27A5A5F360BBCB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6301A0926D7044DADE1CB7C2 /* Talos.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Talos.icns; sourceTree = "<group>"; };
 		6331618A52B825AABC1DC5EC /* AppServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServer.swift; sourceTree = "<group>"; };
+		63B60B628401DD1C3EF24B9D /* RecentDocuments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDocuments.swift; sourceTree = "<group>"; };
 		663E1E4E42478C07BD4DC2D2 /* MCPAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPAppView.swift; sourceTree = "<group>"; };
+		66AEC5CC4308B071980B6F47 /* RecentDocumentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDocumentsView.swift; sourceTree = "<group>"; };
 		673871726683A02E29B248D2 /* TalosNativeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosNativeHost.swift; sourceTree = "<group>"; };
 		6969EEA6748F0E53FBB946C5 /* ProviderTokenCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTokenCounter.swift; sourceTree = "<group>"; };
 		6B59F37CA3AD3F5ECB4997C3 /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
@@ -251,6 +255,8 @@
 				F062B95637FEC6883E592D35 /* ProviderEditor.swift */,
 				70913AB772F308657E509F42 /* Providers.swift */,
 				6969EEA6748F0E53FBB946C5 /* ProviderTokenCounter.swift */,
+				63B60B628401DD1C3EF24B9D /* RecentDocuments.swift */,
+				66AEC5CC4308B071980B6F47 /* RecentDocumentsView.swift */,
 				2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */,
 				23521B5CDB48331307D2ED62 /* Reviewer.swift */,
 				6B59F37CA3AD3F5ECB4997C3 /* SemanticIndex.swift */,
@@ -599,6 +605,8 @@
 				E5879A7092FDF72C69872296 /* ProviderEditor.swift in Sources */,
 				83E884CA68D2B9D51226A3C2 /* ProviderTokenCounter.swift in Sources */,
 				59EFBCD216961E06356D37D5 /* Providers.swift in Sources */,
+				076F808FEA9D6F814F74091B /* RecentDocuments.swift in Sources */,
+				B1D53771A35A9B495495D491 /* RecentDocumentsView.swift in Sources */,
 				4BB116C270D7CB0DC5499BD5 /* RemoteServer.swift in Sources */,
 				31AB57F45839C834725A3158 /* Reviewer.swift in Sources */,
 				E07E7792E08FBBF1EA778B1B /* SemanticIndex.swift in Sources */,

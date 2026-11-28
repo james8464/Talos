@@ -85,6 +85,7 @@ final class AppModel: ObservableObject {
     @Published var showQuickSwitcher = false
     @Published var deleteCandidate: Session?
     @Published var showHelp = false
+    @Published var showRecentDocuments = false
     @Published var showArchived = false
     @Published var renameTarget: Session?
     @Published var pendingDraft: String?
@@ -113,6 +114,7 @@ final class AppModel: ObservableObject {
     let plugins = PluginStore()
     let skills = SkillStore()
     let hooks = HookStore()
+    let recentDocuments = RecentDocumentsStore()
     let profiles = ProfileStore()
     let memories = MemoryStore()
     let chronicle = ChronicleStore()

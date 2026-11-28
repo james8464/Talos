@@ -30,6 +30,8 @@ model that produced them.
   plus Chrome DevTools Protocol control with DOM selectors and JavaScript
 - On-device semantic code search (`search_codebase`) using Apple sentence
   embeddings plus lexical ranking, with a cached, incrementally rebuilt index
+- Recent documents with File > Open Recent and a browser that persists files
+  you attach, preview, or open
 - A headless `talos` CLI that drives the app server: sessions, streamed
   prompts, stop, and approvals, with JSON output for scripts
 - Language-server diagnostics, symbols, quick fixes and refactors, and

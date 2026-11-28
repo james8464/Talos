@@ -157,6 +157,11 @@ struct ContentView: View {
             .environmentObject(model.settings)
             .environment(\.layoutDirection, resolvedLayoutDirection)
         }
+        .sheet(isPresented: $model.showRecentDocuments) {
+            RecentDocumentsView()
+                .environmentObject(model)
+                .environment(\.layoutDirection, resolvedLayoutDirection)
+        }
         .sheet(isPresented: $model.showHelp) {
             HelpView()
                 .environmentObject(model)
@@ -1450,6 +1455,7 @@ private struct ComposerView: View {
                 let files = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
                 let new = files.filter { !attachments.contains($0) }
                 attachments.append(contentsOf: new)
+                for url in new { model.recentDocuments.record(url) }
                 return !new.isEmpty
             } isTargeted: { value in
                 dropTargeted = value
@@ -1482,6 +1488,7 @@ private struct ComposerView: View {
         ) { result in
             if case .success(let urls) = result {
                 attachments.append(contentsOf: urls)
+                for url in urls { model.recentDocuments.record(url) }
             }
         }
         .onAppear {

@@ -31,6 +31,8 @@ applicable to a single-user, local-first macOS model client.
   tool output stays left-to-right for code and paths.
 - Added persisted sidebar customization: group by date, project, or none, with
   preview and message-count toggles in the sidebar menu and Settings.
+- Added a persisted recent-documents store, File > Open Recent, and a browser
+  with open, reveal, remove, clear, missing-file handling, and relative dates.
 - Added searchable Settings and image/PDF attachment thumbnails.
 
 ## Design fundamentals
@@ -74,7 +76,7 @@ applicable to a single-user, local-first macOS model client.
 | Drag and drop | Support drag and drop plus an alternative | ✅ | Composer accepts dropped files; paperclip picker remains |
 | Entering data | Clear fields, defaults, validation | ✅ | Composer, settings forms, labeled fields, inline errors |
 | Feedback | Accessible status feedback, confirm significant actions | ✅ | Streaming bar, tool status labels, sidebar running indicator, delete confirmation |
-| File management | Open/save/attach files predictably | 🟡 | Attachments, projects, and document creation; no recent-documents browser |
+| File management | Open/save/attach files predictably | ✅ | Attachments, projects, document creation, and a persisted recent-documents store with File > Open Recent, a browser, missing-file handling, reveal, remove, and clear |
 | Going full screen | Support standard full screen | ✅ | Standard resizable window and system full-screen control |
 | Launching | Show content immediately, avoid startup alerts | ✅ | Welcome/empty states render immediately; errors are inline/alerts after actions |
 | Live-viewing apps | Live media viewing | ➖ | Not a media app |
@@ -256,5 +258,4 @@ applicable to a single-user, local-first macOS model client.
 ## Remaining partial items
 
 - VoiceOver has structural labels but no full spoken walkthrough.
-- No recent-documents browser.
 - Charts are a custom heatmap rather than the Charts framework.

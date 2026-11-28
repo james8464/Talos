@@ -10,6 +10,36 @@ final class WindowBridge {
     }
 }
 
+struct RecentDocumentsCommands: Commands {
+    @ObservedObject var store: RecentDocumentsStore
+    let model: AppModel
+
+    var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Menu("Open Recent") {
+                if store.items.isEmpty {
+                    Text("No Recent Documents")
+                } else {
+                    ForEach(store.items.prefix(12)) { document in
+                        Button(document.name) {
+                            NSWorkspace.shared.open(document.url)
+                            store.record(document.url)
+                        }
+                    }
+                    Divider()
+                }
+                Button("Browse Recent Documents…") {
+                    model.showRecentDocuments = true
+                }
+                Button("Clear Menu") {
+                    store.clear()
+                }
+                .disabled(store.items.isEmpty)
+            }
+        }
+    }
+}
+
 struct NewWindowCommands: Commands {
     let model: AppModel
 
@@ -19,6 +49,8 @@ struct NewWindowCommands: Commands {
                 .keyboardShortcut("n", modifiers: .command)
             Button("New Window") { WindowBridge.shared.openMainWindow() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
+            Button("Browse Project Files…") { model.showProjectBrowser = true }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
         }
     }
 }
@@ -42,6 +74,7 @@ struct TalosApp: App {
             .environmentObject(model)
             .environmentObject(model.settings)
             .environmentObject(model.usage)
+            .environmentObject(model.recentDocuments)
             .tint(Brand.bronze)
             .frame(minWidth: 900, minHeight: 600)
             .onAppear {
@@ -54,18 +87,7 @@ struct TalosApp: App {
 
     var body: some Scene {
         WindowGroup(id: "main") {
-            ContentView()
-                .environmentObject(model)
-                .environmentObject(model.settings)
-                .environmentObject(model.usage)
-                .tint(Brand.bronze)
-                .frame(minWidth: 900, minHeight: 600)
-                .onAppear {
-                    if let icon = Brand.icon {
-                        NSApp.applicationIconImage = icon
-                    }
-                    menuBar.configure(model: model, settings: model.settings)
-                }
+            rootContent
         }
         WindowGroup("Talos", id: "secondary") {
             rootContent
@@ -74,6 +96,7 @@ struct TalosApp: App {
         .windowToolbarStyle(.unified)
         .commands {
             NewWindowCommands(model: model)
+            RecentDocumentsCommands(store: model.recentDocuments, model: model)
             CommandMenu("Task") {
                 Button("Quick Switch…") { model.showQuickSwitcher = true }
                     .keyboardShortcut("k", modifiers: .command)

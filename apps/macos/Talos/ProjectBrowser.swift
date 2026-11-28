@@ -74,6 +74,11 @@ struct ProjectBrowserView: View {
             }
         }
         .onAppear(perform: refresh)
+        .onChange(of: selected) { _, url in
+            if let url, !url.hasDirectoryPath {
+                model.recentDocuments.record(url)
+            }
+        }
         .frame(minWidth: 820, minHeight: 540)
     }
 

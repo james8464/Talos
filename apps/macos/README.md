@@ -136,6 +136,13 @@ with a rebuild action. Task deletion goes through the window UndoManager, so
 ⌘Z restores a deleted task and ⇧⌘Z removes it again. File > New Window
 (⇧⌘N) opens another standard window over the same task store.
 
+## Recent documents
+
+Files you attach, preview in the project browser, or open through Talos are
+recorded in a persisted recent-documents list. File > Open Recent lists the
+latest entries and opens the browser, where you can open, reveal, remove, or
+clear them. Missing files stay visible with a Missing badge and Open disabled.
+
 ## Semantic code search
 
 `search_codebase` indexes the workspace with Apple's on-device sentence
