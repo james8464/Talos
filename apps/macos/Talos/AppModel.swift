@@ -1863,9 +1863,14 @@ final class AppModel: ObservableObject {
                     )
                 }
                 if message.role == .user, !message.attachments.isEmpty {
+                    var text = message.text + "\n\nAttached files:\n" + message.attachments.map { "- \($0)" }.joined(separator: "\n")
+                    let pdfText = PDFLoader.extractedText(paths: message.attachments)
+                    if !pdfText.isEmpty {
+                        text += "\n\nPDF text:\n" + pdfText
+                    }
                     return ChatMessage(
                         role: .user,
-                        text: message.text + "\n\nAttached files:\n" + message.attachments.map { "- \($0)" }.joined(separator: "\n"),
+                        text: text,
                         attachments: message.attachments
                     )
                 }

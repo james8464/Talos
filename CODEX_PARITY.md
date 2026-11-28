@@ -66,7 +66,8 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
 | OpenCode Go | all advertised models with a chat-completions, Responses, or Anthropic Messages endpoint are routed; other transports are filtered out |
 | Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
-| Images | attachments and tool screenshots are sent as native image blocks to models identified as vision-capable; PDF input is not yet supported |
+| Images | attachments and tool screenshots are sent as native image blocks to models identified as vision-capable |
+| PDF input | PDF attachments are text-extracted for every model and rendered page-by-page for vision models (8 pages, 16-image cap); image-only PDFs work through page rendering |
 | Reasoning | provider-specific options only where the transport exposes them |
 | Usage | provider-reported where available, otherwise clearly marked estimated |
 | Sandbox | shell/file enforcement via `sandbox-exec`; no managed network proxy/domain allowlist |
@@ -85,7 +86,7 @@ These are Codex features Talos does not claim to have:
 - Plugin marketplaces and remote plugin catalogs
 - Dictation/voice and menu-bar mode
 - Exact tokenizer-based accounting; Talos uses reported counts plus estimates
-- PDF input and image input for uncatalogued vision models
+- Image input for uncatalogued vision models
 - Automatic retry/edit/fork of individual messages
 
 The remaining list is intentionally explicit. Talos labels unimplemented tools

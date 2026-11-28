@@ -47,6 +47,7 @@
 		D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DA27C786B558AC4F245F39 /* Brand.swift */; };
 		D142E21A2891D62B7C9C2750 /* CloudTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34CE21CD9645365CB1B2156 /* CloudTasks.swift */; };
 		D343B0F24794835180D04C31 /* OpenCodeAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A2EC1118F5104E0CA50DAA /* OpenCodeAuth.swift */; };
+		DA085E19377ECC10955BA207 /* PDFLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC986894EC2D21386D7A4EED /* PDFLoader.swift */; };
 		DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */; };
 		E1E61F33240469D831267B5C /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE40BA2F2E62D3115E531DD /* UsageStore.swift */; };
 		E5879A7092FDF72C69872296 /* ProviderEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F062B95637FEC6883E592D35 /* ProviderEditor.swift */; };
@@ -96,6 +97,7 @@
 		E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPSamplingView.swift; sourceTree = "<group>"; };
 		E7B85C1FB17725B76F534C9F /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
 		EB1A617E407672D5729425D2 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+		EC986894EC2D21386D7A4EED /* PDFLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFLoader.swift; sourceTree = "<group>"; };
 		F062B95637FEC6883E592D35 /* ProviderEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderEditor.swift; sourceTree = "<group>"; };
 		F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationSettings.swift; sourceTree = "<group>"; };
 		F34CE21CD9645365CB1B2156 /* CloudTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTasks.swift; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 				77222638AE45AC6E779D2AFB /* OllamaClient.swift */,
 				93A2EC1118F5104E0CA50DAA /* OpenCodeAuth.swift */,
 				8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */,
+				EC986894EC2D21386D7A4EED /* PDFLoader.swift */,
 				420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */,
 				9BE7EF9CF0A2D361264A1F30 /* PolicySettings.swift */,
 				DD45CF04EACBD4E18E45E631 /* Profiles.swift */,
@@ -271,6 +274,7 @@
 				4B326AB0712C6A431D7E95F3 /* OllamaClient.swift in Sources */,
 				D343B0F24794835180D04C31 /* OpenCodeAuth.swift in Sources */,
 				A77212AE158D591E2C7A23E0 /* OpenCodeCatalog.swift in Sources */,
+				DA085E19377ECC10955BA207 /* PDFLoader.swift in Sources */,
 				15F2A611B24AC0D4E15BBB04 /* Plugins.swift in Sources */,
 				9C3DFE20BF786F021F232AF6 /* PolicySettings.swift in Sources */,
 				097751808748B85CF6F8E7AC /* Profiles.swift in Sources */,

@@ -837,7 +837,9 @@ private struct AttachmentPill: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            if let image = NSImage(contentsOf: url) {
+            if url.pathExtension.lowercased() == "pdf" {
+                Image(systemName: "doc.richtext")
+            } else if let image = NSImage(contentsOf: url) {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFill()
