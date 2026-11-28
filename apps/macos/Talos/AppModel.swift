@@ -732,7 +732,23 @@ final class AppModel: ObservableObject {
         let messages = [system] + session.messages.filter {
             $0.role != .system && !($0.role == .assistant && $0.text.isEmpty)
         }
-        return ContextUsage(used: TokenEstimator.estimate(messages), limit: contextLimit)
+        let used = exactTokenCount(messages) ?? TokenEstimator.estimate(messages)
+        return ContextUsage(used: used, limit: contextLimit)
+    }
+
+    var tokenizerLabel: String {
+        TokenCounter.label(provider: choice.provider.rawValue, model: choice.id)
+    }
+
+    private func exactTokenCount(_ messages: [ChatMessage]) -> Int? {
+        guard messages.allSatisfy({ $0.attachments.isEmpty && $0.attachmentPath == nil }) else {
+            return nil
+        }
+        return TokenCounter.count(
+            messages.map(\.text),
+            provider: choice.provider.rawValue,
+            model: choice.id
+        )
     }
 
     var contextLabel: String {
@@ -1479,16 +1495,20 @@ final class AppModel: ObservableObject {
 
     private func contextSummary() -> String {
         let usage = contextUsage
-        let messageTokens = TokenEstimator.estimate(
-            (selected?.messages ?? []).filter { $0.role != .system }
-        )
-        let systemTokens = TokenEstimator.estimate(systemPrompt())
+        let history = (selected?.messages ?? []).filter { $0.role != .system }
+        let messageTokens = exactTokenCount(history) ?? TokenEstimator.estimate(history)
+        let systemTokens = TokenCounter.count(
+            systemPrompt(),
+            provider: choice.provider.rawValue,
+            model: choice.id
+        ) ?? TokenEstimator.estimate(systemPrompt())
         var lines = [
             "Context: \(usage.label)",
             "Messages: \(TokenEstimator.format(messageTokens)) tokens",
             "System and tools: \(TokenEstimator.format(systemTokens)) tokens",
             "Skills: \(skills.enabled.count)",
             "MCP tools: \(mcpTools.count)",
+            "Token counting: \(tokenizerLabel)",
         ]
         if let fraction = usage.fraction {
             lines.append("Window used: \(Int(fraction * 100))%")
@@ -1691,7 +1711,9 @@ final class AppModel: ObservableObject {
     private func usageSummary() -> String {
         guard let id = selectedID else { return "No task selected." }
         let sessionUsage = usage.tokens(for: id)
-        let qualifier = sessionUsage.estimated ? "estimated" : "reported"
+        let qualifier = sessionUsage.estimated
+            ? "estimated"
+            : (sessionUsage.tokenizer == true ? "tokenized" : "reported")
         return """
         This task: \(TokenEstimator.format(sessionUsage.total)) tokens (\(TokenEstimator.format(sessionUsage.prompt)) prompt, \(TokenEstimator.format(sessionUsage.completion)) completion, \(qualifier)).
         All tasks: \(TokenEstimator.format(usage.totalTokens)) tokens.
@@ -1990,7 +2012,28 @@ final class AppModel: ObservableObject {
                 reportedUsage = usage
             }
         }
-        return (raw, reportedUsage ?? TokenEstimator.estimatedUsage(prompt: messages, completion: raw))
+        if let reportedUsage {
+            return (raw, reportedUsage)
+        }
+        if messages.allSatisfy({ $0.attachments.isEmpty && $0.attachmentPath == nil }),
+           let promptCount = TokenCounter.count(
+               messages.map(\.text),
+               provider: choice.provider.rawValue,
+               model: choice.id
+           ),
+           let completionCount = TokenCounter.count(
+               raw,
+               provider: choice.provider.rawValue,
+               model: choice.id
+           ) {
+            return (raw, TokenUsage(
+                prompt: promptCount,
+                completion: completionCount,
+                estimated: false,
+                tokenizer: true
+            ))
+        }
+        return (raw, TokenEstimator.estimatedUsage(prompt: messages, completion: raw))
     }
 
     private func contextTokens(for session: Session) -> Int {

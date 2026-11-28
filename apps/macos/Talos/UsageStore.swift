@@ -8,6 +8,7 @@ struct UsageRecord: Codable, Identifiable, Equatable {
     var promptTokens: Int
     var completionTokens: Int
     var estimated: Bool
+    var tokenizer: Bool? = nil
     var sessionID: UUID?
 
     var total: Int { promptTokens + completionTokens }
@@ -39,6 +40,7 @@ final class UsageStore: ObservableObject {
             promptTokens: usage.prompt,
             completionTokens: usage.completion,
             estimated: usage.estimated,
+            tokenizer: usage.tokenizer,
             sessionID: sessionID
         ))
         prune()
@@ -52,7 +54,8 @@ final class UsageStore: ObservableObject {
                 TokenUsage(
                     prompt: total.prompt + record.promptTokens,
                     completion: total.completion + record.completionTokens,
-                    estimated: total.estimated || record.estimated
+                    estimated: total.estimated || record.estimated,
+                    tokenizer: (total.tokenizer == true || record.tokenizer == true) ? true : nil
                 )
             }
     }

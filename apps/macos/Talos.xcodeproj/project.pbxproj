@@ -11,12 +11,15 @@
 		097751808748B85CF6F8E7AC /* Profiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD45CF04EACBD4E18E45E631 /* Profiles.swift */; };
 		15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B85C1FB17725B76F534C9F /* Browser.swift */; };
 		15F2A611B24AC0D4E15BBB04 /* Plugins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */; };
+		195093A5F69935039358AA9E /* Tokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29816AA9A9DFB0CBFA35EE85 /* Tokenizer.swift */; };
+		1DCE36C2F5449B7246676E63 /* o200k_base.tiktoken in Resources */ = {isa = PBXBuildFile; fileRef = E22046A9DBAD6D63D36B57AD /* o200k_base.tiktoken */; };
 		2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88120A756923F2A3457A372B /* Skills.swift */; };
 		2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1A617E407672D5729425D2 /* Keychain.swift */; };
 		2D8A0471734DB5FDB9BC3292 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09A4D0139081FED1D948312 /* AppModel.swift */; };
 		31AB57F45839C834725A3158 /* Reviewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23521B5CDB48331307D2ED62 /* Reviewer.swift */; };
 		34BAFB83932D74DE05435DAB /* ProjectBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */; };
 		35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D2AC40CFA47F5E6168180BB /* TalosApp.swift */; };
+		3B5D0E8FD1D267DDA1CA0AB4 /* cl100k_base.tiktoken in Resources */ = {isa = PBXBuildFile; fileRef = 441D6C240908411954FA7BFF /* cl100k_base.tiktoken */; };
 		3F2A669C71F9ABF065D9BA97 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29612E0C17BE1D0D3A380FCA /* Models.swift */; };
 		456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1122852660CD8181149806 /* ContentView.swift */; };
 		4B326AB0712C6A431D7E95F3 /* OllamaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77222638AE45AC6E779D2AFB /* OllamaClient.swift */; };
@@ -61,12 +64,14 @@
 		218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTasksSettings.swift; sourceTree = "<group>"; };
 		23521B5CDB48331307D2ED62 /* Reviewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reviewer.swift; sourceTree = "<group>"; };
 		29612E0C17BE1D0D3A380FCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		29816AA9A9DFB0CBFA35EE85 /* Tokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokenizer.swift; sourceTree = "<group>"; };
 		2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
 		2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPersistence.swift; sourceTree = "<group>"; };
 		3C2A35D82393F85F067D06A9 /* Subagent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subagent.swift; sourceTree = "<group>"; };
 		3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPElicitationView.swift; sourceTree = "<group>"; };
 		41F9D7D9C4D566C212125A12 /* ManagedPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedPolicy.swift; sourceTree = "<group>"; };
 		420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plugins.swift; sourceTree = "<group>"; };
+		441D6C240908411954FA7BFF /* cl100k_base.tiktoken */ = {isa = PBXFileReference; path = cl100k_base.tiktoken; sourceTree = "<group>"; };
 		57E3AB66594CCF5305513D55 /* Projects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Projects.swift; sourceTree = "<group>"; };
 		5952B2988ACA2B10007C9244 /* Git.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Git.swift; sourceTree = "<group>"; };
 		5C064999B0D1F92F7B32F537 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
@@ -96,6 +101,7 @@
 		DA482A89BCEA5B1F988307C3 /* MCPResourceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPResourceView.swift; sourceTree = "<group>"; };
 		DD45CF04EACBD4E18E45E631 /* Profiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profiles.swift; sourceTree = "<group>"; };
 		E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPSamplingView.swift; sourceTree = "<group>"; };
+		E22046A9DBAD6D63D36B57AD /* o200k_base.tiktoken */ = {isa = PBXFileReference; path = o200k_base.tiktoken; sourceTree = "<group>"; };
 		E7B85C1FB17725B76F534C9F /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
 		EB1A617E407672D5729425D2 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		EC986894EC2D21386D7A4EED /* PDFLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFLoader.swift; sourceTree = "<group>"; };
@@ -161,6 +167,7 @@
 				88120A756923F2A3457A372B /* Skills.swift */,
 				3C2A35D82393F85F067D06A9 /* Subagent.swift */,
 				5D2AC40CFA47F5E6168180BB /* TalosApp.swift */,
+				29816AA9A9DFB0CBFA35EE85 /* Tokenizer.swift */,
 				01B5B87B005EEE76F31442B1 /* Tools.swift */,
 				BDE40BA2F2E62D3115E531DD /* UsageStore.swift */,
 				B196A39265E01E042AADBA90 /* WorktreePanel.swift */,
@@ -172,6 +179,8 @@
 		D252064F1F9BC1936477F46D /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				441D6C240908411954FA7BFF /* cl100k_base.tiktoken */,
+				E22046A9DBAD6D63D36B57AD /* o200k_base.tiktoken */,
 				6301A0926D7044DADE1CB7C2 /* Talos.icns */,
 			);
 			path = Resources;
@@ -242,6 +251,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */,
+				3B5D0E8FD1D267DDA1CA0AB4 /* cl100k_base.tiktoken in Resources */,
+				1DCE36C2F5449B7246676E63 /* o200k_base.tiktoken in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,6 +305,7 @@
 				2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */,
 				4DC5F71A4B9EEA16C3F3BC19 /* Subagent.swift in Sources */,
 				35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */,
+				195093A5F69935039358AA9E /* Tokenizer.swift in Sources */,
 				8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */,
 				E1E61F33240469D831267B5C /* UsageStore.swift in Sources */,
 				B5FB8F8CBAA739DBFACE35A3 /* WorktreePanel.swift in Sources */,

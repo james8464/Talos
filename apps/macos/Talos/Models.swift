@@ -225,6 +225,7 @@ struct TokenUsage: Codable, Equatable, Sendable {
     var prompt: Int
     var completion: Int
     var estimated: Bool
+    var tokenizer: Bool? = nil
 
     var total: Int { prompt + completion }
 }

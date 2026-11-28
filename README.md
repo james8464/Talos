@@ -35,7 +35,8 @@ model that produced them.
 - Message queueing while a response is streaming, attachments, inline
   image/file previews, native image input for vision models, and PDF input
   through extracted text plus rendered pages
-- Context-window accounting, automatic and manual conversation compaction
+- Context-window accounting with exact cl100k/o200k tokenizers for supported
+  OpenAI models, automatic and manual conversation compaction
 - Token usage history with a 12-week heatmap and per-model totals
 - Slash commands including `/new`, `/clear`, `/compact`, `/stop`, `/retry`,
   `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`,

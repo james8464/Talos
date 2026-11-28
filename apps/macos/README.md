@@ -33,6 +33,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/CDPClient.swift` — Chrome DevTools Protocol client for DOM control and screenshots
 - `Talos/Subagent.swift` — isolated read-only child task loop and report
 - `Talos/PDFLoader.swift` — PDF text extraction and page rendering for vision
+- `Talos/Tokenizer.swift` — bundled cl100k/o200k BPE tokenizers and model mapping
 - `Talos/MCP.swift` — stdio/HTTP MCP, OAuth, and elicitation
 - `Talos/MCPElicitationView.swift` — native form for server-requested input
 - `Talos/MCPSamplingView.swift` — approval sheet for server-initiated sampling

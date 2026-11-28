@@ -1423,6 +1423,7 @@ private struct Inspector: View {
                 LabeledContent("Reasoning", value: model.reasoningTitle)
                 LabeledContent("Vision", value: model.modelCapabilities.supportsVision ? "Images" : "Text only")
                 LabeledContent("Context", value: model.contextUsage.label)
+                LabeledContent("Token counting", value: model.tokenizerLabel)
                 LabeledContent("Speed", value: settings.speed.title)
                 LabeledContent("Endpoint") {
                     Text(model.choice.provider == .local ? "This Mac" : "Cloud")

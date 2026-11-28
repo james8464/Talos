@@ -34,9 +34,9 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Approvals | On-request or never, Allow Once, Always Allow for This Task |
 | Sandbox | Read-only, workspace-write, full access via `sandbox-exec` |
 | Network | Denied by default in sandbox; explicit toggle |
-| Context | Capability/model/override window, live usage meter |
+| Context | Capability/model/override window, live usage meter, exact tokenizer counts for supported families |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
-| Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
+| Usage | Reported provider tokens, exact cl100k/o200k BPE fallback for supported OpenAI/OpenCode GPT families, character estimate elsewhere, 12-week heatmap, per-model totals |
 | Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/policy`, `/cloud`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
 | Nested subagents | Children can delegate again while under an explicit depth limit of 2 (parent → child → grandchild); deeper calls are blocked, every level keeps its own read-only context, and nested delegation is only advertised while allowed |
@@ -86,7 +86,7 @@ These are Codex features Talos does not claim to have:
 - Packaged browser extension with native messaging
 - Plugin marketplaces and remote plugin catalogs
 - Dictation/voice and menu-bar mode
-- Exact tokenizer-based accounting; Talos uses reported counts plus estimates
+- Exact tokenization for Anthropic, Gemini, Ollama, and other non-BPE families
 - Image input for uncatalogued vision models
 - Automatic retry/edit/fork of individual messages
 
