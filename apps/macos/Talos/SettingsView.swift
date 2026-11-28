@@ -154,7 +154,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .remote:
             return ["phone", "remote", "qr", "daemon", "mobile"]
         case .appearance:
-            return ["font", "transcript", "text size", "messages", "notifications", "sound"]
+            return ["font", "transcript", "text size", "messages", "notifications", "sound", "gestures", "trackpad", "swipe"]
         case .usage:
             return ["tokens", "cost", "usage", "audit", "export", "context", "history"]
         case .advanced:
@@ -1334,6 +1334,7 @@ private struct AppearanceSettingsView: View {
                 LabeledContent("Transcript size") {
                     HStack(spacing: 10) {
                         Slider(value: $settings.transcriptFontSize, in: 12...20, step: 1)
+                            .accessibilityLabel("Transcript size")
                         Text(settings.transcriptFontSize, format: .number.precision(.fractionLength(0)))
                             .monospacedDigit()
                             .frame(width: 24, alignment: .trailing)
@@ -1350,12 +1351,39 @@ private struct AppearanceSettingsView: View {
                         Text(mode.title).tag(mode)
                     }
                 }
+                .accessibilityLabel("Group tasks by")
                 Toggle("Show task previews", isOn: $settings.sidebarShowPreviews)
+                    .accessibilityLabel("Show task previews")
                 Toggle("Show message counts", isOn: $settings.sidebarShowCounts)
+                    .accessibilityLabel("Show message counts")
+            }
+
+            Section("Trackpad gestures") {
+                Toggle("Enable custom swipe gestures", isOn: $settings.customGesturesEnabled)
+                    .accessibilityLabel("Enable custom swipe gestures")
+                Toggle("Require the Option key", isOn: $settings.gesturesRequireOption)
+                    .accessibilityLabel("Require the Option key for gestures")
+                    .disabled(!settings.customGesturesEnabled)
+                gesturePicker("Swipe left", selection: $settings.gestureSwipeLeft)
+                    .accessibilityLabel("Swipe left action")
+                    .disabled(!settings.customGesturesEnabled)
+                gesturePicker("Swipe right", selection: $settings.gestureSwipeRight)
+                    .accessibilityLabel("Swipe right action")
+                    .disabled(!settings.customGesturesEnabled)
+                gesturePicker("Swipe up", selection: $settings.gestureSwipeUp)
+                    .accessibilityLabel("Swipe up action")
+                    .disabled(!settings.customGesturesEnabled)
+                gesturePicker("Swipe down", selection: $settings.gestureSwipeDown)
+                    .accessibilityLabel("Swipe down action")
+                    .disabled(!settings.customGesturesEnabled)
+                Text("Custom swipes supplement the keyboard shortcuts; every action remains available from the menu bar. Scrolling is never consumed.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Completion") {
                 Toggle("Play a sound when a task finishes", isOn: $settings.completionSound)
+                    .accessibilityLabel("Play a sound when a task finishes")
                 Toggle("Notify when the app is in the background", isOn: Binding(
                     get: { settings.notifyOnFinish },
                     set: { value in
@@ -1365,6 +1393,7 @@ private struct AppearanceSettingsView: View {
                         }
                     }
                 ))
+                .accessibilityLabel("Notify when the app is in the background")
                 Text("Notifications use the macOS notification center. The app asks for permission the first time you enable them.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -1372,6 +1401,14 @@ private struct AppearanceSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private func gesturePicker(_ title: String, selection: Binding<GestureAction>) -> some View {
+        Picker(title, selection: selection) {
+            ForEach(GestureAction.allCases) { action in
+                Text(action.title).tag(action)
+            }
+        }
     }
 }
 

@@ -115,6 +115,7 @@ final class AppModel: ObservableObject {
     let skills = SkillStore()
     let hooks = HookStore()
     let recentDocuments = RecentDocumentsStore()
+    private var gestureMonitor: TrackpadGestureMonitor?
     let profiles = ProfileStore()
     let memories = MemoryStore()
     let chronicle = ChronicleStore()
@@ -919,6 +920,34 @@ final class AppModel: ObservableObject {
         saveSessions()
         let id = session.id
         Task { await runSessionHooks(.sessionStart, sessionID: id) }
+    }
+
+    func configureGestures() {
+        guard gestureMonitor == nil else { return }
+        gestureMonitor = TrackpadGestureMonitor(settings: settings) { [weak self] action in
+            self?.performGesture(action)
+        }
+    }
+
+    func performGesture(_ action: GestureAction) {
+        switch action {
+        case .none:
+            break
+        case .nextTask:
+            selectAdjacentTask(1)
+        case .previousTask:
+            selectAdjacentTask(-1)
+        case .toggleInspector:
+            showInspector.toggle()
+        case .quickSwitcher:
+            showQuickSwitcher = true
+        case .newTask:
+            newSession()
+        case .stop:
+            stop()
+        case .compact:
+            compactCurrentSession()
+        }
     }
 
     func selectAdjacentTask(_ offset: Int) {

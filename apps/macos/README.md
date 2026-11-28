@@ -115,6 +115,15 @@ window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
 
+## Trackpad gestures
+
+Settings → Appearance → Trackpad gestures can enable optional two-finger swipes
+for next/previous task, Quick Switch, toggle inspector, new task, stop, or
+compact. Each direction is independently configurable, mappings persist in
+`SettingsStore`, an Option-key gate is available, and the events are passed
+through so normal scrolling still works. Every mapped action also has a
+keyboard shortcut and menu command.
+
 ## Interface
 
 The interface is audited against Apple's published Human Interface Guidelines;

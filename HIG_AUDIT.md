@@ -41,6 +41,10 @@ applicable to a single-user, local-first macOS model client.
 - Documented the on-device semantic index end to end in
   [`SEMANTIC_INDEX.md`](SEMANTIC_INDEX.md): data flow, privacy, measured
   performance, fallbacks, and limitations.
+- Added configurable two-finger trackpad gestures with persisted action
+  mappings, an optional Option-key gate, and keyboard/menu equivalents. Live
+  verification: left/right switched tasks, up opened Quick Switch, and down
+  toggled the inspector.
 - Hardened the MCP web view: nonpersistent store, main-frame-only bridge,
   same-origin iframe sandboxing, blocked file/data/javascript navigation,
   external links only in the browser, no downloads or automatic windows, media
@@ -226,7 +230,7 @@ applicable to a single-user, local-first macOS model client.
 | Eyes | ➖ | visionOS input |
 | Focus and selection | ✅ | Composer focus, search focus, keyboard task switching, native selection |
 | Game controls | ➖ | No game input |
-| Gestures | 🟡 | Standard trackpad/window gestures work; no custom gesture surface |
+| Gestures | ✅ | Optional two-finger swipes (left/right/up/down) map to persisted actions: next/previous task, Quick Switch, toggle inspector, new task, stop, compact, or none. Option-key gate available; scrolling is never consumed; every action has a keyboard/menu equivalent. Verified live and with a 10-case recognizer harness |
 | Gyroscope and accelerometer | ➖ | Not applicable |
 | Keyboards | ✅ | Menu shortcuts, ⌘K, ⌘N, ⌘., ⌘[/], ⌘?, standard text editing |
 | Nearby interactions | ➖ | No UWB/NFC interaction |

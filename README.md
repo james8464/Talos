@@ -15,6 +15,8 @@ model that produced them.
   Anthropic Messages models are all routed
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
+- Optional two-finger trackpad gestures for task navigation, Quick Switch, and
+  the inspector, with persisted mappings and an Option-key gate
 - A customizable task-first macOS interface: group tasks by date, project, or
   none; toggle previews and message counts; a ⌘K quick switcher for
   tasks and commands, searchable Settings, a guided welcome screen, a live plan

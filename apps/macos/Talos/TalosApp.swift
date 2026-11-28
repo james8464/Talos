@@ -82,6 +82,7 @@ struct TalosApp: App {
                     NSApp.applicationIconImage = icon
                 }
                 menuBar.configure(model: model, settings: model.settings)
+                model.configureGestures()
             }
     }
 

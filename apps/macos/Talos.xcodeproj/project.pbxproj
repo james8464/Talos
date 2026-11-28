@@ -80,6 +80,7 @@
 		E969804526DB9434B89E8F5B /* ChronicleUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5C48D6CA06EC216DEF823B /* ChronicleUI.swift */; };
 		EF9DE81CD12FB970924CD394 /* RemoteDaemon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6719690E9E7E2989F90E68 /* RemoteDaemon.swift */; };
 		F1AC4D9267F5DBB627D6B457 /* Hooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93B3035FF733F0B8A5C4C32 /* Hooks.swift */; };
+		F1F0D8DD3EE8E91D8D60077D /* TrackpadGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E4D19F8ABA08DFEE17A4992 /* TrackpadGestures.swift */; };
 		FA1A055EABB73A566CF97EEC /* Chronicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181A45AAE1E910EB7D6860D2 /* Chronicle.swift */; };
 		FB543F49EF1BD7D3E5D9A817 /* MemoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A162AA5478775AECD7CD01 /* MemoryStore.swift */; };
 /* End PBXBuildFile section */
@@ -134,6 +135,7 @@
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		78051C8FEB42854A3967C6FF /* RemoteClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteClient.swift; sourceTree = "<group>"; };
 		7DF7DCED466867A6BC71FB24 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		7E4D19F8ABA08DFEE17A4992 /* TrackpadGestures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackpadGestures.swift; sourceTree = "<group>"; };
 		7E5C48D6CA06EC216DEF823B /* ChronicleUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronicleUI.swift; sourceTree = "<group>"; };
 		8438786D61796CA99F3ACF3F /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		847BD0AAE243B78A20C79D30 /* MCP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCP.swift; sourceTree = "<group>"; };
@@ -269,6 +271,7 @@
 				A3D88102816CA6291EAA2799 /* TerminalSession.swift */,
 				29816AA9A9DFB0CBFA35EE85 /* Tokenizer.swift */,
 				01B5B87B005EEE76F31442B1 /* Tools.swift */,
+				7E4D19F8ABA08DFEE17A4992 /* TrackpadGestures.swift */,
 				BDE40BA2F2E62D3115E531DD /* UsageStore.swift */,
 				B196A39265E01E042AADBA90 /* WorktreePanel.swift */,
 				D252064F1F9BC1936477F46D /* Resources */,
@@ -619,6 +622,7 @@
 				636525DC5027C882107B839C /* TerminalSession.swift in Sources */,
 				195093A5F69935039358AA9E /* Tokenizer.swift in Sources */,
 				8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */,
+				F1F0D8DD3EE8E91D8D60077D /* TrackpadGestures.swift in Sources */,
 				E1E61F33240469D831267B5C /* UsageStore.swift in Sources */,
 				B5FB8F8CBAA739DBFACE35A3 /* WorktreePanel.swift in Sources */,
 			);

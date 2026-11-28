@@ -195,6 +195,24 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(cloudAllowLAN, forKey: "cloudAllowLAN") }
     }
 
+    @Published var customGesturesEnabled: Bool {
+        didSet { defaults.set(customGesturesEnabled, forKey: "customGesturesEnabled") }
+    }
+    @Published var gesturesRequireOption: Bool {
+        didSet { defaults.set(gesturesRequireOption, forKey: "gesturesRequireOption") }
+    }
+    @Published var gestureSwipeLeft: GestureAction {
+        didSet { defaults.set(gestureSwipeLeft.rawValue, forKey: "gestureSwipeLeft") }
+    }
+    @Published var gestureSwipeRight: GestureAction {
+        didSet { defaults.set(gestureSwipeRight.rawValue, forKey: "gestureSwipeRight") }
+    }
+    @Published var gestureSwipeUp: GestureAction {
+        didSet { defaults.set(gestureSwipeUp.rawValue, forKey: "gestureSwipeUp") }
+    }
+    @Published var gestureSwipeDown: GestureAction {
+        didSet { defaults.set(gestureSwipeDown.rawValue, forKey: "gestureSwipeDown") }
+    }
     @Published var sidebarGrouping: SidebarGrouping {
         didSet { defaults.set(sidebarGrouping.rawValue, forKey: "sidebarGrouping") }
     }
@@ -295,6 +313,12 @@ final class SettingsStore: ObservableObject {
         cloudRunLocally = defaults.bool(forKey: "cloudRunLocally")
         cloudAllowLAN = defaults.bool(forKey: "cloudAllowLAN")
 
+        customGesturesEnabled = defaults.bool(forKey: "customGesturesEnabled")
+        gesturesRequireOption = defaults.object(forKey: "gesturesRequireOption") as? Bool ?? true
+        gestureSwipeLeft = GestureAction(rawValue: defaults.string(forKey: "gestureSwipeLeft") ?? "") ?? .nextTask
+        gestureSwipeRight = GestureAction(rawValue: defaults.string(forKey: "gestureSwipeRight") ?? "") ?? .previousTask
+        gestureSwipeUp = GestureAction(rawValue: defaults.string(forKey: "gestureSwipeUp") ?? "") ?? .quickSwitcher
+        gestureSwipeDown = GestureAction(rawValue: defaults.string(forKey: "gestureSwipeDown") ?? "") ?? .toggleInspector
         sidebarGrouping = SidebarGrouping(rawValue: defaults.string(forKey: "sidebarGrouping") ?? "") ?? .date
         sidebarShowPreviews = defaults.object(forKey: "sidebarShowPreviews") as? Bool ?? true
         sidebarShowCounts = defaults.object(forKey: "sidebarShowCounts") as? Bool ?? true
