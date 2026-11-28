@@ -289,6 +289,7 @@ enum SlashCommands {
         SlashCommand(id: "/worktree", detail: "Create a Git worktree"),
         SlashCommand(id: "/diff", detail: "Open the changes panel"),
         SlashCommand(id: "/review", detail: "Review working tree changes"),
+        SlashCommand(id: "/subagent", detail: "Delegate a read-only research task"),
         SlashCommand(id: "/security-review", detail: "Review changes for security risks"),
         SlashCommand(id: "/rewind", detail: "Remove the last turn"),
         SlashCommand(id: "/export", detail: "Export this task as Markdown"),

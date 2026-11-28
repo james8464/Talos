@@ -36,7 +36,8 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Context | Capability/model/override window, live usage meter |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
-| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/todos`, `/help` |
+| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/subagent`, `/todos`, `/help` |
+| Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
 | MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable |
@@ -69,7 +70,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 These are Codex features Talos does not claim to have:
 
 - Codex Cloud tasks and cloud apply
-- Subagents, Ultra/Max fan-out, multi-agent orchestration
+- Parallel multi-agent fan-out and nested subagents
 - Managed branches beyond one worktree per task
 - Hooks and hook trust
 - Config profiles and managed/enterprise policy

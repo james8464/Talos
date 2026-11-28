@@ -112,6 +112,8 @@ struct ToolCall: Sendable {
             return [string("action") ?? "browser", string("url")].compactMap { $0 }.joined(separator: " ")
         case "update_plan":
             return "Update the task plan"
+        case "subagent":
+            return string("label") ?? string("task") ?? "Delegate a subagent"
         default:
             return name
         }
@@ -148,6 +150,7 @@ struct ToolContext: Sendable {
     let enabledPlan: Bool
     let skills: [Skill]
     let mcpTools: [MCPTool]
+    var readOnly = false
     let maxOutputCharacters = 30_000
 }
 
@@ -220,11 +223,16 @@ enum ToolPrompt {
         if context.enabledFileEdits {
             lines.append("- read_file: {\"path\":\"...\",\"start_line\":1,\"end_line\":200} Read a text file.")
             lines.append("- list_files: {\"path\":\".\",\"depth\":2,\"limit\":200} List files in the workspace.")
-            lines.append("- write_file: {\"path\":\"...\",\"content\":\"...\"} Write a text file.")
-            lines.append("- create_document: {\"path\":\"notes/plan.md\",\"content\":\"...\",\"format\":\"md\"} Create a document from scratch (md, txt, html, csv, json, rtf, docx).")
-            lines.append("- search_files: {\"query\":\"...\",\"path\":\".\",\"glob\":\"*.swift\",\"limit\":100} Search text files in the project.")
-            lines.append("- view_image: {\"path\":\"...\"} Show an image or file from disk to the user.")
-            lines.append("- apply_patch: {\"patch\":\"...\"} Apply a unified diff inside the workspace.")
+            if context.readOnly {
+                lines.append("- search_files: {\"query\":\"...\",\"path\":\".\",\"glob\":\"*.swift\",\"limit\":100} Search text files in the project.")
+                lines.append("- view_image: {\"path\":\"...\"} Show an image or file from disk to the user.")
+            } else {
+                lines.append("- write_file: {\"path\":\"...\",\"content\":\"...\"} Write a text file.")
+                lines.append("- create_document: {\"path\":\"notes/plan.md\",\"content\":\"...\",\"format\":\"md\"} Create a document from scratch (md, txt, html, csv, json, rtf, docx).")
+                lines.append("- search_files: {\"query\":\"...\",\"path\":\".\",\"glob\":\"*.swift\",\"limit\":100} Search text files in the project.")
+                lines.append("- view_image: {\"path\":\"...\"} Show an image or file from disk to the user.")
+                lines.append("- apply_patch: {\"patch\":\"...\"} Apply a unified diff inside the workspace.")
+            }
         }
         if context.enabledComputerUse {
             lines.append("- computer: {\"action\":\"screenshot\"|\"frontmost_app\"|\"list_windows\"|\"click\"|\"type\"|\"key\"|\"scroll\"|\"activate_app\"|\"open_url\", ...} Control the Mac. click takes x,y; type takes text; key takes key (for example cmd+shift+p); scroll takes dx,dy.")
@@ -238,6 +246,9 @@ enum ToolPrompt {
         }
         if context.enabledPlan {
             lines.append("- update_plan: {\"steps\":[{\"title\":\"...\",\"status\":\"pending\"|\"in_progress\"|\"completed\"}]} Replace the task plan.")
+        }
+        if !context.readOnly {
+            lines.append("- subagent: {\"task\":\"...\",\"label\":\"...\",\"max_steps\":8} Delegate focused research to a fresh read-only context. It returns a report with the files and facts it found. Use it for broad exploration, reviews, or questions that would clutter this conversation.")
         }
         if !context.skills.isEmpty {
             lines.append("")
@@ -346,7 +357,7 @@ struct ToolRunner: Sendable {
     }
 
     private func runShell(_ call: ToolCall) async -> ToolResult {
-        guard context.enabledShell else { return .fail("Shell is disabled in Settings.") }
+        guard context.enabledShell, !context.readOnly else { return .fail("Shell is disabled in Settings.") }
         guard let command = call.string("command"), !command.isEmpty else {
             return .fail("shell requires a command.")
         }
@@ -425,7 +436,7 @@ struct ToolRunner: Sendable {
     }
 
     private func writeFile(_ call: ToolCall) -> ToolResult {
-        guard context.enabledFileEdits else { return .fail("File editing is disabled in Settings.") }
+        guard context.enabledFileEdits, !context.readOnly else { return .fail("File editing is disabled in Settings.") }
         guard let path = call.string("path"), !path.isEmpty, let content = call.string("content") else {
             return .fail("write_file requires path and content.")
         }
@@ -444,7 +455,7 @@ struct ToolRunner: Sendable {
     }
 
     private func createDocument(_ call: ToolCall) async -> ToolResult {
-        guard context.enabledFileEdits else { return .fail("File editing is disabled in Settings.") }
+        guard context.enabledFileEdits, !context.readOnly else { return .fail("File editing is disabled in Settings.") }
         guard let path = call.string("path"), !path.isEmpty, let content = call.string("content") else {
             return .fail("create_document requires path and content.")
         }
@@ -533,7 +544,7 @@ struct ToolRunner: Sendable {
     }
 
     private func applyPatch(_ call: ToolCall) async -> ToolResult {
-        guard context.enabledFileEdits else { return .fail("File editing is disabled in Settings.") }
+        guard context.enabledFileEdits, !context.readOnly else { return .fail("File editing is disabled in Settings.") }
         guard let patch = call.string("patch"), !patch.isEmpty else {
             return .fail("apply_patch requires a patch.")
         }

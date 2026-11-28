@@ -19,6 +19,7 @@
 		456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1122852660CD8181149806 /* ContentView.swift */; };
 		4B326AB0712C6A431D7E95F3 /* OllamaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77222638AE45AC6E779D2AFB /* OllamaClient.swift */; };
 		4BB116C270D7CB0DC5499BD5 /* RemoteServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */; };
+		4DC5F71A4B9EEA16C3F3BC19 /* Subagent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2A35D82393F85F067D06A9 /* Subagent.swift */; };
 		59EFBCD216961E06356D37D5 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70913AB772F308657E509F42 /* Providers.swift */; };
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
@@ -43,6 +44,7 @@
 		29612E0C17BE1D0D3A380FCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
 		2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPersistence.swift; sourceTree = "<group>"; };
+		3C2A35D82393F85F067D06A9 /* Subagent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subagent.swift; sourceTree = "<group>"; };
 		420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plugins.swift; sourceTree = "<group>"; };
 		57E3AB66594CCF5305513D55 /* Projects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Projects.swift; sourceTree = "<group>"; };
 		5952B2988ACA2B10007C9244 /* Git.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Git.swift; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 				5C064999B0D1F92F7B32F537 /* SettingsStore.swift */,
 				7DF7DCED466867A6BC71FB24 /* SettingsView.swift */,
 				88120A756923F2A3457A372B /* Skills.swift */,
+				3C2A35D82393F85F067D06A9 /* Subagent.swift */,
 				5D2AC40CFA47F5E6168180BB /* TalosApp.swift */,
 				01B5B87B005EEE76F31442B1 /* Tools.swift */,
 				BDE40BA2F2E62D3115E531DD /* UsageStore.swift */,
@@ -226,6 +229,7 @@
 				B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */,
 				8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */,
 				2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */,
+				4DC5F71A4B9EEA16C3F3BC19 /* Subagent.swift in Sources */,
 				35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */,
 				8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */,
 				E1E61F33240469D831267B5C /* UsageStore.swift in Sources */,

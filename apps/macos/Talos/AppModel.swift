@@ -652,6 +652,24 @@ final class AppModel: ObservableObject {
             showGitPanel = true
         case "/review":
             reviewChanges(focus: .general)
+        case "/subagent", "/delegate":
+            guard !remainder.isEmpty else {
+                appendCommandMessage("Usage: /subagent Investigate how authentication is wired, then report the files involved.")
+                break
+            }
+            guard !isStreaming, let id = selectedID else {
+                appendCommandMessage("Stop the current response before starting a subagent.")
+                break
+            }
+            Task {
+                isStreaming = true
+                let result = await runSubagent(
+                    ToolCall(name: "subagent", arguments: ["task": .string(remainder)]),
+                    sessionID: id
+                )
+                isStreaming = false
+                appendCommandMessage(result.output)
+            }
         case "/security-review":
             reviewChanges(focus: .security)
         case "/rewind":
@@ -1313,6 +1331,9 @@ final class AppModel: ObservableObject {
         if call.name == "update_plan" {
             return updatePlan(call, sessionID: sessionID)
         }
+        if call.name == "subagent" {
+            return await runSubagent(call, sessionID: sessionID)
+        }
         if call.name.hasPrefix("mcp__") {
             let arguments = call.arguments.mapValues(\.anyValue)
             switch await mcp.call(toolName: call.name, arguments: arguments) {
@@ -1323,6 +1344,57 @@ final class AppModel: ObservableObject {
             }
         }
         return await ToolRunner(context: toolContext()).run(call)
+    }
+
+    private func runSubagent(_ call: ToolCall, sessionID: UUID) async -> ToolResult {
+        let task = (call.string("task") ?? call.string("prompt") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !task.isEmpty else {
+            return .fail("subagent requires a task.")
+        }
+        let label = call.string("label")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let maxSteps = min(max(call.int("max_steps") ?? 8, 1), 16)
+        let runChoice = choice
+        var generation = settings.generation(reasoning: reasoningSelection)
+        generation.allowImages = modelCapabilities.supportsVision
+
+        let context = ToolContext(
+            workspace: projectURL.path,
+            sandbox: .readOnly,
+            network: settings.networkAccess,
+            enabledShell: false,
+            enabledFileEdits: settings.enableFileEdits,
+            enabledComputerUse: false,
+            enabledWeb: settings.enableWeb,
+            enabledBrowser: false,
+            enabledPlan: false,
+            skills: skills.enabled,
+            mcpTools: [],
+            readOnly: true
+        )
+
+        let engine = SubagentEngine(
+            label: label?.isEmpty == false ? label! : String(task.prefix(40)),
+            task: task,
+            maxSteps: maxSteps,
+            context: context,
+            projectInstructions: projectInstructions
+        ) { messages in
+            let (raw, used) = try await self.streamCompletion(
+                choice: runChoice,
+                messages: messages,
+                generation: generation
+            )
+            self.usage.record(used, provider: runChoice.provider, model: runChoice.id, sessionID: sessionID)
+            return (raw, used)
+        }
+
+        do {
+            let outcome = try await engine.run()
+            return .ok(outcome.report)
+        } catch {
+            return .fail("Subagent failed: \(error.localizedDescription)")
+        }
     }
 
     private func updatePlan(_ call: ToolCall, sessionID: UUID) -> ToolResult {

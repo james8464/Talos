@@ -30,6 +30,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Plugins.swift` — plugin bundles containing skills and declared MCP servers
 - `Talos/MCP.swift` — stdio and Streamable HTTP MCP client and tool bridge
 - `Talos/Browser.swift` — Safari/Chrome accessibility control and screenshot OCR
+- `Talos/Subagent.swift` — isolated read-only child task loop and report
 - `Talos/RemoteServer.swift` — local phone-control HTTP server
 - `Talos/SettingsView.swift` — sidebar Settings window
 

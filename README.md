@@ -18,6 +18,8 @@ model that produced them.
 - Tools that work with every model: shell, file read/write, patch, file search,
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR)
+- Delegated read-only subagents that work in a fresh context and return a
+  report with the files and facts they found
 - Approval prompts, per-task “always allow”, sandbox modes, network control
 - Message queueing while a response is streaming, attachments, inline
   image/file previews, and native image input for vision models
@@ -28,7 +30,7 @@ model that produced them.
   `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/rewind`,
   `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
   `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`,
-  `/browser`, `/worktree`, `/todos`, `/help`
+  `/browser`, `/worktree`, `/subagent`, `/todos`, `/help`
 - Skills, plugin bundles, and stdio MCP servers
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
