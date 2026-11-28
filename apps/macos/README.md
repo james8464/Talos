@@ -115,6 +115,13 @@ window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
 
+## Interface
+
+The main window uses a task-first layout: a date-grouped sidebar with a model
+status footer, a ⌘K quick switcher for tasks and commands, a guided welcome
+screen, a composer with a live context meter, and a streaming status bar with
+stop and context. Tool results appear as compact cards with expandable output.
+
 ## Semantic code search
 
 `search_codebase` indexes the workspace with Apple's on-device sentence

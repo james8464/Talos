@@ -82,6 +82,7 @@ final class AppModel: ObservableObject {
     @Published var worktrees: [GitWorktreeInfo] = []
     @Published var showGitPanel = false
     @Published var showWorktrees = false
+    @Published var showQuickSwitcher = false
     @Published var showArchived = false
     @Published var renameTarget: Session?
     @Published var pendingDraft: String?

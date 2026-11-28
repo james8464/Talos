@@ -13,8 +13,9 @@ model that produced them.
   Anthropic Messages models are all routed
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
-- A task-first macOS interface: date-grouped tasks, a guided welcome screen,
-  a focused composer with live context, and tool results as compact cards
+- A task-first macOS interface: date-grouped tasks, a ⌘K quick switcher for
+  tasks and commands, a guided welcome screen, a focused composer with live
+  context and a working status bar, and tool results as compact cards
 - Project switcher, project-scoped tasks, a file browser with previews, a
   Git changes panel with colored diffs, staging, and commit, plus a worktree
   manager that creates, switches, merges, and cleans up task branches

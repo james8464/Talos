@@ -17,11 +17,23 @@ struct ContentView: View {
                     .navigationTitle(session.title)
                     .navigationSubtitle(model.isStreaming ? "Working…" : model.choice.display)
             } else {
-                ContentUnavailableView(
-                    "No Task Selected",
-                    systemImage: "square.stack.3d.up",
-                    description: Text("Choose a task in the sidebar or create a new one.")
-                )
+                ContentUnavailableView {
+                    if let icon = Brand.icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 52, height: 52)
+                    } else {
+                        Image(systemName: "circle.hexagongrid.fill")
+                            .font(.system(size: 46))
+                            .foregroundStyle(Brand.bronze)
+                    }
+                } description: {
+                    Text("Choose a task in the sidebar, or start a new one.\nPress ⌘K to search tasks and commands.")
+                } actions: {
+                    Button("New Task") { model.newSession() }
+                        .buttonStyle(.borderedProminent)
+                    Button("Review Changes…") { model.showGitPanel = true }
+                }
             }
         }
         .inspector(isPresented: $model.showInspector) {
@@ -41,6 +53,13 @@ struct ContentView: View {
                 .help("New Task (⌘N)")
             }
             ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    model.showQuickSwitcher = true
+                } label: {
+                    Label("Quick Switch", systemImage: "magnifyingglass")
+                }
+                .help("Search tasks and commands (⌘K)")
+
                 GitButton()
                 Button {
                     model.stop()
@@ -72,6 +91,11 @@ struct ContentView: View {
             }
             .environmentObject(model)
             .environmentObject(model.settings)
+        }
+        .sheet(isPresented: $model.showQuickSwitcher) {
+            QuickSwitcher()
+                .environmentObject(model)
+                .environmentObject(model.settings)
         }
         .sheet(isPresented: $model.showProjectBrowser) {
             ProjectBrowserView()
@@ -200,6 +224,7 @@ private struct GitButton: View {
 
 private struct Sidebar: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.openSettings) private var openSettings
 
     private struct SessionGroup: Identifiable {
         let id: String
@@ -363,6 +388,37 @@ private struct Sidebar: View {
                     }
                 }
             }
+
+            Divider()
+
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(model.isStreaming ? Color.orange : Brand.bronze.opacity(0.55))
+                    .frame(width: 6, height: 6)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(model.choice.id)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Text(model.isStreaming ? "Working…" : model.status)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                Button {
+                    openSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.borderless)
+                .help("Settings")
+                .accessibilityLabel("Open settings")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
         .navigationTitle("Talos")
     }
@@ -405,6 +461,254 @@ private struct SidebarRow: View {
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
+    }
+}
+
+private struct QuickSwitcher: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openSettings) private var openSettings
+
+    @State private var query = ""
+    @State private var hovered: String?
+    @FocusState private var searchFocused: Bool
+
+    private struct PaletteCommand: Identifiable {
+        let id: String
+        let title: String
+        let detail: String
+        let symbol: String
+        let shortcut: String?
+        let action: () -> Void
+    }
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var sessions: [Session] {
+        let base = model.sessions.filter { !$0.archived }
+        guard !trimmedQuery.isEmpty else { return Array(base.prefix(4)) }
+        return base.filter {
+            $0.title.localizedCaseInsensitiveContains(trimmedQuery)
+                || $0.preview.localizedCaseInsensitiveContains(trimmedQuery)
+        }.prefix(8).map { $0 }
+    }
+
+    private var commands: [PaletteCommand] {
+        var list: [PaletteCommand] = [
+            PaletteCommand(
+                id: "new",
+                title: "New Task",
+                detail: "Start a fresh task in this project",
+                symbol: "plus.circle",
+                shortcut: "⌘N"
+            ) { model.newSession() },
+            PaletteCommand(
+                id: "changes",
+                title: "Review Changes",
+                detail: "Open diffs, staging, commit, and pull requests",
+                symbol: "arrow.triangle.branch",
+                shortcut: "⌘⇧G"
+            ) { model.showGitPanel = true },
+            PaletteCommand(
+                id: "worktrees",
+                title: "Manage Worktrees",
+                detail: "Create, switch, merge, or clean up task branches",
+                symbol: "square.split.2x1",
+                shortcut: nil
+            ) { model.showWorktrees = true },
+            PaletteCommand(
+                id: "compact",
+                title: "Compact Conversation",
+                detail: "Summarize older messages to free context",
+                symbol: "arrow.down.right.and.arrow.up.left",
+                shortcut: "⌘⇧K"
+            ) { model.compactCurrentSession() },
+            PaletteCommand(
+                id: "inspector",
+                title: model.showInspector ? "Hide Details Inspector" : "Show Details Inspector",
+                detail: "Project, model, tools, plan, and token details",
+                symbol: "sidebar.right",
+                shortcut: "⌘⌥I"
+            ) { model.showInspector.toggle() },
+            PaletteCommand(
+                id: "settings",
+                title: "Settings",
+                detail: "Models, providers, tools, hooks, MCP, and policy",
+                symbol: "gearshape",
+                shortcut: "⌘,"
+            ) { openSettings() },
+        ]
+        if model.isStreaming {
+            list.insert(
+                PaletteCommand(
+                    id: "stop",
+                    title: "Stop Response",
+                    detail: "Cancel the active run",
+                    symbol: "stop.circle",
+                    shortcut: "⌘."
+                ) { model.stop() },
+                at: 0
+            )
+        }
+        guard !trimmedQuery.isEmpty else { return list }
+        return list.filter {
+            $0.title.localizedCaseInsensitiveContains(trimmedQuery)
+                || $0.detail.localizedCaseInsensitiveContains(trimmedQuery)
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Search tasks and commands", text: $query)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 15))
+                    .focused($searchFocused)
+                    .onSubmit(openFirst)
+                if !query.isEmpty {
+                    Button {
+                        query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Clear search")
+                }
+                Text("esc")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 4))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    if !sessions.isEmpty {
+                        sectionTitle("Tasks")
+                        ForEach(sessions) { session in
+                            Button {
+                                model.selectedID = session.id
+                                dismiss()
+                            } label: {
+                                row(
+                                    id: "session-\(session.id)",
+                                    symbol: "bubble.left.and.text.bubble.right",
+                                    title: session.title,
+                                    detail: session.preview,
+                                    trailing: "\(session.messages.count)"
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    if !commands.isEmpty {
+                        sectionTitle("Commands")
+                        ForEach(commands) { command in
+                            Button {
+                                command.action()
+                                dismiss()
+                            } label: {
+                                row(
+                                    id: command.id,
+                                    symbol: command.symbol,
+                                    title: command.title,
+                                    detail: command.detail,
+                                    trailing: command.shortcut
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    if sessions.isEmpty && commands.isEmpty {
+                        ContentUnavailableView.search(text: trimmedQuery)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 24)
+                    }
+                }
+                .padding(8)
+            }
+            .frame(maxHeight: 500)
+        }
+        .frame(width: 580)
+        .background(.ultraThickMaterial)
+        .onExitCommand { dismiss() }
+        .onAppear {
+            DispatchQueue.main.async { searchFocused = true }
+        }
+    }
+
+    private func sectionTitle(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.tertiary)
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
+            .padding(.bottom, 2)
+    }
+
+    private func row(
+        id: String,
+        symbol: String,
+        title: String,
+        detail: String,
+        trailing: String?
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+                .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                if !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            if let trailing {
+                Text(trailing)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(hovered == id ? Brand.bronze.opacity(0.12) : Color.clear)
+        )
+        .contentShape(Rectangle())
+        .onHover { value in
+            if value { hovered = id } else if hovered == id { hovered = nil }
+        }
+    }
+
+    private func openFirst() {
+        if let session = sessions.first {
+            model.selectedID = session.id
+            dismiss()
+        } else if let command = commands.first {
+            command.action()
+            dismiss()
+        }
     }
 }
 
@@ -1095,6 +1399,32 @@ private struct TaskView: View {
     var body: some View {
         VStack(spacing: 0) {
             transcript
+            if model.isStreaming {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Working…")
+                        .font(.caption.weight(.medium))
+                    Text(model.choice.id)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Spacer()
+                    Text(model.contextLabel)
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Button("Stop") {
+                        model.stop()
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption)
+                    .accessibilityLabel("Stop response")
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 7)
+                .background(.thinMaterial)
+                Divider()
+            }
             AmbientSuggestionBar()
             Divider()
             ComposerView(draft: $draft, composerFocused: composerFocused)
@@ -1139,6 +1469,16 @@ private struct TaskView: View {
                 .padding(.horizontal, 32)
                 .padding(.vertical, 28)
                 .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .background {
+                if session.messages.isEmpty {
+                    RadialGradient(
+                        colors: [Brand.bronze.opacity(0.12), Brand.bronze.opacity(0.03), .clear],
+                        center: UnitPoint(x: 0.12, y: 0.04),
+                        startRadius: 4,
+                        endRadius: 560
+                    )
+                }
             }
             .onChange(of: session.messages.last?.text) {
                 if let id = session.messages.last?.id {
@@ -1464,6 +1804,7 @@ private struct AttachmentPreview: View {
 private struct EmptyTask: View {
     @EnvironmentObject private var model: AppModel
     let onSuggestion: (String) -> Void
+    @State private var hoveredSuggestion: UUID?
 
     private struct Suggestion: Identifiable {
         let id = UUID()
@@ -1566,13 +1907,25 @@ private struct EmptyTask: View {
                         .frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
                         .background(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color(nsColor: .controlBackgroundColor))
+                                .fill(
+                                    hoveredSuggestion == suggestion.id
+                                        ? Brand.bronze.opacity(0.08)
+                                        : Color(nsColor: .controlBackgroundColor)
+                                )
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 1)
+                                .strokeBorder(
+                                    hoveredSuggestion == suggestion.id
+                                        ? Brand.bronze.opacity(0.45)
+                                        : Color(nsColor: .separatorColor).opacity(0.7),
+                                    lineWidth: 1
+                                )
                         )
                         .contentShape(Rectangle())
+                        .onHover { value in
+                            hoveredSuggestion = value ? suggestion.id : nil
+                        }
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(suggestion.title). \(suggestion.detail)")
