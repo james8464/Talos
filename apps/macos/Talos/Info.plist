@@ -26,5 +26,9 @@
 	<string>public.app-category.developer-tools</string>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Talos uses the microphone for local dictation into the composer.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Talos transcribes your speech into the composer using macOS Speech.</string>
 </dict>
 </plist>

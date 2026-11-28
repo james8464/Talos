@@ -623,6 +623,8 @@ private struct ComposerView: View {
     var composerFocused: FocusState<Bool>.Binding
     @State private var attachments: [URL] = []
     @State private var importing = false
+    @StateObject private var dictation = DictationController()
+    @State private var dictationBase = ""
 
     private var canSend: Bool {
         !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -685,6 +687,21 @@ private struct ComposerView: View {
                     .onSubmit(send)
                     .accessibilityLabel("Message")
 
+                if let error = dictation.error {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle")
+                        Text(error)
+                            .lineLimit(3)
+                        Spacer()
+                        Button("Open Settings") {
+                            DictationController.openSpeechSettings()
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                }
+
                 HStack(spacing: 7) {
                     Button {
                         importing = true
@@ -694,6 +711,16 @@ private struct ComposerView: View {
                     .buttonStyle(.borderless)
                     .foregroundStyle(.secondary)
                     .help("Attach files")
+
+                    Button {
+                        toggleDictation()
+                    } label: {
+                        Image(systemName: dictation.isRecording ? "mic.fill" : "mic")
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(dictation.isRecording ? Color.red : Color.secondary)
+                    .help(dictation.isRecording ? "Stop dictation" : "Dictate a message")
+                    .accessibilityLabel(dictation.isRecording ? "Stop dictation" : "Start dictation")
 
                     ModelPickerButton()
                     Divider().frame(height: 12)
@@ -742,6 +769,23 @@ private struct ComposerView: View {
                 attachments.append(contentsOf: urls)
             }
         }
+        .onDisappear {
+            dictation.onTranscript = nil
+            dictation.cancel()
+        }
+    }
+
+    private func toggleDictation() {
+        if dictation.isRecording {
+            dictation.stop()
+            return
+        }
+        dictationBase = draft
+        dictation.error = nil
+        dictation.onTranscript = { text in
+            draft = DictationText.merged(base: dictationBase, transcript: text)
+        }
+        dictation.start()
     }
 
     private var sendControl: some View {
@@ -786,6 +830,10 @@ private struct ComposerView: View {
 
     private func send() {
         guard canSend else { return }
+        if dictation.isRecording {
+            dictation.onTranscript = nil
+            dictation.cancel()
+        }
         let text = draft
         let paths = attachments.map(\.path)
         draft = ""

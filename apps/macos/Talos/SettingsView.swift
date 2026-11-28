@@ -529,6 +529,8 @@ private struct ToolsSettingsView: View {
     @EnvironmentObject private var settings: SettingsStore
     @State private var accessibility = ToolPermission.accessibility
     @State private var screenRecording = ToolPermission.screenRecording
+    @State private var microphone = DictationController.currentPermissions().microphone
+    @State private var speech = DictationController.currentPermissions().speech
 
     var body: some View {
         Form {
@@ -601,6 +603,16 @@ private struct ToolsSettingsView: View {
                     granted: screenRecording,
                     open: ToolPermission.openScreenRecordingSettings
                 )
+                permissionRow(
+                    "Microphone",
+                    granted: microphone == .authorized,
+                    open: DictationController.openMicrophoneSettings
+                )
+                permissionRow(
+                    "Speech Recognition",
+                    granted: speech == .authorized,
+                    open: DictationController.openSpeechSettings
+                )
                 HStack {
                     Button("Request Accessibility") {
                         ToolPermission.requestAccessibility()
@@ -609,6 +621,12 @@ private struct ToolsSettingsView: View {
                     Button("Request Screen Recording") {
                         ToolPermission.requestScreenRecording()
                         refreshPermissions()
+                    }
+                    Button("Request Dictation Access") {
+                        Task {
+                            _ = await DictationController.requestPermissions()
+                            refreshPermissions()
+                        }
                     }
                 }
                 Text("Computer use needs both permissions. Shell, file, web, and plan tools do not.")
@@ -636,6 +654,9 @@ private struct ToolsSettingsView: View {
     private func refreshPermissions() {
         accessibility = ToolPermission.accessibility
         screenRecording = ToolPermission.screenRecording
+        let current = DictationController.currentPermissions()
+        microphone = current.microphone
+        speech = current.speech
     }
 }
 

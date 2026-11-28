@@ -58,6 +58,8 @@ model that produced them.
   cancellation, and live transcript events
 - A menu-bar quick panel for status, model switching, new tasks, stop, and
   opening the main window
+- Composer dictation through macOS Speech and AVAudioEngine, with on-device
+  preference and permission handling
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
 - Notifications, appearance controls, and a native sidebar Settings window

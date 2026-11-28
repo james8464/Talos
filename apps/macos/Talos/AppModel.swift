@@ -199,6 +199,7 @@ final class AppModel: ObservableObject {
             await refreshCloudTasks()
             startCloudServicesIfNeeded()
             startAppServerIfConfigured()
+
         }
     }
 

@@ -28,6 +28,8 @@ targets:
         CFBundleVersion: "3"
         LSApplicationCategoryType: public.app-category.developer-tools
         NSHumanReadableCopyright: ""
+        NSMicrophoneUsageDescription: "Talos uses the microphone for local dictation into the composer."
+        NSSpeechRecognitionUsageDescription: "Talos transcribes your speech into the composer using macOS Speech."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.talos.macos
