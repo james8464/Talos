@@ -39,6 +39,10 @@ struct TalosApp: App {
             CommandMenu("Task") {
                 Button("Quick Switch…") { model.showQuickSwitcher = true }
                     .keyboardShortcut("k", modifiers: .command)
+                Button("Next Task") { model.selectAdjacentTask(1) }
+                    .keyboardShortcut("]", modifiers: .command)
+                Button("Previous Task") { model.selectAdjacentTask(-1) }
+                    .keyboardShortcut("[", modifiers: .command)
                 Button("Stop") { model.stop() }
                     .keyboardShortcut(".", modifiers: .command)
                     .disabled(!model.isStreaming)

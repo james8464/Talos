@@ -917,6 +917,18 @@ final class AppModel: ObservableObject {
         Task { await runSessionHooks(.sessionStart, sessionID: id) }
     }
 
+    func selectAdjacentTask(_ offset: Int) {
+        let rows = filteredSessions
+        guard !rows.isEmpty else { return }
+        if let selectedID,
+           let index = rows.firstIndex(where: { $0.id == selectedID }) {
+            let next = (index + offset + rows.count) % rows.count
+            self.selectedID = rows[next].id
+        } else {
+            self.selectedID = rows.first?.id
+        }
+    }
+
     func delete(_ id: UUID) {
         sessions.removeAll { $0.id == id }
         if selectedID == id { selectedID = filteredSessions.first?.id ?? sessions.first?.id }

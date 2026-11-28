@@ -119,8 +119,10 @@ heatmap.
 
 The main window uses a task-first layout: a date-grouped sidebar with a model
 status footer, a ⌘K quick switcher for tasks and commands, a guided welcome
-screen, a composer with a live context meter, and a streaming status bar with
-stop and context. Tool results appear as compact cards with expandable output.
+screen, a collapsible plan strip, a composer with a live context meter, and a
+streaming status bar with stop and context. Tool results appear as compact
+cards with expandable output, and the inspector shows semantic-index status
+with a rebuild action.
 
 ## Semantic code search
 

@@ -1398,6 +1398,9 @@ private struct TaskView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if !session.plan.isEmpty {
+                PlanStrip(plan: session.plan)
+            }
             transcript
             if model.isStreaming {
                 HStack(spacing: 8) {
@@ -1798,6 +1801,90 @@ private struct AttachmentPreview: View {
 
     private var imageSymbol: String {
         NSImage(contentsOf: url) == nil ? "doc" : "photo"
+    }
+}
+
+private struct PlanStrip: View {
+    let plan: [PlanStep]
+    @State private var expanded = false
+
+    private var completed: Int { plan.filter { $0.status == .completed }.count }
+    private var current: PlanStep? {
+        plan.first(where: { $0.status == .inProgress }) ?? plan.first(where: { $0.status == .pending })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "checklist")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Brand.bronze)
+                Text("Plan")
+                    .font(.caption.weight(.semibold))
+                Text("\(completed)/\(plan.count)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                if !expanded, let current {
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Text(current.title)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        expanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(expanded ? "Collapse plan" : "Expand plan")
+            }
+
+            ProgressView(value: Double(completed), total: Double(max(plan.count, 1)))
+                .progressViewStyle(.linear)
+                .tint(Brand.bronze)
+
+            if expanded {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(plan) { step in
+                        HStack(alignment: .firstTextBaseline, spacing: 7) {
+                            Image(systemName: step.status.symbol)
+                                .font(.system(size: 10))
+                                .foregroundStyle(color(for: step.status))
+                            Text(step.title)
+                                .font(.caption)
+                                .strikethrough(step.status == .completed)
+                                .foregroundStyle(step.status == .completed ? .secondary : .primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(.top, 3)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 1)
+        )
+        .padding(.horizontal, 24)
+        .padding(.top, 10)
+    }
+
+    private func color(for status: PlanStatus) -> Color {
+        switch status {
+        case .completed: return .green
+        case .inProgress: return Brand.bronze
+        case .pending: return .secondary
+        }
     }
 }
 
@@ -2329,6 +2416,8 @@ private struct Inspector: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var usage: UsageStore
+    @State private var indexStatus: SemanticIndexStatus?
+    @State private var indexBusy = false
 
     var body: some View {
         Form {
@@ -2388,6 +2477,33 @@ private struct Inspector: View {
                 LabeledContent("Approvals", value: settings.approvalPolicy == .onRequest ? "On request" : "Never")
             }
 
+            Section("Index") {
+                if let status = indexStatus {
+                    LabeledContent("Semantic search") {
+                        Text(status.chunks == 0
+                             ? "Not built"
+                             : "\(status.chunks) chunks · \(status.files) files")
+                            .foregroundStyle(.secondary)
+                    }
+                    if status.isStale {
+                        Text("Stale — rebuild to include recent edits.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                } else {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("Checking index…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Button(indexBusy ? "Rebuilding…" : "Rebuild Index") {
+                    rebuildIndex()
+                }
+                .disabled(indexBusy)
+            }
+
             if let plan = model.selected?.plan, !plan.isEmpty {
                 Section("Plan") {
                     ForEach(plan) { step in
@@ -2422,6 +2538,17 @@ private struct Inspector: View {
         }
         .formStyle(.grouped)
         .navigationTitle("Details")
+        .task(id: model.projectURL) {
+            indexStatus = await SemanticIndex.shared.status(workspace: model.projectURL)
+        }
+    }
+
+    private func rebuildIndex() {
+        indexBusy = true
+        Task {
+            indexStatus = try? await SemanticIndex.shared.rebuild(workspace: model.projectURL)
+            indexBusy = false
+        }
     }
 
     private func toolRow(_ name: String, symbol: String, enabled: Bool) -> some View {
