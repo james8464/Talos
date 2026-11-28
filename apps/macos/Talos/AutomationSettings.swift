@@ -183,6 +183,11 @@ struct HooksSettingsView: View {
     var body: some View {
         Form {
             Section("Hooks") {
+                if model.hooks.managedLocked {
+                    Text("Hooks are controlled by the managed policy and cannot be edited here.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if model.hooks.hooks.isEmpty {
                     Text("No hooks yet. Hooks run a local command on session or tool events.")
                         .font(.caption)
@@ -232,6 +237,7 @@ struct HooksSettingsView: View {
                         .buttonStyle(.borderless)
                     }
                     .padding(.vertical, 2)
+                    .disabled(model.hooks.managedLocked)
                 }
             }
 
@@ -243,6 +249,7 @@ struct HooksSettingsView: View {
                         command: "echo '{\"additional_context\":\"hook ran\"}'"
                     )
                 }
+                .disabled(model.hooks.managedLocked)
                 Text("Hook commands run through zsh in the workspace. They receive event details as JSON on stdin and as TALOS_* environment variables. Untrusted hooks ask before running.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

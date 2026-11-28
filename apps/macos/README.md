@@ -38,6 +38,8 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Hooks.swift` — typed event hooks, trust, and execution log
 - `Talos/Profiles.swift` — named provider/model/safety profiles
 - `Talos/Reviewer.swift` — read-only auto-review for approval prompts
+- `Talos/ManagedPolicy.swift` — signed/local managed policy loader and signature checks
+- `Talos/PolicySettings.swift` — read-only policy status pane
 - `Talos/FanOut.swift` — bounded-concurrency read-only task fan-out
 - `Talos/WorktreePanel.swift` — worktree list, switch, merge, and cleanup UI
 - `Talos/AutomationSettings.swift` — profiles and hooks settings UI

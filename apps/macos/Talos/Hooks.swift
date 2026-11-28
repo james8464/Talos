@@ -240,6 +240,7 @@ final class HookStore: ObservableObject {
 
     @Published private(set) var hooks: [HookDefinition] = []
     @Published private(set) var log: [HookLogEntry] = []
+    private(set) var managedLocked = false
 
     init() {
         if let data = defaults.data(forKey: Self.storageKey),
@@ -256,30 +257,48 @@ final class HookStore: ObservableObject {
         enabled.filter { $0.event == event && $0.matches(toolName: toolName) }
     }
 
+    func applyManaged(_ hooks: [HookDefinition]) {
+        self.hooks = hooks
+        managedLocked = true
+    }
+
+    func clearManaged() {
+        managedLocked = false
+        if let data = defaults.data(forKey: Self.storageKey),
+           let decoded = try? JSONDecoder().decode([HookDefinition].self, from: data) {
+            hooks = decoded
+        }
+    }
+
     func add(_ hook: HookDefinition) {
+        guard !managedLocked else { return }
         hooks.append(hook)
         save()
     }
 
     func update(_ hook: HookDefinition) {
-        guard let index = hooks.firstIndex(where: { $0.id == hook.id }) else { return }
+        guard !managedLocked,
+              let index = hooks.firstIndex(where: { $0.id == hook.id }) else { return }
         hooks[index] = hook
         save()
     }
 
     func remove(_ hook: HookDefinition) {
+        guard !managedLocked else { return }
         hooks.removeAll { $0.id == hook.id }
         save()
     }
 
     func setEnabled(_ hook: HookDefinition, _ enabled: Bool) {
-        guard let index = hooks.firstIndex(where: { $0.id == hook.id }) else { return }
+        guard !managedLocked,
+              let index = hooks.firstIndex(where: { $0.id == hook.id }) else { return }
         hooks[index].enabled = enabled
         save()
     }
 
     func setTrusted(_ hook: HookDefinition, _ trusted: Bool) {
-        guard let index = hooks.firstIndex(where: { $0.id == hook.id }) else { return }
+        guard !managedLocked,
+              let index = hooks.firstIndex(where: { $0.id == hook.id }) else { return }
         hooks[index].trusted = trusted
         save()
     }

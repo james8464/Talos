@@ -41,6 +41,8 @@ struct SettingsView: View {
             ProfilesSettingsView()
         case .hooks:
             HooksSettingsView()
+        case .policy:
+            ManagedPolicySettingsView()
         case .skills:
             SkillsSettingsView()
         case .plugins:
@@ -69,6 +71,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case tools
     case profiles
     case hooks
+    case policy
     case skills
     case plugins
     case mcp
@@ -89,6 +92,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .tools: return "Tools"
         case .profiles: return "Profiles"
         case .hooks: return "Hooks"
+        case .policy: return "Policy"
         case .skills: return "Skills"
         case .plugins: return "Plugins"
         case .mcp: return "MCP"
@@ -109,6 +113,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .tools: return "wrench.and.screwdriver"
         case .profiles: return "person.crop.rectangle.stack"
         case .hooks: return "bolt.badge.clock"
+        case .policy: return "checkmark.shield"
         case .skills: return "sparkles"
         case .plugins: return "puzzlepiece.extension"
         case .mcp: return "point.3.connected.trianglepath.dotted"
@@ -136,7 +141,12 @@ private struct GeneralSettingsView: View {
                         Text(choice.display).tag(choice)
                     }
                 }
-                .disabled(model.choices.isEmpty)
+                .disabled(model.choices.isEmpty || model.managedPolicy?.isModelLocked == true)
+                if model.managedPolicy?.isModelLocked == true {
+                    Text("The model is fixed by the managed policy.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 HStack {
                     Text(model.status)
@@ -169,6 +179,7 @@ private struct GeneralSettingsView: View {
                             Text(option.title).tag(option.id)
                         }
                     }
+                    .disabled(model.managedPolicy?.isReasoningLocked == true)
                     Text(selectedDetail)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -511,6 +522,7 @@ private struct ToolsSettingsView: View {
                         Text(policy.title).tag(policy)
                     }
                 }
+                .disabled(settings.managed?.approval != nil)
                 Text(settings.approvalPolicy.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -520,13 +532,17 @@ private struct ToolsSettingsView: View {
                         Text(mode.title).tag(mode)
                     }
                 }
+                .disabled(settings.managed?.sandbox != nil)
                 Text(settings.sandboxMode.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 Toggle("Allow network access for shell commands and web tools", isOn: $settings.networkAccess)
+                    .disabled(settings.managed?.network != nil)
                 Stepper("Maximum tool steps: \(settings.maxToolSteps)", value: $settings.maxToolSteps, in: 1...24)
+                    .disabled(settings.managed?.maxToolSteps != nil)
                 Toggle("Review high-impact tools before approval", isOn: $settings.autoReviewTools)
+                    .disabled(settings.managed?.autoReview != nil)
                 Text("Runs a read-only reviewer in a separate context and shows its recommendation in the approval sheet.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -534,11 +550,17 @@ private struct ToolsSettingsView: View {
 
             Section("Tool access") {
                 Toggle("Shell commands", isOn: $settings.enableShell)
+                    .disabled(settings.managed?.enableShell != nil)
                 Toggle("File reads and edits", isOn: $settings.enableFileEdits)
+                    .disabled(settings.managed?.enableFileEdits != nil)
                 Toggle("Computer use", isOn: $settings.enableComputerUse)
+                    .disabled(settings.managed?.enableComputerUse != nil)
                 Toggle("Browser control", isOn: $settings.enableBrowser)
+                    .disabled(settings.managed?.enableBrowser != nil)
                 Toggle("Web fetch and search", isOn: $settings.enableWeb)
+                    .disabled(settings.managed?.enableWeb != nil)
                 Toggle("Task plans", isOn: $settings.enablePlan)
+                    .disabled(settings.managed?.enablePlan != nil)
                 Text("These tools are provided by Talos and work with every model. The sandbox applies to shell and file tools.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -734,6 +756,11 @@ private struct MCPSettingsView: View {
                     }
                 }
 
+                if settings.managedMCPLocked {
+                    Text("The managed policy controls this server list.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 ForEach(settings.mcpServers) { server in
                     HStack(spacing: 8) {
                         Toggle(server.name, isOn: Binding(
@@ -756,8 +783,10 @@ private struct MCPSettingsView: View {
                             Image(systemName: "trash")
                         }
                         .buttonStyle(.borderless)
+                        .disabled(settings.managedMCPLocked)
                     }
                 }
+                .disabled(settings.managedMCPLocked)
             }
 
             Section {
@@ -785,7 +814,11 @@ private struct MCPSettingsView: View {
                     url = ""
                     Task { await model.reloadMCP() }
                 }
-                .disabled(command.trimmingCharacters(in: .whitespaces).isEmpty && url.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(
+                    settings.managedMCPLocked
+                        || (command.trimmingCharacters(in: .whitespaces).isEmpty
+                            && url.trimmingCharacters(in: .whitespaces).isEmpty)
+                )
             } header: {
                 Text("Add server")
             } footer: {

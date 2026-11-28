@@ -67,6 +67,10 @@ final class AppModel: ObservableObject {
     @Published var pendingDraft: String?
     @Published var editingProvider: Provider?
     @Published var settingsSection: SettingsSection = .general
+    @Published private(set) var managedPolicy: ManagedPolicy?
+    @Published private(set) var policySource: String?
+    @Published private(set) var policySignature = "Not configured"
+    @Published private(set) var policyError: String?
     @Published var showWorktreeSheet = false
 
     let settings = SettingsStore()
@@ -84,6 +88,18 @@ final class AppModel: ObservableObject {
     private let openCodeSessionID = UUID().uuidString
 
     init() {
+        let loadedPolicy = ManagedPolicyLoader.load()
+        managedPolicy = loadedPolicy.policy
+        policySource = loadedPolicy.sourcePath
+        policySignature = loadedPolicy.signatureStatus
+        policyError = loadedPolicy.error
+        if let policy = loadedPolicy.policy {
+            settings.applyManagedPolicy(policy)
+            if let managedHooks = policy.hooks {
+                hooks.applyManaged(managedHooks)
+            }
+        }
+
         if let snapshot = SessionPersistence.load(), !snapshot.sessions.isEmpty {
             sessions = snapshot.sessions
             selectedID = snapshot.selectedID ?? snapshot.sessions.first?.id
@@ -122,6 +138,9 @@ final class AppModel: ObservableObject {
            let provider = Provider(rawValue: raw),
            let id = defaults.string(forKey: "selectedModel") {
             choice = ModelChoice(provider: provider, id: id)
+        }
+        if let policy = loadedPolicy.policy {
+            applyManagedSelection(policy)
         }
         remote.onText = { [weak self] text in
             self?.submit(text)
@@ -184,7 +203,9 @@ final class AppModel: ObservableObject {
     }
 
     func reloadMCP() async {
-        let configured = settings.mcpServers + plugins.enabledMCPServers
+        let configured = settings.managedMCPLocked
+            ? settings.mcpServers
+            : settings.mcpServers + plugins.enabledMCPServers
         await mcp.setElicitationHandler { [weak self] request in
             guard let self else { return .decline }
             return await self.promptForElicitation(request)
@@ -609,6 +630,9 @@ final class AppModel: ObservableObject {
     }
 
     func choose(_ choice: ModelChoice) {
+        if let policy = managedPolicy, !policy.allows(choice: choice) {
+            return
+        }
         self.choice = choice
         if choice.provider != .local {
             settings.setModel(choice.id, for: choice.provider)
@@ -619,8 +643,57 @@ final class AppModel: ObservableObject {
     }
 
     func setReasoning(_ value: String?) {
+        if let policy = managedPolicy, policy.reasoning != nil {
+            let forced = policy.enforcedReasoning(value)
+            reasoningSelection = forced
+            settings.setReasoning(forced, for: choice)
+            return
+        }
         reasoningSelection = value
         settings.setReasoning(value, for: choice)
+    }
+
+    private func applyManagedSelection(_ policy: ManagedPolicy) {
+        if let provider = policy.provider {
+            var id = policy.model ?? ""
+            if id.isEmpty {
+                id = choice.provider == provider ? choice.id : settings.model(for: provider)
+            }
+            if !id.isEmpty {
+                choice = ModelChoice(provider: provider, id: id)
+            }
+        } else if let model = policy.model, !model.isEmpty {
+            choice = ModelChoice(provider: choice.provider, id: model)
+        }
+        if let reasoning = policy.reasoning {
+            reasoningSelection = reasoning
+            settings.setReasoning(reasoning, for: choice)
+        }
+    }
+
+    func reloadPolicy() {
+        let loaded = ManagedPolicyLoader.load()
+        managedPolicy = loaded.policy
+        policySource = loaded.sourcePath
+        policySignature = loaded.signatureStatus
+        policyError = loaded.error
+        if let policy = loaded.policy {
+            settings.applyManagedPolicy(policy)
+            if let managedHooks = policy.hooks {
+                hooks.applyManaged(managedHooks)
+            } else {
+                hooks.clearManaged()
+            }
+            applyManagedSelection(policy)
+        } else {
+            settings.clearManagedPolicy()
+            hooks.clearManaged()
+        }
+        Task {
+            await refreshChoices()
+            await reloadMCP()
+            await refreshCapabilities()
+        }
     }
 
     func captureProfile(name: String = "Profile") -> AgentProfile {
@@ -668,6 +741,9 @@ final class AppModel: ObservableObject {
             settings.setReasoning(nil, for: choice)
         }
         profiles.markActive(profile)
+        if let policy = managedPolicy {
+            applyManagedSelection(policy)
+        }
         Task { await refreshCapabilities() }
     }
 
@@ -983,6 +1059,8 @@ final class AppModel: ObservableObject {
             openSettings(.providers)
         case "/profiles":
             openSettings(.profiles)
+        case "/policy":
+            openSettings(.policy)
         case "/hooks":
             openSettings(.hooks)
         case "/models":
@@ -1382,6 +1460,7 @@ final class AppModel: ObservableObject {
         Sandbox: \(settings.sandboxMode.title)
         Approvals: \(settings.approvalPolicy == .onRequest ? "On request" : "Never")
         Profile: \(profiles.active?.name ?? "None")
+        Policy: \(managedPolicy?.title ?? "None")
         Hooks: \(hooks.enabled.count) enabled
         Auto-review: \(settings.autoReviewTools ? "On" : "Off")
         Skills: \(skills.enabled.count)

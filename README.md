@@ -25,6 +25,7 @@ model that produced them.
 - Automatic read-only review of high-impact tool calls, shown in the approval
   sheet with a verdict, risk, and concrete reasons
 - Named config profiles that switch model, reasoning, sandbox, approvals, and tools
+- Managed policies, signed or local, that lock model, safety, hooks, and MCP settings
 - Event hooks for prompts, tools, and sessions, with command output, blocking,
   added context, and explicit trust confirmation
 - Approval prompts, per-task “always allow”, sandbox modes, network control

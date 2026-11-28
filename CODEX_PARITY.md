@@ -36,12 +36,13 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Context | Capability/model/override window, live usage meter |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
-| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
+| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/policy`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
 | Fan-out | `fanout` tool and `/fanout` run multiple isolated read-only tasks concurrently with a configurable cap, per-task timeouts and usage, independent failures, and one report per task |
 | Auto-review | A read-only reviewer runs against the pending tool call, arguments, and working tree diff before an approval prompt; the sheet shows verdict, risk, reasons, and reviewer model |
 | Hooks | Typed `session_start`, `session_end`, `user_prompt_submit`, `pre_tool_use`, and `post_tool_use` hooks with JSON/env payloads, tool matchers, block decisions, additional context, timeouts, activity log, and per-hook trust confirmation |
 | Profiles | Named profiles switch provider, model, reasoning, sandbox, approval, network, speed, and tool toggles; persisted with the active profile shown in status |
+| Managed policy | Loads an Ed25519-signed envelope or a local policy from managed paths/`TALOS_POLICY_FILE`; locks provider, model, reasoning, sandbox, approval, network, tool toggles, hook list, and MCP server list; read-only Policy pane with source, signature status, and locked values |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
 | MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable, elicitation forms, OAuth discovery + dynamic registration + PKCE + refresh |
@@ -77,7 +78,6 @@ These are Codex features Talos does not claim to have:
 
 - Codex Cloud tasks and cloud apply
 - Nested subagents (parallel fan-out is implemented)
-- Managed/enterprise policy distribution (personal profiles are implemented)
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
 - Browser extension/Chrome control and full CDP access

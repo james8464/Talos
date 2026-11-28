@@ -31,21 +31,51 @@ final class SettingsStore: ObservableObject {
     @Published private(set) var contextWindowOverrides: [String: Int] = [:]
     @Published private(set) var savedKeys: Set<Provider> = []
     @Published private(set) var mcpServers: [MCPServerConfig] = []
+    private(set) var managed: ManagedPolicy?
+
+    var managedMCPLocked: Bool { managed?.mcpServers != nil }
 
     @Published var approvalPolicy: ApprovalPolicy {
-        didSet { defaults.set(approvalPolicy.rawValue, forKey: "approvalPolicy") }
+        didSet {
+            if let forced = managed?.approval, approvalPolicy != forced {
+                approvalPolicy = forced
+                return
+            }
+            defaults.set(approvalPolicy.rawValue, forKey: "approvalPolicy")
+        }
     }
     @Published var sandboxMode: SandboxMode {
-        didSet { defaults.set(sandboxMode.rawValue, forKey: "sandboxMode") }
+        didSet {
+            if let forced = managed?.sandbox, sandboxMode != forced {
+                sandboxMode = forced
+                return
+            }
+            defaults.set(sandboxMode.rawValue, forKey: "sandboxMode")
+        }
     }
     @Published var networkAccess: Bool {
-        didSet { defaults.set(networkAccess, forKey: "networkAccess") }
+        didSet {
+            if let forced = managed?.network, networkAccess != forced {
+                networkAccess = forced
+                return
+            }
+            defaults.set(networkAccess, forKey: "networkAccess")
+        }
     }
     @Published var workspacePath: String {
         didSet { defaults.set(workspacePath, forKey: "workspacePath") }
     }
     @Published var maxToolSteps: Int {
-        didSet { defaults.set(maxToolSteps, forKey: "maxToolSteps") }
+        didSet {
+            if let forced = managed?.maxToolSteps {
+                let value = min(max(forced, 1), 24)
+                if maxToolSteps != value {
+                    maxToolSteps = value
+                    return
+                }
+            }
+            defaults.set(maxToolSteps, forKey: "maxToolSteps")
+        }
     }
     @Published var autoCompact: Bool {
         didSet { defaults.set(autoCompact, forKey: "autoCompact") }
@@ -54,14 +84,68 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(compactionThreshold, forKey: "compactionThreshold") }
     }
 
-    @Published var enableShell: Bool { didSet { defaults.set(enableShell, forKey: "enableShell") } }
-    @Published var enableFileEdits: Bool { didSet { defaults.set(enableFileEdits, forKey: "enableFileEdits") } }
-    @Published var enableComputerUse: Bool { didSet { defaults.set(enableComputerUse, forKey: "enableComputerUse") } }
-    @Published var enableWeb: Bool { didSet { defaults.set(enableWeb, forKey: "enableWeb") } }
-    @Published var enableBrowser: Bool { didSet { defaults.set(enableBrowser, forKey: "enableBrowser") } }
-    @Published var enablePlan: Bool { didSet { defaults.set(enablePlan, forKey: "enablePlan") } }
+    @Published var enableShell: Bool {
+        didSet {
+            if let forced = managed?.enableShell, enableShell != forced {
+                enableShell = forced
+                return
+            }
+            defaults.set(enableShell, forKey: "enableShell")
+        }
+    }
+    @Published var enableFileEdits: Bool {
+        didSet {
+            if let forced = managed?.enableFileEdits, enableFileEdits != forced {
+                enableFileEdits = forced
+                return
+            }
+            defaults.set(enableFileEdits, forKey: "enableFileEdits")
+        }
+    }
+    @Published var enableComputerUse: Bool {
+        didSet {
+            if let forced = managed?.enableComputerUse, enableComputerUse != forced {
+                enableComputerUse = forced
+                return
+            }
+            defaults.set(enableComputerUse, forKey: "enableComputerUse")
+        }
+    }
+    @Published var enableWeb: Bool {
+        didSet {
+            if let forced = managed?.enableWeb, enableWeb != forced {
+                enableWeb = forced
+                return
+            }
+            defaults.set(enableWeb, forKey: "enableWeb")
+        }
+    }
+    @Published var enableBrowser: Bool {
+        didSet {
+            if let forced = managed?.enableBrowser, enableBrowser != forced {
+                enableBrowser = forced
+                return
+            }
+            defaults.set(enableBrowser, forKey: "enableBrowser")
+        }
+    }
+    @Published var enablePlan: Bool {
+        didSet {
+            if let forced = managed?.enablePlan, enablePlan != forced {
+                enablePlan = forced
+                return
+            }
+            defaults.set(enablePlan, forKey: "enablePlan")
+        }
+    }
     @Published var autoReviewTools: Bool {
-        didSet { defaults.set(autoReviewTools, forKey: "autoReviewTools") }
+        didSet {
+            if let forced = managed?.autoReview, autoReviewTools != forced {
+                autoReviewTools = forced
+                return
+            }
+            defaults.set(autoReviewTools, forKey: "autoReviewTools")
+        }
     }
 
     @Published var appearance: AppearanceMode {
@@ -213,18 +297,50 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    func applyManagedPolicy(_ policy: ManagedPolicy) {
+        managed = policy
+        if let value = policy.sandbox { sandboxMode = value }
+        if let value = policy.approval { approvalPolicy = value }
+        if let value = policy.network { networkAccess = value }
+        if let value = policy.enableShell { enableShell = value }
+        if let value = policy.enableFileEdits { enableFileEdits = value }
+        if let value = policy.enableComputerUse { enableComputerUse = value }
+        if let value = policy.enableWeb { enableWeb = value }
+        if let value = policy.enableBrowser { enableBrowser = value }
+        if let value = policy.enablePlan { enablePlan = value }
+        if let value = policy.autoReview { autoReviewTools = value }
+        if let value = policy.maxToolSteps { maxToolSteps = min(max(value, 1), 24) }
+        if let servers = policy.mcpServers {
+            mcpServers = servers
+        } else if let data = defaults.data(forKey: "mcpServers"),
+                  let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data) {
+            mcpServers = decoded
+        }
+    }
+
+    func clearManagedPolicy() {
+        managed = nil
+        if let data = defaults.data(forKey: "mcpServers"),
+           let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data) {
+            mcpServers = decoded
+        }
+    }
+
     func addMCPServer(_ server: MCPServerConfig) {
+        guard !managedMCPLocked else { return }
         mcpServers.append(server)
         saveMCP()
     }
 
     func removeMCPServer(_ server: MCPServerConfig) {
+        guard !managedMCPLocked else { return }
         mcpServers.removeAll { $0.id == server.id }
         saveMCP()
     }
 
     func setMCPEnabled(_ server: MCPServerConfig, _ enabled: Bool) {
-        guard let index = mcpServers.firstIndex(where: { $0.id == server.id }) else { return }
+        guard !managedMCPLocked,
+              let index = mcpServers.firstIndex(where: { $0.id == server.id }) else { return }
         mcpServers[index].enabled = enabled
         saveMCP()
     }
