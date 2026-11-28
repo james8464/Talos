@@ -39,7 +39,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Hooks.swift` — typed event hooks, trust, and execution log
 - `Talos/Profiles.swift` — named provider/model/safety profiles
 - `Talos/Reviewer.swift` — read-only auto-review for approval prompts
-- `Talos/ManagedPolicy.swift` — signed/local managed policy loader and signature checks
+- `Talos/ManagedPolicy.swift` — MDM/signed/local managed policy loader, merge, and signature checks
 - `Talos/PolicySettings.swift` — read-only policy status pane
 - `Talos/CloudTasks.swift` — self-hosted queue, HTTP worker protocol, and local worker
 - `Talos/CloudTasksSettings.swift` — task server, worker, enqueue, and task list UI

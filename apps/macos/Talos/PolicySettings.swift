@@ -52,6 +52,7 @@ struct ManagedPolicySettingsView: View {
             }
 
             Section("Search paths") {
+                LabeledContent("Managed preferences domain", value: ManagedPolicyLoader.managedDomain)
                 ForEach(ManagedPolicyLoader.candidatePaths, id: \.self) { path in
                     Text(path)
                         .font(.system(.caption, design: .monospaced))
@@ -61,7 +62,7 @@ struct ManagedPolicySettingsView: View {
             }
 
             Section {
-                Text("Managed policies are read-only. A signed policy is verified with an Ed25519 key from policy.pub or TALOS_POLICY_PUBLIC_KEY. Local unsigned files are accepted only from the managed search paths or an explicit TALOS_POLICY_FILE.")
+                Text("Managed policies are read-only. MDM values from the managed preferences domain override a signed or local file field by field. A signed file is verified with an Ed25519 key from policy.pub or TALOS_POLICY_PUBLIC_KEY. Local unsigned files are accepted only from the managed search paths or an explicit TALOS_POLICY_FILE.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 import CryptoKit
 
 struct ManagedPolicy: Codable, Equatable, Sendable {
@@ -50,6 +51,31 @@ struct ManagedPolicy: Codable, Equatable, Sendable {
         mcpServers != nil
     }
 
+    func merged(over base: ManagedPolicy?) -> ManagedPolicy {
+        guard let base else { return self }
+        var value = base
+        if let version { value.version = version }
+        if let name { value.name = name }
+        if let message { value.message = message }
+        if let provider { value.provider = provider }
+        if let model { value.model = model }
+        if let reasoning { value.reasoning = reasoning }
+        if let sandbox { value.sandbox = sandbox }
+        if let approval { value.approval = approval }
+        if let network { value.network = network }
+        if let enableShell { value.enableShell = enableShell }
+        if let enableFileEdits { value.enableFileEdits = enableFileEdits }
+        if let enableComputerUse { value.enableComputerUse = enableComputerUse }
+        if let enableWeb { value.enableWeb = enableWeb }
+        if let enableBrowser { value.enableBrowser = enableBrowser }
+        if let enablePlan { value.enablePlan = enablePlan }
+        if let autoReview { value.autoReview = autoReview }
+        if let maxToolSteps { value.maxToolSteps = maxToolSteps }
+        if let hooks { value.hooks = hooks }
+        if let mcpServers { value.mcpServers = mcpServers }
+        return value
+    }
+
     func allows(choice: ModelChoice) -> Bool {
         if let provider, choice.provider != provider { return false }
         if let model, !model.isEmpty, choice.id != model { return false }
@@ -89,7 +115,15 @@ struct ManagedPolicyLoad: Sendable {
     let error: String?
 }
 
+struct ManagedPreferencesResult: Sendable {
+    let policy: ManagedPolicy?
+    let domain: String
+    let error: String?
+}
+
 enum ManagedPolicyLoader {
+    static let managedDomain = "app.talos.macos"
+
     static var candidatePaths: [String] {
         var paths: [String] = []
         if let override = ProcessInfo.processInfo.environment["TALOS_POLICY_FILE"], !override.isEmpty {
@@ -105,15 +139,141 @@ enum ManagedPolicyLoader {
     }
 
     static func load() -> ManagedPolicyLoad {
-        for path in candidatePaths where FileManager.default.fileExists(atPath: path) {
-            return load(url: URL(fileURLWithPath: path))
-        }
-        return ManagedPolicyLoad(
+        var fileResult = ManagedPolicyLoad(
             policy: nil,
             sourcePath: nil,
             signatureStatus: "Not configured",
             error: nil
         )
+        for path in candidatePaths where FileManager.default.fileExists(atPath: path) {
+            fileResult = load(url: URL(fileURLWithPath: path))
+            break
+        }
+
+        let preferences = loadManagedPreferences()
+        guard let preferences else { return fileResult }
+        if let error = preferences.error {
+            return ManagedPolicyLoad(
+                policy: nil,
+                sourcePath: "Managed preferences: \(preferences.domain)",
+                signatureStatus: "Managed preferences (MDM)",
+                error: error
+            )
+        }
+        guard let managed = preferences.policy else { return fileResult }
+
+        let merged = managed.merged(over: fileResult.policy)
+        let source: String
+        if let fileSource = fileResult.sourcePath {
+            source = "\(fileSource) + managed preferences: \(preferences.domain)"
+        } else {
+            source = "Managed preferences: \(preferences.domain)"
+        }
+        let signature: String
+        switch (fileResult.policy != nil, fileResult.signatureStatus) {
+        case (true, _) where fileResult.signatureStatus.contains("Signed"):
+            signature = "Signed (Ed25519) + MDM managed preferences"
+        case (true, _):
+            signature = "Local file (unsigned) + MDM managed preferences"
+        default:
+            signature = "Managed preferences (MDM)"
+        }
+        return ManagedPolicyLoad(
+            policy: merged,
+            sourcePath: source,
+            signatureStatus: signature,
+            error: nil
+        )
+    }
+
+    static func loadManagedPreferences(domain: String? = nil) -> ManagedPreferencesResult? {
+        let environment = ProcessInfo.processInfo.environment
+        if let simulatedDomain = environment["TALOS_MANAGED_PREFS_DOMAIN"],
+           !simulatedDomain.isEmpty {
+            let values = UserDefaults(suiteName: simulatedDomain)?.dictionaryRepresentation() ?? [:]
+            return decodeManagedPreferences(values, domain: simulatedDomain)
+        }
+        if let file = environment["TALOS_MANAGED_PREFS_FILE"], !file.isEmpty {
+            guard let data = try? Data(contentsOf: URL(fileURLWithPath: file)),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return ManagedPreferencesResult(
+                    policy: nil,
+                    domain: file,
+                    error: "The managed preferences file is not a valid property list or JSON dictionary."
+                )
+            }
+            return decodeManagedPreferences(object, domain: file)
+        }
+
+        let resolvedDomain = domain ?? managedDomain
+        let scopes: [(CFString, CFString)] = [
+            (kCFPreferencesAnyUser, kCFPreferencesCurrentHost),
+            (kCFPreferencesAnyUser, kCFPreferencesAnyHost),
+        ]
+        for (user, host) in scopes {
+            if let values = CFPreferencesCopyMultiple(
+                nil,
+                resolvedDomain as CFString,
+                user,
+                host
+            ) as? [String: Any], !values.isEmpty {
+                return decodeManagedPreferences(values, domain: resolvedDomain)
+            }
+        }
+        return nil
+    }
+
+    private static func decodeManagedPreferences(
+        _ values: [String: Any],
+        domain: String
+    ) -> ManagedPreferencesResult? {
+        let wrappedKeys = ["ManagedPolicy", "Policy", "policy"]
+        for key in wrappedKeys {
+            guard let raw = values[key] else { continue }
+            let data: Data?
+            if let dictionary = raw as? [String: Any] {
+                data = try? JSONSerialization.data(withJSONObject: dictionary)
+            } else if let text = raw as? String {
+                data = text.data(using: .utf8)
+            } else if let value = raw as? Data {
+                data = value
+            } else {
+                data = nil
+            }
+            guard let data else {
+                return ManagedPreferencesResult(
+                    policy: nil,
+                    domain: domain,
+                    error: "Managed policy in \(domain) is not a dictionary or JSON string."
+                )
+            }
+            guard let policy = try? JSONDecoder().decode(ManagedPolicy.self, from: data) else {
+                return ManagedPreferencesResult(
+                    policy: nil,
+                    domain: domain,
+                    error: "Managed policy in \(domain) does not match the policy schema."
+                )
+            }
+            return ManagedPreferencesResult(policy: policy, domain: domain, error: nil)
+        }
+
+        let knownKeys: Set<String> = [
+            "version", "name", "message", "provider", "model", "reasoning",
+            "sandbox", "approval", "network", "enableShell", "enableFileEdits",
+            "enableComputerUse", "enableWeb", "enableBrowser", "enablePlan",
+            "autoReview", "maxToolSteps", "hooks", "mcpServers",
+        ]
+        let filtered = values.filter { knownKeys.contains($0.key) }
+        guard !filtered.isEmpty else { return nil }
+        guard let data = try? JSONSerialization.data(withJSONObject: filtered),
+              let policy = try? JSONDecoder().decode(ManagedPolicy.self, from: data) else {
+            return ManagedPreferencesResult(
+                policy: nil,
+                domain: domain,
+                error: "Managed preferences in \(domain) do not match the policy schema."
+            )
+        }
+        return ManagedPreferencesResult(policy: policy, domain: domain, error: nil)
     }
 
     static func load(url: URL) -> ManagedPolicyLoad {
