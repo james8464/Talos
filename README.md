@@ -28,6 +28,8 @@ model that produced them.
   sheet with a verdict, risk, and concrete reasons
 - Persistent memories and goals that are injected into every task, with a
   local editor and model-facing `remember` and `update_goal` tools
+- Opt-in Chronicle history and dismissible ambient suggestions based on local
+  activity, with no server dependency
 - Named config profiles that switch model, reasoning, sandbox, approvals, and tools
 - Managed policies from MDM preferences, signed envelopes, or local files that
   lock model, safety, hooks, and MCP settings

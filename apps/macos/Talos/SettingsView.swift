@@ -43,6 +43,8 @@ struct SettingsView: View {
             HooksSettingsView()
         case .memory:
             MemorySettingsView()
+        case .chronicle:
+            ChronicleSettingsView()
         case .policy:
             ManagedPolicySettingsView()
         case .cloud:
@@ -78,6 +80,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case profiles
     case hooks
     case memory
+    case chronicle
     case policy
     case cloud
     case appServer
@@ -102,6 +105,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .profiles: return "Profiles"
         case .hooks: return "Hooks"
         case .memory: return "Memory"
+        case .chronicle: return "Chronicle"
         case .policy: return "Policy"
         case .cloud: return "Cloud Tasks"
         case .appServer: return "App Server"
@@ -126,6 +130,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .profiles: return "person.crop.rectangle.stack"
         case .hooks: return "bolt.badge.clock"
         case .memory: return "brain"
+        case .chronicle: return "clock.arrow.circlepath"
         case .policy: return "checkmark.shield"
         case .cloud: return "cloud"
         case .appServer: return "server.rack"

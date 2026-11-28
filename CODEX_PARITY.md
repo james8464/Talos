@@ -81,13 +81,13 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Menu bar | NSStatusItem quick panel with live ready/working/error status, model menu, context and queue state, New Task, Stop while running, Open Talos, Settings, and Quit |
 | Voice input | macOS Speech + AVAudioEngine live dictation with on-device preference, composer mic control, partial-transcript merging, permission status/request UI, and a 15s authorization timeout. Verified with a generated AIFF through file transcription and live microphone capture, including a recognized transcript in the composer |
 | Memory and goals | Persistent local memories and active goals injected into every system prompt; enabled/disabled state, goal status, add/edit/delete UI, `/memory`, and model-facing `remember` and `update_goal` tools |
+| Chronicle | Opt-in local activity history and rule-based ambient suggestions for repeated failures, completed runs, and working-tree changes; dedupe/cooldown, three-active cap, persisted dismiss/act state, composer banner, and Settings history/suggestion UI |
 | Sessions | persist, archive, fork, rename, retry; no resume picker yet |
 
 ## Not yet
 
 These are Codex features Talos does not claim to have:
 
-- Chronicle and ambient suggestions
 - Remote-control daemon and native mobile client
 - Exact tokenization for Anthropic, Gemini, Ollama, and other non-BPE families
 - Image input for uncatalogued vision models

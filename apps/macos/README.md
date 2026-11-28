@@ -51,6 +51,8 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/MenuBarController.swift` — NSStatusItem quick panel and window/settings actions
 - `Talos/MemoryStore.swift` — persistent memories and goals
 - `Talos/MemorySettings.swift` — memory and goal editor
+- `Talos/Chronicle.swift` — local activity history and ambient suggestion rules
+- `Talos/ChronicleUI.swift` — composer suggestion strip and Chronicle settings
 - `Talos/DictationController.swift` — Speech/AVAudioEngine dictation and permissions
 - `Extension/talos-browser` — Manifest V3 Chrome extension
 - `NativeHost/TalosNativeHost.swift` — native messaging host for the extension

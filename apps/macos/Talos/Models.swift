@@ -301,6 +301,7 @@ enum SlashCommands {
         SlashCommand(id: "/init", detail: "Create AGENTS.md"),
         SlashCommand(id: "/resume", detail: "List recent tasks"),
         SlashCommand(id: "/memory", detail: "Edit persistent memories and goals"),
+        SlashCommand(id: "/chronicle", detail: "Review activity and ambient suggestions"),
         SlashCommand(id: "/permissions", detail: "Open approvals and sandbox"),
         SlashCommand(id: "/config", detail: "Open Settings"),
         SlashCommand(id: "/providers", detail: "Configure providers"),

@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import Combine
 
 struct ApprovalRequest: Identifiable {
     let id = UUID()
@@ -89,6 +90,7 @@ final class AppModel: ObservableObject {
     let hooks = HookStore()
     let profiles = ProfileStore()
     let memories = MemoryStore()
+    let chronicle = ChronicleStore()
     let mcp = MCPManager()
     let remote = RemoteServer()
     let cloudQueue = CloudTaskQueue()
@@ -97,11 +99,15 @@ final class AppModel: ObservableObject {
     private var cloudWorker: CloudTaskWorker?
     private let defaults = UserDefaults.standard
     private var runTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
     private var approvalContinuation: CheckedContinuation<ApprovalDecision, Never>?
     private let openCodeSessionID = UUID().uuidString
 
     init() {
         appServer.host = self
+        chronicle.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
         let loadedPolicy = ManagedPolicyLoader.load()
         managedPolicy = loadedPolicy.policy
         policySource = loadedPolicy.sourcePath
@@ -276,9 +282,24 @@ final class AppModel: ObservableObject {
         await mcp.readResource(uri: uri)
     }
 
+    private var lastChronicleChangeCount = -1
+
     func refreshGit() async {
         gitStatus = await GitService.status(in: projectURL)
         worktrees = await GitService.listWorktrees(in: projectURL)
+        let count = gitStatus.files.count
+        if settings.chronicleEnabled,
+           count >= 3,
+           count != lastChronicleChangeCount {
+            lastChronicleChangeCount = count
+            chronicleRecord(
+                .filesChanged,
+                summary: "\(count) files changed",
+                sessionID: selectedID
+            )
+        } else if count < 3 {
+            lastChronicleChangeCount = count
+        }
     }
 
     private func promptForElicitation(_ request: MCPElicitationRequest) async -> MCPElicitationResponse {
@@ -1229,6 +1250,11 @@ final class AppModel: ObservableObject {
         }
         let message = ChatMessage(role: .user, text: trimmed, attachments: attachments)
         sessions[index].messages.append(message)
+        chronicleRecord(
+            .prompt,
+            summary: String(trimmed.prefix(180)),
+            sessionID: sessionID
+        )
         sessions[index].updatedAt = Date()
         isStreaming = true
         activeRunSessionID = sessionID
@@ -1510,6 +1536,8 @@ final class AppModel: ObservableObject {
             resumeSummary()
         case "/memory":
             openSettings(.memory)
+        case "/chronicle", "/suggestions":
+            openSettings(.chronicle)
         case "/instructions":
             showProjectMemory()
         case "/browser":
@@ -1576,6 +1604,38 @@ final class AppModel: ObservableObject {
             return "Project instructions from \(path.path):\n\(clipped)"
         }
         return nil
+    }
+
+    private func chronicleRecord(
+        _ kind: ChronicleEventKind,
+        summary: String,
+        sessionID: UUID? = nil
+    ) {
+        guard settings.chronicleEnabled else { return }
+        chronicle.record(
+            kind,
+            summary: summary,
+            sessionID: sessionID,
+            generateSuggestions: settings.chronicleSuggestionsEnabled
+        )
+    }
+
+    func performSuggestion(_ suggestion: AmbientSuggestion) {
+        chronicle.markActedOn(suggestion)
+        switch suggestion.action {
+        case .openMemory:
+            openSettings(.memory)
+        case .reviewChanges:
+            showGitPanel = true
+        case .compact:
+            compactCurrentSession()
+        case .retry:
+            retryLastTurn()
+        case .draft:
+            if let prompt = suggestion.prompt, !prompt.isEmpty {
+                pendingDraft = prompt
+            }
+        }
     }
 
     private func systemPrompt() -> String {
@@ -1794,6 +1854,7 @@ final class AppModel: ObservableObject {
         Approvals: \(settings.approvalPolicy == .onRequest ? "On request" : "Never")
         Profile: \(profiles.active?.name ?? "None")
         Memories: \(memories.memories.count) · Goals: \(memories.activeGoals.count) active
+        Chronicle: \(chronicle.activeSuggestions.count) suggestion(s)
         Policy: \(managedPolicy?.title ?? "None")
         Hooks: \(hooks.enabled.count) enabled
         Auto-review: \(settings.autoReviewTools ? "On" : "Off")
@@ -1867,6 +1928,8 @@ final class AppModel: ObservableObject {
     }
 
     private func runLoop(sessionID: UUID, choice runChoice: ModelChoice) async {
+        var runFailed = false
+        var runError: String?
         defer {
             let wasCancelled = Task.isCancelled
             isStreaming = false
@@ -1878,6 +1941,15 @@ final class AppModel: ObservableObject {
             if !wasCancelled {
                 playCompletionFeedback()
                 startNextQueued(sessionID)
+            }
+            if !wasCancelled {
+                chronicleRecord(
+                    runFailed ? .runFailed : .runCompleted,
+                    summary: runFailed
+                        ? (runError ?? "The run failed.")
+                        : "Completed \(runChoice.display)",
+                    sessionID: sessionID
+                )
             }
             Task { await refreshGit() }
         }
@@ -1932,6 +2004,13 @@ final class AppModel: ObservableObject {
                 }
 
                 var result = await executeTool(parsed.call, sessionID: sessionID)
+                if result.status == .failed {
+                    chronicleRecord(
+                        .toolFailed,
+                        summary: "\(parsed.call.name): \(result.output.prefix(160))",
+                        sessionID: sessionID
+                    )
+                }
                 let post = await runHooks(
                     .postToolUse,
                     tool: parsed.call,
@@ -1952,6 +2031,8 @@ final class AppModel: ObservableObject {
                 appendToolMessage(sessionID, call: parsed.call, result: result)
             } catch {
                 if !Task.isCancelled {
+                    runFailed = true
+                    runError = error.localizedDescription
                     setMessageText(sessionID, assistantID, "Request failed. \(error.localizedDescription)")
                     finishMessage(sessionID, assistantID)
                     self.error = error.localizedDescription
@@ -2637,6 +2718,7 @@ extension AppModel: AppServerHost {
             : "App Server Task")
         session.projectPath = currentProject?.path ?? settings.workspacePath
         sessions.insert(session, at: 0)
+        selectedID = session.id
         saveSessions()
         return session.id
     }

@@ -194,6 +194,12 @@ final class SettingsStore: ObservableObject {
     @Published var transcriptFontSize: Double {
         didSet { defaults.set(transcriptFontSize, forKey: "transcriptFontSize") }
     }
+    @Published var chronicleEnabled: Bool {
+        didSet { defaults.set(chronicleEnabled, forKey: "chronicleEnabled") }
+    }
+    @Published var chronicleSuggestionsEnabled: Bool {
+        didSet { defaults.set(chronicleSuggestionsEnabled, forKey: "chronicleSuggestionsEnabled") }
+    }
     @Published var menuBarEnabled: Bool {
         didSet { defaults.set(menuBarEnabled, forKey: "menuBarEnabled") }
     }
@@ -271,6 +277,8 @@ final class SettingsStore: ObservableObject {
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         let storedFont = defaults.object(forKey: "transcriptFontSize") as? Double ?? 14
         transcriptFontSize = min(max(storedFont, 12), 20)
+        chronicleEnabled = defaults.bool(forKey: "chronicleEnabled")
+        chronicleSuggestionsEnabled = defaults.bool(forKey: "chronicleSuggestionsEnabled")
         menuBarEnabled = defaults.object(forKey: "menuBarEnabled") as? Bool ?? true
         notifyOnFinish = defaults.bool(forKey: "notifyOnFinish")
         completionSound = defaults.object(forKey: "completionSound") as? Bool ?? true

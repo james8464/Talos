@@ -931,6 +931,7 @@ private struct TaskView: View {
     var body: some View {
         VStack(spacing: 0) {
             transcript
+            AmbientSuggestionBar()
             Divider()
             ComposerView(draft: $draft, composerFocused: composerFocused)
         }

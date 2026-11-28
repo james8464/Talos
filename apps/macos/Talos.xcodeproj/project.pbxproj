@@ -61,13 +61,16 @@
 		DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */; };
 		E1E61F33240469D831267B5C /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE40BA2F2E62D3115E531DD /* UsageStore.swift */; };
 		E5879A7092FDF72C69872296 /* ProviderEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F062B95637FEC6883E592D35 /* ProviderEditor.swift */; };
+		E969804526DB9434B89E8F5B /* ChronicleUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5C48D6CA06EC216DEF823B /* ChronicleUI.swift */; };
 		F1AC4D9267F5DBB627D6B457 /* Hooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93B3035FF733F0B8A5C4C32 /* Hooks.swift */; };
+		FA1A055EABB73A566CF97EEC /* Chronicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181A45AAE1E910EB7D6860D2 /* Chronicle.swift */; };
 		FB543F49EF1BD7D3E5D9A817 /* MemoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A162AA5478775AECD7CD01 /* MemoryStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		01B5B87B005EEE76F31442B1 /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
 		08D44A0432C25F6647A1BE45 /* FanOut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FanOut.swift; sourceTree = "<group>"; };
+		181A45AAE1E910EB7D6860D2 /* Chronicle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chronicle.swift; sourceTree = "<group>"; };
 		18E43F6139C6EA5473A00032 /* MemorySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemorySettings.swift; sourceTree = "<group>"; };
 		218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTasksSettings.swift; sourceTree = "<group>"; };
 		23521B5CDB48331307D2ED62 /* Reviewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reviewer.swift; sourceTree = "<group>"; };
@@ -93,6 +96,7 @@
 		752940EB53B173AED8964FF2 /* TalosNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = TalosNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		7DF7DCED466867A6BC71FB24 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		7E5C48D6CA06EC216DEF823B /* ChronicleUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChronicleUI.swift; sourceTree = "<group>"; };
 		8438786D61796CA99F3ACF3F /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		847BD0AAE243B78A20C79D30 /* MCP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCP.swift; sourceTree = "<group>"; };
 		88120A756923F2A3457A372B /* Skills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Skills.swift; sourceTree = "<group>"; };
@@ -147,6 +151,8 @@
 				C0DA27C786B558AC4F245F39 /* Brand.swift */,
 				E7B85C1FB17725B76F534C9F /* Browser.swift */,
 				FE7DBC90152307B91B738B5B /* CDPClient.swift */,
+				181A45AAE1E910EB7D6860D2 /* Chronicle.swift */,
+				7E5C48D6CA06EC216DEF823B /* ChronicleUI.swift */,
 				F34CE21CD9645365CB1B2156 /* CloudTasks.swift */,
 				218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */,
 				AD1122852660CD8181149806 /* ContentView.swift */,
@@ -327,6 +333,8 @@
 				D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */,
 				15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */,
 				5A14E9CF14B7A67B1070CDA6 /* CDPClient.swift in Sources */,
+				FA1A055EABB73A566CF97EEC /* Chronicle.swift in Sources */,
+				E969804526DB9434B89E8F5B /* ChronicleUI.swift in Sources */,
 				D142E21A2891D62B7C9C2750 /* CloudTasks.swift in Sources */,
 				7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
