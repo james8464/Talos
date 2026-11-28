@@ -164,6 +164,9 @@ clear them. Missing files stay visible with a Missing badge and Open disabled.
 
 ## Semantic code search
 
+Full data-flow, privacy, performance, fallback, and limitation details are in
+[`SEMANTIC_INDEX.md`](../../SEMANTIC_INDEX.md).
+
 `search_codebase` indexes the workspace with Apple's on-device sentence
 embeddings and ranks chunks with a lexical boost, so conceptual queries work
 without exact identifiers. The index is cached per workspace and rebuilt when

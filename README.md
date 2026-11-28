@@ -30,7 +30,9 @@ model that produced them.
   control (page reading, indexed actions, navigation, and screenshot OCR),
   plus Chrome DevTools Protocol control with DOM selectors and JavaScript
 - On-device semantic code search (`search_codebase`) using Apple sentence
-  embeddings plus lexical ranking, with a cached, incrementally rebuilt index
+  embeddings plus lexical ranking; see
+  [`SEMANTIC_INDEX.md`](SEMANTIC_INDEX.md) for data flow, privacy, performance,
+  and limits
 - Swift Charts usage visualization with labeled axes, an average line, and
   peak/average summaries
 - Recent documents with File > Open Recent and a browser that persists files

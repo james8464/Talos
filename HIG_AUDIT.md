@@ -38,6 +38,9 @@ applicable to a single-user, local-first macOS model client.
 - Completed a VoiceOver walkthrough of the main window, Settings, and an MCP
   app; added speaker prefixes to transcript messages, and recorded the spoken
   labels in [`VOICEOVER_AUDIT.md`](VOICEOVER_AUDIT.md).
+- Documented the on-device semantic index end to end in
+  [`SEMANTIC_INDEX.md`](SEMANTIC_INDEX.md): data flow, privacy, measured
+  performance, fallbacks, and limitations.
 - Hardened the MCP web view: nonpersistent store, main-frame-only bridge,
   same-origin iframe sandboxing, blocked file/data/javascript navigation,
   external links only in the browser, no downloads or automatic windows, media
@@ -251,7 +254,7 @@ applicable to a single-user, local-first macOS model client.
 | iMessage apps and stickers | ➖ | Not an iMessage app |
 | Live Photos | ➖ | No photo library |
 | Mac Catalyst | ➖ | Native AppKit/SwiftUI app |
-| Machine learning | 🟡 | On-device sentence embeddings for semantic search; no further ML claims |
+| Machine learning | ✅ | On-device `NLEmbedding` sentence index with no network access; performance measured (3 files/3 chunks: 60 ms build; 90 files/953 chunks: 62.9 s cold, 19 ms warm, 185 MB peak) and fallbacks/limits documented in `SEMANTIC_INDEX.md` |
 | Maps | ➖ | No maps |
 | NFC | ➖ | No NFC |
 | Photo editing | ➖ | Attachments are not edited |

@@ -39,6 +39,9 @@ enum SemanticIndexError: LocalizedError {
 
 /// Local semantic search over the workspace using Apple's on-device sentence
 /// embeddings. No network service, model download, or API key is involved.
+///
+/// Data flow, privacy, performance, fallbacks, and limits are documented in
+/// `SEMANTIC_INDEX.md` at the repository root.
 actor SemanticIndex {
     static let shared = SemanticIndex()
 
