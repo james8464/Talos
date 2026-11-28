@@ -7,7 +7,8 @@ model that produced them.
 ## What is included
 
 - Local models through Ollama, plus OpenCode Go, OpenAI, Anthropic, and Google Gemini
-- OpenCode Go subscription import from the local OpenCode login
+- OpenCode Go subscription import from the local OpenCode login, with live
+  context, vision, and reasoning metadata for chat-completions models
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
 - Project switcher, project-scoped tasks, a file browser with previews, and a

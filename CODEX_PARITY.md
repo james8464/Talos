@@ -11,7 +11,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | --- | --- |
 | Model selection | Local Ollama models plus OpenCode Go, OpenAI, Anthropic, Gemini |
 | Provider setup | Compact provider list, one editor sheet, editable base URL/model/discovery, Keychain keys, OpenCode subscription import |
-| OpenCode Go | OAuth access imported from the local OpenCode CLI; OpenAI-compatible model discovery and chat |
+| OpenCode Go | OAuth access imported from the local OpenCode CLI; live model metadata drives model list, context, vision, and reasoning effort for 19 chat-completions models |
 | Reasoning effort | Only options reported or supported by the selected model |
 | Response speed | Fast / Balanced / Thorough output budgets |
 | Chat | Streaming, stop, per-message model labels, copy, retry, edit-and-resend |
@@ -54,6 +54,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | --- | --- |
 | MCP | stdio and Streamable HTTP; no MCP elicitation or MCP apps yet |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
+| OpenCode Go | chat-completions models are routed; Responses/Messages-only models are not routed yet |
 | Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
 | Images | attachments and tool screenshots are sent as native image blocks to models identified as vision-capable; PDF input is not yet supported |
 | Reasoning | provider-specific options only where the transport exposes them |

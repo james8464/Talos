@@ -233,6 +233,7 @@ struct OpenAICompatibleClient {
     }
 
     private func supportsReasoning(_ model: String) -> Bool {
+        if isOpenCode, openCodeSession != nil { return true }
         let id = model.lowercased()
         return id.hasPrefix("gpt-5")
             || id.hasPrefix("gpt-6")

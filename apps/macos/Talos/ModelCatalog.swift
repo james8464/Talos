@@ -1,17 +1,33 @@
 import Foundation
 
 enum ModelCatalog {
-    static func capabilities(for choice: ModelChoice, ollama: OllamaModelInfo?) -> ModelCapabilities {
+    static func capabilities(
+        for choice: ModelChoice,
+        ollama: OllamaModelInfo?,
+        openCode: OpenCodeModel? = nil
+    ) -> ModelCapabilities {
         switch choice.provider {
         case .local:
             return local(choice: choice, info: ollama)
         case .openCode:
+            let options = (openCode?.reasoningEfforts ?? []).map { effort in
+                ReasoningOption(
+                    id: effort,
+                    title: effort.capitalized,
+                    detail: "OpenCode Go reasoning effort."
+                )
+            }
+            let defaultEffort = options.contains(where: { $0.id == "medium" })
+                ? "medium"
+                : options.first?.id
             return ModelCapabilities(
-                reasoningOptions: [],
-                defaultReasoning: nil,
-                contextWindow: nil,
-                supportsVision: openCodeSupportsVision(choice.id),
-                summary: "OpenCode Go uses its OpenAI-compatible chat endpoint. Reasoning controls depend on the selected model and are not exposed here."
+                reasoningOptions: options,
+                defaultReasoning: defaultEffort,
+                contextWindow: openCode?.contextLimit,
+                supportsVision: openCode?.supportsVision ?? openCodeSupportsVision(choice.id),
+                summary: openCode.map {
+                    "OpenCode Go · \($0.name)" + ($0.supportsVision ? " · vision" : "")
+                } ?? "OpenCode Go model metadata is loading."
             )
         case .openAI:
             return openAI(choice: choice)

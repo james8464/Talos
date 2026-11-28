@@ -45,6 +45,7 @@ final class AppModel: ObservableObject {
     @Published var currentProject: Project?
     @Published var mcpTools: [MCPTool] = []
     @Published var mcpStatus = "No MCP servers"
+    @Published var openCodeModels: [OpenCodeModel] = []
     @Published var gitStatus = GitStatus()
     @Published var showGitPanel = false
     @Published var showArchived = false
@@ -367,6 +368,9 @@ final class AppModel: ObservableObject {
 
     func choose(_ choice: ModelChoice) {
         self.choice = choice
+        if choice.provider != .local {
+            settings.setModel(choice.id, for: choice.provider)
+        }
         defaults.set(choice.provider.rawValue, forKey: "selectedProvider")
         defaults.set(choice.id, forKey: "selectedModel")
         Task { await refreshCapabilities() }
@@ -392,7 +396,24 @@ final class AppModel: ObservableObject {
         }
 
         settings.refreshKeys()
-        for provider in [Provider.openCode, .openAI, .anthropic, .gemini] where settings.savedKeys.contains(provider) {
+
+        if settings.savedKeys.contains(.openCode), let key = settings.key(for: .openCode) {
+            do {
+                openCodeModels = try await OpenCodeCatalog.fetch(token: key)
+                    .filter(\.supportsChatCompletions)
+                next += openCodeModels.map { ModelChoice(provider: .openCode, id: $0.id) }
+            } catch {
+                openCodeModels = []
+                let model = settings.openCodeModel
+                if !model.isEmpty {
+                    next.append(ModelChoice(provider: .openCode, id: model))
+                }
+            }
+        } else {
+            openCodeModels = []
+        }
+
+        for provider in [Provider.openAI, .anthropic, .gemini] where settings.savedKeys.contains(provider) {
             let model = settings.model(for: provider)
             if !model.isEmpty {
                 next.append(ModelChoice(provider: provider, id: model))
@@ -435,7 +456,11 @@ final class AppModel: ObservableObject {
         guard choice == target else { return }
 
         selectedModelInfo = info
-        let capabilities = ModelCatalog.capabilities(for: target, ollama: info)
+        let capabilities = ModelCatalog.capabilities(
+            for: target,
+            ollama: info,
+            openCode: openCodeModels.first { $0.id == target.id }
+        )
         modelCapabilities = capabilities
 
         if let current = reasoningSelection,

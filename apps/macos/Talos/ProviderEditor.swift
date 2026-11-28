@@ -236,11 +236,9 @@ struct ProviderEditor: View {
             let ids: [String]
             switch provider {
             case .openCode:
-                ids = try await OpenAICompatibleClient(
-                    baseURL: settings.openCodeBase,
-                    apiKey: key,
-                    isOpenCode: true
-                ).models()
+                ids = try await OpenCodeCatalog.fetch(token: key)
+                    .filter(\.supportsChatCompletions)
+                    .map(\.id)
             case .openAI:
                 ids = try await OpenAICompatibleClient(baseURL: settings.openAIBase, apiKey: key).models()
             case .anthropic:
