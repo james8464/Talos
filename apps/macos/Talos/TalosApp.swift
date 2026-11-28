@@ -34,6 +34,7 @@ struct TalosApp: App {
                     .keyboardShortcut("k", modifiers: [.command, .shift])
                     .disabled(model.isStreaming)
                 Button("New Worktree…") { model.showWorktreeSheet = true }
+                Button("Manage Worktrees…") { model.showWorktrees = true }
                 Button("Review Changes…") { model.showGitPanel = true }
                     .keyboardShortcut("g", modifiers: [.command, .shift])
                 Divider()

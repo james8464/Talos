@@ -34,6 +34,27 @@ struct GitWorktree: Sendable {
     let branch: String
 }
 
+struct GitWorktreeInfo: Identifiable, Hashable, Sendable {
+    let path: String
+    let branch: String?
+    let head: String
+    let isBare: Bool
+    let isLocked: Bool
+    let isCurrent: Bool
+
+    var id: String { path }
+
+    var name: String {
+        URL(fileURLWithPath: path).lastPathComponent
+    }
+
+    var branchLabel: String {
+        branch ?? "detached"
+    }
+
+    var isMain: Bool { isCurrent }
+}
+
 enum GitService {
     static func createWorktree(
         in root: URL,
@@ -65,6 +86,135 @@ enum GitService {
             return .failure(GitError.message(result.text.isEmpty ? "git worktree add failed." : result.text))
         }
         return .success(GitWorktree(path: path.path, branch: branch))
+    }
+
+    static func listWorktrees(in root: URL) async -> [GitWorktreeInfo] {
+        let result = await run(["worktree", "list", "--porcelain"], in: root)
+        guard result.code == 0 else { return [] }
+        let current = root.resolvingSymlinksInPath().standardizedFileURL.path
+        var items: [GitWorktreeInfo] = []
+        var path: String?
+        var head = ""
+        var branch: String?
+        var bare = false
+        var locked = false
+
+        func flush() {
+            guard let path else { return }
+            let normalized = URL(fileURLWithPath: path)
+                .resolvingSymlinksInPath()
+                .standardizedFileURL
+                .path
+            items.append(GitWorktreeInfo(
+                path: normalized,
+                branch: branch,
+                head: head,
+                isBare: bare,
+                isLocked: locked,
+                isCurrent: normalized == current || current.hasPrefix(normalized + "/")
+            ))
+        }
+
+        for line in result.text.components(separatedBy: "\n") {
+            if line.isEmpty {
+                flush()
+                path = nil
+                head = ""
+                branch = nil
+                bare = false
+                locked = false
+                continue
+            }
+            if line.hasPrefix("worktree ") {
+                path = String(line.dropFirst("worktree ".count))
+            } else if line.hasPrefix("HEAD ") {
+                head = String(line.dropFirst("HEAD ".count))
+            } else if line.hasPrefix("branch ") {
+                let ref = String(line.dropFirst("branch ".count))
+                branch = ref.hasPrefix("refs/heads/") ? String(ref.dropFirst("refs/heads/".count)) : ref
+            } else if line == "bare" {
+                bare = true
+            } else if line == "locked" || line.hasPrefix("locked ") {
+                locked = true
+            }
+        }
+        flush()
+        return items
+    }
+
+    static func currentBranch(in root: URL) async -> String? {
+        let result = await run(["branch", "--show-current"], in: root)
+        let value = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return result.code == 0 && !value.isEmpty ? value : nil
+    }
+
+    static func mergeWorktree(
+        in root: URL,
+        branch: String,
+        message: String? = nil
+    ) async -> Result<String, Error> {
+        let status = await status(in: root)
+        guard status.isRepository else {
+            return .failure(GitError.message("The project folder is not a Git repository."))
+        }
+        let trimmed = branch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return .failure(GitError.message("Choose a branch to merge."))
+        }
+        if let current = await currentBranch(in: root), current == trimmed {
+            return .failure(GitError.message("\(trimmed) is already the current branch."))
+        }
+        guard !status.hasChanges else {
+            return .failure(GitError.message(
+                "Commit or stash the changes in \(root.lastPathComponent) before merging."
+            ))
+        }
+
+        let title = message?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let arguments = ["merge", "--no-ff", trimmed, "-m", (title?.isEmpty == false ? title! : "Merge branch '\(trimmed)'")]
+        let result = await run(arguments, in: root)
+        guard result.code == 0 else {
+            _ = await run(["merge", "--abort"], in: root)
+            let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return .failure(GitError.message(text.isEmpty ? "Merge failed." : text))
+        }
+        return .success(result.text.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    static func removeWorktree(
+        in root: URL,
+        path: String,
+        branch: String?,
+        force: Bool = false,
+        deleteBranch: Bool = false
+    ) async -> Result<String, Error> {
+        let target = URL(fileURLWithPath: path).standardizedFileURL
+        let rootPath = root.standardizedFileURL.path
+        guard target.path != rootPath else {
+            return .failure(GitError.message("The main worktree cannot be removed."))
+        }
+
+        var arguments = ["worktree", "remove"]
+        if force { arguments.append("--force") }
+        arguments.append(target.path)
+        let removal = await run(arguments, in: root)
+        guard removal.code == 0 else {
+            let text = removal.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return .failure(GitError.message(text.isEmpty ? "git worktree remove failed." : text))
+        }
+        _ = await run(["worktree", "prune"], in: root)
+
+        var notes = ["Removed worktree \(target.lastPathComponent)."]
+        if let branch, !branch.isEmpty {
+            let deletion = await run(["branch", force ? "-D" : "-d", branch], in: root)
+            if deletion.code == 0 {
+                notes.append("Deleted branch \(branch).")
+            } else {
+                let reason = deletion.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                notes.append("Kept branch \(branch): \(reason.isEmpty ? "it is not fully merged." : reason)")
+            }
+        }
+        return .success(notes.joined(separator: "\n"))
     }
 
     static func status(in root: URL) async -> GitStatus {

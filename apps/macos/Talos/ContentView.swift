@@ -93,6 +93,10 @@ struct ContentView: View {
                 .environmentObject(model)
                 .environmentObject(model.settings)
         }
+        .sheet(isPresented: $model.showWorktrees) {
+            WorktreePanel()
+                .environmentObject(model)
+        }
         .sheet(isPresented: $model.showWorktreeSheet) {
             NewWorktreeSheet()
                 .environmentObject(model)
@@ -131,6 +135,7 @@ private struct ProjectMenu: View {
             Button("Open Folder…") { model.chooseProject() }
             Button("Browse Files…") { model.showProjectBrowser = true }
             Button("New Worktree…") { model.showWorktreeSheet = true }
+            Button("Manage Worktrees…") { model.showWorktrees = true }
             Button("Review Changes…") { model.showGitPanel = true }
             Divider()
             Button("Reveal in Finder") {

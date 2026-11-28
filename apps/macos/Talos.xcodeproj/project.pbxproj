@@ -34,6 +34,7 @@
 		A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E3AB66594CCF5305513D55 /* Projects.swift */; };
 		A77212AE158D591E2C7A23E0 /* OpenCodeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */; };
 		AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D44A0432C25F6647A1BE45 /* FanOut.swift */; };
+		B5FB8F8CBAA739DBFACE35A3 /* WorktreePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B196A39265E01E042AADBA90 /* WorktreePanel.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6301A0926D7044DADE1CB7C2 /* Talos.icns */; };
 		C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */; };
@@ -72,6 +73,7 @@
 		9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitPanel.swift; sourceTree = "<group>"; };
 		AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		AD1122852660CD8181149806 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B196A39265E01E042AADBA90 /* WorktreePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorktreePanel.swift; sourceTree = "<group>"; };
 		BD0D8CB4E3107DD1D9D04F0C /* Talos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Talos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDE40BA2F2E62D3115E531DD /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
 		C09A4D0139081FED1D948312 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -134,6 +136,7 @@
 				5D2AC40CFA47F5E6168180BB /* TalosApp.swift */,
 				01B5B87B005EEE76F31442B1 /* Tools.swift */,
 				BDE40BA2F2E62D3115E531DD /* UsageStore.swift */,
+				B196A39265E01E042AADBA90 /* WorktreePanel.swift */,
 				D252064F1F9BC1936477F46D /* Resources */,
 			);
 			path = Talos;
@@ -257,6 +260,7 @@
 				35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */,
 				8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */,
 				E1E61F33240469D831267B5C /* UsageStore.swift in Sources */,
+				B5FB8F8CBAA739DBFACE35A3 /* WorktreePanel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

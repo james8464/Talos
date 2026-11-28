@@ -55,7 +55,9 @@ final class AppModel: ObservableObject {
     private var approvalReviewTask: Task<Void, Never>?
     @Published var openCodeModels: [OpenCodeModel] = []
     @Published var gitStatus = GitStatus()
+    @Published var worktrees: [GitWorktreeInfo] = []
     @Published var showGitPanel = false
+    @Published var showWorktrees = false
     @Published var showArchived = false
     @Published var renameTarget: Session?
     @Published var pendingDraft: String?
@@ -200,6 +202,7 @@ final class AppModel: ObservableObject {
 
     func refreshGit() async {
         gitStatus = await GitService.status(in: projectURL)
+        worktrees = await GitService.listWorktrees(in: projectURL)
     }
 
     private func promptForElicitation(_ request: MCPElicitationRequest) async -> MCPElicitationResponse {
@@ -246,6 +249,37 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func openWorktree(_ worktree: GitWorktreeInfo) {
+        let project = projects.open(path: worktree.path)
+        openProject(project)
+        showWorktrees = false
+    }
+
+    func mergeWorktree(_ worktree: GitWorktreeInfo) async -> Result<String, Error> {
+        guard let branch = worktree.branch else {
+            return .failure(GitError.message("This worktree has a detached HEAD and cannot be merged by branch name."))
+        }
+        let result = await GitService.mergeWorktree(in: projectURL, branch: branch)
+        await refreshGit()
+        return result
+    }
+
+    func removeWorktree(
+        _ worktree: GitWorktreeInfo,
+        force: Bool = false,
+        deleteBranch: Bool = true
+    ) async -> Result<String, Error> {
+        let result = await GitService.removeWorktree(
+            in: projectURL,
+            path: worktree.path,
+            branch: worktree.branch,
+            force: force,
+            deleteBranch: deleteBranch
+        )
+        await refreshGit()
+        return result
+    }
+
     func createWorktree(name: String) async -> Result<Project, Error> {
         let result = await GitService.createWorktree(
             in: projectURL,
@@ -256,6 +290,7 @@ final class AppModel: ObservableObject {
         case .success(let worktree):
             let project = projects.open(path: worktree.path)
             openProject(project)
+            await refreshGit()
             return .success(project)
         case .failure(let error):
             return .failure(error)
@@ -831,6 +866,27 @@ final class AppModel: ObservableObject {
                     case .failure(let error):
                         appendCommandMessage("Worktree failed: \(error.localizedDescription)")
                     }
+                }
+            }
+        case "/worktrees":
+            Task { await refreshGit() }
+            showWorktrees = true
+        case "/merge":
+            guard !remainder.isEmpty else {
+                appendCommandMessage("Usage: /merge talos/branch-name")
+                break
+            }
+            guard !isStreaming else {
+                appendCommandMessage("Stop the current response before merging.")
+                break
+            }
+            Task {
+                switch await GitService.mergeWorktree(in: projectURL, branch: remainder) {
+                case .success(let text):
+                    await refreshGit()
+                    appendCommandMessage(text.isEmpty ? "Merged \(remainder)." : text)
+                case .failure(let error):
+                    appendCommandMessage("Merge failed: \(error.localizedDescription)")
                 }
             }
         case "/diff":

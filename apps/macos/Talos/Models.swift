@@ -287,6 +287,8 @@ enum SlashCommands {
         SlashCommand(id: "/usage", detail: "Show token usage"),
         SlashCommand(id: "/cost", detail: "Show token usage"),
         SlashCommand(id: "/worktree", detail: "Create a Git worktree"),
+        SlashCommand(id: "/worktrees", detail: "Manage worktrees and branches"),
+        SlashCommand(id: "/merge", detail: "Merge a managed branch"),
         SlashCommand(id: "/diff", detail: "Open the changes panel"),
         SlashCommand(id: "/review", detail: "Review working tree changes"),
         SlashCommand(id: "/subagent", detail: "Delegate a read-only research task"),

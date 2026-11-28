@@ -13,8 +13,8 @@ model that produced them.
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
 - Project switcher, project-scoped tasks, a file browser with previews, a
-  Git changes panel with colored diffs, staging, and commit, and one-command
-  Git worktrees for isolated task branches
+  Git changes panel with colored diffs, staging, and commit, plus a worktree
+  manager that creates, switches, merges, and cleans up task branches
 - Tools that work with every model: shell, file read/write, patch, file search,
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR)
@@ -37,7 +37,8 @@ model that produced them.
   `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/rewind`,
   `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
   `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`,
-  `/mcp`, `/remote`, `/browser`, `/worktree`, `/subagent`, `/fanout`, `/todos`, `/help`
+  `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`,
+  `/todos`, `/help`
 - Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in
   and interactive elicitation forms
 - Local phone control with a token-protected web page and QR code

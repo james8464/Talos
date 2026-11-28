@@ -20,7 +20,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Projects | Project switcher, recent projects, project-scoped tasks |
 | File browser | Lazy project tree, text/image preview, open/reveal, new file |
 | Git review | Branch/status, changed files, colored diff, stage all, commit |
-| Git worktrees | Create an isolated worktree and branch from the project menu, `/worktree`, or Settings prefix |
+| Git worktrees | Create, list, switch, merge, and clean up worktrees from a manager panel, `/worktree`, `/worktrees`, `/merge`, or Settings prefix; merges require a clean tree and roll back on conflict |
 | Documents | `create_document` for md, txt, html, csv, json, rtf, docx |
 | Shell | Sandboxed zsh commands under workspace root |
 | Files | Read with line ranges, write, list, search |
@@ -36,7 +36,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Context | Capability/model/override window, live usage meter |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
-| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/subagent`, `/fanout`, `/todos`, `/help` |
+| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
 | Fan-out | `fanout` tool and `/fanout` run multiple isolated read-only tasks concurrently with a configurable cap, per-task timeouts and usage, independent failures, and one report per task |
 | Auto-review | A read-only reviewer runs against the pending tool call, arguments, and working tree diff before an approval prompt; the sheet shows verdict, risk, reasons, and reviewer model |
@@ -75,7 +75,6 @@ These are Codex features Talos does not claim to have:
 
 - Codex Cloud tasks and cloud apply
 - Nested subagents (parallel fan-out is implemented)
-- Managed branches beyond one worktree per task
 - Managed/enterprise policy distribution (personal profiles are implemented)
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
