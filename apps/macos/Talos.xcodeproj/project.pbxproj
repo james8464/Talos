@@ -37,6 +37,7 @@
 		B5FB8F8CBAA739DBFACE35A3 /* WorktreePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B196A39265E01E042AADBA90 /* WorktreePanel.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6301A0926D7044DADE1CB7C2 /* Talos.icns */; };
+		C3CF9D5095F5C13BC4366D46 /* MCPAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 663E1E4E42478C07BD4DC2D2 /* MCPAppView.swift */; };
 		C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */; };
 		CB37052B4F401B29A60DE5AC /* MCPSamplingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */; };
 		D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DA27C786B558AC4F245F39 /* Brand.swift */; };
@@ -62,6 +63,7 @@
 		5C064999B0D1F92F7B32F537 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		5D2AC40CFA47F5E6168180BB /* TalosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosApp.swift; sourceTree = "<group>"; };
 		6301A0926D7044DADE1CB7C2 /* Talos.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Talos.icns; sourceTree = "<group>"; };
+		663E1E4E42478C07BD4DC2D2 /* MCPAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPAppView.swift; sourceTree = "<group>"; };
 		6EDDFB389E2CD36304364711 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
 		70913AB772F308657E509F42 /* Providers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
@@ -115,6 +117,7 @@
 				C7B210FBD6286CFA7711C157 /* Info.plist */,
 				EB1A617E407672D5729425D2 /* Keychain.swift */,
 				847BD0AAE243B78A20C79D30 /* MCP.swift */,
+				663E1E4E42478C07BD4DC2D2 /* MCPAppView.swift */,
 				3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */,
 				E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */,
 				98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */,
@@ -240,6 +243,7 @@
 				98060838BC265B011D427731 /* ImageLoader.swift in Sources */,
 				2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */,
 				6790212F8FC205B737DC983A /* MCP.swift in Sources */,
+				C3CF9D5095F5C13BC4366D46 /* MCPAppView.swift in Sources */,
 				C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */,
 				CB37052B4F401B29A60DE5AC /* MCPSamplingView.swift in Sources */,
 				96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */,

@@ -46,6 +46,7 @@ final class AppModel: ObservableObject {
     @Published var mcpTools: [MCPTool] = []
     @Published var mcpStatus = "No MCP servers"
     @Published var mcpElicitation: MCPElicitationRequest?
+    @Published var activeMCPApp: MCPUIApp?
     private var mcpElicitationContinuation: CheckedContinuation<MCPElicitationResponse, Never>?
     @Published var pendingSampling: MCPSamplingRequest?
     @Published private(set) var samplingApprovedServers: Set<String> = []
@@ -221,6 +222,37 @@ final class AppModel: ObservableObject {
             mcpElicitationContinuation = continuation
             mcpElicitation = request
         }
+    }
+
+    func presentMCPApp(for toolName: String) async {
+        guard let tool = mcpTools.first(where: { $0.toolName == toolName }),
+              let uri = tool.uiResourceUri else { return }
+        switch await mcp.readResource(uri: uri) {
+        case .success(let content):
+            guard let html = content.text, content.isHTML else { return }
+            activeMCPApp = MCPUIApp(
+                uri: uri,
+                serverName: tool.serverName,
+                title: tool.name,
+                mimeType: content.mimeType ?? "text/html",
+                html: html
+            )
+        case .failure(let error):
+            mcpStatus = "App failed: \(error.localizedDescription)"
+        }
+    }
+
+    func callMCPAppTool(
+        _ name: String,
+        serverName: String,
+        arguments: [String: Any]
+    ) async -> Result<String, Error> {
+        guard let tool = mcpTools.first(where: {
+            $0.serverName == serverName && ($0.name == name || $0.toolName == name)
+        }) else {
+            return .failure(MCPError.message("No MCP tool named \(name) on \(serverName)."))
+        }
+        return await mcp.call(toolName: tool.toolName, arguments: arguments)
     }
 
     func answerElicitation(_ response: MCPElicitationResponse) {
@@ -1494,6 +1526,9 @@ final class AppModel: ObservableObject {
                         output: result.output + "\n\nHook context:\n" + contexts.joined(separator: "\n"),
                         attachmentPath: result.attachmentPath
                     )
+                }
+                if parsed.call.name.hasPrefix("mcp__"), result.status == .succeeded {
+                    await presentMCPApp(for: parsed.call.name)
                 }
                 appendToolMessage(sessionID, call: parsed.call, result: result)
             } catch {

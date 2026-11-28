@@ -40,7 +40,8 @@ model that produced them.
   `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`,
   `/todos`, `/help`
 - Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in,
-  interactive elicitation forms, and approved model sampling for servers
+  interactive elicitation forms, approved model sampling, and sandboxed HTML
+  MCP apps that can call their own server's tools
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
 - Notifications, appearance controls, and a native sidebar Settings window

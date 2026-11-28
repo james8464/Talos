@@ -34,6 +34,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/MCP.swift` — stdio/HTTP MCP, OAuth, and elicitation
 - `Talos/MCPElicitationView.swift` — native form for server-requested input
 - `Talos/MCPSamplingView.swift` — approval sheet for server-initiated sampling
+- `Talos/MCPAppView.swift` — sandboxed WebKit host and JS tool bridge for MCP apps
 - `Talos/Hooks.swift` — typed event hooks, trust, and execution log
 - `Talos/Profiles.swift` — named provider/model/safety profiles
 - `Talos/Reviewer.swift` — read-only auto-review for approval prompts

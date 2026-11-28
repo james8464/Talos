@@ -114,6 +114,10 @@ struct ContentView: View {
             MCPSamplingView(request: request)
                 .environmentObject(model)
         }
+        .sheet(item: $model.activeMCPApp) { app in
+            MCPAppView(app: app)
+                .environmentObject(model)
+        }
     }
 }
 

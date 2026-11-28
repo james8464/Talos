@@ -19,6 +19,7 @@ struct MCPTool: Identifiable, Hashable, Sendable {
     let name: String
     let description: String
     let inputSchema: String
+    let uiResourceUri: String?
 
     var id: String { "\(serverID.uuidString)|\(name)" }
 
@@ -37,12 +38,17 @@ struct MCPTool: Identifiable, Hashable, Sendable {
         let schemaObject = raw["inputSchema"] as? [String: Any] ?? [:]
         let schemaData = try? JSONSerialization.data(withJSONObject: schemaObject, options: [.sortedKeys])
         let schema = schemaData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        let meta = raw["_meta"] as? [String: Any]
+        let ui = meta?["ui"] as? [String: Any]
+        let uiResource = (ui?["resourceUri"] as? String)
+            ?? (meta?["ui/resourceUri"] as? String)
         return MCPTool(
             serverID: config.id,
             serverName: config.name,
             name: name,
             description: description,
-            inputSchema: schema
+            inputSchema: schema,
+            uiResourceUri: uiResource
         )
     }
 }
@@ -55,6 +61,25 @@ private extension String {
         }
         return String(scalars)
     }
+}
+
+struct MCPResourceContent: Sendable {
+    let uri: String
+    let mimeType: String?
+    let text: String?
+
+    var isHTML: Bool {
+        (mimeType ?? "").lowercased().contains("html")
+    }
+}
+
+struct MCPUIApp: Identifiable, Sendable {
+    let id = UUID()
+    let uri: String
+    let serverName: String
+    let title: String
+    let mimeType: String
+    let html: String
 }
 
 enum MCPElicitationKind: Equatable, Sendable {
@@ -837,6 +862,25 @@ actor MCPClient {
         return renderContent(result["content"])
     }
 
+    func readResource(uri: String) async throws -> MCPResourceContent {
+        let response = try await request("resources/read", params: ["uri": uri])
+        guard let result = response["result"] as? [String: Any],
+              let contents = result["contents"] as? [[String: Any]],
+              let first = contents.first else {
+            throw MCPError.message("\(config.name) returned no resource content.")
+        }
+        var text = first["text"] as? String
+        if text == nil, let blob = first["blob"] as? String,
+           let data = Data(base64Encoded: blob) {
+            text = String(data: data, encoding: .utf8)
+        }
+        return MCPResourceContent(
+            uri: first["uri"] as? String ?? uri,
+            mimeType: first["mimeType"] as? String,
+            text: text
+        )
+    }
+
     func stop() {
         stopped = true
         reader?.cancel()
@@ -1073,6 +1117,25 @@ actor MCPHTTPClient {
         return renderContent(result["content"])
     }
 
+    func readResource(uri: String) async throws -> MCPResourceContent {
+        guard let response = try await request("resources/read", params: ["uri": uri]),
+              let result = response["result"] as? [String: Any],
+              let contents = result["contents"] as? [[String: Any]],
+              let first = contents.first else {
+            throw MCPError.message("\(config.name) returned no resource content.")
+        }
+        var text = first["text"] as? String
+        if text == nil, let blob = first["blob"] as? String,
+           let data = Data(base64Encoded: blob) {
+            text = String(data: data, encoding: .utf8)
+        }
+        return MCPResourceContent(
+            uri: first["uri"] as? String ?? uri,
+            mimeType: first["mimeType"] as? String,
+            text: text
+        )
+    }
+
     func stop() {}
 
     private func notify(_ method: String) async throws {
@@ -1275,6 +1338,13 @@ actor MCPManager {
             case .http(let client): return try await client.callTool(name: name, arguments: arguments)
             }
         }
+
+        func readResource(uri: String) async throws -> MCPResourceContent {
+            switch self {
+            case .stdio(let client): return try await client.readResource(uri: uri)
+            case .http(let client): return try await client.readResource(uri: uri)
+            }
+        }
     }
 
     private var clients: [UUID: Connection] = [:]
@@ -1329,6 +1399,18 @@ actor MCPManager {
         }
         tools = discovered
         return (discovered, errors)
+    }
+
+    func readResource(uri: String) async -> Result<MCPResourceContent, Error> {
+        guard let tool = tools.first(where: { $0.uiResourceUri == uri }),
+              let client = clients[tool.serverID] else {
+            return .failure(MCPError.message("No connected server advertises \(uri)."))
+        }
+        do {
+            return .success(try await client.readResource(uri: uri))
+        } catch {
+            return .failure(error)
+        }
     }
 
     func call(toolName: String, arguments: [String: Any]) async -> Result<String, Error> {
