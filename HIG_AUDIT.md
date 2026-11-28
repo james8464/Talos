@@ -29,6 +29,8 @@ applicable to a single-user, local-first macOS model client.
 - Verified right-to-left layout with a forced RTL pass: sidebar, detail,
   inspector, composer, quick switcher, and modal sheets mirror correctly, and
   tool output stays left-to-right for code and paths.
+- Added persisted sidebar customization: group by date, project, or none, with
+  preview and message-count toggles in the sidebar menu and Settings.
 - Added searchable Settings and image/PDF attachment thumbnails.
 
 ## Design fundamentals
@@ -109,7 +111,7 @@ applicable to a single-user, local-first macOS model client.
 | HIG page | Status | Evidence / note |
 | --- | --- | --- |
 | Boxes | ✅ | Cards and grouped surfaces follow system corner radii |
-| Collections | 🟡 | Sidebar uses native List rather than a custom collection |
+| Collections | ✅ | Native List provides selection, sections, and context menus; no custom collection layout is needed |
 | Column views | ➖ | No browser-style column navigation |
 | Disclosure controls | ✅ | Tool output and plan details expand/collapse |
 | Labels | ✅ | Control labels and value labels are paired and readable |
@@ -142,7 +144,7 @@ applicable to a single-user, local-first macOS model client.
 | --- | --- | --- |
 | Path controls | ➖ | No file-path navigation control |
 | Search fields | ✅ | Placeholder scope, live filtering, clear button, Esc |
-| Sidebars | ✅ | Date groups, hide/show commands, native selection; no user customization (🟡 if required) |
+| Sidebars | ✅ | Group by date/project/none, toggle previews and message counts, show/hide archived, and hide/show the sidebar. Choices persist across launches and are available in both the sidebar menu and Settings |
 | Tab bars | ➖ | No tab bar |
 | Token fields | ➖ | No token entry control |
 
@@ -253,7 +255,6 @@ applicable to a single-user, local-first macOS model client.
 
 ## Remaining partial items
 
-- Sidebar content is grouped but not user-customizable.
 - VoiceOver has structural labels but no full spoken walkthrough.
 - No recent-documents browser.
 - Charts are a custom heatmap rather than the Charts framework.

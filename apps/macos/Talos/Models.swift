@@ -437,3 +437,19 @@ enum SandboxMode: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+
+enum SidebarGrouping: String, CaseIterable, Identifiable, Codable {
+    case date
+    case project
+    case none
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .date: return "Date"
+        case .project: return "Project"
+        case .none: return "None"
+        }
+    }
+}

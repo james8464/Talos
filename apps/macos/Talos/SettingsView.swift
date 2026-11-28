@@ -1343,6 +1343,16 @@ private struct AppearanceSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Sidebar") {
+                Picker("Group tasks by", selection: $settings.sidebarGrouping) {
+                    ForEach(SidebarGrouping.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                Toggle("Show task previews", isOn: $settings.sidebarShowPreviews)
+                Toggle("Show message counts", isOn: $settings.sidebarShowCounts)
+            }
+
             Section("Completion") {
                 Toggle("Play a sound when a task finishes", isOn: $settings.completionSound)
                 Toggle("Notify when the app is in the background", isOn: Binding(

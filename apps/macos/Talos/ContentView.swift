@@ -303,6 +303,7 @@ private struct GitButton: View {
 
 private struct Sidebar: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
     @Environment(\.openSettings) private var openSettings
 
     private struct SessionGroup: Identifiable {
@@ -312,29 +313,47 @@ private struct Sidebar: View {
     }
 
     private var groups: [SessionGroup] {
-        let calendar = Calendar.current
-        let now = Date()
-        let today = calendar.startOfDay(for: now)
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
-        let weekAgo = calendar.date(byAdding: .day, value: -7, to: today) ?? today
-        var buckets: [String: [Session]] = [:]
-        for session in model.filteredSessions {
-            let day = calendar.startOfDay(for: session.updatedAt)
-            let key: String
-            if day >= today {
-                key = "Today"
-            } else if day >= yesterday {
-                key = "Yesterday"
-            } else if day >= weekAgo {
-                key = "Previous 7 Days"
-            } else {
-                key = "Older"
+        let sessions = model.filteredSessions
+        switch settings.sidebarGrouping {
+        case .none:
+            guard !sessions.isEmpty else { return [] }
+            return [SessionGroup(id: "all", title: "Tasks", sessions: sessions)]
+        case .project:
+            var buckets: [String: [Session]] = [:]
+            for session in sessions {
+                let name = session.projectPath.isEmpty
+                    ? "No Project"
+                    : URL(fileURLWithPath: session.projectPath).lastPathComponent
+                buckets[name, default: []].append(session)
             }
-            buckets[key, default: []].append(session)
-        }
-        return ["Today", "Yesterday", "Previous 7 Days", "Older"].compactMap { title in
-            guard let sessions = buckets[title], !sessions.isEmpty else { return nil }
-            return SessionGroup(id: title, title: title, sessions: sessions)
+            return buckets.keys.sorted().map { name in
+                SessionGroup(id: "project-\(name)", title: name, sessions: buckets[name] ?? [])
+            }
+        case .date:
+            let calendar = Calendar.current
+            let now = Date()
+            let today = calendar.startOfDay(for: now)
+            let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+            let weekAgo = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+            var buckets: [String: [Session]] = [:]
+            for session in sessions {
+                let day = calendar.startOfDay(for: session.updatedAt)
+                let key: String
+                if day >= today {
+                    key = "Today"
+                } else if day >= yesterday {
+                    key = "Yesterday"
+                } else if day >= weekAgo {
+                    key = "Previous 7 Days"
+                } else {
+                    key = "Older"
+                }
+                buckets[key, default: []].append(session)
+            }
+            return ["Today", "Yesterday", "Previous 7 Days", "Older"].compactMap { title in
+                guard let rows = buckets[title], !rows.isEmpty else { return nil }
+                return SessionGroup(id: title, title: title, sessions: rows)
+            }
         }
     }
 
@@ -357,6 +376,28 @@ private struct Sidebar: View {
                     }
                 }
                 Spacer()
+                Menu {
+                    Picker("Group by", selection: $settings.sidebarGrouping) {
+                        ForEach(SidebarGrouping.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    Divider()
+                    Toggle("Show previews", isOn: $settings.sidebarShowPreviews)
+                    Toggle("Show message counts", isOn: $settings.sidebarShowCounts)
+                    Divider()
+                    Toggle("Show archived tasks", isOn: $model.showArchived)
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .help("Customize sidebar")
+                .accessibilityLabel("Customize sidebar")
+
                 Button {
                     model.newSession()
                 } label: {
@@ -404,7 +445,9 @@ private struct Sidebar: View {
                         ForEach(group.sessions) { session in
                             SidebarRow(
                                 session: session,
-                                isRunning: model.activeRunSessionID == session.id
+                                isRunning: model.activeRunSessionID == session.id,
+                                showsPreview: settings.sidebarShowPreviews,
+                                showsCounts: settings.sidebarShowCounts
                             )
                             .tag(session.id)
                             .contextMenu {
@@ -424,7 +467,12 @@ private struct Sidebar: View {
                     Section("Archived") {
                         if model.showArchived {
                             ForEach(model.archivedSessions) { session in
-                                SidebarRow(session: session, isRunning: false)
+                                SidebarRow(
+                                    session: session,
+                                    isRunning: false,
+                                    showsPreview: settings.sidebarShowPreviews,
+                                    showsCounts: settings.sidebarShowCounts
+                                )
                                     .tag(session.id)
                                     .opacity(0.7)
                                     .contextMenu {
@@ -508,6 +556,8 @@ private struct Sidebar: View {
 private struct SidebarRow: View {
     let session: Session
     var isRunning = false
+    var showsPreview = true
+    var showsCounts = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -525,18 +575,20 @@ private struct SidebarRow: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
-            HStack(spacing: 5) {
-                if !session.preview.isEmpty {
-                    Text(session.preview)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 0)
-                if session.messages.count > 0 {
-                    Text("\(session.messages.count)")
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+            if showsPreview || showsCounts {
+                HStack(spacing: 5) {
+                    if showsPreview, !session.preview.isEmpty {
+                        Text(session.preview)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    if showsCounts, session.messages.count > 0 {
+                        Text("\(session.messages.count)")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
         }

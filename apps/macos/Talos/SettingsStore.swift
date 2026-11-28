@@ -195,6 +195,15 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(cloudAllowLAN, forKey: "cloudAllowLAN") }
     }
 
+    @Published var sidebarGrouping: SidebarGrouping {
+        didSet { defaults.set(sidebarGrouping.rawValue, forKey: "sidebarGrouping") }
+    }
+    @Published var sidebarShowPreviews: Bool {
+        didSet { defaults.set(sidebarShowPreviews, forKey: "sidebarShowPreviews") }
+    }
+    @Published var sidebarShowCounts: Bool {
+        didSet { defaults.set(sidebarShowCounts, forKey: "sidebarShowCounts") }
+    }
     @Published var transcriptFontSize: Double {
         didSet { defaults.set(transcriptFontSize, forKey: "transcriptFontSize") }
     }
@@ -286,6 +295,9 @@ final class SettingsStore: ObservableObject {
         cloudRunLocally = defaults.bool(forKey: "cloudRunLocally")
         cloudAllowLAN = defaults.bool(forKey: "cloudAllowLAN")
 
+        sidebarGrouping = SidebarGrouping(rawValue: defaults.string(forKey: "sidebarGrouping") ?? "") ?? .date
+        sidebarShowPreviews = defaults.object(forKey: "sidebarShowPreviews") as? Bool ?? true
+        sidebarShowCounts = defaults.object(forKey: "sidebarShowCounts") as? Bool ?? true
         let storedFont = defaults.object(forKey: "transcriptFontSize") as? Double ?? 14
         transcriptFontSize = min(max(storedFont, 12), 20)
         githubAPIBase = defaults.string(forKey: "githubAPIBase") ?? "https://api.github.com"
