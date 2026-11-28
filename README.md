@@ -37,8 +37,9 @@ model that produced them.
   added context, and explicit trust confirmation
 - Approval prompts, per-task “always allow”, sandbox modes, network control
 - Message queueing while a response is streaming, attachments, inline
-  image/file previews, native image input for vision models, and PDF input
-  through extracted text plus rendered pages
+  image/file previews, native image input for vision models, PDF input through
+  extracted text plus rendered pages, and a per-model vision override for
+  uncatalogued models
 - Context-window accounting with exact cl100k/o200k tokenizers for supported
   OpenAI models, automatic and manual conversation compaction
 - Token usage history with a 12-week heatmap and per-model totals

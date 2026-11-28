@@ -251,6 +251,20 @@ private struct ModelsSettingsView: View {
                 LabeledContent("Model", value: model.choice.display)
                 LabeledContent("Reasoning", value: model.reasoningTitle)
                 LabeledContent("Vision", value: model.modelCapabilities.supportsVision ? "Images" : "Text only")
+                Picker("Vision override", selection: Binding(
+                    get: { settings.visionOverride(for: model.choice) },
+                    set: { value in
+                        settings.setVisionOverride(value, for: model.choice)
+                        Task { await model.refreshCapabilities() }
+                    }
+                )) {
+                    Text("Automatic").tag(Optional<Bool>.none)
+                    Text("Send images and PDF pages").tag(Optional<Bool>.some(true))
+                    Text("Text only").tag(Optional<Bool>.some(false))
+                }
+                Text("Use this for uncatalogued vision models whose metadata does not report image support.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 LabeledContent("Context window", value: model.contextLimit.map { $0.formatted() } ?? "Unknown")
                 LabeledContent("Context used", value: model.contextUsage.label)
                 Text(model.modelCapabilities.summary)

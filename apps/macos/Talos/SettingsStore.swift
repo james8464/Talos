@@ -29,6 +29,7 @@ final class SettingsStore: ObservableObject {
 
     @Published private(set) var reasoningByModel: [String: String] = [:]
     @Published private(set) var contextWindowOverrides: [String: Int] = [:]
+    @Published private(set) var visionOverrides: [String: Bool] = [:]
     @Published private(set) var savedKeys: Set<Provider> = []
     @Published private(set) var mcpServers: [MCPServerConfig] = []
     private(set) var managed: ManagedPolicy?
@@ -291,6 +292,10 @@ final class SettingsStore: ObservableObject {
            let decoded = try? JSONDecoder().decode([String: Int].self, from: data) {
             contextWindowOverrides = decoded
         }
+        if let data = defaults.data(forKey: "visionOverrides"),
+           let decoded = try? JSONDecoder().decode([String: Bool].self, from: data) {
+            visionOverrides = decoded
+        }
         if let data = defaults.data(forKey: "mcpServers"),
            let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data) {
             mcpServers = decoded
@@ -359,6 +364,24 @@ final class SettingsStore: ObservableObject {
         reasoningByModel = next
         if let data = try? JSONEncoder().encode(next) {
             defaults.set(data, forKey: "reasoningByModel")
+        }
+    }
+
+    func visionOverride(for choice: ModelChoice) -> Bool? {
+        visionOverrides[reasoningKey(for: choice)]
+    }
+
+    func setVisionOverride(_ value: Bool?, for choice: ModelChoice) {
+        var next = visionOverrides
+        let key = reasoningKey(for: choice)
+        if let value {
+            next[key] = value
+        } else {
+            next.removeValue(forKey: key)
+        }
+        visionOverrides = next
+        if let data = try? JSONEncoder().encode(next) {
+            defaults.set(data, forKey: "visionOverrides")
         }
     }
 

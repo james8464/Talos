@@ -1196,7 +1196,7 @@ final class AppModel: ObservableObject {
             for: target,
             ollama: info,
             openCode: openCodeModels.first { $0.id == target.id }
-        )
+        ).applyingVisionOverride(settings.visionOverride(for: target))
         modelCapabilities = capabilities
 
         if let current = reasoningSelection,

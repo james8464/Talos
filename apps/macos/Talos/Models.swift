@@ -211,6 +211,16 @@ struct ModelCapabilities: Equatable {
     var summary: String = "Reasoning not exposed by this model."
 
     static let none = ModelCapabilities()
+
+    func applyingVisionOverride(_ value: Bool?) -> ModelCapabilities {
+        guard let value else { return self }
+        var copy = self
+        copy.supportsVision = value
+        copy.summary += value
+            ? " · vision override: image input enabled"
+            : " · vision override: text only"
+        return copy
+    }
 }
 
 struct GenerationSettings {
