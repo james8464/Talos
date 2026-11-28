@@ -1987,6 +1987,7 @@ private struct MessageRow: View {
             .lineSpacing(2.5)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel("\(roleTitle) said: \(message.text)")
     }
 
     @ViewBuilder

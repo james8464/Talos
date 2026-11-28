@@ -35,6 +35,9 @@ applicable to a single-user, local-first macOS model client.
   with open, reveal, remove, clear, missing-file handling, and relative dates.
 - Replaced the custom usage heatmap with Swift Charts: labeled axes, an average
   rule, peak/average context, and an accessibility description.
+- Completed a VoiceOver walkthrough of the main window, Settings, and an MCP
+  app; added speaker prefixes to transcript messages, and recorded the spoken
+  labels in [`VOICEOVER_AUDIT.md`](VOICEOVER_AUDIT.md).
 - Hardened the MCP web view: nonpersistent store, main-frame-only bridge,
   same-origin iframe sandboxing, blocked file/data/javascript navigation,
   external links only in the browser, no downloads or automatic windows, media
@@ -258,9 +261,8 @@ applicable to a single-user, local-first macOS model client.
 | Sign in with Apple | ➖ | Provider keys only |
 | Siri | ➖ | No Siri intent |
 | Tap to Pay on iPhone | ➖ | iPhone feature |
-| VoiceOver | 🟡 | AX labels/roles audited with 0 unlabeled controls; no full spoken walkthrough |
+| VoiceOver | ✅ | VoiceOver enabled and Quickstart completed; VO cursor and AX tree captured across the main window, Settings, and a live MCP app. App-owned unlabeled controls: 0. Transcript messages now announce the speaker before their text. See `VOICEOVER_AUDIT.md` |
 | Wallet | ➖ | No passes |
 
 ## Remaining partial items
 
-- VoiceOver has structural labels but no full spoken walkthrough.

@@ -121,6 +121,10 @@ The interface is audited against Apple's published Human Interface Guidelines;
 see [`HIG_AUDIT.md`](../../HIG_AUDIT.md) for the page-by-page checklist and the
 remaining partial items.
 
+VoiceOver labels are audited with `make ax-audit`, and the spoken walkthrough
+of the main window, Settings, and an MCP app is recorded in
+[`VOICEOVER_AUDIT.md`](../../VOICEOVER_AUDIT.md).
+
 To verify right-to-left layout, launch with
 `TALOS_LAYOUT_DIRECTION=rtl` (or `ltr`) to force the direction without changing
 the system locale. Code and tool output stay left-to-right.
