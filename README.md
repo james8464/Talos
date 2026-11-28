@@ -20,6 +20,8 @@ model that produced them.
   control (page reading, indexed actions, navigation, and screenshot OCR)
 - Delegated read-only subagents that work in a fresh context and return a
   report with the files and facts they found
+- Parallel fan-out across isolated read-only tasks with a concurrency cap and
+  per-task reports
 - Automatic read-only review of high-impact tool calls, shown in the approval
   sheet with a verdict, risk, and concrete reasons
 - Named config profiles that switch model, reasoning, sandbox, approvals, and tools
@@ -35,7 +37,7 @@ model that produced them.
   `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/rewind`,
   `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
   `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`,
-  `/mcp`, `/remote`, `/browser`, `/worktree`, `/subagent`, `/todos`, `/help`
+  `/mcp`, `/remote`, `/browser`, `/worktree`, `/subagent`, `/fanout`, `/todos`, `/help`
 - Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in
   and interactive elicitation forms
 - Local phone control with a token-protected web page and QR code

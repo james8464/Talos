@@ -837,6 +837,31 @@ final class AppModel: ObservableObject {
             showGitPanel = true
         case "/review":
             reviewChanges(focus: .general)
+        case "/fanout":
+            let parts = remainder
+                .components(separatedBy: CharacterSet.newlines)
+                .flatMap { $0.components(separatedBy: "|") }
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            guard parts.count >= 2 else {
+                appendCommandMessage("Usage: /fanout task one | task two | task three")
+                break
+            }
+            guard !isStreaming, let id = selectedID else {
+                appendCommandMessage("Stop the current response before starting a fan-out.")
+                break
+            }
+            Task {
+                isStreaming = true
+                let result = await runFanout(
+                    ToolCall(name: "fanout", arguments: [
+                        "tasks": .array(parts.map { .object(["task": .string($0)]) }),
+                    ]),
+                    sessionID: id
+                )
+                isStreaming = false
+                appendCommandMessage(result.output)
+            }
         case "/subagent", "/delegate":
             guard !remainder.isEmpty else {
                 appendCommandMessage("Usage: /subagent Investigate how authentication is wired, then report the files involved.")
@@ -1613,6 +1638,9 @@ final class AppModel: ObservableObject {
         if call.name == "subagent" {
             return await runSubagent(call, sessionID: sessionID)
         }
+        if call.name == "fanout" {
+            return await runFanout(call, sessionID: sessionID)
+        }
         if call.name.hasPrefix("mcp__") {
             let arguments = call.arguments.mapValues(\.anyValue)
             switch await mcp.call(toolName: call.name, arguments: arguments) {
@@ -1674,6 +1702,63 @@ final class AppModel: ObservableObject {
         } catch {
             return .fail("Subagent failed: \(error.localizedDescription)")
         }
+    }
+
+    private func runFanout(_ call: ToolCall, sessionID: UUID) async -> ToolResult {
+        let rawTasks = call.array("tasks") ?? []
+        var tasks: [FanOutTask] = []
+        for raw in rawTasks {
+            if let text = raw.string?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+                tasks.append(FanOutTask(label: String(text.prefix(40)), task: text))
+            } else if let object = raw.object,
+                      let text = object["task"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !text.isEmpty {
+                let label = object["label"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines)
+                tasks.append(FanOutTask(
+                    label: label?.isEmpty == false ? label! : String(text.prefix(40)),
+                    task: text
+                ))
+            }
+        }
+        guard !tasks.isEmpty else {
+            return .fail("fanout requires a non-empty tasks array.")
+        }
+        let concurrency = min(max(call.int("max_concurrency") ?? 3, 1), 6)
+        let maxSteps = min(max(call.int("max_steps") ?? 6, 1), 12)
+        let runChoice = choice
+        var generation = settings.generation(reasoning: reasoningSelection)
+        generation.allowImages = modelCapabilities.supportsVision
+        let context = ToolContext(
+            workspace: projectURL.path,
+            sandbox: .readOnly,
+            network: settings.networkAccess,
+            enabledShell: false,
+            enabledFileEdits: settings.enableFileEdits,
+            enabledComputerUse: false,
+            enabledWeb: settings.enableWeb,
+            enabledBrowser: false,
+            enabledPlan: false,
+            skills: skills.enabled,
+            mcpTools: [],
+            readOnly: true
+        )
+        let engine = FanOutEngine(
+            tasks: tasks,
+            maxConcurrency: concurrency,
+            maxSteps: maxSteps,
+            context: context,
+            projectInstructions: projectInstructions
+        ) { messages in
+            let (raw, used) = try await self.streamCompletion(
+                choice: runChoice,
+                messages: messages,
+                generation: generation
+            )
+            self.usage.record(used, provider: runChoice.provider, model: runChoice.id, sessionID: sessionID)
+            return (raw, used)
+        }
+        let outcome = await engine.run()
+        return .ok(outcome.report)
     }
 
     private func updatePlan(_ call: ToolCall, sessionID: UUID) -> ToolResult {

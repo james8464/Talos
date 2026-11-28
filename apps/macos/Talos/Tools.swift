@@ -114,6 +114,9 @@ struct ToolCall: Sendable {
             return "Update the task plan"
         case "subagent":
             return string("label") ?? string("task") ?? "Delegate a subagent"
+        case "fanout":
+            let count = array("tasks")?.count ?? 0
+            return "Fan out \(count) read-only task\(count == 1 ? "" : "s")"
         default:
             return name
         }
@@ -249,6 +252,7 @@ enum ToolPrompt {
         }
         if !context.readOnly {
             lines.append("- subagent: {\"task\":\"...\",\"label\":\"...\",\"max_steps\":8} Delegate focused research to a fresh read-only context. It returns a report with the files and facts it found. Use it for broad exploration, reviews, or questions that would clutter this conversation.")
+            lines.append("- fanout: {\"tasks\":[{\"task\":\"...\",\"label\":\"...\"}],\"max_concurrency\":3,\"max_steps\":6} Run independent read-only research tasks in parallel and return one report per task. Use it only when tasks do not depend on each other.")
         }
         if !context.skills.isEmpty {
             lines.append("")

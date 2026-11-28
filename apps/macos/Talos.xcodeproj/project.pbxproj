@@ -33,6 +33,7 @@
 		988C3C896907F0AFC6582F39 /* AutomationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */; };
 		A0133D6A90B5E935862B6DF9 /* Projects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E3AB66594CCF5305513D55 /* Projects.swift */; };
 		A77212AE158D591E2C7A23E0 /* OpenCodeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */; };
+		AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D44A0432C25F6647A1BE45 /* FanOut.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6301A0926D7044DADE1CB7C2 /* Talos.icns */; };
 		C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */; };
@@ -46,6 +47,7 @@
 
 /* Begin PBXFileReference section */
 		01B5B87B005EEE76F31442B1 /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
+		08D44A0432C25F6647A1BE45 /* FanOut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FanOut.swift; sourceTree = "<group>"; };
 		23521B5CDB48331307D2ED62 /* Reviewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reviewer.swift; sourceTree = "<group>"; };
 		29612E0C17BE1D0D3A380FCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 				C0DA27C786B558AC4F245F39 /* Brand.swift */,
 				E7B85C1FB17725B76F534C9F /* Browser.swift */,
 				AD1122852660CD8181149806 /* ContentView.swift */,
+				08D44A0432C25F6647A1BE45 /* FanOut.swift */,
 				5952B2988ACA2B10007C9244 /* Git.swift */,
 				9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */,
 				F93B3035FF733F0B8A5C4C32 /* Hooks.swift */,
@@ -224,6 +227,7 @@
 				D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */,
 				15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */,
 				456BE74C1F30CF8AD8A786DC /* ContentView.swift in Sources */,
+				AB0CB338608AB1F762FFE0A4 /* FanOut.swift in Sources */,
 				72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */,
 				974D3C5EAC287920BE8F69CC /* GitPanel.swift in Sources */,
 				F1AC4D9267F5DBB627D6B457 /* Hooks.swift in Sources */,
