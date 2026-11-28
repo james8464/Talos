@@ -49,6 +49,10 @@ final class AppModel: ObservableObject {
     private var mcpElicitationContinuation: CheckedContinuation<MCPElicitationResponse, Never>?
     @Published var pendingHookTrust: HookTrustRequest?
     private var hookTrustContinuation: CheckedContinuation<HookTrustDecision, Never>?
+    @Published var approvalReview: ApprovalReview?
+    @Published var approvalReviewing = false
+    @Published var approvalReviewError: String?
+    private var approvalReviewTask: Task<Void, Never>?
     @Published var openCodeModels: [OpenCodeModel] = []
     @Published var gitStatus = GitStatus()
     @Published var showGitPanel = false
@@ -1142,6 +1146,7 @@ final class AppModel: ObservableObject {
         Approvals: \(settings.approvalPolicy == .onRequest ? "On request" : "Never")
         Profile: \(profiles.active?.name ?? "None")
         Hooks: \(hooks.enabled.count) enabled
+        Auto-review: \(settings.autoReviewTools ? "On" : "Off")
         Skills: \(skills.enabled.count)
         Plugins: \(plugins.enabled.count)
         MCP tools: \(mcpTools.count)
@@ -1195,6 +1200,9 @@ final class AppModel: ObservableObject {
     }
 
     func resolveApproval(_ decision: ApprovalDecision) {
+        approvalReviewTask?.cancel()
+        approvalReviewTask = nil
+        approvalReviewing = false
         pendingApproval = nil
         let continuation = approvalContinuation
         approvalContinuation = nil
@@ -1504,6 +1512,55 @@ final class AppModel: ObservableObject {
         }
     }
 
+    private func generateApprovalReview(
+        _ call: ToolCall,
+        sessionID: UUID,
+        choice reviewChoice: ModelChoice
+    ) async {
+        let diff = await GitService.diff(in: projectURL)
+        if Task.isCancelled { return }
+        var generation = settings.generation(reasoning: reasoningSelection)
+        generation.allowImages = modelCapabilities.supportsVision
+        let reviewerContext = ToolContext(
+            workspace: projectURL.path,
+            sandbox: .readOnly,
+            network: false,
+            enabledShell: false,
+            enabledFileEdits: settings.enableFileEdits,
+            enabledComputerUse: false,
+            enabledWeb: false,
+            enabledBrowser: false,
+            enabledPlan: false,
+            skills: [],
+            mcpTools: [],
+            readOnly: true
+        )
+        let reviewer = ApprovalReviewer(
+            model: reviewChoice.id,
+            maxSteps: 4,
+            context: reviewerContext,
+            projectInstructions: projectInstructions
+        ) { messages in
+            let (raw, used) = try await self.streamCompletion(
+                choice: reviewChoice,
+                messages: messages,
+                generation: generation
+            )
+            self.usage.record(used, provider: reviewChoice.provider, model: reviewChoice.id, sessionID: sessionID)
+            return (raw, used)
+        }
+        do {
+            let review = try await reviewer.review(call: call, diff: diff)
+            guard !Task.isCancelled else { return }
+            approvalReview = review
+            approvalReviewing = false
+        } catch {
+            guard !Task.isCancelled else { return }
+            approvalReviewError = error.localizedDescription
+            approvalReviewing = false
+        }
+    }
+
     private func requestApproval(for call: ToolCall, sessionID: UUID) async -> Bool {
         guard settings.approvalPolicy == .onRequest, ToolRunner.requiresApproval(call) else {
             return true
@@ -1512,6 +1569,18 @@ final class AppModel: ObservableObject {
            sessions[index].approvedTools.contains(call.name) {
             return true
         }
+        approvalReview = nil
+        approvalReviewError = nil
+        approvalReviewTask?.cancel()
+        approvalReviewing = settings.autoReviewTools
+        if settings.autoReviewTools {
+            let reviewChoice = choice
+            approvalReviewTask = Task { [weak self] in
+                guard let self else { return }
+                await self.generateApprovalReview(call, sessionID: sessionID, choice: reviewChoice)
+            }
+        }
+
         let decision = await withCheckedContinuation { continuation in
             if let existing = approvalContinuation {
                 existing.resume(returning: .deny)
@@ -1519,6 +1588,9 @@ final class AppModel: ObservableObject {
             approvalContinuation = continuation
             pendingApproval = ApprovalRequest(toolName: call.name, summary: call.summary)
         }
+        approvalReviewTask?.cancel()
+        approvalReviewTask = nil
+        approvalReviewing = false
         switch decision {
         case .deny:
             return false

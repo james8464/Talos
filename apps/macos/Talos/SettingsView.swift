@@ -526,6 +526,10 @@ private struct ToolsSettingsView: View {
 
                 Toggle("Allow network access for shell commands and web tools", isOn: $settings.networkAccess)
                 Stepper("Maximum tool steps: \(settings.maxToolSteps)", value: $settings.maxToolSteps, in: 1...24)
+                Toggle("Review high-impact tools before approval", isOn: $settings.autoReviewTools)
+                Text("Runs a read-only reviewer in a separate context and shows its recommendation in the approval sheet.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Tool access") {

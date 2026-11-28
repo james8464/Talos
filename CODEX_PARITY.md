@@ -38,6 +38,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
 | Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/subagent`, `/todos`, `/help` |
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
+| Auto-review | A read-only reviewer runs against the pending tool call, arguments, and working tree diff before an approval prompt; the sheet shows verdict, risk, reasons, and reviewer model |
 | Hooks | Typed `session_start`, `session_end`, `user_prompt_submit`, `pre_tool_use`, and `post_tool_use` hooks with JSON/env payloads, tool matchers, block decisions, additional context, timeouts, activity log, and per-hook trust confirmation |
 | Profiles | Named profiles switch provider, model, reasoning, sandbox, approval, network, speed, and tool toggles; persisted with the active profile shown in status |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
@@ -80,7 +81,6 @@ These are Codex features Talos does not claim to have:
 - Browser extension/Chrome control and full CDP access
 - MCP apps and server-initiated sampling
 - Plugin marketplaces and remote plugin catalogs
-- Auto-review subagent for approvals
 - Dictation/voice and menu-bar mode
 - Exact tokenizer-based accounting; Talos uses reported counts plus estimates
 - PDF input and image input for uncatalogued vision models

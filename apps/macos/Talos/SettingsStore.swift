@@ -60,6 +60,9 @@ final class SettingsStore: ObservableObject {
     @Published var enableWeb: Bool { didSet { defaults.set(enableWeb, forKey: "enableWeb") } }
     @Published var enableBrowser: Bool { didSet { defaults.set(enableBrowser, forKey: "enableBrowser") } }
     @Published var enablePlan: Bool { didSet { defaults.set(enablePlan, forKey: "enablePlan") } }
+    @Published var autoReviewTools: Bool {
+        didSet { defaults.set(autoReviewTools, forKey: "autoReviewTools") }
+    }
 
     @Published var appearance: AppearanceMode {
         didSet { defaults.set(appearance.rawValue, forKey: "appearance") }
@@ -111,6 +114,7 @@ final class SettingsStore: ObservableObject {
         enableWeb = defaults.object(forKey: "enableWeb") as? Bool ?? true
         enableBrowser = defaults.object(forKey: "enableBrowser") as? Bool ?? true
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
+        autoReviewTools = defaults.object(forKey: "autoReviewTools") as? Bool ?? true
 
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         let storedFont = defaults.object(forKey: "transcriptFontSize") as? Double ?? 14

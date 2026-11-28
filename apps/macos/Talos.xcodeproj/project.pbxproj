@@ -14,6 +14,7 @@
 		2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88120A756923F2A3457A372B /* Skills.swift */; };
 		2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1A617E407672D5729425D2 /* Keychain.swift */; };
 		2D8A0471734DB5FDB9BC3292 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09A4D0139081FED1D948312 /* AppModel.swift */; };
+		31AB57F45839C834725A3158 /* Reviewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23521B5CDB48331307D2ED62 /* Reviewer.swift */; };
 		34BAFB83932D74DE05435DAB /* ProjectBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */; };
 		35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D2AC40CFA47F5E6168180BB /* TalosApp.swift */; };
 		3F2A669C71F9ABF065D9BA97 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29612E0C17BE1D0D3A380FCA /* Models.swift */; };
@@ -45,6 +46,7 @@
 
 /* Begin PBXFileReference section */
 		01B5B87B005EEE76F31442B1 /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
+		23521B5CDB48331307D2ED62 /* Reviewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reviewer.swift; sourceTree = "<group>"; };
 		29612E0C17BE1D0D3A380FCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
 		2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPersistence.swift; sourceTree = "<group>"; };
@@ -120,6 +122,7 @@
 				F062B95637FEC6883E592D35 /* ProviderEditor.swift */,
 				70913AB772F308657E509F42 /* Providers.swift */,
 				2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */,
+				23521B5CDB48331307D2ED62 /* Reviewer.swift */,
 				2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */,
 				5C064999B0D1F92F7B32F537 /* SettingsStore.swift */,
 				7DF7DCED466867A6BC71FB24 /* SettingsView.swift */,
@@ -241,6 +244,7 @@
 				E5879A7092FDF72C69872296 /* ProviderEditor.swift in Sources */,
 				59EFBCD216961E06356D37D5 /* Providers.swift in Sources */,
 				4BB116C270D7CB0DC5499BD5 /* RemoteServer.swift in Sources */,
+				31AB57F45839C834725A3158 /* Reviewer.swift in Sources */,
 				DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */,
 				B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */,
 				8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */,

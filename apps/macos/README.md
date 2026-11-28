@@ -35,6 +35,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/MCPElicitationView.swift` — native form for server-requested input
 - `Talos/Hooks.swift` — typed event hooks, trust, and execution log
 - `Talos/Profiles.swift` — named provider/model/safety profiles
+- `Talos/Reviewer.swift` — read-only auto-review for approval prompts
 - `Talos/AutomationSettings.swift` — profiles and hooks settings UI
 - `Talos/RemoteServer.swift` — local phone-control HTTP server
 - `Talos/SettingsView.swift` — sidebar Settings window

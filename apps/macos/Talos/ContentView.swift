@@ -70,6 +70,8 @@ struct ContentView: View {
             ApprovalSheet(request: request) { decision in
                 model.resolveApproval(decision)
             }
+            .environmentObject(model)
+            .environmentObject(model.settings)
         }
         .sheet(isPresented: $model.showProjectBrowser) {
             ProjectBrowserView()
@@ -1290,6 +1292,8 @@ private struct RenameSheet: View {
 }
 
 private struct ApprovalSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
     let request: ApprovalRequest
     let resolve: (ApprovalDecision) -> Void
 
@@ -1298,9 +1302,12 @@ private struct ApprovalSheet: View {
             Label("Allow \(request.toolName)?", systemImage: "exclamationmark.shield")
                 .font(.headline)
             Text(request.summary)
-                .font(.callout)
+                .font(.system(.callout, design: .monospaced))
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
+
+            reviewSection
+
             Text("This tool can affect files or the desktop. Talos will run it only after you allow it.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -1313,8 +1320,63 @@ private struct ApprovalSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 500)
+        .frame(width: 540)
         .interactiveDismissDisabled()
+    }
+
+    @ViewBuilder
+    private var reviewSection: some View {
+        if model.approvalReviewing {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Reviewing this action in a separate read-only context…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
+        } else if let review = model.approvalReview {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(review.verdict.title, systemImage: review.verdict.symbol)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(color(for: review.verdict))
+                Text(review.summary)
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !review.reasons.isEmpty {
+                    ForEach(review.reasons.prefix(5), id: \.self) { reason in
+                        Text("• \(reason)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Text("Risk: \(review.risk) · reviewed by \(review.model)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(color(for: review.verdict).opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+        } else if let error = model.approvalReviewError {
+            Text("Automatic review unavailable: \(error)")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        } else if !settings.autoReviewTools {
+            Text("Automatic review is off.")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private func color(for verdict: ReviewVerdict) -> Color {
+        switch verdict {
+        case .allow: return .green
+        case .caution: return .orange
+        case .deny: return .red
+        }
     }
 }
 

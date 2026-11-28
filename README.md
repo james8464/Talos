@@ -20,6 +20,8 @@ model that produced them.
   control (page reading, indexed actions, navigation, and screenshot OCR)
 - Delegated read-only subagents that work in a fresh context and return a
   report with the files and facts they found
+- Automatic read-only review of high-impact tool calls, shown in the approval
+  sheet with a verdict, risk, and concrete reasons
 - Named config profiles that switch model, reasoning, sandbox, approvals, and tools
 - Event hooks for prompts, tools, and sessions, with command output, blocking,
   added context, and explicit trust confirmation
