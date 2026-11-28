@@ -717,6 +717,7 @@ private struct SkillsSettingsView: View {
 
 private struct PluginsSettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
     @State private var notice: String?
     @State private var error: String?
 
@@ -773,6 +774,30 @@ private struct PluginsSettingsView: View {
                 Text("Local plugins")
             } footer: {
                 Text("A plugin can bundle skills and stdio MCP servers. Enabled plugins add their skills and tools to every model.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Remote catalog") {
+                TextField("Catalog URL (HTTPS or localhost)", text: $settings.pluginCatalogURL)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Ed25519 public key (base64)", text: $settings.pluginCatalogPublicKey)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.caption, design: .monospaced))
+                HStack {
+                    LabeledContent("Status", value: model.plugins.remoteCatalogStatus)
+                    Spacer()
+                    Button("Refresh Remote Catalog") {
+                        Task { await model.refreshPluginCatalogs() }
+                    }
+                }
+                if let error = model.plugins.remoteCatalogError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .textSelection(.enabled)
+                }
+                Text("Remote catalogs must be a signed envelope with base64 payload and Ed25519 signature. Plugin sources must be zip archives with a SHA-256 digest in the signed catalog.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -858,6 +883,11 @@ private struct PluginsSettingsView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
+                if let dependencies = plugin.dependencies, !dependencies.isEmpty {
+                    Text("Requires: \(dependencies.joined(separator: ", "))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 if let author = plugin.author, !author.isEmpty {
                     Text(author)
                         .font(.caption2)
@@ -868,13 +898,15 @@ private struct PluginsSettingsView: View {
             if let installed = model.plugins.installedPlugin(id: plugin.id) {
                 if model.plugins.updateAvailable(plugin) {
                     Button("Update to \(plugin.version)") {
-                        do {
-                            try model.plugins.update(plugin, catalog: catalog.name)
-                            notice = "Updated \(plugin.name) to \(plugin.version)."
-                            error = nil
-                            model.reloadPlugins()
-                        } catch {
-                            self.error = error.localizedDescription
+                        Task {
+                            do {
+                                try await model.plugins.update(plugin, catalog: catalog.name)
+                                notice = "Updated \(plugin.name) to \(plugin.version)."
+                                error = nil
+                                model.reloadPlugins()
+                            } catch {
+                                self.error = error.localizedDescription
+                            }
                         }
                     }
                 } else {
@@ -894,13 +926,15 @@ private struct PluginsSettingsView: View {
                 }
             } else {
                 Button("Install") {
-                    do {
-                        try model.plugins.install(plugin, catalog: catalog.name)
-                        notice = "Installed \(plugin.name) \(plugin.version)."
-                        error = nil
-                        model.reloadPlugins()
-                    } catch {
-                        self.error = error.localizedDescription
+                    Task {
+                        do {
+                            try await model.plugins.install(plugin, catalog: catalog.name)
+                            notice = "Installed \(plugin.name) \(plugin.version)."
+                            error = nil
+                            model.reloadPlugins()
+                        } catch {
+                            self.error = error.localizedDescription
+                        }
                     }
                 }
             }

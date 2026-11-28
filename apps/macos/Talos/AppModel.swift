@@ -197,6 +197,7 @@ final class AppModel: ObservableObject {
             await reloadMCP()
             await refreshGit()
             await refreshCloudTasks()
+            await refreshPluginCatalogs()
             startCloudServicesIfNeeded()
             startAppServerIfConfigured()
 
@@ -218,7 +219,17 @@ final class AppModel: ObservableObject {
         plugins.reload()
         plugins.reloadCatalogs()
         reloadSkills()
-        Task { await reloadMCP() }
+        Task {
+            await refreshPluginCatalogs()
+            await reloadMCP()
+        }
+    }
+
+    func refreshPluginCatalogs() async {
+        await plugins.loadRemoteCatalog(
+            urlString: settings.pluginCatalogURL,
+            publicKeyBase64: settings.pluginCatalogPublicKey
+        )
     }
 
     func reloadMCP() async {

@@ -138,6 +138,13 @@ final class SettingsStore: ObservableObject {
             defaults.set(enablePlan, forKey: "enablePlan")
         }
     }
+    @Published var pluginCatalogURL: String {
+        didSet { defaults.set(pluginCatalogURL, forKey: "pluginCatalogURL") }
+    }
+    @Published var pluginCatalogPublicKey: String {
+        didSet { defaults.set(pluginCatalogPublicKey, forKey: "pluginCatalogPublicKey") }
+    }
+
     @Published var appServerEnabled: Bool {
         didSet { defaults.set(appServerEnabled, forKey: "appServerEnabled") }
     }
@@ -234,6 +241,8 @@ final class SettingsStore: ObservableObject {
         enableWeb = defaults.object(forKey: "enableWeb") as? Bool ?? true
         enableBrowser = defaults.object(forKey: "enableBrowser") as? Bool ?? true
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
+        pluginCatalogURL = defaults.string(forKey: "pluginCatalogURL") ?? ""
+        pluginCatalogPublicKey = defaults.string(forKey: "pluginCatalogPublicKey") ?? ""
         appServerEnabled = defaults.bool(forKey: "appServerEnabled")
         let storedAppPort = defaults.object(forKey: "appServerPort") as? Int ?? 8790
         appServerPort = min(max(storedAppPort, 1024), 65_535)

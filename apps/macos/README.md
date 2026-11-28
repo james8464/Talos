@@ -55,7 +55,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Extension/talos-browser` — Manifest V3 Chrome extension
 - `NativeHost/TalosNativeHost.swift` — native messaging host for the extension
 - `scripts/install-native-host.sh` — registers the host and pins the extension ID
-- `Talos/Plugins.swift` — local plugin bundles, catalog marketplace, install/update/remove
+- `Talos/Plugins.swift` — local/signed remote catalogs, dependencies, verified downloads, install/update/remove
 - `Talos/FanOut.swift` — bounded-concurrency read-only task fan-out
 - `Talos/WorktreePanel.swift` — worktree list, switch, merge, and cleanup UI
 - `Talos/AutomationSettings.swift` — profiles and hooks settings UI

@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import CryptoKit
 
 struct CatalogPlugin: Identifiable, Codable, Equatable, Sendable {
     var id: String
@@ -9,6 +10,8 @@ struct CatalogPlugin: Identifiable, Codable, Equatable, Sendable {
     var author: String? = nil
     var source: String
     var homepage: String? = nil
+    var dependencies: [String]? = nil
+    var sha256: String? = nil
 }
 
 struct PluginCatalog: Identifiable, Codable, Equatable, Sendable {
@@ -23,6 +26,7 @@ struct InstalledPlugin: Identifiable, Codable, Equatable, Sendable {
     var path: String
     var catalog: String
     var installedAt = Date()
+    var dependencies: [String]? = nil
 }
 
 enum PluginError: LocalizedError {
@@ -51,6 +55,11 @@ final class PluginStore: ObservableObject {
     @Published private(set) var disabled: Set<String> = []
     @Published private(set) var catalogs: [PluginCatalog] = []
     @Published private(set) var installedPlugins: [InstalledPlugin] = []
+    @Published private(set) var remoteCatalogStatus = "Not configured"
+    @Published private(set) var remoteCatalogError: String?
+
+    private var localCatalogs: [PluginCatalog] = []
+    private var remoteCatalogs: [PluginCatalog] = []
 
     private let defaults = UserDefaults.standard
     private let baseDirectory: URL
@@ -194,7 +203,97 @@ final class PluginStore: ObservableObject {
                 found.append(resolve(catalog, relativeTo: base))
             }
         }
-        catalogs = found.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        localCatalogs = found
+        mergeCatalogs()
+    }
+
+    func loadRemoteCatalog(urlString: String, publicKeyBase64: String) async {
+        let environment = ProcessInfo.processInfo.environment
+        let rawURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? (environment["TALOS_PLUGIN_CATALOG_URL"] ?? "")
+            : urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        let keyText = publicKeyBase64.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? (environment["TALOS_PLUGIN_CATALOG_PUBLIC_KEY"] ?? "")
+            : publicKeyBase64.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !rawURL.isEmpty else {
+            remoteCatalogStatus = "Not configured"
+            remoteCatalogError = nil
+            remoteCatalogs = []
+            mergeCatalogs()
+            return
+        }
+        guard let url = URL(string: rawURL),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "https" || (scheme == "http" && Self.isLoopback(url.host)) else {
+            remoteCatalogStatus = "Failed"
+            remoteCatalogError = "Remote catalogs must use HTTPS (or HTTP on localhost)."
+            return
+        }
+        do {
+                var request = URLRequest(url: url)
+            request.timeoutInterval = 15
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                throw PluginError.message("Catalog server answered \((response as? HTTPURLResponse)?.statusCode ?? -1).")
+            }
+            guard data.count <= 2_000_000 else {
+                throw PluginError.message("Catalog is larger than 2 MB.")
+            }
+            guard let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let payloadText = envelope["payload"] as? String,
+                  let signatureText = envelope["signature"] as? String,
+                  let payloadData = Data(base64Encoded: payloadText),
+                  let signature = Data(base64Encoded: signatureText) else {
+                throw PluginError.message("The remote catalog envelope is malformed.")
+            }
+            guard let keyData = Data(base64Encoded: keyText),
+                  let key = try? Curve25519.Signing.PublicKey(rawRepresentation: keyData) else {
+                throw PluginError.message("No valid catalog public key is configured.")
+            }
+            guard key.isValidSignature(signature, for: payloadData) else {
+                throw PluginError.message("The catalog signature is invalid.")
+            }
+            let list: [PluginCatalog]
+            if let catalogs = try? JSONDecoder().decode([PluginCatalog].self, from: payloadData) {
+                list = catalogs
+            } else if let catalog = try? JSONDecoder().decode(PluginCatalog.self, from: payloadData) {
+                list = [catalog]
+            } else {
+                throw PluginError.message("The signed catalog payload is not valid.")
+            }
+            remoteCatalogs = list
+            remoteCatalogStatus = "Loaded \(list.reduce(0) { $0 + $1.plugins.count }) signed plugins"
+            remoteCatalogError = nil
+            mergeCatalogs()
+        } catch {
+            remoteCatalogStatus = "Failed"
+            remoteCatalogError = error.localizedDescription
+        }
+    }
+
+    private func mergeCatalogs() {
+        var seen = Set<String>()
+        var merged: [PluginCatalog] = []
+        for catalog in localCatalogs + remoteCatalogs where seen.insert(catalog.id).inserted {
+            merged.append(catalog)
+        }
+        catalogs = merged.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private static func isLoopback(_ host: String?) -> Bool {
+        guard let host = host?.lowercased() else { return false }
+        return host == "127.0.0.1" || host == "::1" || host == "localhost"
+    }
+
+    func catalogPlugin(id: String) -> CatalogPlugin? {
+        for catalog in catalogs {
+            if let plugin = catalog.plugins.first(where: { $0.id == id }) {
+                return plugin
+            }
+        }
+        return nil
     }
 
     func installedPlugin(id: String) -> InstalledPlugin? {
@@ -210,38 +309,82 @@ final class PluginStore: ObservableObject {
         return compareVersions(plugin.version, installed.version) == .orderedDescending
     }
 
-    func install(_ plugin: CatalogPlugin, catalog: String) throws {
+    func install(_ plugin: CatalogPlugin, catalog: String) async throws {
+        var visiting = Set<String>()
+        var done = Set<String>()
+        try await installRecursive(plugin, catalog: catalog, visiting: &visiting, done: &done)
+    }
+
+    private func installRecursive(
+        _ plugin: CatalogPlugin,
+        catalog: String,
+        visiting: inout Set<String>,
+        done: inout Set<String>
+    ) async throws {
+        let id = try safeID(plugin.id)
+        if done.contains(id) { return }
+        if visiting.contains(id) {
+            throw PluginError.message("Dependency cycle detected at \(plugin.id).")
+        }
+        if installedPlugin(id: id) != nil {
+            done.insert(id)
+            return
+        }
+        visiting.insert(id)
+        for dependencyID in plugin.dependencies ?? [] {
+            guard let dependency = catalogPlugin(id: dependencyID) else {
+                throw PluginError.message("\(plugin.name) requires missing plugin '\(dependencyID)'.")
+            }
+            try await installRecursive(dependency, catalog: catalog, visiting: &visiting, done: &done)
+        }
+        visiting.remove(id)
+        try await installSingle(plugin, catalog: catalog)
+        done.insert(id)
+    }
+
+    private func installSingle(_ plugin: CatalogPlugin, catalog: String) async throws {
         let id = try safeID(plugin.id)
         guard installedPlugin(id: id) == nil else {
             throw PluginError.message("\(plugin.name) is already installed. Use Update.")
         }
-        let source = try sourceURL(for: plugin)
         let destination = directory.appendingPathComponent(id, isDirectory: true)
         guard !FileManager.default.fileExists(atPath: destination.path) else {
             throw PluginError.message("A folder already exists at \(destination.path).")
         }
-        try copyPlugin(from: source, to: destination)
+        let prepared = try await prepareSource(for: plugin)
+        defer { prepared.cleanup?() }
+        try copyPlugin(from: prepared.url, to: destination)
         var installed = loadInstalled()
         installed.append(InstalledPlugin(
             id: id,
             version: plugin.version,
             path: destination.path,
-            catalog: catalog
+            catalog: catalog,
+            dependencies: plugin.dependencies
         ))
         saveInstalled(installed)
         installedPlugins = installed
         reload()
     }
 
-    func update(_ plugin: CatalogPlugin, catalog: String) throws {
+    func update(_ plugin: CatalogPlugin, catalog: String) async throws {
         let id = try safeID(plugin.id)
         guard installedPlugin(id: id) != nil else {
             throw PluginError.message("\(plugin.name) is not installed.")
         }
-        let source = try sourceURL(for: plugin)
+        var visiting = Set<String>()
+        var done = Set<String>()
+        for dependencyID in plugin.dependencies ?? [] {
+            guard let dependency = catalogPlugin(id: dependencyID) else {
+                throw PluginError.message("\(plugin.name) requires missing plugin '\(dependencyID)'.")
+            }
+            try await installRecursive(dependency, catalog: catalog, visiting: &visiting, done: &done)
+        }
+        let prepared = try await prepareSource(for: plugin)
+        defer { prepared.cleanup?() }
         let destination = directory.appendingPathComponent(id, isDirectory: true)
         let staging = directory.appendingPathComponent(".\(id)-update-\(UUID().uuidString)", isDirectory: true)
-        try copyPlugin(from: source, to: staging)
+        try copyPlugin(from: prepared.url, to: staging)
         do {
             if FileManager.default.fileExists(atPath: destination.path) {
                 try FileManager.default.removeItem(at: destination)
@@ -256,11 +399,97 @@ final class PluginStore: ObservableObject {
             installed[index].version = plugin.version
             installed[index].path = destination.path
             installed[index].catalog = catalog
+            installed[index].dependencies = plugin.dependencies
             installed[index].installedAt = Date()
         }
         saveInstalled(installed)
         installedPlugins = installed
         reload()
+    }
+
+    private struct PreparedSource {
+        let url: URL
+        let cleanup: (() -> Void)?
+    }
+
+    private func prepareSource(for plugin: CatalogPlugin) async throws -> PreparedSource {
+        let raw = plugin.source.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.lowercased().hasPrefix("http://") || raw.lowercased().hasPrefix("https://") {
+            guard let url = URL(string: raw),
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "https" || (scheme == "http" && Self.isLoopback(url.host)) else {
+                throw PluginError.message("Remote plugin sources must use HTTPS (or HTTP on localhost).")
+            }
+            guard let expected = plugin.sha256?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                  expected.count == 64 else {
+                throw PluginError.message("\(plugin.name) has no SHA-256 digest.")
+            }
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 30
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                throw PluginError.message("Plugin download failed with \((response as? HTTPURLResponse)?.statusCode ?? -1).")
+            }
+            guard data.count <= 50_000_000 else {
+                throw PluginError.message("Plugin archive is larger than 50 MB.")
+            }
+            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            guard digest == expected else {
+                throw PluginError.message("Plugin archive digest does not match the signed catalog.")
+            }
+            guard data.prefix(2) == Data([0x50, 0x4B]) else {
+                throw PluginError.message("Remote plugin sources must be zip archives.")
+            }
+            return try extractArchive(data)
+        }
+        return PreparedSource(url: try sourceURL(for: plugin), cleanup: nil)
+    }
+
+    private func extractArchive(_ data: Data) throws -> PreparedSource {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("talos-plugin-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let zip = root.appendingPathComponent("plugin.zip")
+            try data.write(to: zip)
+            let contents = root.appendingPathComponent("contents", isDirectory: true)
+            try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+            process.arguments = ["-x", "-k", zip.path, contents.path]
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else {
+                throw PluginError.message("Could not extract the plugin archive.")
+            }
+            let pluginRoot = try findPluginRoot(in: contents)
+            return PreparedSource(url: pluginRoot) {
+                try? FileManager.default.removeItem(at: root)
+            }
+        } catch {
+            try? FileManager.default.removeItem(at: root)
+            throw error
+        }
+    }
+
+    private func findPluginRoot(in directory: URL) throws -> URL {
+        if FileManager.default.fileExists(atPath: directory.appendingPathComponent("plugin.json").path) {
+            return directory
+        }
+        let children = (try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        for child in children {
+            let isDirectory = (try? child.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            if isDirectory,
+               FileManager.default.fileExists(atPath: child.appendingPathComponent("plugin.json").path) {
+                return child
+            }
+        }
+        throw PluginError.message("The plugin archive has no plugin.json.")
     }
 
     func uninstall(_ plugin: CatalogPlugin) throws {
@@ -271,6 +500,12 @@ final class PluginStore: ObservableObject {
         let safe = try safeID(id)
         guard let installed = installedPlugin(id: safe) else {
             throw PluginError.message("\(id) is not installed.")
+        }
+        let dependents = installedPlugins.filter { ($0.dependencies ?? []).contains(safe) }
+        if !dependents.isEmpty {
+            throw PluginError.message(
+                "\(id) is required by \(dependents.map(\.id).joined(separator: ", ")). Remove those plugins first."
+            )
         }
         let path = URL(fileURLWithPath: installed.path).standardizedFileURL
         let root = directory.standardizedFileURL.path

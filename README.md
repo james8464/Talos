@@ -47,7 +47,8 @@ model that produced them.
   `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/hooks`,
   `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`,
   `/todos`, `/help`
-- A local plugin marketplace with catalog install, update, and remove flows
+- A plugin marketplace with local or signed remote catalogs, dependency
+  resolution, verified downloads, and install/update/remove flows
 - Skills, plugin bundles, stdio and HTTP MCP servers, including OAuth sign-in,
   interactive elicitation forms, approved model sampling, a read-only resource
   browser with templates, and sandboxed HTML MCP apps that can call their own
