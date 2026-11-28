@@ -2169,7 +2169,12 @@ final class AppModel: ObservableObject {
         return await ToolRunner(context: toolContext()).run(call)
     }
 
-    private func runSubagent(_ call: ToolCall, sessionID: UUID) async -> ToolResult {
+    private func runSubagent(
+        _ call: ToolCall,
+        sessionID: UUID,
+        depth: Int = 0
+    ) async -> ToolResult {
+        let maxDepth = 2
         let task = (call.string("task") ?? call.string("prompt") ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !task.isEmpty else {
@@ -2193,7 +2198,8 @@ final class AppModel: ObservableObject {
             enabledPlan: false,
             skills: skills.enabled,
             mcpTools: [],
-            readOnly: true
+            readOnly: true,
+            allowNestedAgents: depth < maxDepth
         )
 
         let engine = SubagentEngine(
@@ -2201,7 +2207,19 @@ final class AppModel: ObservableObject {
             task: task,
             maxSteps: maxSteps,
             context: context,
-            projectInstructions: projectInstructions
+            projectInstructions: projectInstructions,
+            depth: depth,
+            maxDepth: maxDepth,
+            nestedRunner: { [weak self] nestedCall, nextDepth in
+                guard let self else {
+                    return .fail("Talos is not available for nested delegation.")
+                }
+                return await self.runSubagent(
+                    nestedCall,
+                    sessionID: sessionID,
+                    depth: nextDepth
+                )
+            }
         ) { messages in
             let (raw, used) = try await self.streamCompletion(
                 choice: runChoice,

@@ -38,6 +38,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
 | Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/profiles`, `/policy`, `/cloud`, `/hooks`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/worktrees`, `/merge`, `/subagent`, `/fanout`, `/todos`, `/help` |
 | Subagents | `subagent` tool and `/subagent` run a read-only child task in a fresh context and return a report with tool trace; read-only enforcement blocks writes and shell |
+| Nested subagents | Children can delegate again while under an explicit depth limit of 2 (parent → child → grandchild); deeper calls are blocked, every level keeps its own read-only context, and nested delegation is only advertised while allowed |
 | Fan-out | `fanout` tool and `/fanout` run multiple isolated read-only tasks concurrently with a configurable cap, per-task timeouts and usage, independent failures, and one report per task |
 | Auto-review | A read-only reviewer runs against the pending tool call, arguments, and working tree diff before an approval prompt; the sheet shows verdict, risk, reasons, and reviewer model |
 | Hooks | Typed `session_start`, `session_end`, `user_prompt_submit`, `pre_tool_use`, and `post_tool_use` hooks with JSON/env payloads, tool matchers, block decisions, additional context, timeouts, activity log, and per-hook trust confirmation |
@@ -79,7 +80,6 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 These are Codex features Talos does not claim to have:
 
-- Nested subagents (parallel fan-out is implemented)
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
 - Browser extension/Chrome control and full CDP access

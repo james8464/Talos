@@ -19,7 +19,8 @@ model that produced them.
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR)
 - Delegated read-only subagents that work in a fresh context and return a
-  report with the files and facts they found
+  report with the files and facts they found, including nested delegation to
+  a bounded depth with isolated contexts
 - Parallel fan-out across isolated read-only tasks with a concurrency cap and
   per-task reports
 - Automatic read-only review of high-impact tool calls, shown in the approval

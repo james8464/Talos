@@ -38,6 +38,9 @@ struct SubagentEngine {
     let context: ToolContext
     let projectInstructions: String?
     var instructions: String? = nil
+    var depth: Int = 0
+    var maxDepth: Int = 2
+    var nestedRunner: (@MainActor (ToolCall, Int) async -> ToolResult)? = nil
     let complete: @MainActor ([ChatMessage]) async throws -> (String, TokenUsage)
 
     func run() async throws -> SubagentOutcome {
@@ -73,7 +76,16 @@ struct SubagentEngine {
                 role: .assistant,
                 text: parsed.cleaned.isEmpty ? "Calling \(parsed.call.name)." : parsed.cleaned
             ))
-            let result = await runner.run(parsed.call)
+            let result: ToolResult
+            if parsed.call.name == "subagent" {
+                if let nestedRunner, depth < maxDepth {
+                    result = await nestedRunner(parsed.call, depth + 1)
+                } else {
+                    result = .fail("Nested subagents are blocked at the depth limit (depth \(depth), limit \(maxDepth)).")
+                }
+            } else {
+                result = await runner.run(parsed.call)
+            }
             steps.append("\(parsed.call.name): \(result.status.rawValue) — \(parsed.call.summary)")
             let clipped = result.output.count > 12_000
                 ? String(result.output.prefix(12_000)) + "\n…"
@@ -107,6 +119,11 @@ struct SubagentEngine {
             You are read-only: inspect files, search, and use the web when it is enabled. You cannot edit files or run shell commands.
             Do not ask for approval. When you have enough evidence, answer with a concise report: findings, exact file paths, and anything the parent should verify.
             """
+            if depth < maxDepth {
+                prompt += "\nYou may delegate focused research to one more subagent. It is also read-only."
+            } else {
+                prompt += "\nYou are at the subagent depth limit and cannot spawn another subagent."
+            }
         }
         if let projectInstructions {
             prompt += "\n\n" + projectInstructions
