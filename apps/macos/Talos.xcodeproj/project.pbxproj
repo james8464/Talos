@@ -32,6 +32,7 @@
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
 		7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */; };
+		7F75F76F4697C6ECB25A8018 /* TalosNativeHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 673871726683A02E29B248D2 /* TalosNativeHost.swift */; };
 		8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF7DCED466867A6BC71FB24 /* SettingsView.swift */; };
 		8AD2CEA09FDDC0D80A311738 /* AppServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6331618A52B825AABC1DC5EC /* AppServer.swift */; };
 		8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B5B87B005EEE76F31442B1 /* Tools.swift */; };
@@ -86,8 +87,10 @@
 		6301A0926D7044DADE1CB7C2 /* Talos.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Talos.icns; sourceTree = "<group>"; };
 		6331618A52B825AABC1DC5EC /* AppServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServer.swift; sourceTree = "<group>"; };
 		663E1E4E42478C07BD4DC2D2 /* MCPAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPAppView.swift; sourceTree = "<group>"; };
+		673871726683A02E29B248D2 /* TalosNativeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosNativeHost.swift; sourceTree = "<group>"; };
 		6EDDFB389E2CD36304364711 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
 		70913AB772F308657E509F42 /* Providers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
+		752940EB53B173AED8964FF2 /* TalosNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = TalosNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
 		77222638AE45AC6E779D2AFB /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		7DF7DCED466867A6BC71FB24 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		8438786D61796CA99F3ACF3F /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
@@ -128,6 +131,7 @@
 		13B106CE034023664FA78797 = {
 			isa = PBXGroup;
 			children = (
+				E1A230B6E28C277F5CE6349B /* NativeHost */,
 				66155871B76F0DABD3705E3B /* Talos */,
 				FEAED88641E6068AB3F87AC0 /* Products */,
 			);
@@ -204,10 +208,19 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		E1A230B6E28C277F5CE6349B /* NativeHost */ = {
+			isa = PBXGroup;
+			children = (
+				673871726683A02E29B248D2 /* TalosNativeHost.swift */,
+			);
+			path = NativeHost;
+			sourceTree = "<group>";
+		};
 		FEAED88641E6068AB3F87AC0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				BD0D8CB4E3107DD1D9D04F0C /* Talos.app */,
+				752940EB53B173AED8964FF2 /* TalosNativeHost */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -232,6 +245,23 @@
 			productName = Talos;
 			productReference = BD0D8CB4E3107DD1D9D04F0C /* Talos.app */;
 			productType = "com.apple.product-type.application";
+		};
+		FF936BCDB05967105F87A46B /* TalosNativeHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CDF24903AAB9BEF9501A741D /* Build configuration list for PBXNativeTarget "TalosNativeHost" */;
+			buildPhases = (
+				E8BADA243550087F4C7F0220 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TalosNativeHost;
+			packageProductDependencies = (
+			);
+			productName = TalosNativeHost;
+			productReference = 752940EB53B173AED8964FF2 /* TalosNativeHost */;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -258,6 +288,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				FF936BCDB05967105F87A46B /* TalosNativeHost */,
 				55F0A33EE55A8064F7B89192 /* Talos */,
 			);
 		};
@@ -277,6 +308,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		E8BADA243550087F4C7F0220 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F75F76F4697C6ECB25A8018 /* TalosNativeHost.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EC31240172BE71DA8C506394 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -356,6 +395,38 @@
 				SDKROOT = macosx;
 			};
 			name = Release;
+		};
+		2CDD811676E8942348AE2B4D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.talos.nativehost;
+				PRODUCT_NAME = TalosNativeHost;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		84036489886791D02083E8B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.talos.nativehost;
+				PRODUCT_NAME = TalosNativeHost;
+				SDKROOT = macosx;
+			};
+			name = Debug;
 		};
 		8CBCD847108CE37D7050D2D5 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -519,6 +590,15 @@
 			buildConfigurations = (
 				8CBCD847108CE37D7050D2D5 /* Debug */,
 				99F8F617C1F99494565592DA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CDF24903AAB9BEF9501A741D /* Build configuration list for PBXNativeTarget "TalosNativeHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				84036489886791D02083E8B2 /* Debug */,
+				2CDD811676E8942348AE2B4D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

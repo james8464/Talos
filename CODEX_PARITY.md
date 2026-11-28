@@ -27,6 +27,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Patches | Unified diff through `git apply` with `patch` fallback |
 | Computer use | Screenshot, frontmost app, windows, click, type, keys, scroll, activate app, open URL |
 | Browser CDP | `browser_cdp` talks to Chrome's DevTools Protocol for status, page read with selectors, navigation, JavaScript evaluation, click by selector/text, typing, and PNG screenshots; endpoint configurable, mutating actions approval-gated |
+| Browser extension | Packaged Manifest V3 extension plus a native messaging host; saves page/selection context, sends browser prompts into the app server, polls replies, cancels runs, and opens Talos; installer pins the extension ID and registers the host |
 | Browser | Safari/Chrome accessibility page reading, indexed click/type, navigation, back/forward/reload, screenshot OCR; verified live against Safari and example.com |
 | Web | Fetch and search, gated by network setting |
 | Plan | `update_plan` with inspector progress |
@@ -88,7 +89,6 @@ These are Codex features Talos does not claim to have:
 
 - Chronicle and ambient suggestions
 - Remote-control daemon and native mobile client
-- Packaged browser extension with native messaging
 - Remote plugin marketplaces, signatures, and dependency resolution
 - Exact tokenization for Anthropic, Gemini, Ollama, and other non-BPE families
 - Image input for uncatalogued vision models

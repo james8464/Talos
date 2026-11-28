@@ -56,6 +56,8 @@ model that produced them.
   tasks, isolated worktrees, and an optional local worker
 - A headless local JSON-RPC + SSE app server for sessions, prompts, approvals,
   cancellation, and live transcript events
+- A packaged Chrome extension and native messaging host for sending pages and
+  selections to Talos
 - A menu-bar quick panel for status, model switching, new tasks, stop, and
   opening the main window
 - Composer dictation through macOS Speech and AVAudioEngine, with on-device

@@ -1212,7 +1212,8 @@ final class AppModel: ObservableObject {
         error = nil
 
         let isFirstMessage = !sessions[index].messages.contains { $0.role == .user }
-        if isFirstMessage {
+        if isFirstMessage,
+           sessions[index].title == "New Task" || sessions[index].title.isEmpty {
             sessions[index].title = String(trimmed.prefix(48))
         }
         let message = ChatMessage(role: .user, text: trimmed, attachments: attachments)

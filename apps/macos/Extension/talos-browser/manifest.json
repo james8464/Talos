@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Talos Browser Bridge",
+  "version": "1.0.0",
+  "description": "Send the current page or selection to Talos and ask about it.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnRCAlRD0v1J2tk0xbk2bFbylYWv6ENEIkWsU1swke3D1FWKbyvvJPY/IsgjDAPOFChzWtFPfBKv8CH/pnMYrp7Qq3ueca4PRh0ltDOJS/QyJ5cdibBbNpw6yfuOn995Im2RUenNq5vioMHK/+CiiHMv769svQzmUcp5l93rnWQy/aJlscEc0MT4V1buGNDUbmkF+JHUtMydMWW5VMWF1zB9Nxy2PEUtL42OdhtkMNQolmNef9cjdmIz/GLmdwXSqVBU73fGSNDCQR7yG0SQCvQ+W4YxQU/2jYznN8B9kQkY5II9X+zkUtfhMR1IdiFXVapiMn4L6QSzGc41WEYUp2QIDAQAB",
+  "permissions": [
+    "nativeMessaging",
+    "activeTab",
+    "scripting",
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Talos",
+    "default_popup": "popup.html"
+  }
+}

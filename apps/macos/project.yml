@@ -13,6 +13,18 @@ settings:
     CODE_SIGNING_REQUIRED: NO
     ENABLE_HARDENED_RUNTIME: NO
 targets:
+  TalosNativeHost:
+    type: tool
+    platform: macOS
+    sources:
+      - path: NativeHost
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.nativehost
+        PRODUCT_NAME: TalosNativeHost
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
   Talos:
     type: application
     platform: macOS
@@ -42,5 +54,6 @@ schemes:
     build:
       targets:
         Talos: all
+        TalosNativeHost: all
     run:
       config: Debug
