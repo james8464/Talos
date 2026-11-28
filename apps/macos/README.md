@@ -176,7 +176,9 @@ clear them. Missing files stay visible with a Missing badge and Open disabled.
 ## Semantic code search
 
 Full data-flow, privacy, performance, fallback, and limitation details are in
-[`SEMANTIC_INDEX.md`](../../SEMANTIC_INDEX.md).
+[`SEMANTIC_INDEX.md`](../../SEMANTIC_INDEX.md). Run `make semantic-eval` for the
+20-query regression set; its relevance sets and results are in
+[`Tools/SemanticEval/README.md`](Tools/SemanticEval/README.md).
 
 `search_codebase` indexes the workspace with averaged Apple on-device word
 embeddings and ranks chunks with a lexical boost, so conceptual queries work

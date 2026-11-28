@@ -35,7 +35,7 @@ model that produced them.
 - On-device semantic code search (`search_codebase`) using Apple word
   embeddings plus lexical ranking and a persisted per-file vector cache; see
   [`SEMANTIC_INDEX.md`](SEMANTIC_INDEX.md) for data flow, privacy, cache path,
-  performance, and limits
+  performance, limits, and the 20-query evaluation
 - Swift Charts usage visualization with labeled axes, an average line, and
   peak/average summaries
 - Recent documents with File > Open Recent and a browser that persists files

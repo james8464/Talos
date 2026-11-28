@@ -1,4 +1,4 @@
-.PHONY: build cli run project clean check ax-audit
+.PHONY: build cli run project clean check ax-audit semantic-eval
 
 build:
 	cd apps/macos && xcodebuild -project Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath .build CODE_SIGNING_ALLOWED=NO build
@@ -14,6 +14,10 @@ project:
 
 clean:
 	rm -rf apps/macos/.build
+
+semantic-eval:
+	swiftc -O apps/macos/Talos/SemanticIndex.swift apps/macos/Tools/SemanticEval/main.swift -o /tmp/talos-semantic-eval
+	/tmp/talos-semantic-eval .
 
 ax-audit:
 	swiftc apps/macos/Tools/AXAudit.swift -o /tmp/talos-ax-audit

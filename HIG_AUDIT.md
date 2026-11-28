@@ -267,7 +267,7 @@ applicable to a single-user, local-first macOS model client.
 | iMessage apps and stickers | ➖ | Not an iMessage app |
 | Live Photos | ➖ | No photo library |
 | Mac Catalyst | ➖ | Native AppKit/SwiftUI app |
-| Machine learning | ✅ | On-device `NLEmbedding` word-vector index with a persisted per-file cache. Measured 93 files/975 chunks: 7.3 s first-ever build, 0.6 s cached launch, 0.69 s after one file changed, 20 ms warm query, 65 MB peak; fallbacks, privacy, cache path, and limits documented in `SEMANTIC_INDEX.md` |
+| Machine learning | ✅ | On-device `NLEmbedding` word-vector index with a persisted per-file cache and a 20-query workspace regression set (20/20 top-1 vs 19/20 for sentence vectors). Measured 93 files/975 chunks: 7.3 s first-ever build, 0.6 s cached launch, 0.69 s after one file changed, 25 ms warm query, 65 MB peak; fallbacks, privacy, cache path, and limits documented in `SEMANTIC_INDEX.md` |
 | Maps | ➖ | No maps |
 | NFC | ➖ | No NFC |
 | Photo editing | ➖ | Attachments are not edited |

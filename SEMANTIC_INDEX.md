@@ -31,12 +31,17 @@ performance, fallback behavior, and limitations.
    scored:
 
    ```text
-   score = 0.45 × cosine(embedding) + 0.50 × lexical overlap + 0.05 × path match
+   base  = 0.45 × cosine + 0.50 × lexical + 0.05 × path + 0.15 × basename
+   score = base × 0.80 for markdown/text docs
+           + 0.02 × min(matching chunks in the file, 5)
    ```
 
    Lexical overlap uses lowercased, camel-case-split, stopped, stemmed tokens
-   with prefix matching. The tool returns the top-ranked chunks with paths,
-   line ranges, scores, and text.
+   with prefix matching. The document penalty keeps READMEs and audits from
+   outranking implementation files, the basename term rewards component names
+   such as `Keychain` or `SessionPersistence`, and the file-hit term rewards
+   files with several independently relevant chunks. The tool returns the
+   top-ranked chunks with paths, line ranges, scores, and text.
 7. **Invalidation.** Each search/status call re-enumerates candidates and
    compares file count, sizes, and modification times. Unchanged files are
    loaded from the disk cache and only changed/new files are re-embedded. The
@@ -69,9 +74,9 @@ Mac (`/usr/bin/time -l`):
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Small sample, first run | 3 | 3 | 250 ms | 20 ms | 0 | 21 MB |
 | Small sample, cached launch | 3 | 3 | 20 ms | 20 ms | 3 | 21 MB |
-| Talos repository, first run | 93 | 975 | 7.3 s | 20 ms | 0 | 65 MB |
-| Talos repository, cached launch | 93 | 975 | 0.6 s | 20 ms | 93 | 65 MB |
-| Talos repository, one file changed | 93 | 975 | 0.69 s | 20 ms | 92 | 68 MB |
+| Talos repository, first run | 93 | 975 | 7.3 s | 25 ms | 0 | 65 MB |
+| Talos repository, cached launch | 93 | 975 | 0.6 s | 25 ms | 93 | 65 MB |
+| Talos repository, one file changed | 93 | 975 | 0.69 s | 25 ms | 92 | 68 MB |
 
 - Word-vector lookup and averaging replaced per-sentence neural inference:
   first-ever indexing dropped from 66.4 s to 7.3 s, and peak memory from
@@ -84,6 +89,33 @@ Mac (`/usr/bin/time -l`):
   number of files reused from cache.
 - Cache writes are best-effort; failure to read or write it falls back to
   embedding from source.
+
+## Evaluation
+
+`make semantic-eval` runs a fixed 20-query regression set over the Talos
+workspace (`apps/macos/Tools/SemanticEval`). The fixture directory is skipped by
+the index so it cannot rank itself.
+
+Current word-embedding hybrid:
+
+```text
+TOP1: 20/20
+TOP3: 20/20
+MRR: 1.000
+```
+
+The previous sentence-vector approach, re-scored with the same ranking terms:
+
+```text
+TOP1: 19/20
+TOP3: 20/20
+MRR: 0.975
+```
+
+The queries and relevance sets are documented in
+`apps/macos/Tools/SemanticEval/README.md`. This is a regression set, not an
+independent benchmark; relevance sets include the primary UI/tooling file as
+well as the implementation file.
 
 ## Fallback behavior
 

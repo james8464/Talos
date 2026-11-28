@@ -9,6 +9,8 @@ struct SemanticChunk: Sendable {
     let text: String
     let vector: [Float]
     let tokens: Set<String>
+    let pathTokens: Set<String>
+    let basenameTokens: Set<String>
 }
 
 struct SemanticHit: Sendable {
@@ -90,7 +92,7 @@ actor SemanticIndex {
     private let skippedDirectories: Set<String> = [
         ".git", ".build", "node_modules", "DerivedData", ".swiftpm", ".venv",
         "venv", "Pods", "vendor", "dist", "build", ".next", "__pycache__",
-        ".gradle", "target", "coverage",
+        ".gradle", "target", "coverage", "SemanticEval",
     ]
 
     func status(workspace: URL) async -> SemanticIndexStatus {
@@ -163,10 +165,10 @@ actor SemanticIndex {
         if prefix.hasPrefix("./") { prefix.removeFirst(2) }
         if prefix == "." { prefix = "" }
         let queryTokens = Self.tokens(trimmed)
-        var scored: [(Double, SemanticChunk)] = []
-        for chunk in index.chunks {
+        var lexicalScores = [Double](repeating: 0, count: index.chunks.count)
+        var fileHits: [String: Int] = [:]
+        for (offset, chunk) in index.chunks.enumerated() {
             if !prefix.isEmpty, !chunk.path.hasPrefix(prefix) { continue }
-            let cosine = Self.cosine(queryFloats, chunk.vector)
             let lexical: Double
             if queryTokens.isEmpty {
                 lexical = 0
@@ -180,10 +182,29 @@ actor SemanticIndex {
                 }.count
                 lexical = Double(matches) / Double(queryTokens.count)
             }
-            let pathTokens = Self.tokens(chunk.path)
-            let pathMatches = queryTokens.filter { pathTokens.contains($0) }.count
+            lexicalScores[offset] = lexical
+            if lexical >= 0.4 {
+                fileHits[chunk.path, default: 0] += 1
+            }
+        }
+
+        var scored: [(Double, SemanticChunk)] = []
+        for (offset, chunk) in index.chunks.enumerated() {
+            if !prefix.isEmpty, !chunk.path.hasPrefix(prefix) { continue }
+            let cosine = Self.cosine(queryFloats, chunk.vector)
+            let lexical = lexicalScores[offset]
+            let pathMatches = queryTokens.filter { chunk.pathTokens.contains($0) }.count
             let pathBoost = queryTokens.isEmpty ? 0 : Double(pathMatches) / Double(queryTokens.count)
-            scored.append((0.45 * cosine + 0.50 * lexical + 0.05 * pathBoost, chunk))
+            let basenameMatches = queryTokens.filter { chunk.basenameTokens.contains($0) }.count
+            let basenameBoost = queryTokens.isEmpty ? 0 : Double(basenameMatches) / Double(queryTokens.count)
+
+            var score = 0.45 * cosine + 0.50 * lexical + 0.05 * pathBoost + 0.15 * basenameBoost
+            let ext = URL(fileURLWithPath: chunk.path).pathExtension.lowercased()
+            if ["md", "txt", "rst"].contains(ext) {
+                score *= 0.80
+            }
+            score += 0.02 * Double(min(fileHits[chunk.path] ?? 0, 5))
+            scored.append((score, chunk))
         }
         let hits = scored
             .sorted { $0.0 > $1.0 }
@@ -248,7 +269,9 @@ actor SemanticIndex {
                         endLine: chunk.endLine,
                         text: chunk.text,
                         vector: chunk.vector,
-                        tokens: Self.tokens(relative + "\n" + chunk.text)
+                        tokens: Self.tokens(relative + "\n" + chunk.text),
+                        pathTokens: Self.tokens(relative),
+                        basenameTokens: Self.tokens(URL(fileURLWithPath: relative).deletingPathExtension().lastPathComponent)
                     )
                 }
                 chunks.append(contentsOf: loaded)
@@ -420,7 +443,9 @@ actor SemanticIndex {
                         endLine: end,
                         text: meaningful,
                         vector: vector,
-                        tokens: Self.tokens(path + "\n" + meaningful)
+                        tokens: Self.tokens(path + "\n" + meaningful),
+                        pathTokens: Self.tokens(path),
+                        basenameTokens: Self.tokens(URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent)
                     ))
                 }
             }
