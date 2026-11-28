@@ -14,3 +14,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Talos
         run: xcodebuild -project apps/macos/Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO build
+      - name: Build Talos Mobile
+        run: xcodebuild -project apps/macos/Talos.xcodeproj -scheme TalosMobile -configuration Debug -sdk iphonesimulator -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO build

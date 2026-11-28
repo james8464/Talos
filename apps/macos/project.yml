@@ -25,6 +25,32 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
 
+  TalosMobile:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: ../mobile/TalosMobile
+    info:
+      path: ../mobile/TalosMobile/Info.plist
+      properties:
+        CFBundleDisplayName: Talos Remote
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.mobile
+        PRODUCT_NAME: TalosMobile
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        SWIFT_EMIT_LOC_STRINGS: YES
+
   TalosRemoteDaemon:
     type: tool
     platform: macOS
@@ -62,6 +88,12 @@ targets:
         CURRENT_PROJECT_VERSION: "3"
         COMBINE_HIDPI_IMAGES: YES
 schemes:
+  TalosMobile:
+    build:
+      targets:
+        TalosMobile: all
+    run:
+      config: Debug
   Talos:
     build:
       targets:

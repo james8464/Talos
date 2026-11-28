@@ -68,8 +68,8 @@ model that produced them.
 - Composer dictation through macOS Speech and AVAudioEngine, with on-device
   preference, permission handling, and verified live microphone transcription
 - Local phone control with a token-protected web page and QR code
-- A headless remote-control daemon with a mobile web client for sessions,
-  prompts, stop, and approvals
+- A headless remote-control daemon with a mobile web client and a native
+  SwiftUI iOS companion for sessions, prompts, stop, and approvals
 - Session persistence with archive, fork, rename, retry, and edit-and-resend
 - Persisted message lineage with retry, edit, and fork for any selected message
 - Notifications, appearance controls, and a native sidebar Settings window
