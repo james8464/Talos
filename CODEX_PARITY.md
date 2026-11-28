@@ -27,7 +27,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Patches | Unified diff through `git apply` with `patch` fallback |
 | Computer use | Screenshot, frontmost app, windows, click, type, keys, scroll, activate app, open URL |
 | Browser CDP | `browser_cdp` talks to Chrome's DevTools Protocol for status, page read with selectors, navigation, JavaScript evaluation, click by selector/text, typing, and PNG screenshots; endpoint configurable, mutating actions approval-gated |
-| Browser extension | Packaged Manifest V3 extension plus a native messaging host; saves page/selection context, sends browser prompts into the app server, polls replies, cancels runs, and opens Talos; installer pins the extension ID and registers the host |
+| Browser extension | Packaged Manifest V3 extension plus a native messaging host; saves page/selection context, sends browser prompts into the app server, polls replies, cancels runs, and opens Talos; installer pins the extension ID and registers the host. Verified loaded in Chrome for Testing with popup ping, native page save, and the “Save page context for Talos” context menu |
 | Browser | Safari/Chrome accessibility page reading, indexed click/type, navigation, back/forward/reload, screenshot OCR; verified live against Safari and example.com |
 | Web | Fetch and search, gated by network setting |
 | Plan | `update_plan` with inspector progress |
@@ -79,7 +79,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Cloud tasks | Self-hosted JSON task queue with a bearer-token HTTP worker protocol: enqueue/list/get/cancel/delete, claim, event logs, completion and failure, persisted tasks, isolated git worktrees, and a local worker that runs tasks with shell and file tools |
 | App server | Headless local JSON-RPC + SSE API with bearer auth: initialize, session create/list/get, prompt, cancel, pending approval, approval resolve, and live transcript/tool/approval/run events |
 | Menu bar | NSStatusItem quick panel with live ready/working/error status, model menu, context and queue state, New Task, Stop while running, Open Talos, Settings, and Quit |
-| Voice input | macOS Speech + AVAudioEngine live dictation with on-device preference, composer mic control, partial-transcript merging, permission status/request UI, and a 15s authorization timeout. Implementation is complete; live transcription could not be exercised because macOS never presented a Speech Recognition TCC prompt to the ad-hoc build |
+| Voice input | macOS Speech + AVAudioEngine live dictation with on-device preference, composer mic control, partial-transcript merging, permission status/request UI, and a 15s authorization timeout. Verified with a generated AIFF through file transcription and live microphone capture, including a recognized transcript in the composer |
 | Memory and goals | Persistent local memories and active goals injected into every system prompt; enabled/disabled state, goal status, add/edit/delete UI, `/memory`, and model-facing `remember` and `update_goal` tools |
 | Sessions | persist, archive, fork, rename, retry; no resume picker yet |
 
