@@ -1065,14 +1065,17 @@ private struct ComposerView: View {
 
             VStack(spacing: 8) {
                 if !attachments.isEmpty {
-                    HStack(spacing: 6) {
-                        ForEach(attachments, id: \.self) { url in
-                            AttachmentPill(url: url) {
-                                attachments.removeAll { $0 == url }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 8) {
+                            ForEach(attachments, id: \.self) { url in
+                                ComposerAttachmentTile(url: url) {
+                                    attachments.removeAll { $0 == url }
+                                }
                             }
                         }
-                        Spacer()
+                        .padding(.vertical, 2)
                     }
+                    .frame(maxHeight: 92)
                 }
 
                 if !slashMatches.isEmpty {
@@ -1223,6 +1226,16 @@ private struct ComposerView: View {
                 attachments.append(contentsOf: urls)
             }
         }
+        .onAppear {
+            if attachments.isEmpty,
+               let seeded = ProcessInfo.processInfo.environment["TALOS_DEMO_ATTACHMENT"] {
+                let urls = seeded
+                    .split(separator: "|")
+                    .map { URL(fileURLWithPath: String($0)) }
+                    .filter { FileManager.default.fileExists(atPath: $0.path) }
+                attachments.append(contentsOf: urls)
+            }
+        }
         .onDisappear {
             dictation.onTranscript = nil
             dictation.cancel()
@@ -1343,6 +1356,73 @@ private struct QueueStrip: View {
         }
         .padding(.horizontal, 26)
         .padding(.top, 8)
+    }
+}
+
+private struct ComposerAttachmentTile: View {
+    let url: URL
+    var remove: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ZStack(alignment: .topTrailing) {
+                Group {
+                    if url.pathExtension.lowercased() == "pdf" {
+                        VStack(spacing: 4) {
+                            Image(systemName: "doc.richtext")
+                                .font(.system(size: 22))
+                                .foregroundStyle(Brand.bronze)
+                            Text("PDF")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(width: 64, height: 64)
+                        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    } else if let image = NSImage(contentsOf: url) {
+                        Image(nsImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 64, height: 64)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    } else {
+                        VStack(spacing: 4) {
+                            Image(systemName: "doc")
+                                .font(.system(size: 22))
+                                .foregroundStyle(.secondary)
+                            Text(url.pathExtension.uppercased())
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .frame(width: 64, height: 64)
+                        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 1)
+                )
+
+                Button(action: remove) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 13))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Color.black.opacity(0.55))
+                }
+                .buttonStyle(.plain)
+                .offset(x: 5, y: -5)
+                .help("Remove attachment")
+                .accessibilityLabel("Remove \(url.lastPathComponent)")
+            }
+            .frame(width: 64, height: 64)
+
+            Text(url.lastPathComponent)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(width: 64, alignment: .leading)
+        }
+        .help(url.path)
     }
 }
 

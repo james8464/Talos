@@ -6,10 +6,20 @@ import CoreImage.CIFilterBuiltins
 
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var query = ""
+
+    private var filteredSections: [SettingsSection] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return SettingsSection.allCases }
+        return SettingsSection.allCases.filter { section in
+            section.title.localizedCaseInsensitiveContains(trimmed)
+                || section.keywords.contains { $0.localizedCaseInsensitiveContains(trimmed) }
+        }
+    }
 
     var body: some View {
         NavigationSplitView {
-            List(SettingsSection.allCases, selection: Binding(
+            List(filteredSections, selection: Binding(
                 get: { model.settingsSection },
                 set: { model.settingsSection = $0 }
             )) { section in
@@ -17,7 +27,19 @@ struct SettingsView: View {
                     .tag(section)
             }
             .listStyle(.sidebar)
+            .searchable(text: $query, placement: .sidebar, prompt: "Search Settings")
+            .overlay {
+                if filteredSections.isEmpty {
+                    ContentUnavailableView.search(text: query)
+                }
+            }
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 230)
+            .onChange(of: query) {
+                guard !filteredSections.isEmpty,
+                      !filteredSections.contains(model.settingsSection),
+                      let first = filteredSections.first else { return }
+                model.settingsSection = first
+            }
         } detail: {
             detail
                 .navigationTitle(model.settingsSection.title)
@@ -95,6 +117,51 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case about
 
     var id: String { rawValue }
+
+    var keywords: [String] {
+        switch self {
+        case .general:
+            return ["appearance", "theme", "dark", "light", "model", "speed", "inspector", "menu bar", "window"]
+        case .projects:
+            return ["folder", "workspace", "path", "recent", "project"]
+        case .models:
+            return ["model", "context", "reasoning", "vision", "capabilities", "token"]
+        case .providers:
+            return ["key", "keychain", "api", "openai", "anthropic", "gemini", "google", "ollama", "opencode", "provider", "login"]
+        case .tools:
+            return ["shell", "terminal", "files", "computer", "browser", "web", "plan", "lsp", "language server", "semantic", "search", "approvals", "sandbox", "network", "embeddings"]
+        case .profiles:
+            return ["profile", "switch", "configuration", "preset"]
+        case .hooks:
+            return ["hook", "script", "event", "trust", "automation"]
+        case .memory:
+            return ["memory", "goal", "remember", "context"]
+        case .chronicle:
+            return ["history", "suggestions", "ambient", "chronicle", "activity"]
+        case .policy:
+            return ["managed", "mdm", "signed", "policy", "lock", "enterprise"]
+        case .cloud:
+            return ["cloud", "queue", "worker", "tasks", "worktree"]
+        case .appServer:
+            return ["server", "json-rpc", "sse", "token", "port", "api", "headless"]
+        case .skills:
+            return ["skill", "skills", "skill.md", "instructions"]
+        case .plugins:
+            return ["plugin", "catalog", "marketplace", "signature", "extension"]
+        case .mcp:
+            return ["mcp", "tools", "resources", "oauth", "servers", "model context protocol"]
+        case .remote:
+            return ["phone", "remote", "qr", "daemon", "mobile"]
+        case .appearance:
+            return ["theme", "color", "font", "transcript", "dark", "light", "accent"]
+        case .usage:
+            return ["tokens", "cost", "usage", "audit", "export", "context", "history"]
+        case .advanced:
+            return ["compaction", "context", "updates", "debug", "experimental"]
+        case .about:
+            return ["version", "license", "credits", "about", "links"]
+        }
+    }
 
     var title: String {
         switch self {
