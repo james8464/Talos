@@ -91,6 +91,11 @@ struct ContentView: View {
                 .environmentObject(model)
                 .environmentObject(model.settings)
         }
+        .sheet(isPresented: $model.showWorktreeSheet) {
+            NewWorktreeSheet()
+                .environmentObject(model)
+                .environmentObject(model.settings)
+        }
     }
 }
 
@@ -115,6 +120,7 @@ private struct ProjectMenu: View {
             Divider()
             Button("Open Folder…") { model.chooseProject() }
             Button("Browse Files…") { model.showProjectBrowser = true }
+            Button("New Worktree…") { model.showWorktreeSheet = true }
             Button("Review Changes…") { model.showGitPanel = true }
             Divider()
             Button("Reveal in Finder") {
@@ -1156,6 +1162,84 @@ private struct EmptyTask: View {
         .frame(maxWidth: 560, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 36)
+    }
+}
+
+private struct NewWorktreeSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var settings: SettingsStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = "task"
+    @State private var busy = false
+    @State private var error: String?
+
+    private var slug: String {
+        let value = name
+            .lowercased()
+            .replacingOccurrences(of: #"[^a-z0-9]+"#, with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        return value.isEmpty ? "task" : value
+    }
+
+    private var branch: String { settings.branchPrefix + slug }
+
+    private var path: String {
+        model.projectURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(model.projectURL.lastPathComponent + "-" + slug)
+            .path
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("New Worktree")
+                .font(.title3.weight(.semibold))
+            Text("Create an isolated checkout for this task without disturbing the current working tree.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            TextField("Worktree name", text: $name)
+                .textFieldStyle(.roundedBorder)
+
+            LabeledContent("Branch", value: branch)
+            LabeledContent("Folder") {
+                Text(path)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .lineLimit(2)
+            }
+
+            if let error {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel", role: .cancel) { dismiss() }
+                Button(busy ? "Creating…" : "Create Worktree") { create() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(busy)
+            }
+        }
+        .padding(20)
+        .frame(width: 540)
+    }
+
+    private func create() {
+        busy = true
+        error = nil
+        Task {
+            switch await model.createWorktree(name: name) {
+            case .success:
+                dismiss()
+            case .failure(let failure):
+                error = failure.localizedDescription
+            }
+            busy = false
+        }
     }
 }
 

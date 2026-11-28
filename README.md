@@ -8,11 +8,13 @@ model that produced them.
 
 - Local models through Ollama, plus OpenCode Go, OpenAI, Anthropic, and Google Gemini
 - OpenCode Go subscription import from the local OpenCode login, with live
-  context, vision, and reasoning metadata for chat-completions models
+  context, vision, and reasoning metadata; chat-completions, Responses, and
+  Anthropic Messages models are all routed
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
-- Project switcher, project-scoped tasks, a file browser with previews, and a
-  Git changes panel with colored diffs, staging, and commit
+- Project switcher, project-scoped tasks, a file browser with previews, a
+  Git changes panel with colored diffs, staging, and commit, and one-command
+  Git worktrees for isolated task branches
 - Tools that work with every model: shell, file read/write, patch, file search,
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR)
@@ -26,7 +28,7 @@ model that produced them.
   `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/rewind`,
   `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`,
   `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`,
-  `/browser`, `/todos`, `/help`
+  `/browser`, `/worktree`, `/todos`, `/help`
 - Skills, plugin bundles, and stdio MCP servers
 - Local phone control with a token-protected web page and QR code
 - Session persistence with archive, fork, rename, retry, and edit-and-resend

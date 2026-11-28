@@ -11,7 +11,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | --- | --- |
 | Model selection | Local Ollama models plus OpenCode Go, OpenAI, Anthropic, Gemini |
 | Provider setup | Compact provider list, one editor sheet, editable base URL/model/discovery, Keychain keys, OpenCode subscription import |
-| OpenCode Go | OAuth access imported from the local OpenCode CLI; live model metadata drives model list, context, vision, and reasoning effort for 19 chat-completions models |
+| OpenCode Go | OAuth access imported from the local OpenCode CLI; live model metadata drives model list, context, vision, and reasoning effort for 30 models routed over chat-completions, Responses, and Anthropic Messages |
 | Reasoning effort | Only options reported or supported by the selected model |
 | Response speed | Fast / Balanced / Thorough output budgets |
 | Chat | Streaming, stop, per-message model labels, copy, retry, edit-and-resend |
@@ -20,12 +20,13 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Projects | Project switcher, recent projects, project-scoped tasks |
 | File browser | Lazy project tree, text/image preview, open/reveal, new file |
 | Git review | Branch/status, changed files, colored diff, stage all, commit |
+| Git worktrees | Create an isolated worktree and branch from the project menu, `/worktree`, or Settings prefix |
 | Documents | `create_document` for md, txt, html, csv, json, rtf, docx |
 | Shell | Sandboxed zsh commands under workspace root |
 | Files | Read with line ranges, write, list, search |
 | Patches | Unified diff through `git apply` with `patch` fallback |
 | Computer use | Screenshot, frontmost app, windows, click, type, keys, scroll, activate app, open URL |
-| Browser | Safari/Chrome accessibility page reading, indexed click/type, navigation, back/forward/reload, screenshot OCR |
+| Browser | Safari/Chrome accessibility page reading, indexed click/type, navigation, back/forward/reload, screenshot OCR; verified live against Safari and example.com |
 | Web | Fetch and search, gated by network setting |
 | Plan | `update_plan` with inspector progress |
 | Image viewing | `view_image` and automatic tool-result previews |
@@ -35,7 +36,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Context | Capability/model/override window, live usage meter |
 | Compaction | Automatic threshold + `/compact`, same-model summarization |
 | Usage | Reported provider tokens, estimate fallback, 12-week heatmap, per-model totals |
-| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`, `/browser`, `/todos`, `/help` |
+| Slash commands | `/new`, `/clear`, `/compact`, `/stop`, `/retry`, `/rewind`, `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`, `/usage`, `/cost`, `/diff`, `/review`, `/security-review`, `/export`, `/doctor`, `/init`, `/memory`, `/resume`, `/permissions`, `/config`, `/providers`, `/models`, `/skills`, `/plugins`, `/mcp`, `/remote`, `/browser`, `/worktree`, `/todos`, `/help` |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
 | MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable |
@@ -54,7 +55,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | --- | --- |
 | MCP | stdio and Streamable HTTP; no MCP elicitation or MCP apps yet |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
-| OpenCode Go | chat-completions models are routed; Responses/Messages-only models are not routed yet |
+| OpenCode Go | all advertised models with a chat-completions, Responses, or Anthropic Messages endpoint are routed; other transports are filtered out |
 | Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
 | Images | attachments and tool screenshots are sent as native image blocks to models identified as vision-capable; PDF input is not yet supported |
 | Reasoning | provider-specific options only where the transport exposes them |
@@ -69,7 +70,7 @@ These are Codex features Talos does not claim to have:
 
 - Codex Cloud tasks and cloud apply
 - Subagents, Ultra/Max fan-out, multi-agent orchestration
-- Git worktrees and managed branches (diff review and commit are implemented)
+- Managed branches beyond one worktree per task
 - Hooks and hook trust
 - Config profiles and managed/enterprise policy
 - Memories, goals, Chronicle, ambient suggestions

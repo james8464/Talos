@@ -166,31 +166,76 @@ final class BrowserController {
         return .ok("Browser screenshot saved to \(path.path).\n\nPage text from screenshot:\n\(ocr)", attachment: path.path)
     }
 
+    private static let browserBundleIDs = [
+        "com.apple.Safari",
+        "com.apple.SafariTechnologyPreview",
+        "com.google.Chrome",
+        "com.google.Chrome.canary",
+        "org.chromium.Chromium",
+        "company.thebrowser.Browser",
+        "com.microsoft.edgemac",
+        "org.mozilla.firefox",
+    ]
+
+    func isRunning() -> Bool {
+        !runningBrowsers().isEmpty
+    }
+
+    private func runningBrowsers() -> [NSRunningApplication] {
+        let known = Self.browserBundleIDs.flatMap {
+            NSRunningApplication.runningApplications(withBundleIdentifier: $0)
+        }
+        let others = NSWorkspace.shared.runningApplications.filter(isBrowser)
+        var seen = Set<pid_t>()
+        return (known + others).filter { seen.insert($0.processIdentifier).inserted }
+    }
+
     private func browserWindow() -> (NSRunningApplication, AXUIElement)? {
         let front = NSWorkspace.shared.frontmostApplication
-        let candidates = [front].compactMap { $0 } + NSWorkspace.shared.runningApplications
-        guard let app = candidates.first(where: isBrowser) else { return nil }
-        if front?.processIdentifier != app.processIdentifier {
-            app.activate(options: [.activateIgnoringOtherApps])
+        let browsers = runningBrowsers()
+        guard !browsers.isEmpty else { return nil }
+        let ordered = browsers.sorted { lhs, rhs in
+            if lhs.processIdentifier == front?.processIdentifier { return true }
+            if rhs.processIdentifier == front?.processIdentifier { return false }
+            return lhs.isActive && !rhs.isActive
         }
-        let axApp = AXUIElementCreateApplication(app.processIdentifier)
-        var focused: CFTypeRef?
-        if AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &focused) == .success,
-           let focused {
-            return (app, unsafeBitCast(focused, to: AXUIElement.self))
-        }
-        if let window = (attribute(axApp, kAXWindowsAttribute) as? [AXUIElement])?.first {
-            return (app, window)
+        for app in ordered {
+            let axApp = AXUIElementCreateApplication(app.processIdentifier)
+            var focused: CFTypeRef?
+            if AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &focused) == .success,
+               let focused {
+                return (app, unsafeBitCast(focused, to: AXUIElement.self))
+            }
+            if let window = (attribute(axApp, kAXWindowsAttribute) as? [AXUIElement])?.first {
+                return (app, window)
+            }
         }
         return nil
     }
 
     private func isBrowser(_ app: NSRunningApplication) -> Bool {
         let id = app.bundleIdentifier?.lowercased() ?? ""
-        return id.contains("safari") || id.contains("google.chrome") || id.contains("chromium") || id.contains("arc")
+        return id.contains("safari")
+            || id.contains("google.chrome")
+            || id.contains("chromium")
+            || id.contains("thebrowser")
+            || id.contains("edgemac")
+            || id.contains("firefox")
     }
 
     private func documentURL(_ element: AXUIElement) -> String? {
+        if let direct = urlAttribute(element) { return direct }
+        var found: String?
+        var nodeCount = 0
+        walk(element, depth: 0, nodeCount: &nodeCount) { node, role, _, _, _ in
+            if found == nil, role == "AXWebArea" {
+                found = urlAttribute(node)
+            }
+        }
+        return found
+    }
+
+    private func urlAttribute(_ element: AXUIElement) -> String? {
         for key in [kAXDocumentAttribute, "AXURL"] {
             let raw = attribute(element, key)
             if let value = raw as? String, !value.isEmpty { return value }

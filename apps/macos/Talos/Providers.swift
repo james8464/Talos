@@ -282,11 +282,136 @@ struct OpenAICompatibleClient {
     }
 }
 
+/// OpenAI Responses API streaming, used by OpenCode's responses-only models.
+struct OpenAIResponsesClient {
+    let baseURL: String
+    let apiKey: String
+    var session: String? = nil
+
+    func stream(model: String, messages: [ChatTurn], settings: GenerationSettings) -> AsyncThrowingStream<ModelStreamEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    guard let url = URL(string: root + "/responses") else {
+                        throw ProviderError.message("The base URL is invalid.")
+                    }
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "POST"
+                    request.timeoutInterval = 600
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+                    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+                    request.setValue("opencode/2.4.0", forHTTPHeaderField: "User-Agent")
+                    request.setValue("https://opencode.ai", forHTTPHeaderField: "Origin")
+                    request.setValue("https://opencode.ai/", forHTTPHeaderField: "Referer")
+                    request.setValue(session ?? UUID().uuidString, forHTTPHeaderField: "x-opencode-session")
+
+                    let instructions = messages.first(where: { $0.role == .system })?.text ?? ""
+                    var input: [[String: Any]] = []
+                    for message in messages where message.role != .system {
+                        let role = message.role == .assistant ? "assistant" : "user"
+                        var content: [[String: Any]] = []
+                        if !message.text.isEmpty {
+                            content.append([
+                                "type": role == "assistant" ? "output_text" : "input_text",
+                                "text": message.text,
+                            ])
+                        }
+                        if settings.allowImages, message.role != .assistant {
+                            for image in ImageLoader.load(paths: message.attachments) {
+                                content.append([
+                                    "type": "input_image",
+                                    "image_url": "data:\(image.mediaType);base64,\(image.base64)",
+                                ])
+                            }
+                        }
+                        if content.isEmpty {
+                            content.append(["type": "input_text", "text": " "])
+                        }
+                        input.append(["role": role, "content": content])
+                    }
+
+                    var payload: [String: Any] = [
+                        "model": model,
+                        "input": input,
+                        "stream": true,
+                        "max_output_tokens": settings.maxTokens,
+                    ]
+                    if !instructions.isEmpty {
+                        payload["instructions"] = instructions
+                    }
+                    if let effort = settings.reasoning, !effort.isEmpty {
+                        payload["reasoning"] = ["effort": effort]
+                    }
+                    request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+
+                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    guard let http = response as? HTTPURLResponse else {
+                        throw ProviderError.message("OpenCode returned no response.")
+                    }
+                    guard http.statusCode == 200 else {
+                        throw ProviderError.message("OpenCode answered \(http.statusCode).")
+                    }
+
+                    var used = false
+                    for try await line in bytes.lines {
+                        if Task.isCancelled { break }
+                        guard line.hasPrefix("data:") else { continue }
+                        let raw = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                        if raw == "[DONE]" { break }
+                        guard let data = raw.data(using: .utf8),
+                              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                              let type = object["type"] as? String else {
+                            continue
+                        }
+                        switch type {
+                        case "response.output_text.delta":
+                            if let delta = object["delta"] as? String, !delta.isEmpty {
+                                continuation.yield(.text(delta))
+                            }
+                        case "response.completed":
+                            if let response = object["response"] as? [String: Any],
+                               let usage = response["usage"] as? [String: Any],
+                               let input = usage["input_tokens"] as? Int,
+                               let output = usage["output_tokens"] as? Int,
+                               !used {
+                                used = true
+                                continuation.yield(.usage(TokenUsage(
+                                    prompt: input,
+                                    completion: output,
+                                    estimated: false
+                                )))
+                            }
+                        case "response.failed", "error":
+                            let message = (object["error"] as? [String: Any])?["message"] as? String
+                                ?? (object["response"] as? [String: Any])?["error"] as? String
+                                ?? "OpenCode response failed."
+                            throw ProviderError.message(message)
+                        default:
+                            break
+                        }
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private var root: String {
+        baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+    }
+}
+
 /// Anthropic Messages API streaming.
 struct AnthropicClient {
     let baseURL: String
     let apiKey: String
     var sendsImages = false
+    var isOpenCode = false
+    var openCodeSession: String? = nil
 
     func models() async throws -> [String] {
         guard let url = URL(string: root + "/v1/models") else {
@@ -323,6 +448,12 @@ struct AnthropicClient {
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
                     request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+                    if isOpenCode {
+                        request.setValue("opencode/2.4.0", forHTTPHeaderField: "User-Agent")
+                        request.setValue("https://opencode.ai", forHTTPHeaderField: "Origin")
+                        request.setValue("https://opencode.ai/", forHTTPHeaderField: "Referer")
+                        request.setValue(openCodeSession ?? UUID().uuidString, forHTTPHeaderField: "x-opencode-session")
+                    }
 
                     let system = messages.first(where: { $0.role == .system })?.text ?? ""
                     let turns = payloadMessages(messages)
@@ -336,13 +467,26 @@ struct AnthropicClient {
                     if !system.isEmpty {
                         payload["system"] = system
                     }
-                    if let rawBudget = settings.reasoning,
-                       let budget = Int(rawBudget),
+                    if isOpenCode,
+                       let effort = settings.reasoning,
                        supportsThinking(model) {
-                        payload["thinking"] = ["type": "enabled", "budget_tokens": budget]
-                        payload["max_tokens"] = max(settings.maxTokens, budget + 1024)
+                        payload["thinking"] = ["type": "adaptive"]
+                        payload["output_config"] = ["effort": effort]
                     } else {
-                        payload["temperature"] = settings.temperature
+                        let budget: Int?
+                        if isOpenCode {
+                            budget = settings.reasoning.flatMap {
+                                ["low": 1024, "medium": 2048, "high": 4096, "xhigh": 8192, "max": 16384][$0]
+                            }
+                        } else {
+                            budget = settings.reasoning.flatMap(Int.init)
+                        }
+                        if let budget, supportsThinking(model) {
+                            payload["thinking"] = ["type": "enabled", "budget_tokens": budget]
+                            payload["max_tokens"] = max(settings.maxTokens, budget + 1024)
+                        } else if !isOpenCode {
+                            payload["temperature"] = settings.temperature
+                        }
                     }
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
@@ -429,7 +573,8 @@ struct AnthropicClient {
     }
 
     private func supportsThinking(_ model: String) -> Bool {
-        model.contains("claude-sonnet-4") || model.contains("claude-opus-4") || model.contains("claude-3-7")
+        if isOpenCode { return true }
+        return model.contains("claude-sonnet-4") || model.contains("claude-opus-4") || model.contains("claude-3-7")
     }
 
     private var root: String {

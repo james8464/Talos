@@ -53,6 +53,7 @@ final class AppModel: ObservableObject {
     @Published var pendingDraft: String?
     @Published var editingProvider: Provider?
     @Published var settingsSection: SettingsSection = .general
+    @Published var showWorktreeSheet = false
 
     let settings = SettingsStore()
     let usage = UsageStore()
@@ -211,6 +212,22 @@ final class AppModel: ObservableObject {
         if panel.runModal() == .OK, let url = panel.url {
             let project = projects.open(path: url.path)
             openProject(project)
+        }
+    }
+
+    func createWorktree(name: String) async -> Result<Project, Error> {
+        let result = await GitService.createWorktree(
+            in: projectURL,
+            name: name,
+            branchPrefix: settings.branchPrefix
+        )
+        switch result {
+        case .success(let worktree):
+            let project = projects.open(path: worktree.path)
+            openProject(project)
+            return .success(project)
+        case .failure(let error):
+            return .failure(error)
         }
     }
 
@@ -400,7 +417,7 @@ final class AppModel: ObservableObject {
         if settings.savedKeys.contains(.openCode), let key = settings.key(for: .openCode) {
             do {
                 openCodeModels = try await OpenCodeCatalog.fetch(token: key)
-                    .filter(\.supportsChatCompletions)
+                    .filter(\.isRouted)
                 next += openCodeModels.map { ModelChoice(provider: .openCode, id: $0.id) }
             } catch {
                 openCodeModels = []
@@ -618,6 +635,19 @@ final class AppModel: ObservableObject {
             appendCommandMessage(todosSummary())
         case "/cost":
             appendCommandMessage(usageSummary())
+        case "/worktree":
+            if remainder.isEmpty {
+                showWorktreeSheet = true
+            } else {
+                Task {
+                    switch await createWorktree(name: remainder) {
+                    case .success(let project):
+                        appendCommandMessage("Opened worktree \(project.path).")
+                    case .failure(let error):
+                        appendCommandMessage("Worktree failed: \(error.localizedDescription)")
+                    }
+                }
+            }
         case "/diff":
             showGitPanel = true
         case "/review":
@@ -1105,20 +1135,37 @@ final class AppModel: ObservableObject {
             stream = OllamaClient(baseURL: URL(string: settings.localURL) ?? URL(string: Provider.local.defaultBaseURL)!)
                 .stream(model: choice.id, messages: messages, settings: generation)
         case .openCode:
-            stream = OpenAICompatibleClient(
-                baseURL: settings.openCodeBase,
-                apiKey: settings.key(for: .openCode) ?? "",
-                usesCompletionTokens: false,
-                sendsTemperature: true,
-                sendsReasoningEffort: false,
-                sendsImages: modelCapabilities.supportsVision,
-                isOpenCode: true,
-                openCodeSession: openCodeSessionID
-            ).stream(
-                model: choice.id,
-                messages: messages.map { ChatTurn(role: $0.role, text: $0.text, attachments: $0.attachments) },
-                settings: generation
-            )
+            let metadata = openCodeModels.first { $0.id == choice.id }
+            let chatTurns = messages.map { ChatTurn(role: $0.role, text: $0.text, attachments: $0.attachments) }
+            switch metadata?.recommendedAPI {
+            case "responses":
+                stream = OpenAIResponsesClient(
+                    baseURL: metadata?.responsesBaseURL ?? "https://opencode.ai/inference/go/openai/v1",
+                    apiKey: settings.key(for: .openCode) ?? "",
+                    session: openCodeSessionID
+                ).stream(model: choice.id, messages: chatTurns, settings: generation)
+            case "messages":
+                var base = metadata?.messagesBaseURL ?? "https://opencode.ai/inference/go/anthropic/v1"
+                if base.hasSuffix("/v1") { base.removeLast(3) }
+                stream = AnthropicClient(
+                    baseURL: base,
+                    apiKey: settings.key(for: .openCode) ?? "",
+                    sendsImages: modelCapabilities.supportsVision,
+                    isOpenCode: true,
+                    openCodeSession: openCodeSessionID
+                ).stream(model: choice.id, messages: chatTurns, settings: generation)
+            default:
+                stream = OpenAICompatibleClient(
+                    baseURL: metadata?.chatBaseURL ?? settings.openCodeBase,
+                    apiKey: settings.key(for: .openCode) ?? "",
+                    usesCompletionTokens: false,
+                    sendsTemperature: true,
+                    sendsReasoningEffort: true,
+                    sendsImages: modelCapabilities.supportsVision,
+                    isOpenCode: true,
+                    openCodeSession: openCodeSessionID
+                ).stream(model: choice.id, messages: chatTurns, settings: generation)
+            }
         case .openAI:
             stream = OpenAICompatibleClient(
                 baseURL: settings.openAIBase,

@@ -29,7 +29,44 @@ struct GitStatus: Equatable, Sendable {
     var hasChanges: Bool { !files.isEmpty }
 }
 
+struct GitWorktree: Sendable {
+    let path: String
+    let branch: String
+}
+
 enum GitService {
+    static func createWorktree(
+        in root: URL,
+        name: String,
+        branchPrefix: String
+    ) async -> Result<GitWorktree, Error> {
+        let status = await status(in: root)
+        guard status.isRepository else {
+            return .failure(GitError.message("The project folder is not a Git repository."))
+        }
+        let slug = name
+            .lowercased()
+            .replacingOccurrences(of: #"[^a-z0-9]+"#, with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        let safeName = slug.isEmpty ? "task" : slug
+        let branch = branchPrefix + safeName
+        let parent = root.deletingLastPathComponent()
+        var path = parent.appendingPathComponent(root.lastPathComponent + "-" + safeName, isDirectory: true)
+        var suffix = 1
+        while FileManager.default.fileExists(atPath: path.path) {
+            path = parent.appendingPathComponent(root.lastPathComponent + "-" + safeName + "-\(suffix)", isDirectory: true)
+            suffix += 1
+        }
+
+        let result = await run([
+            "worktree", "add", "-b", branch, path.path,
+        ], in: root)
+        guard result.code == 0 else {
+            return .failure(GitError.message(result.text.isEmpty ? "git worktree add failed." : result.text))
+        }
+        return .success(GitWorktree(path: path.path, branch: branch))
+    }
+
     static func status(in root: URL) async -> GitStatus {
         let result = await run(["status", "--porcelain=v1", "-b"], in: root)
         guard result.code == 0 else { return GitStatus() }

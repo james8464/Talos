@@ -8,6 +8,8 @@ struct OpenCodeModel: Identifiable, Equatable, Sendable {
     let reasoningEfforts: [String]
     let contextLimit: Int?
     let chatBaseURL: String?
+    let responsesBaseURL: String?
+    let messagesBaseURL: String?
 
     var supportsVision: Bool {
         inputModalities.contains { $0.hasPrefix("image/") }
@@ -15,6 +17,15 @@ struct OpenCodeModel: Identifiable, Equatable, Sendable {
 
     var supportsChatCompletions: Bool {
         recommendedAPI == "chat-completions" && chatBaseURL != nil
+    }
+
+    var isRouted: Bool {
+        switch recommendedAPI {
+        case "chat-completions": return chatBaseURL != nil
+        case "responses": return responsesBaseURL != nil
+        case "messages": return messagesBaseURL != nil
+        default: return false
+        }
     }
 }
 
@@ -51,7 +62,8 @@ enum OpenCodeCatalog {
             let context = limit?["context"] as? Int
             let api = row["api"] as? [String: Any]
             let chat = api?["chat-completions"] as? [String: Any]
-            let chatBase = chat?["base_url"] as? String
+            let responses = api?["responses"] as? [String: Any]
+            let messages = api?["messages"] as? [String: Any]
             return OpenCodeModel(
                 id: id,
                 name: name,
@@ -59,7 +71,9 @@ enum OpenCodeCatalog {
                 inputModalities: inputs,
                 reasoningEfforts: efforts,
                 contextLimit: context,
-                chatBaseURL: chatBase
+                chatBaseURL: chat?["base_url"] as? String,
+                responsesBaseURL: responses?["base_url"] as? String,
+                messagesBaseURL: messages?["base_url"] as? String
             )
         }
     }

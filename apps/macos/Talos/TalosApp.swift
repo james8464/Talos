@@ -33,6 +33,7 @@ struct TalosApp: App {
                 Button("Compact Conversation") { model.compactCurrentSession() }
                     .keyboardShortcut("k", modifiers: [.command, .shift])
                     .disabled(model.isStreaming)
+                Button("New Worktree…") { model.showWorktreeSheet = true }
                 Button("Review Changes…") { model.showGitPanel = true }
                     .keyboardShortcut("g", modifiers: [.command, .shift])
                 Divider()

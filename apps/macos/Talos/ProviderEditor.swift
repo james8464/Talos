@@ -237,7 +237,7 @@ struct ProviderEditor: View {
             switch provider {
             case .openCode:
                 ids = try await OpenCodeCatalog.fetch(token: key)
-                    .filter(\.supportsChatCompletions)
+                    .filter(\.isRouted)
                     .map(\.id)
             case .openAI:
                 ids = try await OpenAICompatibleClient(baseURL: settings.openAIBase, apiKey: key).models()

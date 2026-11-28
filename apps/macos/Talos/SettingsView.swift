@@ -1094,6 +1094,14 @@ private struct AdvancedSettingsView: View {
                 .disabled(model.isStreaming)
             }
 
+            Section("Git") {
+                TextField("Worktree branch prefix", text: $settings.branchPrefix)
+                    .textFieldStyle(.roundedBorder)
+                Text("New worktrees use this prefix, for example talos/task.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("History") {
                 Button("Clear All Tasks", role: .destructive) {
                     model.clearHistory()

@@ -23,6 +23,9 @@ final class SettingsStore: ObservableObject {
     @Published var keepAlive: String {
         didSet { defaults.set(keepAlive, forKey: "keepAlive") }
     }
+    @Published var branchPrefix: String {
+        didSet { defaults.set(branchPrefix, forKey: "branchPrefix") }
+    }
 
     @Published private(set) var reasoningByModel: [String: String] = [:]
     @Published private(set) var contextWindowOverrides: [String: Int] = [:]
@@ -87,6 +90,7 @@ final class SettingsStore: ObservableObject {
         temperature = min(max(storedTemperature, 0), 1.5)
         speed = ResponseSpeed(rawValue: defaults.string(forKey: "speed") ?? "") ?? .balanced
         keepAlive = defaults.string(forKey: "keepAlive") ?? "30m"
+        branchPrefix = defaults.string(forKey: "branchPrefix") ?? "talos/"
 
         approvalPolicy = ApprovalPolicy(rawValue: defaults.string(forKey: "approvalPolicy") ?? "") ?? .onRequest
         sandboxMode = SandboxMode(rawValue: defaults.string(forKey: "sandboxMode") ?? "") ?? .workspaceWrite

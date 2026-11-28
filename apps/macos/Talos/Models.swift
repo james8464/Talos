@@ -286,6 +286,7 @@ enum SlashCommands {
         SlashCommand(id: "/status", detail: "Show model and tool state"),
         SlashCommand(id: "/usage", detail: "Show token usage"),
         SlashCommand(id: "/cost", detail: "Show token usage"),
+        SlashCommand(id: "/worktree", detail: "Create a Git worktree"),
         SlashCommand(id: "/diff", detail: "Open the changes panel"),
         SlashCommand(id: "/review", detail: "Review working tree changes"),
         SlashCommand(id: "/security-review", detail: "Review changes for security risks"),
