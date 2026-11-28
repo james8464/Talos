@@ -136,6 +136,12 @@ with a rebuild action. Task deletion goes through the window UndoManager, so
 ⌘Z restores a deleted task and ⇧⌘Z removes it again. File > New Window
 (⇧⌘N) opens another standard window over the same task store.
 
+## Usage charts
+
+Settings → Usage renders the last 12 weeks of tokens with Swift Charts: labeled
+date and token axes, a dashed average rule, peak and average summaries, and an
+accessibility label/value on the chart and each mark.
+
 ## Recent documents
 
 Files you attach, preview in the project browser, or open through Talos are

@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import Charts
 import UniformTypeIdentifiers
 import CoreImage
 import CoreImage.CIFilterBuiltins
@@ -1395,22 +1396,14 @@ private struct UsageSettingsView: View {
             }
 
             Section("Last 12 weeks") {
-                UsageHeatmap(totals: usage.dailyTotals(days: 84))
-                HStack(spacing: 5) {
-                    Text("Less")
-                    ForEach(1...5, id: \.self) { level in
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Brand.bronze.opacity(0.12 + Double(level) * 0.17))
-                            .frame(width: 12, height: 12)
-                    }
-                    Text("More")
-                    Spacer()
-                    Text("\(TokenEstimator.format(usage.totalTokens)) total")
+                let totals = usage.dailyTotals(days: 84)
+                if totals.values.reduce(0, +) == 0 {
+                    Text("No usage recorded yet.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } else {
+                    UsageChart(totals: totals)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
             }
 
             Section("By model") {
@@ -1481,43 +1474,96 @@ private struct UsageSettingsView: View {
     }
 }
 
-private struct UsageHeatmap: View {
+private struct UsageDay: Identifiable {
+    let date: Date
+    let tokens: Int
+    var id: Date { date }
+}
+
+private struct UsageChart: View {
     let totals: [Date: Int]
 
-    private let weeks = 12
+    private let days = 84
 
-    var body: some View {
+    private var series: [UsageDay] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let start = calendar.date(byAdding: .day, value: -(weeks * 7 - 1), to: today) ?? today
-        let weekday = calendar.component(.weekday, from: start)
-        let gridStart = calendar.date(byAdding: .day, value: -(weekday - 1), to: start) ?? start
-        let maxValue = totals.values.max() ?? 1
+        return (0..<days).reversed().compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            return UsageDay(date: date, tokens: totals[date] ?? 0)
+        }
+    }
 
-        Grid(horizontalSpacing: 3, verticalSpacing: 3) {
-            ForEach(0..<7, id: \.self) { row in
-                GridRow {
-                    ForEach(0..<weeks, id: \.self) { column in
-                        let date = calendar.date(byAdding: .day, value: column * 7 + row, to: gridStart) ?? gridStart
-                        let day = calendar.startOfDay(for: date)
-                        let value = totals[day] ?? 0
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(shade(value: value, maxValue: maxValue, inRange: day >= start && day <= today))
-                            .frame(width: 13, height: 13)
-                            .help("\(day.formatted(date: .abbreviated, time: .omitted)): \(value) tokens")
+    private var peak: UsageDay? {
+        series.max { $0.tokens < $1.tokens }
+    }
+
+    private var average: Int {
+        let active = series.filter { $0.tokens > 0 }
+        guard !active.isEmpty else { return 0 }
+        return active.reduce(0) { $0 + $1.tokens } / active.count
+    }
+
+    private var startDate: Date {
+        series.first?.date ?? Date()
+    }
+
+    var body: some View {
+        let peakValue = peak?.tokens ?? 0
+        let peakDate = peak?.date
+
+        Chart(series) { day in
+            BarMark(
+                x: .value("Day", day.date, unit: .day),
+                y: .value("Tokens", day.tokens)
+            )
+            .foregroundStyle(Brand.bronze.gradient)
+            .cornerRadius(1.5)
+            .accessibilityLabel(day.date.formatted(date: .abbreviated, time: .omitted))
+            .accessibilityValue("\(day.tokens) tokens")
+
+            if average > 0 {
+                RuleMark(y: .value("Average", average))
+                    .foregroundStyle(.secondary.opacity(0.6))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .accessibilityLabel("Average active day")
+                    .accessibilityValue("\(average) tokens")
+            }
+        }
+        .chartXScale(domain: startDate...Date())
+        .chartXAxis {
+            AxisMarks(values: .stride(by: .weekOfYear, count: 2)) {
+                AxisGridLine()
+                AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading) { value in
+                AxisGridLine()
+                AxisValueLabel {
+                    if let tokens = value.as(Int.self) {
+                        Text(TokenEstimator.format(tokens))
                     }
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
+        .frame(height: 170)
+        .accessibilityLabel("Daily token usage for the last 12 weeks")
+        .accessibilityValue(
+            peakValue > 0
+                ? "Peak \(peakValue) tokens, average \(average) tokens per active day"
+                : "No usage"
+        )
 
-    private func shade(value: Int, maxValue: Int, inRange: Bool) -> Color {
-        guard inRange, value > 0, maxValue > 0 else {
-            return Color.secondary.opacity(0.08)
+        HStack(spacing: 6) {
+            if let peakDate, peakValue > 0 {
+                Text("Peak \(TokenEstimator.format(peakValue)) on \(peakDate.formatted(date: .abbreviated, time: .omitted))")
+            }
+            Spacer()
+            Text("Average \(TokenEstimator.format(average)) per active day")
         }
-        let fraction = Double(value) / Double(maxValue)
-        return Brand.bronze.opacity(0.15 + 0.85 * fraction)
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 }
 

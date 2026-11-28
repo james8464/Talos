@@ -30,6 +30,8 @@ model that produced them.
   plus Chrome DevTools Protocol control with DOM selectors and JavaScript
 - On-device semantic code search (`search_codebase`) using Apple sentence
   embeddings plus lexical ranking, with a cached, incrementally rebuilt index
+- Swift Charts usage visualization with labeled axes, an average line, and
+  peak/average summaries
 - Recent documents with File > Open Recent and a browser that persists files
   you attach, preview, or open
 - A headless `talos` CLI that drives the app server: sessions, streamed

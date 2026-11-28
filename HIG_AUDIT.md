@@ -33,6 +33,8 @@ applicable to a single-user, local-first macOS model client.
   preview and message-count toggles in the sidebar menu and Settings.
 - Added a persisted recent-documents store, File > Open Recent, and a browser
   with open, reveal, remove, clear, missing-file handling, and relative dates.
+- Replaced the custom usage heatmap with Swift Charts: labeled axes, an average
+  rule, peak/average context, and an accessibility description.
 - Added searchable Settings and image/PDF attachment thumbnails.
 
 ## Design fundamentals
@@ -71,7 +73,7 @@ applicable to a single-user, local-first macOS model client.
 
 | HIG page | Guidance checked | Status | Evidence / note |
 | --- | --- | --- | --- |
-| Charting data | Clear, labeled data visualization | 🟡 | Usage heatmap with labeled totals; not a full charting surface |
+| Charting data | Clear, labeled data visualization | ✅ | Swift Charts bar chart of daily tokens with date and token axes, an average rule, peak/average context, and an accessibility label/value for the chart |
 | Collaboration and sharing | Share/collaborate flows | ➖ | Single-user local app |
 | Drag and drop | Support drag and drop plus an alternative | ✅ | Composer accepts dropped files; paperclip picker remains |
 | Entering data | Clear fields, defaults, validation | ✅ | Composer, settings forms, labeled fields, inline errors |
@@ -103,7 +105,7 @@ applicable to a single-user, local-first macOS model client.
 
 | HIG page | Status | Evidence / note |
 | --- | --- | --- |
-| Charts | 🟡 | Usage heatmap is a custom grid, not the Charts framework |
+| Charts | ✅ | Settings → Usage uses the Swift Charts framework with `BarMark`, `RuleMark`, axis formatting, and accessible marks |
 | Image views | ✅ | Attachment thumbnails and image previews preserve aspect ratio |
 | Text views | ✅ | Transcript uses selectable text with semantic styles |
 | Web views | 🟡 | MCP apps use a sandboxed WKWebView with a tool bridge |
@@ -258,4 +260,3 @@ applicable to a single-user, local-first macOS model client.
 ## Remaining partial items
 
 - VoiceOver has structural labels but no full spoken walkthrough.
-- Charts are a custom heatmap rather than the Charts framework.
