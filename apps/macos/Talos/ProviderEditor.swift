@@ -39,6 +39,7 @@ struct ProviderEditor: View {
                     Section("Local server") {
                         TextField("Server", text: baseBinding)
                             .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("Server")
                         HStack {
                             Text("\(model.localModels.count) models available")
                                 .font(.caption)
@@ -76,6 +77,7 @@ struct ProviderEditor: View {
                         HStack(spacing: 8) {
                             SecureField("API key", text: $key)
                                 .textFieldStyle(.roundedBorder)
+                                .accessibilityLabel("API key")
                             Button(settings.savedKeys.contains(provider) ? "Replace" : "Save") {
                                 saveKey()
                             }
@@ -105,8 +107,10 @@ struct ProviderEditor: View {
                     Section("Endpoint") {
                         TextField("Base URL", text: baseBinding)
                             .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("Base URL")
                         TextField("Model", text: modelBinding)
                             .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("Model")
                             .onSubmit {
                                 if model.choice.provider == provider {
                                     model.choose(ModelChoice(provider: provider, id: settings.model(for: provider)))

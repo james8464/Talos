@@ -97,6 +97,7 @@ struct MCPElicitationView: View {
                 set: { values[field.name] = $0 ? "true" : "false" }
             ))
             .toggleStyle(.switch)
+            .accessibilityLabel(field.title)
         case .choice(let options):
             Picker(field.title, selection: Binding(
                 get: { values[field.name] ?? options.first ?? "" },
@@ -107,18 +108,21 @@ struct MCPElicitationView: View {
                 }
             }
             .labelsHidden()
+            .accessibilityLabel(field.title)
         case .number, .integer:
             TextField("0", text: Binding(
                 get: { values[field.name] ?? "" },
                 set: { values[field.name] = $0 }
             ))
             .textFieldStyle(.roundedBorder)
+            .accessibilityLabel(field.title)
         case .string:
             TextField("", text: Binding(
                 get: { values[field.name] ?? "" },
                 set: { values[field.name] = $0 }
             ))
             .textFieldStyle(.roundedBorder)
+            .accessibilityLabel(field.title)
         }
     }
 }

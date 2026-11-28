@@ -149,22 +149,39 @@ usleep(700_000)
 setArabicDefaults()
 
 
-run("/usr/bin/open", ["-a", "\(FileManager.default.currentDirectoryPath)/apps/macos/.build/Build/Products/Debug/Talos.app"])
+let appPath = "\(FileManager.default.currentDirectoryPath)/apps/macos/.build/Build/Products/Debug/Talos.app"
 
-var running: NSRunningApplication?
-for _ in 0..<80 {
-    usleep(250_000)
-    if let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first {
-        running = app
-        break
+func terminateApp() {
+    NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).forEach { $0.terminate() }
+    for _ in 0..<30 where !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty {
+        usleep(100_000)
     }
+    NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).forEach { $0.forceTerminate() }
+    usleep(400_000)
 }
-guard let running else {
+
+func launchApp(surface: String? = nil) -> NSRunningApplication? {
+    terminateApp()
+    var arguments = ["-a", appPath]
+    if let surface {
+        arguments = ["--env", "TALOS_TEST_SURFACE=\(surface)", "-a", appPath]
+    }
+    run("/usr/bin/open", arguments)
+    for _ in 0..<80 {
+        usleep(250_000)
+        if let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first {
+            return app
+        }
+    }
+    return nil
+}
+
+guard let running = launchApp() else {
     print("APP_LAUNCH_FAILED")
     finish(1)
 }
 activate(running.processIdentifier)
-let appElement = AXUIElementCreateApplication(running.processIdentifier)
+var appElement: AXUIElement! = AXUIElementCreateApplication(running.processIdentifier)
 usleep(1_000_000)
 
 var violations: [Violation] = []
@@ -235,6 +252,66 @@ if let main = mainWindows.first {
     print("MAIN arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
 } else {
     violations.append(Violation(page: "Main", message: "No main window"))
+}
+
+// Menu bar titles and menu items.
+func checkMenuBar() {
+    guard let menuBar = children(appElement).first(where: { string($0, kAXRoleAttribute) == "AXMenuBar" }) else {
+        violations.append(Violation(page: "Menu Bar", message: "No menu bar"))
+        return
+    }
+    var arabic = 0
+    var english = 0
+    var labels: [String] = []
+    for item in children(menuBar).dropFirst() {
+        let title = string(item, kAXTitleAttribute) ?? ""
+        if containsArabic(title) { arabic += 1 }
+        if englishKeys.contains(title) {
+            english += 1
+            violations.append(Violation(page: "Menu Bar", message: "English menu title: \(title)"))
+        }
+        if !title.isEmpty { labels.append(title) }
+        press(item)
+        usleep(250_000)
+        if let menu = findElement(item, matching: { string($0, kAXRoleAttribute) == "AXMenu" }) {
+            for entry in findAllElements(menu, matching: { string($0, kAXRoleAttribute) == "AXMenuItem" }) {
+                let name = string(entry, kAXTitleAttribute) ?? string(entry, kAXDescriptionAttribute) ?? ""
+                if name.isEmpty { continue }
+                labels.append(name)
+                if containsArabic(name) { arabic += 1 }
+                if englishKeys.contains(name) {
+                    english += 1
+                    violations.append(Violation(page: "Menu Bar", message: "English menu item: \(name)"))
+                }
+            }
+        }
+        key(53, flags: [])
+        usleep(150_000)
+    }
+    if arabic < 3 {
+        violations.append(Violation(page: "Menu Bar", message: "Too few Arabic menu labels: \(arabic)"))
+    }
+    print("MENUBAR arabic=\(arabic) english=\(english) items=\(labels.count)")
+}
+
+checkMenuBar()
+
+// Rename task from the Task menu.
+if pressMenuItem("إعادة تسمية المهمة…") {
+    usleep(800_000)
+    checkSurface("Rename Task", required: ["إعادة تسمية المهمة", "اسم المهمة"])
+    dismissSheet()
+} else {
+    violations.append(Violation(page: "Rename Task", message: "Could not open from the Task menu"))
+}
+
+// Delete task confirmation from the Task menu.
+if pressMenuItem("حذف المهمة…") {
+    usleep(800_000)
+    checkSurface("Delete Task", required: ["حذف", "لا يمكن التراجع"])
+    dismissSheet()
+} else {
+    violations.append(Violation(page: "Delete Task", message: "Could not open from the Task menu"))
 }
 
 // Sheets and panels outside Settings. These are held-out surfaces: the
@@ -373,6 +450,72 @@ key(5, flags: [.maskCommand, .maskShift])
 usleep(1_000_000)
 checkSurface("Git Panel", required: ["التزام", "تحديث"])
 dismissSheet()
+
+// Dialogs that have no normal UI trigger in a fresh launch. The app exposes a
+// DEBUG-only TALOS_TEST_SURFACE seam for these deterministic checks.
+func dismissElement(_ element: AXUIElement) {
+    for title in ["رفض", "إلغاء", "إغلاق", "تم"] {
+        if let target = findElement(element, matching: { candidate in
+            guard string(candidate, kAXRoleAttribute) == "AXButton" else { return false }
+            let name = string(candidate, kAXTitleAttribute)
+                ?? string(candidate, kAXDescriptionAttribute)
+                ?? string(candidate, kAXHelpAttribute)
+            return name.map { normalized($0) == normalized(title) } ?? false
+        }) {
+            press(target)
+            usleep(600_000)
+            return
+        }
+    }
+    key(53, flags: [])
+    usleep(500_000)
+}
+
+func checkHookedSurface(_ key: String, name: String, required: [String]) {
+    guard let app = launchApp(surface: key) else {
+        violations.append(Violation(page: name, message: "App launch failed"))
+        return
+    }
+    activateIfNeeded(app)
+    let element = AXUIElementCreateApplication(app.processIdentifier)
+    usleep(1_200_000)
+    guard let window = windows(element).first else {
+        violations.append(Violation(page: name, message: "No window"))
+        terminateApp()
+        return
+    }
+    let result = collect(window, page: name)
+    let missing = required.filter { value in !result.labels.contains { $0.contains(value) } }
+    if !missing.isEmpty {
+        violations.append(Violation(page: name, message: "Missing Arabic labels: \(missing.joined(separator: ", "))"))
+    }
+    if result.arabic < 2 {
+        violations.append(Violation(page: name, message: "Too few Arabic labels: \(result.arabic)"))
+    }
+    print("SURFACE \(name) arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
+    dismissElement(element)
+    terminateApp()
+}
+
+func activateIfNeeded(_ app: NSRunningApplication) {
+    NSRunningApplication(processIdentifier: app.processIdentifier)?
+        .activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+}
+
+checkHookedSurface("approval", name: "Approval Sheet", required: ["السماح", "رفض", "السماح مرة واحدة"])
+checkHookedSurface("elicitation", name: "MCP Elicitation", required: ["رفض", "متابعة", "يحتاج إلى إدخال"])
+checkHookedSurface("sampling", name: "MCP Sampling", required: ["رفض", "السماح لهذه الجلسة"])
+checkHookedSurface("recent", name: "Recent Documents", required: ["المستندات الأخيرة"])
+checkHookedSurface("provider", name: "Provider Editor", required: ["بيانات الاعتماد"])
+
+// Restore the normal app for the Settings traversal.
+guard let relaunched = launchApp() else {
+    violations.append(Violation(page: "Settings", message: "Relaunch failed"))
+    finish(1)
+}
+activateIfNeeded(relaunched)
+appElement = AXUIElementCreateApplication(relaunched.processIdentifier)
+usleep(1_200_000)
 
 // Worktree sheet through the project menu.
 if pressMenuItem("شجرة عمل جديدة…") {

@@ -6830,6 +6830,26 @@
           }
         }
       }
+    },
+    "Allow %@?": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السماح بـ %@؟"
+          }
+        }
+      }
+    },
+    "%@ needs input": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ يحتاج إلى إدخال"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

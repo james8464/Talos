@@ -183,6 +183,47 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["TALOS_OPEN_GIT_PANEL"] == "1" {
                 model.showGitPanel = true
             }
+            #if DEBUG
+            // Deterministic test seams for the live localization traversal.
+            switch ProcessInfo.processInfo.environment["TALOS_TEST_SURFACE"] {
+            case "approval":
+                model.pendingApproval = ApprovalRequest(
+                    toolName: "shell",
+                    summary: "rm -rf build",
+                    sessionID: model.selectedID
+                )
+            case "elicitation":
+                model.mcpElicitation = MCPElicitationRequest(
+                    serverName: "demo-server",
+                    message: "Choose the branch to deploy.",
+                    fields: [
+                        MCPElicitationField(
+                            name: "deploy-branch",
+                            title: "deploy-branch",
+                            detail: "Server-supplied field",
+                            kind: .string,
+                            required: true,
+                            defaultValue: "main"
+                        )
+                    ]
+                )
+            case "sampling":
+                model.pendingSampling = MCPSamplingRequest(
+                    serverName: "demo-server",
+                    messages: [MCPSamplingMessage(role: "user", text: "Summarize the plan.", images: [])],
+                    systemPrompt: nil,
+                    maxTokens: 128,
+                    temperature: nil,
+                    modelHints: nil
+                )
+            case "recent":
+                model.showRecentDocuments = true
+            case "provider":
+                model.editingProvider = .openAI
+            default:
+                break
+            }
+            #endif
         }
         .sheet(isPresented: $model.showGitPanel) {
             GitPanelView()

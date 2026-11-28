@@ -106,7 +106,7 @@ brand names, key caps, and technical tokens.
 | --- | ---: | ---: |
 | UI literals found | 486 | 618 |
 | Missing Arabic | 131 | 0 |
-| Catalog keys | 526 | 683 |
+| Catalog keys | 526 | 685 |
 
 The 131 missing strings included the menu-bar menu, approval sheet, worktree
 sheet, GitHub panel, MCP app/elicitation/sampling views, Chronicle controls,
@@ -126,19 +126,44 @@ English because SwiftUI treated the expression as `String` instead of
 - `.help(recording ? "Stop dictation" : "Dictate a message")`.
 
 These now use `LocalizedStringKey(...)` or `String(localized:)`, and the source
-scanner checks wrapped literals as well. The catalog grew to 683 keys.
+scanner checks wrapped literals as well. The catalog grew to 685 keys.
 
-Live traversal (`make localization-eval`) now launches with `AppleLanguages=ar`,
-creates a task, opens five non-Settings surfaces, then opens Settings and visits
-all 20 pages:
+A third runtime pass covered every remaining dialog and sheet with a normal or
+`DEBUG`-only test trigger:
+
+- rename task and delete task, opened from the Task menu;
+- approval sheet, MCP elicitation, and MCP sampling;
+- recent documents and the provider editor;
+- the menu bar (titles and every app menu item);
+- Quick Switcher, Help, Project Browser, Git panel, and worktree sheet;
+- all 20 Settings pages.
+
+It found and fixed:
+
+- missing catalog entries for the approval title `Allow %@?` and the
+  elicitation title `%@ needs input`;
+- unlabeled provider-editor `SecureField`/`TextField` controls for API key,
+  base URL, model, and server;
+- unlabeled MCP elicitation field editors (text, number, choice, boolean).
+
+The menu-bar pass skips the Apple menu, whose recent-item commands
+(“Messages”, “Clear Menu”) belong to the system, and checks the app’s own menus.
 
 ```text
-MAIN arabic=175 english=0 unlabeled=0
-SURFACE Quick Switcher arabic=188 english=0 unlabeled=0
-SURFACE Help arabic=196 english=0 unlabeled=0
-SURFACE Project Browser arabic=178 english=0 unlabeled=0
-SURFACE Git Panel arabic=187 english=0 unlabeled=0
-SURFACE Worktree Sheet arabic=181 english=0 unlabeled=0
+MAIN arabic=177 english=0 unlabeled=0
+MENUBAR arabic=98 english=0 items=106
+SURFACE Rename Task arabic=180 english=0 unlabeled=0
+SURFACE Delete Task arabic=181 english=0 unlabeled=0
+SURFACE Quick Switcher arabic=190 english=0 unlabeled=0
+SURFACE Help arabic=198 english=0 unlabeled=0
+SURFACE Project Browser arabic=180 english=0 unlabeled=0
+SURFACE Git Panel arabic=189 english=0 unlabeled=0
+SURFACE Approval Sheet arabic=181 english=0 unlabeled=0
+SURFACE MCP Elicitation arabic=183 english=0 unlabeled=0
+SURFACE MCP Sampling arabic=182 english=0 unlabeled=0
+SURFACE Recent Documents arabic=181 english=0 unlabeled=0
+SURFACE Provider Editor arabic=189 english=0 unlabeled=0
+SURFACE Worktree Sheet arabic=183 english=0 unlabeled=0
 20 Settings pages: english=0 unlabeled=0
 FAILURES: 0
 ```
@@ -195,7 +220,8 @@ failure surfaced to the user rather than silently executed.
 ## Open evidence gaps
 
 - No native-speaker Arabic review. The live traversal covers the main window,
-  five panels/sheets, and all Settings pages, but not every dialog.
+  the menu bar, twelve panels/dialogs/sheets, and all Settings pages, but not
+  every possible dialog (for example MCP app web views and hook-trust prompts).
 - Some display-only strings passed as `String` to `LabeledContent` values or
   custom helpers may still bypass localization; the source scan covers the
   known SwiftUI constructors, not arbitrary function parameters.
