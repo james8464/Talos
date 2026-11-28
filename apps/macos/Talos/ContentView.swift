@@ -528,6 +528,7 @@ private struct ProviderButton: View {
         }
         .buttonStyle(.borderless)
         .foregroundStyle(.secondary)
+        .accessibilityLabel("Provider and tool settings")
         .popover(isPresented: $showing, arrowEdge: .bottom) {
             ProviderPopover(isPresented: $showing)
         }
@@ -721,6 +722,7 @@ private struct ComposerView: View {
                     .buttonStyle(.borderless)
                     .foregroundStyle(.secondary)
                     .help("Attach files")
+                    .accessibilityLabel("Attach files")
 
                     Button {
                         toggleDictation()
@@ -810,6 +812,7 @@ private struct ComposerView: View {
                 .buttonStyle(.borderless)
                 .foregroundStyle(.secondary)
                 .help("Stop (⌘.)")
+                .accessibilityLabel("Stop response")
             }
 
             Button {
@@ -822,6 +825,7 @@ private struct ComposerView: View {
             .foregroundStyle(canSend ? Brand.bronze : Color.secondary)
             .disabled(!canSend)
             .help(model.isStreaming ? "Queue message (Return)" : "Send (Return)")
+            .accessibilityLabel(model.isStreaming ? "Queue message" : "Send message")
         }
     }
 
@@ -881,6 +885,7 @@ private struct QueueStrip: View {
                     .buttonStyle(.borderless)
                     .foregroundStyle(.secondary)
                     .help("Remove queued message")
+                    .accessibilityLabel("Remove queued message")
                 }
             }
         }
@@ -916,6 +921,7 @@ private struct AttachmentPill: View {
                     Image(systemName: "xmark")
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel("Remove attachment")
             }
         }
         .padding(.horizontal, 7)
@@ -1043,6 +1049,7 @@ private struct MessageRow: View {
                         .foregroundStyle(.secondary)
                         .opacity(hovering ? 1 : 0)
                         .help("Copy")
+                        .accessibilityLabel("Copy message")
                     }
                 }
 

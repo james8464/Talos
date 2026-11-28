@@ -162,6 +162,7 @@ private struct GeneralSettingsView: View {
                         Text(choice.display).tag(choice)
                     }
                 }
+                .accessibilityLabel("Active model")
                 .disabled(model.choices.isEmpty || model.managedPolicy?.isModelLocked == true)
                 if model.managedPolicy?.isModelLocked == true {
                     Text("The model is fixed by the managed policy.")
@@ -200,6 +201,7 @@ private struct GeneralSettingsView: View {
                             Text(option.title).tag(option.id)
                         }
                     }
+                    .accessibilityLabel("Reasoning effort")
                     .disabled(model.managedPolicy?.isReasoningLocked == true)
                     Text(selectedDetail)
                         .font(.caption)
@@ -213,6 +215,7 @@ private struct GeneralSettingsView: View {
                         Text(speed.title).tag(speed)
                     }
                 }
+                .accessibilityLabel("Response speed")
                 Text(settings.speed.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -221,7 +224,9 @@ private struct GeneralSettingsView: View {
 
             Section("Window") {
                 Toggle("Show details inspector", isOn: $model.showInspector)
+                    .accessibilityLabel("Show details inspector")
                 Toggle("Show Talos in the menu bar", isOn: $settings.menuBarEnabled)
+                    .accessibilityLabel("Show Talos in the menu bar")
             }
 
             Section {

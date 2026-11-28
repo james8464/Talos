@@ -59,6 +59,7 @@ struct GitHubPanel: View {
                     TextField("GitHub API base", text: $settings.githubAPIBase)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
+                        .accessibilityLabel("GitHub API base URL")
                 }
 
                 if let pullRequest {
@@ -84,10 +85,12 @@ struct GitHubPanel: View {
                         TextField("File path", text: $reviewPath)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.caption, design: .monospaced))
+                            .accessibilityLabel("Review file path")
                         Stepper("Line \(reviewLine)", value: $reviewLine, in: 1...100_000)
                         TextEditor(text: $reviewBody)
                             .font(.body)
                             .frame(minHeight: 64)
+                            .accessibilityLabel("Review comment body")
                         Button("Add Review Comment") { addComment() }
                             .disabled(busy || reviewPath.isEmpty || reviewBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
@@ -101,6 +104,7 @@ struct GitHubPanel: View {
                         TextEditor(text: $reviewSummary)
                             .font(.body)
                             .frame(minHeight: 54)
+                            .accessibilityLabel("Review summary")
                         Button("Submit Review") { submitReview() }
                             .disabled(busy)
                     }
@@ -108,12 +112,16 @@ struct GitHubPanel: View {
                     Section("Create pull request") {
                         TextField("Title", text: $title)
                             .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("Pull request title")
                         TextEditor(text: $prBody)
                             .font(.body)
                             .frame(minHeight: 70)
+                            .accessibilityLabel("Pull request description")
                         TextField("Base branch", text: $defaultBranch)
                             .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("Base branch")
                         Toggle("Draft", isOn: $draft)
+                            .accessibilityLabel("Draft pull request")
                         HStack {
                             Button("Push Branch") { push() }
                                 .disabled(busy || branch.isEmpty)

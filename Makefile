@@ -1,4 +1,4 @@
-.PHONY: build cli run project clean check
+.PHONY: build cli run project clean check ax-audit
 
 build:
 	cd apps/macos && xcodebuild -project Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath .build CODE_SIGNING_ALLOWED=NO build
@@ -14,5 +14,9 @@ project:
 
 clean:
 	rm -rf apps/macos/.build
+
+ax-audit:
+	swiftc apps/macos/Tools/AXAudit.swift -o /tmp/talos-ax-audit
+	/tmp/talos-ax-audit $$(pgrep -f "Talos.app/Contents/MacOS/Talos" | head -1)
 
 check: build

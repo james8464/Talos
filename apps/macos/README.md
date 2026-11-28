@@ -113,6 +113,18 @@ window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
 
+## Accessibility audit
+
+With the app running and Accessibility permission granted to your terminal:
+
+```sh
+make ax-audit
+```
+
+The script walks the live AX tree, skips the menu bar and system window or
+scrollbar chrome, and fails if any app-owned interactive control has no title,
+description, help, or placeholder. Run it on whichever panel you are auditing.
+
 ## Headless CLI
 
 Build the CLI with `xcodebuild -scheme TalosCLI` (or `make cli`). The binary is

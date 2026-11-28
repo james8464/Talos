@@ -69,7 +69,7 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Central audit export | ✅ | ✅ | ✅ | ✅ | JSON export of sessions, token usage, policy, and hook activity from Settings → Usage or `talos audit`; usage is pruned at 365 days and the hook log is capped at 40 entries; no vendor-hosted collection |
 | Auto-update and notarized distribution | ✅ | ✅ | ✅ | ❌ | Development build only |
 | Windows and Linux | ✅ | ✅ | ✅ | ❌ | macOS-only app |
-| Accessibility of the client UI | ✅ | ✅ | ✅ | 🟡 | Basic labels; no formal WCAG audit |
+| Accessibility of the client UI | ✅ | ✅ | ✅ | ✅ | Explicit labels on icon-only and form controls; `make ax-audit` walks the live AX tree and reports 0 unlabeled app-owned controls in the main window, Changes/Diagnostics, GitHub panel, and General settings; no full WCAG contrast certification |
 
 ## Verified, targeted gaps
 
@@ -96,6 +96,11 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 - **Audit export** — `talos audit` produced `talos.audit.v1` JSON with 35
   sessions, 55 usage records, policy state, and hook activity; the same document
   backs the Settings → Usage export button.
+- **Accessibility audit** — an AXUIElement audit (`make ax-audit`) counted
+  app-owned interactive controls and found zero unlabeled ones after adding
+  labels to icon-only composer controls, GitHub form fields, and General
+  settings pickers/toggles. System scrollbar/window chrome and the menu bar are
+  excluded.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   The largest remaining deltas are IDE/LSP/editor integration, PR review
   workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and
