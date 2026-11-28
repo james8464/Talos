@@ -105,12 +105,12 @@ worktree sheet, then opens Settings and visits all 20 pages. It fails on:
 Latest live result:
 
 ```text
-MAIN arabic=174 english=0 unlabeled=0
-SURFACE Quick Switcher arabic=187 english=0 unlabeled=0
-SURFACE Help arabic=195 english=0 unlabeled=0
-SURFACE Project Browser arabic=177 english=0 unlabeled=0
-SURFACE Git Panel arabic=186 english=0 unlabeled=0
-SURFACE Worktree Sheet arabic=180 english=0 unlabeled=0
+MAIN arabic=175 english=0 unlabeled=0
+SURFACE Quick Switcher arabic=188 english=0 unlabeled=0
+SURFACE Help arabic=196 english=0 unlabeled=0
+SURFACE Project Browser arabic=178 english=0 unlabeled=0
+SURFACE Git Panel arabic=187 english=0 unlabeled=0
+SURFACE Worktree Sheet arabic=181 english=0 unlabeled=0
 عام / المشاريع / النماذج / المزوّدون / الأدوات / التكوينات
 الخطافات / الذاكرة / السجل / السياسة / مهام السحابة / خادم التطبيق
 المهارات / الإضافات / MCP / التحكم عن بعد / المظهر / الاستخدام

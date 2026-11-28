@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import Combine
 import CryptoKit
+import TalosToolParser
 
 struct MessageEditTarget: Identifiable {
     let id = UUID()

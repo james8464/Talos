@@ -1,4 +1,5 @@
 import Foundation
+import TalosToolParser
 
 enum HookEvent: String, Codable, CaseIterable, Identifiable, Sendable {
     case sessionStart = "session_start"

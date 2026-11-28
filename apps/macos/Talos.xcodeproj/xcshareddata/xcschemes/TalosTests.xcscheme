@@ -9,20 +9,6 @@
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "55F0A33EE55A8064F7B89192"
-               BuildableName = "Talos.app"
-               BlueprintName = "Talos"
-               ReferencedContainer = "container:Talos.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
             buildForRunning = "NO"
             buildForProfiling = "NO"
             buildForArchiving = "NO"
@@ -32,6 +18,20 @@
                BlueprintIdentifier = "E17B4E7CE6EB511C94F22BAF"
                BuildableName = "TalosTests.xctest"
                BlueprintName = "TalosTests"
+               ReferencedContainer = "container:Talos.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FDCA2340D1E2C5A50D52ED07"
+               BuildableName = "libTalosToolParser.a"
+               BlueprintName = "TalosToolParser"
                ReferencedContainer = "container:Talos.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,9 +46,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "55F0A33EE55A8064F7B89192"
-            BuildableName = "Talos.app"
-            BlueprintName = "Talos"
+            BlueprintIdentifier = "FDCA2340D1E2C5A50D52ED07"
+            BuildableName = "libTalosToolParser.a"
+            BlueprintName = "TalosToolParser"
             ReferencedContainer = "container:Talos.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -78,16 +78,15 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "55F0A33EE55A8064F7B89192"
-            BuildableName = "Talos.app"
-            BlueprintName = "Talos"
+            BlueprintIdentifier = "FDCA2340D1E2C5A50D52ED07"
+            BuildableName = "libTalosToolParser.a"
+            BlueprintName = "TalosToolParser"
             ReferencedContainer = "container:Talos.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -95,16 +94,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "55F0A33EE55A8064F7B89192"
-            BuildableName = "Talos.app"
-            BlueprintName = "Talos"
+            BlueprintIdentifier = "FDCA2340D1E2C5A50D52ED07"
+            BuildableName = "libTalosToolParser.a"
+            BlueprintName = "TalosToolParser"
             ReferencedContainer = "container:Talos.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

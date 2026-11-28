@@ -1,4 +1,5 @@
 import Foundation
+import TalosToolParser
 
 enum ReviewVerdict: String, Codable, Sendable {
     case allow

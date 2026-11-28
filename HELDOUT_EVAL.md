@@ -70,9 +70,11 @@ queries remain weaker than exact `search_files` or LSP lookup.
 
 ## Tool-call parser unit tests
 
-`apps/macos/Tests/ToolParserTests.swift` adds a macOS unit-test target
-(`TalosTests`) and runs through `make test` (`make check` runs the app build and
-the tests). Nine tests cover:
+`apps/macos/ToolParser/ToolParser.swift` is a small static library
+(`TalosToolParser`) consumed by the app. `apps/macos/Tests/ToolParserTests.swift`
+is a host-free macOS unit-test target (`TalosTests`), so CI does not need to
+launch the app to test parsing. It runs through `make test` (`make check` runs
+the app build and the tests). Nine tests cover:
 
 - DeepSeek DSML `invoke`/`parameter` tags, including `string="false"` values,
   numbers, booleans, and XML entities;
@@ -131,12 +133,12 @@ creates a task, opens five non-Settings surfaces, then opens Settings and visits
 all 20 pages:
 
 ```text
-MAIN arabic=174 english=0 unlabeled=0
-SURFACE Quick Switcher arabic=187 english=0 unlabeled=0
-SURFACE Help arabic=195 english=0 unlabeled=0
-SURFACE Project Browser arabic=177 english=0 unlabeled=0
-SURFACE Git Panel arabic=186 english=0 unlabeled=0
-SURFACE Worktree Sheet arabic=180 english=0 unlabeled=0
+MAIN arabic=175 english=0 unlabeled=0
+SURFACE Quick Switcher arabic=188 english=0 unlabeled=0
+SURFACE Help arabic=196 english=0 unlabeled=0
+SURFACE Project Browser arabic=178 english=0 unlabeled=0
+SURFACE Git Panel arabic=187 english=0 unlabeled=0
+SURFACE Worktree Sheet arabic=181 english=0 unlabeled=0
 20 Settings pages: english=0 unlabeled=0
 FAILURES: 0
 ```

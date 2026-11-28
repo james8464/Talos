@@ -15,6 +15,7 @@
 		195093A5F69935039358AA9E /* Tokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29816AA9A9DFB0CBFA35EE85 /* Tokenizer.swift */; };
 		1B0373E37C53623BDEFEE19D /* TalosMobileUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3ED1BDF9A98819575F97D0 /* TalosMobileUITests.swift */; };
 		1DCE36C2F5449B7246676E63 /* o200k_base.tiktoken in Resources */ = {isa = PBXBuildFile; fileRef = E22046A9DBAD6D63D36B57AD /* o200k_base.tiktoken */; };
+		2A69780A2F0D15182E606236 /* libTalosToolParser.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF472F920712310435A9FBBC /* libTalosToolParser.a */; };
 		2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88120A756923F2A3457A372B /* Skills.swift */; };
 		2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1A617E407672D5729425D2 /* Keychain.swift */; };
 		2D8A0471734DB5FDB9BC3292 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09A4D0139081FED1D948312 /* AppModel.swift */; };
@@ -61,6 +62,7 @@
 		B1C339555AB0FBA7999CC065 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1F7E4F11C95066F94514B237 /* Localizable.xcstrings */; };
 		B1D53771A35A9B495495D491 /* RecentDocumentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66AEC5CC4308B071980B6F47 /* RecentDocumentsView.swift */; };
 		B4378BD8385BB6D9F453D8D1 /* TalosMobileApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08CE26F73E0FB579C380729 /* TalosMobileApp.swift */; };
+		B449BAFBE5852CC986102D0A /* ToolParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B680D7A6C31EA59DA7E2B6 /* ToolParser.swift */; };
 		B5FB8F8CBAA739DBFACE35A3 /* WorktreePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B196A39265E01E042AADBA90 /* WorktreePanel.swift */; };
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BB0413CD9F39FAFB12F6A34C /* RemoteClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78051C8FEB42854A3967C6FF /* RemoteClient.swift */; };
@@ -83,17 +85,18 @@
 		EF9DE81CD12FB970924CD394 /* RemoteDaemon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6719690E9E7E2989F90E68 /* RemoteDaemon.swift */; };
 		F1AC4D9267F5DBB627D6B457 /* Hooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93B3035FF733F0B8A5C4C32 /* Hooks.swift */; };
 		F1F0D8DD3EE8E91D8D60077D /* TrackpadGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E4D19F8ABA08DFEE17A4992 /* TrackpadGestures.swift */; };
+		F7EE429D2051E76BBAF28CE8 /* libTalosToolParser.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BF472F920712310435A9FBBC /* libTalosToolParser.a */; };
 		FA1A055EABB73A566CF97EEC /* Chronicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181A45AAE1E910EB7D6860D2 /* Chronicle.swift */; };
 		FB543F49EF1BD7D3E5D9A817 /* MemoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A162AA5478775AECD7CD01 /* MemoryStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		93EC8C1333112A28C1AE9271 /* PBXContainerItemProxy */ = {
+		10FDB201789F1C00CCCD73FD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 58614A9F084EF66A21DAFA46 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 55F0A33EE55A8064F7B89192;
-			remoteInfo = Talos;
+			remoteGlobalIDString = FDCA2340D1E2C5A50D52ED07;
+			remoteInfo = TalosToolParser;
 		};
 		9F189100B353EADF3964EC9B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -101,6 +104,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 678D6BE3415DCD7C8E380205;
 			remoteInfo = TalosMobile;
+		};
+		F41D7A01D83FA39DFB744422 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 58614A9F084EF66A21DAFA46 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FDCA2340D1E2C5A50D52ED07;
+			remoteInfo = TalosToolParser;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -165,6 +175,7 @@
 		BD0D8CB4E3107DD1D9D04F0C /* Talos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Talos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDE40BA2F2E62D3115E531DD /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
 		BEB6B7E92BE795429BBED743 /* AuditExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditExport.swift; sourceTree = "<group>"; };
+		BF472F920712310435A9FBBC /* libTalosToolParser.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libTalosToolParser.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		C071AAB0BC249FF7BE997AB4 /* ToolParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolParserTests.swift; sourceTree = "<group>"; };
 		C09A4D0139081FED1D948312 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		C0DA27C786B558AC4F245F39 /* Brand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brand.swift; sourceTree = "<group>"; };
@@ -188,11 +199,31 @@
 		F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationSettings.swift; sourceTree = "<group>"; };
 		F34CE21CD9645365CB1B2156 /* CloudTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTasks.swift; sourceTree = "<group>"; };
 		F4ABA0BFD684271C01A0C014 /* DictationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationController.swift; sourceTree = "<group>"; };
+		F8B680D7A6C31EA59DA7E2B6 /* ToolParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolParser.swift; sourceTree = "<group>"; };
 		F93B3035FF733F0B8A5C4C32 /* Hooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hooks.swift; sourceTree = "<group>"; };
 		FA96C9B0EC118A88C99EE282 /* TalosCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosCLI.swift; sourceTree = "<group>"; };
 		FCEB256A964F9C1DC758004A /* GitHubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubService.swift; sourceTree = "<group>"; };
 		FE7DBC90152307B91B738B5B /* CDPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CDPClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7075FCC13B80E7825462BA75 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A69780A2F0D15182E606236 /* libTalosToolParser.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		753C5E3583F8085EB7819CDA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F7EE429D2051E76BBAF28CE8 /* libTalosToolParser.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		13B106CE034023664FA78797 = {
@@ -204,6 +235,7 @@
 				B10198B8D92097E3A5159225 /* RemoteDaemon */,
 				66155871B76F0DABD3705E3B /* Talos */,
 				23D10C60AC1D3B09BDCAA479 /* Tests */,
+				3C5DFCBE7BD13679C0D17BE3 /* ToolParser */,
 				FEAED88641E6068AB3F87AC0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -222,6 +254,14 @@
 				CE3ED1BDF9A98819575F97D0 /* TalosMobileUITests.swift */,
 			);
 			path = TalosMobileUITests;
+			sourceTree = "<group>";
+		};
+		3C5DFCBE7BD13679C0D17BE3 /* ToolParser */ = {
+			isa = PBXGroup;
+			children = (
+				F8B680D7A6C31EA59DA7E2B6 /* ToolParser.swift */,
+			);
+			path = ToolParser;
 			sourceTree = "<group>";
 		};
 		66155871B76F0DABD3705E3B /* Talos */ = {
@@ -366,6 +406,7 @@
 		FEAED88641E6068AB3F87AC0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				BF472F920712310435A9FBBC /* libTalosToolParser.a */,
 				BD0D8CB4E3107DD1D9D04F0C /* Talos.app */,
 				3866E2FB19B213EADF93F715 /* TalosCLI */,
 				F1C257EFE71BB0978876FAC9 /* TalosMobile.app */,
@@ -386,10 +427,12 @@
 			buildPhases = (
 				EC31240172BE71DA8C506394 /* Sources */,
 				7E6552D5BC08ED87E488C9AF /* Resources */,
+				7075FCC13B80E7825462BA75 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				93EB2BE08E2372CB53B70CA9 /* PBXTargetDependency */,
 			);
 			name = Talos;
 			packageProductDependencies = (
@@ -472,11 +515,12 @@
 			buildConfigurationList = E98E33563C404F0325CAA416 /* Build configuration list for PBXNativeTarget "TalosTests" */;
 			buildPhases = (
 				1D9E916A2A4259F0DE969767 /* Sources */,
+				753C5E3583F8085EB7819CDA /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				3E9CE3C156767354786AE3F4 /* PBXTargetDependency */,
+				EF9DC0AC25411E308DDFD31C /* PBXTargetDependency */,
 			);
 			name = TalosTests;
 			packageProductDependencies = (
@@ -484,6 +528,24 @@
 			productName = TalosTests;
 			productReference = 38B862534C29D33E35EF8F6C /* TalosTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FDCA2340D1E2C5A50D52ED07 /* TalosToolParser */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 92E85CA928013A4317215F48 /* Build configuration list for PBXNativeTarget "TalosToolParser" */;
+			buildPhases = (
+				F20646DDC0C87E25724D1D96 /* Sources */,
+				E2DEE2960A649A872A600DEB /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TalosToolParser;
+			packageProductDependencies = (
+			);
+			productName = TalosToolParser;
+			productReference = BF472F920712310435A9FBBC /* libTalosToolParser.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 		FF936BCDB05967105F87A46B /* TalosNativeHost */ = {
 			isa = PBXNativeTarget;
@@ -534,6 +596,7 @@
 				FF936BCDB05967105F87A46B /* TalosNativeHost */,
 				678D6BE3415DCD7C8E380205 /* TalosMobile */,
 				91E0034ABADDA23B302DE4DD /* TalosMobileUITests */,
+				FDCA2340D1E2C5A50D52ED07 /* TalosToolParser */,
 				E17B4E7CE6EB511C94F22BAF /* TalosTests */,
 				6C4D3C16B445F0A76547C33B /* TalosCLI */,
 				A777D92A1B11DCDB6A6757B1 /* TalosRemoteDaemon */,
@@ -555,6 +618,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E2DEE2960A649A872A600DEB /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		005E2C8B2844D3AC950251C9 /* Sources */ = {
@@ -680,18 +762,31 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F20646DDC0C87E25724D1D96 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B449BAFBE5852CC986102D0A /* ToolParser.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		3E9CE3C156767354786AE3F4 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 55F0A33EE55A8064F7B89192 /* Talos */;
-			targetProxy = 93EC8C1333112A28C1AE9271 /* PBXContainerItemProxy */;
-		};
 		458A7195E5B6DB940721622A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 678D6BE3415DCD7C8E380205 /* TalosMobile */;
 			targetProxy = 9F189100B353EADF3964EC9B /* PBXContainerItemProxy */;
+		};
+		93EB2BE08E2372CB53B70CA9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FDCA2340D1E2C5A50D52ED07 /* TalosToolParser */;
+			targetProxy = 10FDB201789F1C00CCCD73FD /* PBXContainerItemProxy */;
+		};
+		EF9DC0AC25411E308DDFD31C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FDCA2340D1E2C5A50D52ED07 /* TalosToolParser */;
+			targetProxy = F41D7A01D83FA39DFB744422 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -708,6 +803,10 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.3.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.talos.macos;
 				PRODUCT_NAME = Talos;
 				SDKROOT = macosx;
@@ -779,11 +878,32 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.talos.macos.tests;
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Talos.app/Contents/MacOS/Talos";
 			};
 			name = Debug;
+		};
+		42DA2CFD2E0C07FBEA6E9DF7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.talos.toolparser;
+				PRODUCT_NAME = TalosToolParser;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
 		};
 		587E1269C1E205B915C8E696 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -999,6 +1119,10 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.3.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.talos.macos;
 				PRODUCT_NAME = Talos;
 				SDKROOT = macosx;
@@ -1021,6 +1145,24 @@
 			};
 			name = Release;
 		};
+		AAB20B252E89CAD405268AED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.talos.toolparser;
+				PRODUCT_NAME = TalosToolParser;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
 		B301E4088B607ED9A827F548 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1034,9 +1176,12 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.talos.macos.tests;
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Talos.app/Contents/MacOS/Talos";
 			};
 			name = Release;
 		};
@@ -1117,6 +1262,15 @@
 			buildConfigurations = (
 				8CBCD847108CE37D7050D2D5 /* Debug */,
 				99F8F617C1F99494565592DA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		92E85CA928013A4317215F48 /* Build configuration list for PBXNativeTarget "TalosToolParser" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAB20B252E89CAD405268AED /* Debug */,
+				42DA2CFD2E0C07FBEA6E9DF7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

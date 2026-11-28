@@ -66,6 +66,19 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
 
+  TalosToolParser:
+    type: library.static
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: ToolParser
+    settings:
+      base:
+        PRODUCT_NAME: TalosToolParser
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.toolparser
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
   TalosTests:
     type: bundle.unit-test
     platform: macOS
@@ -73,12 +86,10 @@ targets:
     sources:
       - path: Tests
     dependencies:
-      - target: Talos
+      - target: TalosToolParser
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.talos.macos.tests
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Talos.app/Contents/MacOS/Talos"
-        BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
 
@@ -112,6 +123,8 @@ targets:
     platform: macOS
     sources:
       - path: Talos
+    dependencies:
+      - target: TalosToolParser
     info:
       path: Talos/Info.plist
       properties:
@@ -135,7 +148,7 @@ schemes:
   TalosTests:
     build:
       targets:
-        Talos: all
+        TalosToolParser: all
         TalosTests: [test]
     test:
       config: Debug

@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import AppKit
+import TalosToolParser
 
 struct MCPAppView: View {
     @EnvironmentObject private var model: AppModel

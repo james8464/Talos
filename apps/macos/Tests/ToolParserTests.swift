@@ -1,5 +1,5 @@
 import XCTest
-@testable import Talos
+import TalosToolParser
 
 final class ToolParserTests: XCTestCase {
     func testDeepSeekDSMLTags() {

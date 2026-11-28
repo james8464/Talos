@@ -1,4 +1,5 @@
 import Foundation
+import TalosToolParser
 
 struct SubagentOutcome {
     let label: String
