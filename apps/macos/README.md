@@ -28,6 +28,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Git.swift` and `GitPanel.swift` — status, diff, staging, commit
 - `Talos/GitHubService.swift` and `GitHubPanel.swift` — pull request creation,
   open-PR lookup, inline review comments, and review submission
+- `Talos/PatchPreview.swift` — parsed per-file diff preview for `apply_patch`
 - `Talos/LSPService.swift` and `DiagnosticsPanel.swift` — language-server
   JSON-RPC client, diagnostics, symbols, code actions, and formatting
 - `CLI/TalosCLI.swift` — headless `talos` client for the app server

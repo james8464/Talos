@@ -31,7 +31,7 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Inline autocomplete/Tab | ❌ | ❌ | ✅ | ❌ | Not an editor |
 | Semantic codebase index | 🟡 | ❌ | ✅ | ❌ | Uses file tree/ripgrep, no embeddings index |
 | Debugger integration | ❌ | ❌ | ✅ | ❌ | No debug adapter |
-| Multi-file apply preview | ✅ | ✅ | ✅ | 🟡 | Edits and diffs exist; no staged multi-file apply UI |
+| Multi-file apply preview | ✅ | ✅ | ✅ | ✅ | `apply_patch` approvals render a parsed per-file preview with hunks, +/− counts, new/deleted markers, and colored lines before anything is written; verified live on a two-file patch through the approval flow |
 | IDE extensions | ✅ | ✅ | ✅ (IDE) | ❌ | App/server/daemon only |
 | Headless chat CLI | ✅ | ✅ | 🟡 | ✅ | `talos` CLI over the app server: info, sessions, new, send with SSE streaming, interactive/stdin chat, show, stop, approvals, approve/deny, `--json`, `--no-stream`, and `--yes`; verified live end to end |
 | **Tools and desktop** | | | | | |
@@ -89,6 +89,10 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
   info, session listing and creation, streamed prompts, interactive and stdin
   chat, stop, approval listing, approval allow/deny, non-streaming replies,
   JSON output, and authentication failures.
+- **Multi-file patch preview** — a two-file unified diff was shown in the
+  approval sheet as parsed files, hunks, and colored additions/removals, then
+  allowed through the app server; both files changed and `git diff --stat`
+  reported `2 files changed, 2 insertions(+), 1 deletion(-)`.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   The largest remaining deltas are IDE/LSP/editor integration, PR review
   workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and

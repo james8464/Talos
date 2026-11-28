@@ -35,6 +35,7 @@
 		6CB95B1C0F86AD5D28BFE384 /* TalosCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA96C9B0EC118A88C99EE282 /* TalosCLI.swift */; };
 		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
 		7303483ABDE8FC03103598CA /* ConversationBranching.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85CFBCEEBB16E2023311980 /* ConversationBranching.swift */; };
+		737E97943AA6FFC01F40B5B5 /* PatchPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B464E9E7EAD788D3F2EF190F /* PatchPreview.swift */; };
 		7A56154CC3DD78D5E7720B10 /* CloudTasksSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218A6BD2C7F558965C72DAC6 /* CloudTasksSettings.swift */; };
 		7F75F76F4697C6ECB25A8018 /* TalosNativeHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 673871726683A02E29B248D2 /* TalosNativeHost.swift */; };
 		83E884CA68D2B9D51226A3C2 /* ProviderTokenCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6969EEA6748F0E53FBB946C5 /* ProviderTokenCounter.swift */; };
@@ -138,6 +139,7 @@
 		AD1122852660CD8181149806 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B08CE26F73E0FB579C380729 /* TalosMobileApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosMobileApp.swift; sourceTree = "<group>"; };
 		B196A39265E01E042AADBA90 /* WorktreePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorktreePanel.swift; sourceTree = "<group>"; };
+		B464E9E7EAD788D3F2EF190F /* PatchPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchPreview.swift; sourceTree = "<group>"; };
 		BD0D8CB4E3107DD1D9D04F0C /* Talos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Talos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDE40BA2F2E62D3115E531DD /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
 		C09A4D0139081FED1D948312 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -232,6 +234,7 @@
 				77222638AE45AC6E779D2AFB /* OllamaClient.swift */,
 				93A2EC1118F5104E0CA50DAA /* OpenCodeAuth.swift */,
 				8A4447AC3DEEDBA44F3EF639 /* OpenCodeCatalog.swift */,
+				B464E9E7EAD788D3F2EF190F /* PatchPreview.swift */,
 				EC986894EC2D21386D7A4EED /* PDFLoader.swift */,
 				420BD88C0B13D9E1C5CA49D8 /* Plugins.swift */,
 				9BE7EF9CF0A2D361264A1F30 /* PolicySettings.swift */,
@@ -577,6 +580,7 @@
 				D343B0F24794835180D04C31 /* OpenCodeAuth.swift in Sources */,
 				A77212AE158D591E2C7A23E0 /* OpenCodeCatalog.swift in Sources */,
 				DA085E19377ECC10955BA207 /* PDFLoader.swift in Sources */,
+				737E97943AA6FFC01F40B5B5 /* PatchPreview.swift in Sources */,
 				15F2A611B24AC0D4E15BBB04 /* Plugins.swift in Sources */,
 				9C3DFE20BF786F021F232AF6 /* PolicySettings.swift in Sources */,
 				097751808748B85CF6F8E7AC /* Profiles.swift in Sources */,

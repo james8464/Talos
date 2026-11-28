@@ -16,6 +16,7 @@ struct ApprovalRequest: Identifiable {
     let toolName: String
     let summary: String
     let sessionID: UUID?
+    var patchPreview: PatchPreview? = nil
 }
 
 struct ContextUsage {
@@ -2610,7 +2611,10 @@ final class AppModel: ObservableObject {
             pendingApproval = ApprovalRequest(
                 toolName: call.name,
                 summary: call.summary,
-                sessionID: sessionID
+                sessionID: sessionID,
+                patchPreview: call.name == "apply_patch"
+                    ? call.string("patch").map(PatchPreview.parse)
+                    : nil
             )
         }
         approvalReviewTask?.cancel()

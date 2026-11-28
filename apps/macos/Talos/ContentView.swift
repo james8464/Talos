@@ -1456,6 +1456,10 @@ private struct ApprovalSheet: View {
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if let preview = request.patchPreview {
+                patchPreviewSection(preview)
+            }
+
             reviewSection
 
             Text("This tool can affect files or the desktop. Talos will run it only after you allow it.")
@@ -1470,8 +1474,106 @@ private struct ApprovalSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 540)
+        .frame(width: request.patchPreview == nil ? 540 : 760)
         .interactiveDismissDisabled()
+    }
+
+    @ViewBuilder
+    private func patchPreviewSection(_ preview: PatchPreview) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Patch preview", systemImage: "doc.on.doc")
+                    .font(.callout.weight(.semibold))
+                Spacer()
+                Text(preview.summary)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            if preview.files.isEmpty {
+                Text("Talos could not parse this patch into files. Review the summary above before allowing it.")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(preview.files) { file in
+                            patchFileSection(file)
+                        }
+                    }
+                    .padding(8)
+                }
+                .frame(maxHeight: 340)
+                .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func patchFileSection(_ file: PatchFilePreview) -> some View {
+        let rendered = file.previewHunks()
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Text(file.path)
+                    .font(.system(.caption, design: .monospaced).weight(.semibold))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                if file.isNew {
+                    Text("new")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.green)
+                }
+                if file.isDeleted {
+                    Text("deleted")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.red)
+                }
+                Spacer()
+                Text("+\(file.added) −\(file.removed)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            if file.isBinary {
+                Text("Binary file — contents are not shown.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(rendered.hunks) { hunk in
+                Text(hunk.header)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                ForEach(hunk.lines) { line in
+                    Text(prefix(for: line.kind) + line.text)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(line.kind == .context ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 4)
+                        .background(lineBackground(for: line.kind))
+                }
+            }
+            if rendered.truncated {
+                Text("Preview truncated; the full patch will be applied.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private func prefix(for kind: PatchLinePreview.Kind) -> String {
+        switch kind {
+        case .addition: return "+ "
+        case .removal: return "− "
+        case .context: return "  "
+        }
+    }
+
+    private func lineBackground(for kind: PatchLinePreview.Kind) -> Color {
+        switch kind {
+        case .addition: return .green.opacity(0.12)
+        case .removal: return .red.opacity(0.12)
+        case .context: return .clear
+        }
     }
 
     @ViewBuilder
