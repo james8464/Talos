@@ -612,6 +612,7 @@ private struct ToolsSettingsView: View {
                 Toggle("Task plans", isOn: $settings.enablePlan)
                     .disabled(settings.managed?.enablePlan != nil)
                 Toggle("Language-server diagnostics and code actions", isOn: $settings.enableLSP)
+                Toggle("Semantic codebase search (on-device embeddings)", isOn: $settings.enableSemanticIndex)
                 Text("These tools are provided by Talos and work with every model. The sandbox applies to shell and file tools.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

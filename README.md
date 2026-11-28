@@ -13,6 +13,8 @@ model that produced them.
   Anthropic Messages models are all routed
 - Model controls beside the composer: model, only the reasoning options the
   model actually exposes, response speed, provider state
+- A task-first macOS interface: date-grouped tasks, a guided welcome screen,
+  a focused composer with live context, and tool results as compact cards
 - Project switcher, project-scoped tasks, a file browser with previews, a
   Git changes panel with colored diffs, staging, and commit, plus a worktree
   manager that creates, switches, merges, and cleans up task branches
@@ -21,6 +23,8 @@ model that produced them.
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR),
   plus Chrome DevTools Protocol control with DOM selectors and JavaScript
+- On-device semantic code search (`search_codebase`) using Apple sentence
+  embeddings plus lexical ranking, with a cached, incrementally rebuilt index
 - A headless `talos` CLI that drives the app server: sessions, streamed
   prompts, stop, and approvals, with JSON output for scripts
 - Language-server diagnostics, symbols, quick fixes and refactors, and

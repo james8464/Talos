@@ -1,0 +1,390 @@
+import Foundation
+import NaturalLanguage
+
+struct SemanticChunk: Sendable {
+    let path: String
+    let startLine: Int
+    let endLine: Int
+    let text: String
+    let vector: [Float]
+    let tokens: Set<String>
+}
+
+struct SemanticHit: Sendable {
+    let path: String
+    let startLine: Int
+    let endLine: Int
+    let score: Double
+    let text: String
+}
+
+struct SemanticIndexStatus: Sendable {
+    let workspace: String
+    let files: Int
+    let chunks: Int
+    let builtAt: Date?
+    let embedding: String
+    let isStale: Bool
+}
+
+enum SemanticIndexError: LocalizedError {
+    case message(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .message(let value): return value
+        }
+    }
+}
+
+/// Local semantic search over the workspace using Apple's on-device sentence
+/// embeddings. No network service, model download, or API key is involved.
+actor SemanticIndex {
+    static let shared = SemanticIndex()
+
+    private struct FileState: Sendable {
+        let modified: Date
+        let size: Int
+        let chunkCount: Int
+    }
+
+    private struct WorkspaceIndex {
+        var chunks: [SemanticChunk]
+        var files: [String: FileState]
+        var builtAt: Date
+        var fingerprint: String
+    }
+
+    private var indexes: [String: WorkspaceIndex] = [:]
+    private let embedding = NLEmbedding.sentenceEmbedding(for: .english)
+    private let supportedExtensions: Set<String> = [
+        "swift", "m", "mm", "c", "h", "cc", "cpp", "cxx", "hpp", "hh",
+        "py", "pyi", "js", "jsx", "ts", "tsx", "go", "rs", "java", "kt",
+        "kts", "rb", "php", "cs", "sh", "zsh", "bash", "sql",
+        "md", "txt", "json", "yaml", "yml", "toml", "html", "css", "xml",
+    ]
+    private let skippedDirectories: Set<String> = [
+        ".git", ".build", "node_modules", "DerivedData", ".swiftpm", ".venv",
+        "venv", "Pods", "vendor", "dist", "build", ".next", "__pycache__",
+        ".gradle", "target", "coverage",
+    ]
+
+    func status(workspace: URL) async -> SemanticIndexStatus {
+        let root = workspace.resolvingSymlinksInPath().standardizedFileURL
+        guard embedding != nil else {
+            return SemanticIndexStatus(
+                workspace: root.path,
+                files: 0,
+                chunks: 0,
+                builtAt: nil,
+                embedding: "unavailable",
+                isStale: false
+            )
+        }
+        let key = root.path
+        if let index = indexes[key] {
+            let stale = (try? await needsRebuild(root: root, index: index)) ?? true
+            return SemanticIndexStatus(
+                workspace: key,
+                files: index.files.count,
+                chunks: index.chunks.count,
+                builtAt: index.builtAt,
+                embedding: "NLEmbedding.sentence · 512-d",
+                isStale: stale
+            )
+        }
+        return SemanticIndexStatus(
+            workspace: key,
+            files: 0,
+            chunks: 0,
+            builtAt: nil,
+            embedding: "NLEmbedding.sentence · 512-d",
+            isStale: false
+        )
+    }
+
+    func rebuild(workspace: URL) async throws -> SemanticIndexStatus {
+        let root = workspace.resolvingSymlinksInPath().standardizedFileURL
+        try await build(root: root, force: true)
+        return await status(workspace: root)
+    }
+
+    func search(
+        query: String,
+        workspace: URL,
+        pathPrefix: String? = nil,
+        limit: Int = 8
+    ) async throws -> (hits: [SemanticHit], status: SemanticIndexStatus) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw SemanticIndexError.message("search_codebase requires a query.")
+        }
+        guard let embedding else {
+            throw SemanticIndexError.message(
+                "On-device sentence embeddings are unavailable for this language. Use search_files instead."
+            )
+        }
+        guard let queryVector = embedding.vector(for: trimmed) else {
+            throw SemanticIndexError.message("Could not embed the query.")
+        }
+        let root = workspace.resolvingSymlinksInPath().standardizedFileURL
+        try await build(root: root, force: false)
+        let key = root.path
+        let index = indexes[key] ?? WorkspaceIndex(chunks: [], files: [:], builtAt: Date(), fingerprint: "")
+        let queryFloats = queryVector.map(Float.init)
+        var prefix = pathPrefix?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if prefix.hasPrefix("./") { prefix.removeFirst(2) }
+        if prefix == "." { prefix = "" }
+        let queryTokens = Self.tokens(trimmed)
+        var scored: [(Double, SemanticChunk)] = []
+        for chunk in index.chunks {
+            if !prefix.isEmpty, !chunk.path.hasPrefix(prefix) { continue }
+            let cosine = Self.cosine(queryFloats, chunk.vector)
+            let lexical: Double
+            if queryTokens.isEmpty {
+                lexical = 0
+            } else {
+                let matches = queryTokens.filter { query in
+                    chunk.tokens.contains { docToken in
+                        docToken == query
+                            || (query.count >= 4 && docToken.count >= 4
+                                && (docToken.hasPrefix(query) || query.hasPrefix(docToken)))
+                    }
+                }.count
+                lexical = Double(matches) / Double(queryTokens.count)
+            }
+            let pathTokens = Self.tokens(chunk.path)
+            let pathMatches = queryTokens.filter { pathTokens.contains($0) }.count
+            let pathBoost = queryTokens.isEmpty ? 0 : Double(pathMatches) / Double(queryTokens.count)
+            scored.append((0.45 * cosine + 0.50 * lexical + 0.05 * pathBoost, chunk))
+        }
+        let hits = scored
+            .sorted { $0.0 > $1.0 }
+            .prefix(min(max(limit, 1), 25))
+            .map { item in
+                SemanticHit(
+                    path: item.1.path,
+                    startLine: item.1.startLine,
+                    endLine: item.1.endLine,
+                    score: item.0,
+                    text: item.1.text
+                )
+            }
+        let status = SemanticIndexStatus(
+            workspace: key,
+            files: index.files.count,
+            chunks: index.chunks.count,
+            builtAt: index.builtAt,
+            embedding: "NLEmbedding.sentence · 512-d",
+            isStale: false
+        )
+        return (Array(hits), status)
+    }
+
+    private func build(root: URL, force: Bool) async throws {
+        guard embedding != nil else {
+            throw SemanticIndexError.message(
+                "On-device sentence embeddings are unavailable. Use search_files instead."
+            )
+        }
+        let key = root.path
+        if !force, let existing = indexes[key] {
+            if (try? await needsRebuild(root: root, index: existing)) == false {
+                return
+            }
+        }
+        let candidates = candidateFiles(in: root)
+        var chunks: [SemanticChunk] = []
+        var files: [String: FileState] = [:]
+        for url in candidates {
+            guard let attributes = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
+                  let modified = attributes.contentModificationDate,
+                  let size = attributes.fileSize, size <= 300_000 else { continue }
+            guard let data = try? Data(contentsOf: url),
+                  !data.contains(0),
+                  let text = String(data: data, encoding: .utf8),
+                  !text.isEmpty else { continue }
+            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
+            let fileChunks = chunk(
+                text: text,
+                path: relative,
+                embedding: embedding!
+            )
+            guard !fileChunks.isEmpty else { continue }
+            chunks.append(contentsOf: fileChunks)
+            files[relative] = FileState(
+                modified: modified,
+                size: size,
+                chunkCount: fileChunks.count
+            )
+        }
+        var hasher = Hasher()
+        for (path, state) in files.sorted(by: { $0.key < $1.key }) {
+            hasher.combine(path)
+            hasher.combine(state.size)
+            hasher.combine(state.modified.timeIntervalSince1970)
+        }
+        indexes[key] = WorkspaceIndex(
+            chunks: chunks,
+            files: files,
+            builtAt: Date(),
+            fingerprint: String(hasher.finalize())
+        )
+    }
+
+    private func needsRebuild(root: URL, index: WorkspaceIndex) async throws -> Bool {
+        let candidates = candidateFiles(in: root)
+        if candidates.count != index.files.count { return true }
+        for url in candidates {
+            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
+            guard let state = index.files[relative],
+                  let attributes = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
+                  let modified = attributes.contentModificationDate,
+                  let size = attributes.fileSize else { return true }
+            if state.size != size || abs(state.modified.timeIntervalSince(modified)) > 0.5 {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func candidateFiles(in root: URL) -> [URL] {
+        let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey]
+        guard let enumerator = FileManager.default.enumerator(
+            at: root,
+            includingPropertiesForKeys: keys,
+            options: [.skipsPackageDescendants]
+        ) else { return [] }
+        var files: [URL] = []
+        for case let url as URL in enumerator {
+            let components = Set(url.pathComponents)
+            if components.isDisjoint(with: skippedDirectories) == false {
+                enumerator.skipDescendants()
+                continue
+            }
+            let values = try? url.resourceValues(forKeys: Set(keys))
+            if values?.isDirectory == true {
+                if skippedDirectories.contains(url.lastPathComponent) {
+                    enumerator.skipDescendants()
+                }
+                continue
+            }
+            guard supportedExtensions.contains(url.pathExtension.lowercased()) else { continue }
+            files.append(url.resolvingSymlinksInPath())
+            if files.count >= 700 { break }
+        }
+        return files
+    }
+
+    private func chunk(text: String, path: String, embedding: NLEmbedding) -> [SemanticChunk] {
+        let lines = text.components(separatedBy: "\n")
+        let window = 40
+        let overlap = 10
+        var chunks: [SemanticChunk] = []
+        var start = 0
+        while start < lines.count, chunks.count < 90 {
+            let end = min(start + window, lines.count)
+            let slice = lines[start..<end]
+            let body = slice.joined(separator: "\n")
+            if body.count >= 80, body.count <= 4_000 {
+                let meaningful = body.trimmingCharacters(in: .whitespacesAndNewlines)
+                if meaningful.count >= 40,
+                   meaningful.contains(where: { $0.isLetter }),
+                   let vector = embedding.vector(for: path + "\n" + String(body.prefix(1_500))) {
+                    chunks.append(SemanticChunk(
+                        path: path,
+                        startLine: start + 1,
+                        endLine: end,
+                        text: meaningful,
+                        vector: vector.map(Float.init),
+                        tokens: Self.tokens(path + "\n" + meaningful)
+                    ))
+                }
+            }
+            if end >= lines.count { break }
+            start += max(window - overlap, 1)
+        }
+        return chunks
+    }
+
+    private static let stopWords: Set<String> = [
+        "the", "and", "for", "with", "from", "this", "that", "into", "when",
+        "where", "what", "which", "how", "are", "was", "were", "has", "have",
+        "had", "can", "could", "should", "would", "use", "using", "used",
+        "return", "self", "let", "var", "func", "struct", "class", "enum",
+        "import", "public", "private", "static", "some", "any", "true",
+        "false", "nil", "none", "new", "old", "get", "set", "init", "self",
+        "then", "than", "their", "there", "they", "you", "your", "our",
+        "not", "all", "out", "one", "two", "more", "most", "other", "also",
+    ]
+
+    static func stem(_ token: String) -> String {
+        var value = token
+        for suffix in ["ations", "ation", "ings", "ing", "ions", "ion", "ers", "er", "ed", "es", "s"] {
+            if value.hasSuffix(suffix), value.count - suffix.count >= 4 {
+                value = String(value.dropLast(suffix.count))
+                break
+            }
+        }
+        if value.hasSuffix("e"), value.count >= 5 {
+            value.removeLast()
+        }
+        return value
+    }
+
+    static func tokens(_ text: String) -> Set<String> {
+        var output = Set<String>()
+        var run = ""
+        func add(_ raw: String) {
+            let lowered = raw.lowercased()
+            guard lowered.count >= 3, !stopWords.contains(lowered) else { return }
+            let stemmed = stem(lowered)
+            if stemmed.count >= 3, !stopWords.contains(stemmed) {
+                output.insert(stemmed)
+            }
+        }
+        func flush() {
+            guard !run.isEmpty else { return }
+            add(run)
+            var piece = ""
+            let characters = Array(run)
+            for index in characters.indices {
+                let character = characters[index]
+                let previous = index > 0 ? characters[index - 1] : nil
+                let startsNewWord = character.isUppercase
+                    && previous != nil
+                    && (previous!.isLowercase || previous!.isNumber)
+                if startsNewWord, !piece.isEmpty {
+                    add(piece)
+                    piece = ""
+                }
+                piece.append(character)
+            }
+            add(piece)
+            run = ""
+        }
+        for character in text {
+            if character.isLetter || character.isNumber {
+                run.append(character)
+            } else {
+                flush()
+            }
+        }
+        flush()
+        return output
+    }
+
+    static func cosine(_ a: [Float], _ b: [Float]) -> Double {
+        guard a.count == b.count, !a.isEmpty else { return 0 }
+        var dot: Float = 0
+        var normA: Float = 0
+        var normB: Float = 0
+        for index in a.indices {
+            dot += a[index] * b[index]
+            normA += a[index] * a[index]
+            normB += b[index] * b[index]
+        }
+        let denominator = sqrt(normA) * sqrt(normB)
+        return denominator == 0 ? 0 : Double(dot / denominator)
+    }
+}

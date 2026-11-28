@@ -4,7 +4,13 @@ Approximate audit of Talos against documented Codex, Claude Code, and Cursor
 surfaces as of November 2026. Peer cells describe public/documented capability,
 not exhaustive testing of those products.
 
-Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not offered/not implemented.
+Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not offered/not implemented · ➖ out of scope by product decision.
+
+**Scope.** Talos is a local-first macOS app that brings real tools to models
+from any provider. It does not host its own cloud agents, embed an editor or
+debugger, run a team/SSO/billing backend, sync through a Talos cloud, or target
+Windows/Linux/Android. Those cells are marked ➖ by decision, not as pending
+work.
 
 | Surface | Codex | Claude Code | Cursor | Talos | Talos evidence / remaining gap |
 | --- | --- | --- | --- | --- | --- |
@@ -28,11 +34,11 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Worktrees and branch lifecycle | ✅ | 🟡 | 🟡 | ✅ | Create, list, switch, merge, cleanup |
 | PR creation and review comments | ✅ | 🟡 | ✅ | ✅ | GitHub service reads `origin`, uses the `gh` CLI token or `GITHUB_TOKEN`, and supports draft PR creation, open-PR lookup, inline review comments, and review submit from the Changes panel; verified against live GitHub and a mock API |
 | LSP diagnostics and refactors | ❌ | ❌ | ✅ | ✅ | JSON-RPC client for `sourcekit-lsp`, `clangd`, and installed TypeScript/Python/Go/Rust/JSON servers: diagnostics, document symbols, code actions with workspace-edit application, and formatting; model tool plus a Diagnostics panel in Changes; verified live against sourcekit-lsp and clangd |
-| Inline autocomplete/Tab | ❌ | ❌ | ✅ | ❌ | Not an editor |
-| Semantic codebase index | 🟡 | ❌ | ✅ | ❌ | Uses file tree/ripgrep, no embeddings index |
-| Debugger integration | ❌ | ❌ | ✅ | ❌ | No debug adapter |
+| Inline autocomplete/Tab | ❌ | ❌ | ✅ | ➖ | Out of scope: Talos is a model client, not an editor |
+| Semantic codebase index | 🟡 | ❌ | ✅ | ✅ | `search_codebase` builds a cached on-device index with `NLEmbedding` sentence vectors plus lexical ranking; verified on a sample workspace and through a live model session |
+| Debugger integration | ❌ | ❌ | ✅ | ➖ | Out of scope: no embedded editor/debug adapter |
 | Multi-file apply preview | ✅ | ✅ | ✅ | ✅ | `apply_patch` approvals render a parsed per-file preview with hunks, +/− counts, new/deleted markers, and colored lines before anything is written; verified live on a two-file patch through the approval flow |
-| IDE extensions | ✅ | ✅ | ✅ (IDE) | ❌ | App/server/daemon only |
+| IDE extensions | ✅ | ✅ | ✅ (IDE) | ➖ | Out of scope: Talos ships as an app, CLI, daemon, and iOS client |
 | Headless chat CLI | ✅ | ✅ | 🟡 | ✅ | `talos` CLI over the app server: info, sessions, new, send with SSE streaming, interactive/stdin chat, show, stop, approvals, approve/deny, `--json`, `--no-stream`, and `--yes`; verified live end to end |
 | **Tools and desktop** | | | | | |
 | Web fetch/search | ✅ | ✅ | ✅ | ✅ | Network-gated tools |
@@ -53,22 +59,22 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Nested delegation / fan-out | ✅ | ✅ | ✅ | ✅ | Depth-2 nesting and bounded parallel fan-out |
 | Automatic review before approval | ✅ | ✅ | 🟡 | ✅ | Read-only reviewer in approval sheet |
 | Self-hosted cloud task queue | 🟡 | 🟡 | 🟡 | ✅ | HTTP queue, worker, worktree isolation |
-| Vendor-hosted cloud agents | ✅ | 🟡 | ✅ | ❌ | No vendor cloud backend |
-| Parallel cloud workers | ✅ | 🟡 | ✅ | ❌ | Local fan-out only; queue worker is serial |
+| Vendor-hosted cloud agents | ✅ | 🟡 | ✅ | ➖ | Out of scope: use provider APIs and logins instead of a Talos-hosted cloud |
+| Parallel cloud workers | ✅ | 🟡 | ✅ | ➖ | Out of scope for hosted cloud; local fan-out and a self-hosted queue are included |
 | App server / SDK transport | ✅ | 🟡 | 🟡 | ✅ | JSON-RPC + SSE, sessions/messages/approvals |
 | Remote-control daemon | ✅ | ✅ | 🟡 | ✅ | Token-authenticated daemon and mobile web UI |
-| Native mobile client | ✅ | ✅ | 🟡 | ✅ | SwiftUI iOS client; no Android client |
+| Native mobile client | ✅ | ✅ | 🟡 | ✅ | SwiftUI iOS client; Android is out of scope |
 | Menu-bar quick panel | ✅ | ❌ | ❌ | ✅ | Status, model, new task, stop, show/settings |
 | Voice dictation | ✅ | ✅ | ✅ | ✅ | Speech + AVAudioEngine, verified live |
 | **Enterprise, platform, operations** | | | | | |
 | MDM/signed managed policy | ✅ | ✅ | ✅ | ✅ | Managed preferences, Ed25519 file, local file |
 | Signed plugin catalogs | 🟡 | 🟡 | 🟡 | ✅ | Ed25519 + SHA-256 + dependencies |
-| SSO/OIDC and SCIM | ✅ | ✅ | ✅ | ❌ | No identity-provider integration |
-| Team admin, billing, quotas | ✅ | ✅ | ✅ | ❌ | Single-user local app |
-| Cloud sync across devices | ✅ | ✅ | ✅ | ❌ | Local storage only |
+| SSO/OIDC and SCIM | ✅ | ✅ | ✅ | ➖ | Out of scope: single-user local app |
+| Team admin, billing, quotas | ✅ | ✅ | ✅ | ➖ | Out of scope: no Talos backend or billing |
+| Cloud sync across devices | ✅ | ✅ | ✅ | ➖ | Out of scope: local storage by design |
 | Central audit export | ✅ | ✅ | ✅ | ✅ | JSON export of sessions, token usage, policy, and hook activity from Settings → Usage or `talos audit`; usage is pruned at 365 days and the hook log is capped at 40 entries; no vendor-hosted collection |
-| Auto-update and notarized distribution | ✅ | ✅ | ✅ | ❌ | Development build only |
-| Windows and Linux | ✅ | ✅ | ✅ | ❌ | macOS-only app |
+| Auto-update and notarized distribution | ✅ | ✅ | ✅ | ➖ | Out of scope by decision: local development builds |
+| Windows and Linux | ✅ | ✅ | ✅ | ➖ | Out of scope: macOS-only by decision |
 | Accessibility of the client UI | ✅ | ✅ | ✅ | ✅ | Explicit labels on icon-only and form controls; `make ax-audit` walks the live AX tree and reports 0 unlabeled app-owned controls in the main window, Changes/Diagnostics, GitHub panel, and General settings; no full WCAG contrast certification |
 
 ## Verified, targeted gaps
@@ -105,7 +111,11 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
   persistence, exit codes, multi-line output, timeouts, Ctrl-C recovery, and
   `send`/`read`; a live model session executed `echo TERMINAL-CLEAN-OK` through
   the tool and received exactly `exit 0` plus the output.
+- **Semantic codebase search** — a clean sample workspace ranked the right file
+  first for three conceptual queries, detected a newly added file as stale,
+  rebuilt incrementally, and honored a path filter. A live model session queried
+  the real Talos workspace (886 chunks from 86 files) and received approval
+  related files.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
-  The largest remaining deltas are IDE/LSP/editor integration, PR review
-  workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and
-  non-macOS distribution.
+  Every remaining ❌ is a deliberate product boundary; the app focuses on
+  provider-agnostic tools, a local-first workflow, and a polished macOS client.

@@ -72,6 +72,7 @@
 		DA085E19377ECC10955BA207 /* PDFLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC986894EC2D21386D7A4EED /* PDFLoader.swift */; };
 		DAE891B0817F2171A2F78428 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8438786D61796CA99F3ACF3F /* MenuBarController.swift */; };
 		DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */; };
+		E07E7792E08FBBF1EA778B1B /* SemanticIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B59F37CA3AD3F5ECB4997C3 /* SemanticIndex.swift */; };
 		E1E61F33240469D831267B5C /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE40BA2F2E62D3115E531DD /* UsageStore.swift */; };
 		E5879A7092FDF72C69872296 /* ProviderEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F062B95637FEC6883E592D35 /* ProviderEditor.swift */; };
 		E969804526DB9434B89E8F5B /* ChronicleUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5C48D6CA06EC216DEF823B /* ChronicleUI.swift */; };
@@ -121,6 +122,7 @@
 		663E1E4E42478C07BD4DC2D2 /* MCPAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPAppView.swift; sourceTree = "<group>"; };
 		673871726683A02E29B248D2 /* TalosNativeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosNativeHost.swift; sourceTree = "<group>"; };
 		6969EEA6748F0E53FBB946C5 /* ProviderTokenCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTokenCounter.swift; sourceTree = "<group>"; };
+		6B59F37CA3AD3F5ECB4997C3 /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
 		6EDDFB389E2CD36304364711 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
 		70913AB772F308657E509F42 /* Providers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
 		752940EB53B173AED8964FF2 /* TalosNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = TalosNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -251,6 +253,7 @@
 				6969EEA6748F0E53FBB946C5 /* ProviderTokenCounter.swift */,
 				2A1115DE151F3C56C15F6D71 /* RemoteServer.swift */,
 				23521B5CDB48331307D2ED62 /* Reviewer.swift */,
+				6B59F37CA3AD3F5ECB4997C3 /* SemanticIndex.swift */,
 				2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */,
 				5C064999B0D1F92F7B32F537 /* SettingsStore.swift */,
 				7DF7DCED466867A6BC71FB24 /* SettingsView.swift */,
@@ -598,6 +601,7 @@
 				59EFBCD216961E06356D37D5 /* Providers.swift in Sources */,
 				4BB116C270D7CB0DC5499BD5 /* RemoteServer.swift in Sources */,
 				31AB57F45839C834725A3158 /* Reviewer.swift in Sources */,
+				E07E7792E08FBBF1EA778B1B /* SemanticIndex.swift in Sources */,
 				DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */,
 				B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */,
 				8861FD006DDE302ADA5C69BB /* SettingsView.swift in Sources */,

@@ -2877,7 +2877,8 @@ final class AppModel: ObservableObject {
             skills: skills.enabled,
             mcpTools: mcpTools,
             cdpEndpoint: settings.browserCDPEndpoint,
-            enabledLSP: settings.enableLSP
+            enabledLSP: settings.enableLSP,
+            enabledSemanticIndex: settings.enableSemanticIndex
         )
     }
 

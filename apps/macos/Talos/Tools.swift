@@ -167,6 +167,7 @@ struct ToolContext: Sendable {
     var allowNestedAgents = false
     var cdpEndpoint = "http://127.0.0.1:9222"
     var enabledLSP = true
+    var enabledSemanticIndex = true
     let maxOutputCharacters = 30_000
 }
 
@@ -208,7 +209,14 @@ enum ToolParser {
               !name.isEmpty else {
             return nil
         }
-        let rawArguments = object["arguments"] as? [String: Any] ?? [:]
+        let rawArguments: [String: Any]
+        if let nested = object["arguments"] as? [String: Any] {
+            rawArguments = nested
+        } else {
+            rawArguments = object.filter { key, _ in
+                key != "name" && key != "tool"
+            }
+        }
         let arguments = rawArguments.mapValues(ToolValue.init(any:))
         return ToolCall(name: name, arguments: arguments)
     }
@@ -261,6 +269,9 @@ enum ToolPrompt {
         if context.enabledBrowser {
             lines.append("- browser: {\"action\":\"read\"|\"click\"|\"type\"|\"navigate\"|\"screenshot\"|\"key\"|\"scroll\"|\"back\"|\"forward\"|\"reload\", ...} Control the front Safari or Chrome window. Run read before click/type; read returns page text and indexed elements. click takes index; type takes index and text; navigate takes url; screenshot returns OCR text; key takes key.")
             lines.append("- browser_cdp: {\"action\":\"status\"|\"read\"|\"navigate\"|\"eval\"|\"click\"|\"type\"|\"screenshot\", ...} Control Chrome through the DevTools Protocol when Chrome runs with --remote-debugging-port. read returns page text and selectors; click takes selector or text; type takes selector and text; eval takes a JavaScript expression; navigate takes url.")
+        }
+        if context.enabledSemanticIndex {
+            lines.append("- search_codebase: {\"query\":\"...\",\"limit\":8,\"path\":\".\"} Semantic search over the workspace using on-device embeddings. Use it to find concepts when you do not know the file or exact identifier; use search_files for exact strings. action \"status\" reports the index; action \"rebuild\" refreshes it.")
         }
         if context.enabledLSP {
             lines.append("- lsp: {\"action\":\"diagnostics\",\"path\":\".\"} Run a real language server. actions: diagnostics (file or directory), symbols (file), code_actions (file, line, character), apply_code_action (file, line, title), format (file). Use diagnostics after edits instead of guessing whether code compiles. Use code_actions at a diagnostic position to find fixes and refactors, then apply_code_action.")
@@ -385,6 +396,8 @@ struct ToolRunner: Sendable {
             return await runBrowserCDP(call)
         case "terminal":
             return await runTerminal(call)
+        case "search_codebase":
+            return await runSearchCodebase(call)
         case "lsp":
             return await runLSP(call)
         default:
@@ -624,6 +637,67 @@ struct ToolRunner: Sendable {
     }
 
     @MainActor
+    private func runSearchCodebase(_ call: ToolCall) async -> ToolResult {
+        guard context.enabledSemanticIndex, context.enabledFileEdits else {
+            return .fail("Semantic codebase search is disabled in Settings.")
+        }
+        let action = (call.string("action") ?? "search").lowercased()
+        switch action {
+        case "status", "rebuild":
+            do {
+                let status: SemanticIndexStatus
+                if action == "rebuild" {
+                    status = try await SemanticIndex.shared.rebuild(workspace: workspaceURL)
+                } else {
+                    status = await SemanticIndex.shared.status(workspace: workspaceURL)
+                }
+                var lines = [
+                    "Workspace: \(status.workspace)",
+                    "Embedding: \(status.embedding)",
+                    "Files: \(status.files) · Chunks: \(status.chunks)",
+                ]
+                if let builtAt = status.builtAt {
+                    lines.append("Built: \(builtAt.formatted(date: .abbreviated, time: .standard))")
+                } else {
+                    lines.append("Built: never (the first search builds the index)")
+                }
+                if status.isStale { lines.append("State: stale (next search will rebuild)") }
+                return .ok(lines.joined(separator: "\n"))
+            } catch {
+                return .fail(error.localizedDescription)
+            }
+        default:
+            guard let query = call.string("query") ?? call.string("text"), !query.isEmpty else {
+                return .fail("search_codebase requires a query.")
+            }
+            let limit = min(max(call.int("limit") ?? 8, 1), 25)
+            let prefix = call.string("path")
+            do {
+                let result = try await SemanticIndex.shared.search(
+                    query: query,
+                    workspace: workspaceURL,
+                    pathPrefix: prefix,
+                    limit: limit
+                )
+                guard !result.hits.isEmpty else {
+                    return .ok("No semantic matches for \(query).")
+                }
+                var blocks: [String] = [
+                    "Semantic index: \(result.status.chunks) chunks from \(result.status.files) files (\(result.status.embedding)).",
+                ]
+                for (offset, hit) in result.hits.enumerated() {
+                    let text = truncate(hit.text)
+                    blocks.append(
+                        "\(offset + 1). \(hit.path):\(hit.startLine)-\(hit.endLine) · score \(String(format: "%.2f", hit.score))\n\(text)"
+                    )
+                }
+                return .ok(blocks.joined(separator: "\n\n"))
+            } catch {
+                return .fail(error.localizedDescription)
+            }
+        }
+    }
+
     private func runTerminal(_ call: ToolCall) async -> ToolResult {
         guard context.enabledShell, !context.readOnly else {
             return .fail("Shell access is disabled in Settings.")

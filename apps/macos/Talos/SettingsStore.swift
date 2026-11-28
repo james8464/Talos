@@ -139,6 +139,9 @@ final class SettingsStore: ObservableObject {
             defaults.set(enablePlan, forKey: "enablePlan")
         }
     }
+    @Published var enableSemanticIndex: Bool {
+        didSet { defaults.set(enableSemanticIndex, forKey: "enableSemanticIndex") }
+    }
     @Published var enableLSP: Bool {
         didSet { defaults.set(enableLSP, forKey: "enableLSP") }
     }
@@ -258,6 +261,7 @@ final class SettingsStore: ObservableObject {
         enableBrowser = defaults.object(forKey: "enableBrowser") as? Bool ?? true
         enablePlan = defaults.object(forKey: "enablePlan") as? Bool ?? true
         enableLSP = defaults.object(forKey: "enableLSP") as? Bool ?? true
+        enableSemanticIndex = defaults.object(forKey: "enableSemanticIndex") as? Bool ?? true
         pluginCatalogURL = defaults.string(forKey: "pluginCatalogURL") ?? ""
         pluginCatalogPublicKey = defaults.string(forKey: "pluginCatalogPublicKey") ?? ""
         appServerEnabled = defaults.bool(forKey: "appServerEnabled")

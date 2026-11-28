@@ -31,6 +31,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/PatchPreview.swift` — parsed per-file diff preview for `apply_patch`
 - `Talos/AuditExport.swift` — JSON audit document for sessions, usage, policy, and hooks
 - `Talos/TerminalSession.swift` — persistent PTY-backed zsh session for the `terminal` tool
+- `Talos/SemanticIndex.swift` — on-device embedding index for `search_codebase`
 - `Talos/LSPService.swift` and `DiagnosticsPanel.swift` — language-server
   JSON-RPC client, diagnostics, symbols, code actions, and formatting
 - `CLI/TalosCLI.swift` — headless `talos` client for the app server
@@ -113,6 +114,13 @@ automatic compaction is enabled, Talos summarizes older messages before the
 window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
+
+## Semantic code search
+
+`search_codebase` indexes the workspace with Apple's on-device sentence
+embeddings and ranks chunks with a lexical boost, so conceptual queries work
+without exact identifiers. The index is cached per workspace and rebuilt when
+files change. Actions: a normal search, `status`, and `rebuild`.
 
 ## Persistent terminal
 

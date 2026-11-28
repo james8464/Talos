@@ -201,70 +201,166 @@ private struct GitButton: View {
 private struct Sidebar: View {
     @EnvironmentObject private var model: AppModel
 
+    private struct SessionGroup: Identifiable {
+        let id: String
+        let title: String
+        let sessions: [Session]
+    }
+
+    private var groups: [SessionGroup] {
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+        var buckets: [String: [Session]] = [:]
+        for session in model.filteredSessions {
+            let day = calendar.startOfDay(for: session.updatedAt)
+            let key: String
+            if day >= today {
+                key = "Today"
+            } else if day >= yesterday {
+                key = "Yesterday"
+            } else if day >= weekAgo {
+                key = "Previous 7 Days"
+            } else {
+                key = "Older"
+            }
+            buckets[key, default: []].append(session)
+        }
+        return ["Today", "Yesterday", "Previous 7 Days", "Older"].compactMap { title in
+            guard let sessions = buckets[title], !sessions.isEmpty else { return nil }
+            return SessionGroup(id: title, title: title, sessions: sessions)
+        }
+    }
+
     var body: some View {
-        List(selection: $model.selectedID) {
-            Section("Tasks") {
-                ForEach(model.filteredSessions) { session in
-                    SidebarRow(session: session)
-                        .tag(session.id)
-                        .contextMenu {
-                            Button("Rename…") { model.beginRename(session.id) }
-                            Button("Fork") { model.fork(session.id) }
-                            Button("Archive") { model.archive(session.id) }
-                            Divider()
-                            Button("Delete", role: .destructive) {
-                                model.delete(session.id)
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(model.currentProject?.name ?? "Talos")
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                    if let branch = model.gitStatus.branch {
+                        Label(branch, systemImage: "arrow.triangle.branch")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    } else {
+                        Text("AI tools for your Mac")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Button {
+                    model.newSession()
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .buttonStyle(.borderless)
+                .help("New Task (⌘N)")
+                .accessibilityLabel("New task")
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 4)
+            .padding(.bottom, 8)
+
+            Button {
+                model.newSession()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(Brand.bronze)
+                    Text("New Task")
+                        .font(.system(size: 13, weight: .medium))
+                    Spacer()
+                    Text("⌘N")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .contentShape(Rectangle())
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Brand.bronze.opacity(0.10))
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 6)
+
+            List(selection: $model.selectedID) {
+                ForEach(groups) { group in
+                    Section(group.title) {
+                        ForEach(group.sessions) { session in
+                            SidebarRow(
+                                session: session,
+                                isRunning: model.activeRunSessionID == session.id
+                            )
+                            .tag(session.id)
+                            .contextMenu {
+                                Button("Rename…") { model.beginRename(session.id) }
+                                Button("Fork") { model.fork(session.id) }
+                                Button("Archive") { model.archive(session.id) }
+                                Divider()
+                                Button("Delete", role: .destructive) {
+                                    model.delete(session.id)
+                                }
                             }
                         }
+                    }
                 }
-            }
 
-            if !model.archivedSessions.isEmpty {
-                Section("Archived") {
-                    if model.showArchived {
-                        ForEach(model.archivedSessions) { session in
-                            SidebarRow(session: session)
-                                .tag(session.id)
-                                .opacity(0.7)
-                                .contextMenu {
-                                    Button("Unarchive") { model.unarchive(session.id) }
-                                    Button("Rename…") { model.beginRename(session.id) }
-                                    Button("Fork") { model.fork(session.id) }
-                                    Divider()
-                                    Button("Delete", role: .destructive) {
-                                        model.delete(session.id)
+                if !model.archivedSessions.isEmpty {
+                    Section("Archived") {
+                        if model.showArchived {
+                            ForEach(model.archivedSessions) { session in
+                                SidebarRow(session: session, isRunning: false)
+                                    .tag(session.id)
+                                    .opacity(0.7)
+                                    .contextMenu {
+                                        Button("Unarchive") { model.unarchive(session.id) }
+                                        Button("Rename…") { model.beginRename(session.id) }
+                                        Button("Fork") { model.fork(session.id) }
+                                        Divider()
+                                        Button("Delete", role: .destructive) {
+                                            model.delete(session.id)
+                                        }
                                     }
-                                }
+                            }
+                        } else {
+                            Button("Show \(model.archivedSessions.count) Archived") {
+                                model.showArchived = true
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
-                    } else {
-                        Button("Show \(model.archivedSessions.count) Archived") {
-                            model.showArchived = true
+                        if model.showArchived {
+                            Button("Hide Archived") {
+                                model.showArchived = false
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    if model.showArchived {
-                        Button("Hide Archived") {
-                            model.showArchived = false
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                     }
                 }
             }
-        }
-        .listStyle(.sidebar)
-        .searchable(text: $model.search, placement: .sidebar, prompt: "Search Tasks")
-        .overlay {
-            if model.filteredSessions.isEmpty && model.archivedSessions.isEmpty {
-                if model.search.isEmpty {
-                    ContentUnavailableView(
-                        "No Tasks",
-                        systemImage: "square.and.pencil",
-                        description: Text("Press ⌘N to start one.")
-                    )
-                } else {
-                    ContentUnavailableView.search(text: model.search)
+            .listStyle(.sidebar)
+            .searchable(text: $model.search, placement: .sidebar, prompt: "Search Tasks")
+            .overlay {
+                if model.filteredSessions.isEmpty && model.archivedSessions.isEmpty {
+                    if model.search.isEmpty {
+                        ContentUnavailableView(
+                            "No Tasks",
+                            systemImage: "square.and.pencil",
+                            description: Text("Press ⌘N to start one.")
+                        )
+                    } else {
+                        ContentUnavailableView.search(text: model.search)
+                    }
                 }
             }
         }
@@ -274,24 +370,40 @@ private struct Sidebar: View {
 
 private struct SidebarRow: View {
     let session: Session
+    var isRunning = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if isRunning {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .accessibilityLabel("Running")
+                }
                 Text(session.title)
-                    .font(.body)
+                    .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Text(session.createdAt, style: .relative)
+                Text(session.updatedAt, style: .relative)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.tertiary)
             }
-            Text(session.preview)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 5) {
+                if !session.preview.isEmpty {
+                    Text(session.preview)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                if session.messages.count > 0 {
+                    Text("\(session.messages.count)")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.tertiary)
+                }
+            }
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
     }
 }
@@ -690,7 +802,7 @@ private struct ComposerView: View {
                     )
                 }
 
-                TextField("Send a message…", text: $draft, axis: .vertical)
+                TextField("Ask Talos to build, fix, or explain…", text: $draft, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.body)
                     .lineLimit(1...12)
@@ -711,6 +823,27 @@ private struct ComposerView: View {
                     }
                     .font(.caption)
                     .foregroundStyle(.red)
+                }
+
+                if let fraction = model.contextUsage.fraction {
+                    HStack(spacing: 8) {
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color(nsColor: .separatorColor).opacity(0.6))
+                                Capsule()
+                                    .fill(contextColor)
+                                    .frame(width: max(2, geometry.size.width * min(fraction, 1)))
+                            }
+                        }
+                        .frame(height: 2)
+                        Text(model.contextLabel)
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(contextColor)
+                            .lineLimit(1)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Context usage \(model.contextLabel)")
                 }
 
                 HStack(spacing: 7) {
@@ -743,17 +876,22 @@ private struct ComposerView: View {
                     sendControl
                 }
             }
-            .padding(10)
+            .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        composerFocused.wrappedValue ? Brand.bronze.opacity(0.55) : Color(nsColor: .separatorColor),
+                        lineWidth: composerFocused.wrappedValue ? 1.5 : 1
+                    )
             )
+            .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
             .padding(.horizontal, 24)
             .padding(.top, 12)
+            .animation(.easeOut(duration: 0.15), value: composerFocused.wrappedValue)
 
             HStack(spacing: 4) {
                 Image(systemName: model.choice.provider == .local ? "desktopcomputer" : "cloud")
@@ -801,16 +939,21 @@ private struct ComposerView: View {
     }
 
     private var sendControl: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 7) {
             if model.isStreaming {
                 Button {
                     model.stop()
                 } label: {
-                    Image(systemName: "stop.circle.fill")
-                        .font(.system(size: 22))
+                    ZStack {
+                        Circle()
+                            .strokeBorder(Color.secondary.opacity(0.45), lineWidth: 1)
+                            .frame(width: 26, height: 26)
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
                 .help("Stop (⌘.)")
                 .accessibilityLabel("Stop response")
             }
@@ -818,11 +961,16 @@ private struct ComposerView: View {
             Button {
                 send()
             } label: {
-                Image(systemName: model.isStreaming ? "text.badge.plus" : "arrow.up.circle.fill")
-                    .font(.system(size: 22))
+                ZStack {
+                    Circle()
+                        .fill(canSend ? Brand.bronze : Color.secondary.opacity(0.18))
+                        .frame(width: 26, height: 26)
+                    Image(systemName: model.isStreaming ? "text.badge.plus" : "arrow.up")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(canSend ? Color.white : Color.secondary)
+                }
             }
-            .buttonStyle(.borderless)
-            .foregroundStyle(canSend ? Brand.bronze : Color.secondary)
+            .buttonStyle(.plain)
             .disabled(!canSend)
             .help(model.isStreaming ? "Queue message (Return)" : "Send (Return)")
             .accessibilityLabel(model.isStreaming ? "Queue message" : "Send message")
@@ -966,7 +1114,10 @@ private struct TaskView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 22) {
                     if session.messages.isEmpty {
-                        EmptyTask()
+                        EmptyTask { suggestion in
+                            draft = suggestion
+                            composerFocused.wrappedValue = true
+                        }
                     }
                     ForEach(visibleMessages) { message in
                         MessageRow(
@@ -1019,10 +1170,78 @@ private struct MessageRow: View {
     @State private var hovering = false
 
     var body: some View {
-        if message.role == .tool {
-            ToolCard(message: message)
-        } else {
-            VStack(alignment: .leading, spacing: 6) {
+        Group {
+            if message.role == .tool {
+                ToolCard(message: message)
+            } else if message.role == .user {
+                userRow
+            } else {
+                assistantRow
+            }
+        }
+        .onHover { hovering = $0 }
+        .contextMenu {
+            if let onEdit {
+                Button("Edit and Resend…") { onEdit() }
+            }
+            if let onRetry {
+                Button("Retry This Message") { onRetry() }
+            }
+            if let onFork {
+                Button("Fork From Here") { onFork() }
+            }
+            if !message.text.isEmpty {
+                Button("Copy") { copy() }
+            }
+        }
+    }
+
+    private var userRow: some View {
+        HStack(alignment: .top, spacing: 0) {
+            Spacer(minLength: 70)
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 6) {
+                    if hovering, !message.text.isEmpty {
+                        Button {
+                            copy()
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 10))
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.tertiary)
+                        .help("Copy")
+                        .accessibilityLabel("Copy message")
+                    }
+                    Text("You")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                messageText
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 9)
+                    .background(
+                        Brand.bronze.opacity(0.14),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    )
+                attachments(alignment: .trailing)
+            }
+        }
+    }
+
+    private var assistantRow: some View {
+        HStack(alignment: .top, spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Brand.bronze.opacity(0.12))
+                Image(systemName: "sparkles")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Brand.bronze)
+            }
+            .frame(width: 26, height: 26)
+            .padding(.top, 1)
+
+            VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(roleTitle)
                         .font(.caption.weight(.semibold))
@@ -1039,15 +1258,15 @@ private struct MessageRow: View {
                             .foregroundStyle(.tertiary)
                     }
                     Spacer()
-                    if !message.text.isEmpty {
+                    if hovering, !message.text.isEmpty {
                         Button {
                             copy()
                         } label: {
                             Image(systemName: "doc.on.doc")
+                                .font(.system(size: 10))
                         }
                         .buttonStyle(.borderless)
-                        .foregroundStyle(.secondary)
-                        .opacity(hovering ? 1 : 0)
+                        .foregroundStyle(.tertiary)
                         .help("Copy")
                         .accessibilityLabel("Copy message")
                     }
@@ -1061,35 +1280,28 @@ private struct MessageRow: View {
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    Text(attributedText)
-                        .font(.system(size: settings.transcriptFontSize))
-                        .lineSpacing(2)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    messageText
                 }
 
-                if !message.attachments.isEmpty {
-                    HStack(spacing: 6) {
-                        ForEach(message.attachments, id: \.self) { path in
-                            AttachmentPill(url: URL(fileURLWithPath: path))
-                        }
-                    }
-                }
+                attachments(alignment: .leading)
             }
-            .contentShape(Rectangle())
-            .onHover { hovering = $0 }
-            .contextMenu {
-                if let onEdit {
-                    Button("Edit and Resend…") { onEdit() }
-                }
-                if let onRetry {
-                    Button("Retry This Message") { onRetry() }
-                }
-                if let onFork {
-                    Button("Fork From Here") { onFork() }
-                }
-                if !message.text.isEmpty {
-                    Button("Copy") { copy() }
+        }
+    }
+
+    private var messageText: some View {
+        Text(attributedText)
+            .font(.system(size: settings.transcriptFontSize))
+            .lineSpacing(2.5)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func attachments(alignment: HorizontalAlignment) -> some View {
+        if !message.attachments.isEmpty {
+            HStack(spacing: 6) {
+                ForEach(message.attachments, id: \.self) { path in
+                    AttachmentPill(url: URL(fileURLWithPath: path))
                 }
             }
         }
@@ -1117,15 +1329,21 @@ private struct ToolCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 7) {
+            HStack(spacing: 8) {
                 Image(systemName: symbol)
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 Text(message.toolName ?? "Tool")
-                    .font(.callout.weight(.medium))
+                    .font(.callout.weight(.semibold))
                 Spacer()
                 Label(statusTitle, systemImage: statusSymbol)
-                    .font(.caption)
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(statusColor)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(statusColor.opacity(0.12), in: Capsule())
             }
 
             if let path = message.attachmentPath {
@@ -1139,7 +1357,9 @@ private struct ToolCard: View {
                         .lineSpacing(1)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 6)
+                        .padding(8)
+                        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .padding(.top, 4)
                 } label: {
                     Text(expanded ? "Hide output" : "Show output")
                         .font(.caption)
@@ -1147,15 +1367,17 @@ private struct ToolCard: View {
                 }
             }
         }
-        .padding(10)
+        .padding(11)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.8), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(message.toolName ?? "Tool") \(statusTitle)")
     }
 
     private var status: ToolStatus { message.toolStatus ?? .succeeded }
@@ -1240,9 +1462,47 @@ private struct AttachmentPreview: View {
 }
 
 private struct EmptyTask: View {
+    @EnvironmentObject private var model: AppModel
+    let onSuggestion: (String) -> Void
+
+    private struct Suggestion: Identifiable {
+        let id = UUID()
+        let symbol: String
+        let title: String
+        let detail: String
+        let prompt: String
+    }
+
+    private let suggestions = [
+        Suggestion(
+            symbol: "sparkles",
+            title: "Explore the codebase",
+            detail: "Map the architecture, entry points, and key files",
+            prompt: "Explore this repository and explain its architecture, entry points, and the most important files."
+        ),
+        Suggestion(
+            symbol: "ladybug",
+            title: "Fix a failing test",
+            detail: "Run the tests, find the failure, and patch it",
+            prompt: "Run the test suite, find the first failure, fix it, and rerun the tests."
+        ),
+        Suggestion(
+            symbol: "arrow.triangle.pull",
+            title: "Review my changes",
+            detail: "Read the diff and flag bugs and missing tests",
+            prompt: "Review my uncommitted changes for bugs, regressions, and missing tests."
+        ),
+        Suggestion(
+            symbol: "wand.and.stars",
+            title: "Automate a workflow",
+            detail: "Use shell, files, browser, and MCP tools",
+            prompt: "Look at this project and propose one workflow worth automating, then implement it."
+        ),
+    ]
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 26) {
+            VStack(alignment: .leading, spacing: 12) {
                 Group {
                     if let icon = Brand.icon {
                         Image(nsImage: icon)
@@ -1253,23 +1513,96 @@ private struct EmptyTask: View {
                             .foregroundStyle(Brand.bronze)
                     }
                 }
-                .frame(width: 40, height: 40)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Talos")
-                        .font(.title3.weight(.semibold))
-                    Text("Local and hosted models, one workspace")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                .frame(width: 52, height: 52)
+
+                Text("What should we build?")
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    .tracking(-0.4)
+
+                Text("Talos gives any model real tools on this Mac: shell, a persistent terminal, files, patches, browser, LSP, MCP, subagents, and the desktop.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 560, alignment: .leading)
+
+                HStack(spacing: 6) {
+                    capability("terminal")
+                    capability("folder")
+                    capability("globe")
+                    capability("point.3.connected.trianglepath.dotted")
+                    capability("person.2")
+                    Spacer()
+                }
+                .padding(.top, 2)
+            }
+
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
+                spacing: 12
+            ) {
+                ForEach(suggestions) { suggestion in
+                    Button {
+                        onSuggestion(suggestion.prompt)
+                    } label: {
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: suggestion.symbol)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Brand.bronze)
+                                .frame(width: 30, height: 30)
+                                .background(Brand.bronze.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(suggestion.title)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                Text(suggestion.detail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 1)
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(suggestion.title). \(suggestion.detail)")
                 }
             }
-            Text("Choose a model below, then ask a question or describe what you want to build. Talos can run shell commands, edit files, search the web, and use the desktop with your approval.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 620)
+
+            HStack(spacing: 8) {
+                Label(model.currentProject?.name ?? "Workspace", systemImage: "folder")
+                Text("·")
+                Text(model.choice.display)
+                Text("·")
+                Text("⌘N new task · / for commands")
+            }
+            .font(.caption)
+            .foregroundStyle(.tertiary)
+            .lineLimit(1)
         }
-        .frame(maxWidth: 560, alignment: .leading)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 36)
+        .frame(maxWidth: 680, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, 44)
+        .padding(.bottom, 20)
+    }
+
+    private func capability(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundStyle(.secondary)
+            .frame(width: 22, height: 20)
+            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
 }
 
