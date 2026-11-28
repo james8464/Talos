@@ -90,9 +90,11 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 ## Not yet
 
-No explicitly tracked feature gaps remain in this list. This does not prove
-absolute parity with every Codex/Claude Code/Cursor surface, only that each
-feature previously tracked here is now implemented.
+No explicitly tracked Codex feature gaps remain in this list. This does not
+prove absolute parity with every Codex/Claude Code/Cursor surface, only that
+each feature previously tracked here is now implemented. See
+[`PARITY_MATRIX.md`](PARITY_MATRIX.md) for the broader cross-tool audit and the
+remaining editor, cloud, team, and platform deltas.
 
 
 The remaining list is intentionally explicit. Talos labels unimplemented tools

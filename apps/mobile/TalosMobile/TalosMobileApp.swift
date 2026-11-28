@@ -61,14 +61,17 @@ struct MobileRootView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
+                        .accessibilityIdentifier("daemonURLField")
                     SecureField("Remote token", text: $token)
                         .textInputAutocapitalization(.never)
+                        .accessibilityIdentifier("daemonTokenField")
                 }
 
                 Section {
                     Button(connecting ? "Connecting…" : "Connect") {
                         connect()
                     }
+                    .accessibilityIdentifier("connectButton")
                     .disabled(connecting || server.isEmpty || token.isEmpty)
                 } footer: {
                     Text("Run TalosRemoteDaemon on the Mac, then open this app on the same network. The daemon token is separate from the Talos app-server token.")
@@ -112,6 +115,7 @@ struct MobileRootView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .accessibilityIdentifier("modelLabel")
                     Button {
                         clientDisconnect()
                     } label: {
@@ -155,6 +159,7 @@ struct MobileRootView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier("newSessionButton")
                 }
             }
             .task(id: pollingKey) {
@@ -239,10 +244,12 @@ struct MobileRootView: View {
                 Button("Deny", role: .destructive) {
                     resolve(approval, decision: "deny", client: client)
                 }
+                .accessibilityIdentifier("denyButton")
                 Button("Allow") {
                     resolve(approval, decision: "allow", client: client)
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("allowButton")
             }
         }
         .padding(12)
@@ -256,6 +263,7 @@ struct MobileRootView: View {
         VStack(spacing: 8) {
             TextField("Message Talos…", text: $prompt, axis: .vertical)
                 .lineLimit(1...5)
+                .accessibilityIdentifier("promptField")
                 .padding(10)
                 .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
             HStack {
@@ -263,11 +271,13 @@ struct MobileRootView: View {
                     Button("Stop", role: .destructive) {
                         stop(client)
                     }
+                    .accessibilityIdentifier("stopButton")
                 }
                 Spacer()
                 Button("Send") {
                     send(client)
                 }
+                .accessibilityIdentifier("sendButton")
                 .buttonStyle(.borderedProminent)
                 .disabled(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isStreaming || selectedID == nil)
             }

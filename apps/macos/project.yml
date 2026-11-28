@@ -51,6 +51,21 @@ targets:
         CODE_SIGNING_REQUIRED: NO
         SWIFT_EMIT_LOC_STRINGS: YES
 
+  TalosMobileUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: ../mobile/TalosMobileUITests
+    dependencies:
+      - target: TalosMobile
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.talos.mobile.uitests
+        TEST_TARGET_NAME: TalosMobile
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
   TalosRemoteDaemon:
     type: tool
     platform: macOS
@@ -92,6 +107,11 @@ schemes:
     build:
       targets:
         TalosMobile: all
+        TalosMobileUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - TalosMobileUITests
     run:
       config: Debug
   Talos:
