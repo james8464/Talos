@@ -3038,6 +3038,24 @@ extension AppModel: AppServerHost {
         return true
     }
 
+    func auditDocument() -> [String: Any] {
+        AuditExport.document(
+            sessions: sessions,
+            usage: usage.records,
+            hooks: hooks.log,
+            workspace: projectURL.path,
+            model: choice.display,
+            approvalPolicy: settings.approvalPolicy.rawValue,
+            sandbox: settings.sandboxMode.rawValue,
+            network: settings.networkAccess,
+            managedPolicy: settings.managed != nil
+        )
+    }
+
+    func appServerAuditLog() -> [String: Any] {
+        auditDocument()
+    }
+
     func appServerInfo() -> [String: Any] {
         [
             "server": "talos",

@@ -20,6 +20,7 @@ struct Options {
     var session: String?
     var prompt: String?
     var timeout: Double = 120
+    var output: String?
     var positionals: [String] = []
 
     mutating func parse(_ arguments: [String]) throws {
@@ -47,6 +48,10 @@ struct Options {
                 index += 1
                 guard index < arguments.count else { throw CLIError(message: "--prompt requires a value.") }
                 prompt = arguments[index]
+            case "--output", "-o":
+                index += 1
+                guard index < arguments.count else { throw CLIError(message: "--output requires a path.") }
+                output = arguments[index]
             case "--timeout":
                 index += 1
                 guard index < arguments.count, let value = Double(arguments[index]), value > 0 else {
@@ -271,6 +276,19 @@ struct TalosCLI {
             let result = try await client.call("session.cancel", ["sessionId": id])
             let cancelled = (result as? [String: Any])?["cancelled"] as? Bool ?? false
             print(options.json ? "{\"cancelled\":\(cancelled)}" : "cancelled: \(cancelled)")
+        case "audit", "export-audit":
+            let document = try await client.call("audit.export")
+            let data = try JSONSerialization.data(
+                withJSONObject: document,
+                options: [.prettyPrinted, .sortedKeys]
+            )
+            if let path = options.output {
+                let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                try data.write(to: url)
+                print("Wrote audit log to \(url.path)")
+            } else {
+                print(String(decoding: data, as: UTF8.self))
+            }
         case "approvals", "approval-list":
             let result = try await client.call("approval.pending")
             if options.json {
@@ -605,6 +623,7 @@ struct TalosCLI {
           send <sessionID> <text>     Send a prompt and stream the reply
           chat [sessionID]            Interactive chat; creates a session if needed
           stop <sessionID>            Cancel the active run
+          audit [--output FILE]       Export sessions, usage, policy, and hook audit data
           approvals                   Show the pending approval, if any
           approve <approvalID>        Allow a pending approval
           deny <approvalID>           Deny a pending approval
@@ -619,6 +638,7 @@ struct TalosCLI {
           --yes            Auto-allow approval requests
           --deny           Deny with the approve command
           --no-stream      Poll for the final reply instead of using SSE
+          --output FILE    Write audit JSON to a file instead of stdout
           --timeout SEC    Request timeout (default 120)
 
         EXIT CODES

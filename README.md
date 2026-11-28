@@ -41,6 +41,8 @@ model that produced them.
   lock model, safety, hooks, and MCP settings
 - Event hooks for prompts, tools, and sessions, with command output, blocking,
   added context, and explicit trust confirmation
+- Audit log export as JSON with sessions, token usage, policy, and hook
+  activity, from Settings → Usage or the `talos audit` CLI command
 - Approval prompts with a parsed multi-file patch preview before edits are
   applied, per-task “always allow”, sandbox modes, network control
 - Message queueing while a response is streaming, attachments, inline

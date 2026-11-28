@@ -66,7 +66,7 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | SSO/OIDC and SCIM | ✅ | ✅ | ✅ | ❌ | No identity-provider integration |
 | Team admin, billing, quotas | ✅ | ✅ | ✅ | ❌ | Single-user local app |
 | Cloud sync across devices | ✅ | ✅ | ✅ | ❌ | Local storage only |
-| Central audit export | ✅ | ✅ | ✅ | 🟡 | Local history/hook logs; no export/retention policy |
+| Central audit export | ✅ | ✅ | ✅ | ✅ | JSON export of sessions, token usage, policy, and hook activity from Settings → Usage or `talos audit`; usage is pruned at 365 days and the hook log is capped at 40 entries; no vendor-hosted collection |
 | Auto-update and notarized distribution | ✅ | ✅ | ✅ | ❌ | Development build only |
 | Windows and Linux | ✅ | ✅ | ✅ | ❌ | macOS-only app |
 | Accessibility of the client UI | ✅ | ✅ | ✅ | 🟡 | Basic labels; no formal WCAG audit |
@@ -93,6 +93,9 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
   approval sheet as parsed files, hunks, and colored additions/removals, then
   allowed through the app server; both files changed and `git diff --stat`
   reported `2 files changed, 2 insertions(+), 1 deletion(-)`.
+- **Audit export** — `talos audit` produced `talos.audit.v1` JSON with 35
+  sessions, 55 usage records, policy state, and hook activity; the same document
+  backs the Settings → Usage export button.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   The largest remaining deltas are IDE/LSP/editor integration, PR review
   workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and

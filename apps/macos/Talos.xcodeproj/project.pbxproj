@@ -33,6 +33,7 @@
 		5F0452CA07207E579213E584 /* LSPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761A8AA8BA11DD8257D24497 /* LSPService.swift */; };
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		6CB95B1C0F86AD5D28BFE384 /* TalosCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA96C9B0EC118A88C99EE282 /* TalosCLI.swift */; };
+		701BC29FBF7EF758BF5205B5 /* AuditExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB6B7E92BE795429BBED743 /* AuditExport.swift */; };
 		72313F77775C9A0EB11FCCE6 /* Git.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5952B2988ACA2B10007C9244 /* Git.swift */; };
 		7303483ABDE8FC03103598CA /* ConversationBranching.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85CFBCEEBB16E2023311980 /* ConversationBranching.swift */; };
 		737E97943AA6FFC01F40B5B5 /* PatchPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B464E9E7EAD788D3F2EF190F /* PatchPreview.swift */; };
@@ -142,6 +143,7 @@
 		B464E9E7EAD788D3F2EF190F /* PatchPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchPreview.swift; sourceTree = "<group>"; };
 		BD0D8CB4E3107DD1D9D04F0C /* Talos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Talos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDE40BA2F2E62D3115E531DD /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
+		BEB6B7E92BE795429BBED743 /* AuditExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditExport.swift; sourceTree = "<group>"; };
 		C09A4D0139081FED1D948312 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		C0DA27C786B558AC4F245F39 /* Brand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brand.swift; sourceTree = "<group>"; };
 		C74B895D153BF961B0B8100F /* AppServerSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServerSettings.swift; sourceTree = "<group>"; };
@@ -197,6 +199,7 @@
 				C09A4D0139081FED1D948312 /* AppModel.swift */,
 				6331618A52B825AABC1DC5EC /* AppServer.swift */,
 				C74B895D153BF961B0B8100F /* AppServerSettings.swift */,
+				BEB6B7E92BE795429BBED743 /* AuditExport.swift */,
 				F33D42E730AA43902BDFAA1A /* AutomationSettings.swift */,
 				C0DA27C786B558AC4F245F39 /* Brand.swift */,
 				E7B85C1FB17725B76F534C9F /* Browser.swift */,
@@ -543,6 +546,7 @@
 				2D8A0471734DB5FDB9BC3292 /* AppModel.swift in Sources */,
 				8AD2CEA09FDDC0D80A311738 /* AppServer.swift in Sources */,
 				8CA722B8374500133A8A585E /* AppServerSettings.swift in Sources */,
+				701BC29FBF7EF758BF5205B5 /* AuditExport.swift in Sources */,
 				988C3C896907F0AFC6582F39 /* AutomationSettings.swift in Sources */,
 				D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */,
 				15572E4AD7A94FCEFEF84540 /* Browser.swift in Sources */,

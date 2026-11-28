@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 import CoreImage
 import CoreImage.CIFilterBuiltins
 
@@ -1297,6 +1298,8 @@ private struct AppearanceSettingsView: View {
 
 private struct UsageSettingsView: View {
     @EnvironmentObject private var usage: UsageStore
+    @EnvironmentObject private var model: AppModel
+    @State private var exportNotice: String?
 
     var body: some View {
         Form {
@@ -1344,6 +1347,22 @@ private struct UsageSettingsView: View {
                 }
             }
 
+            Section("Audit") {
+                Text("Export sessions, token usage, policy, and hook activity as JSON.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Button("Export Audit Log…") { exportAudit() }
+                    if let exportNotice {
+                        Text(exportNotice)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+            }
+
             Section {
                 Button("Clear Usage History", role: .destructive) {
                     usage.clear()
@@ -1352,6 +1371,23 @@ private struct UsageSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private func exportAudit() {
+        let panel = NSSavePanel()
+        let stamp = DateFormatter()
+        stamp.dateFormat = "yyyyMMdd-HHmm"
+        panel.nameFieldStringValue = "talos-audit-\(stamp.string(from: Date())).json"
+        panel.allowedContentTypes = [.json]
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let data = try AuditExport.data(model.auditDocument())
+            try data.write(to: url, options: .atomic)
+            exportNotice = "Saved \(url.lastPathComponent)"
+        } catch {
+            exportNotice = "Export failed: \(error.localizedDescription)"
+        }
     }
 
     private func metric(_ title: String, _ value: Int) -> some View {

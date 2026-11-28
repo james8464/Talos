@@ -45,6 +45,7 @@ protocol AppServerHost: AnyObject {
     func appServerEditMessage(sessionID: UUID, messageID: UUID, text: String) async -> Result<UUID, Error>
     func appServerForkMessage(sessionID: UUID, messageID: UUID) -> Result<UUID, Error>
     func appServerInfo() -> [String: Any]
+    func appServerAuditLog() -> [String: Any]
 }
 
 enum AppServerError: LocalizedError {
@@ -352,6 +353,8 @@ final class AppServer: ObservableObject {
             case .failure(let error):
                 return (nil, error.localizedDescription)
             }
+        case "audit.export":
+            return (host.appServerAuditLog(), nil)
         case "approval.resolve":
             guard let raw = params["approvalId"] as? String,
                   let id = UUID(uuidString: raw),

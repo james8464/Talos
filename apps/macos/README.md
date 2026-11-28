@@ -29,6 +29,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/GitHubService.swift` and `GitHubPanel.swift` — pull request creation,
   open-PR lookup, inline review comments, and review submission
 - `Talos/PatchPreview.swift` — parsed per-file diff preview for `apply_patch`
+- `Talos/AuditExport.swift` — JSON audit document for sessions, usage, policy, and hooks
 - `Talos/LSPService.swift` and `DiagnosticsPanel.swift` — language-server
   JSON-RPC client, diagnostics, symbols, code actions, and formatting
 - `CLI/TalosCLI.swift` — headless `talos` client for the app server
@@ -126,6 +127,7 @@ talos sessions
 talos chat --title "Fix the failing test"
 talos send <session-id> "Summarize the diff" --yes
 talos stop <session-id>
+talos audit --output audit.json
 talos approvals
 talos approve <approval-id>
 ```
