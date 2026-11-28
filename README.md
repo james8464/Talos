@@ -41,7 +41,8 @@ model that produced them.
   extracted text plus rendered pages, and a per-model vision override for
   uncatalogued models
 - Context-window accounting with exact cl100k/o200k tokenizers for supported
-  OpenAI models, automatic and manual conversation compaction
+  OpenAI models plus Anthropic, Gemini, and Ollama provider counters,
+  automatic and manual conversation compaction
 - Token usage history with a 12-week heatmap and per-model totals
 - Slash commands including `/new`, `/clear`, `/compact`, `/stop`, `/retry`,
   `/fork`, `/archive`, `/rename`, `/model`, `/queue`, `/context`, `/status`,

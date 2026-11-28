@@ -251,6 +251,13 @@ private struct ModelsSettingsView: View {
                 LabeledContent("Model", value: model.choice.display)
                 LabeledContent("Reasoning", value: model.reasoningTitle)
                 LabeledContent("Vision", value: model.modelCapabilities.supportsVision ? "Images" : "Text only")
+                Toggle("Use provider token counters", isOn: $settings.exactProviderTokenCounting)
+                    .onChange(of: settings.exactProviderTokenCounting) {
+                        Task { await model.refreshCapabilities() }
+                    }
+                Text("Anthropic count_tokens, Gemini countTokens, and Ollama prompt_eval give exact context counts for non-BPE models.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Picker("Vision override", selection: Binding(
                     get: { settings.visionOverride(for: model.choice) },
                     set: { value in

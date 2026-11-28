@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Combine
+import CryptoKit
 
 struct ApprovalRequest: Identifiable {
     let id = UUID()
@@ -27,7 +28,13 @@ struct ContextUsage {
 @MainActor
 final class AppModel: ObservableObject {
     @Published var sessions: [Session] = []
-    @Published var selectedID: UUID?
+    @Published var selectedID: UUID? {
+        didSet {
+            if oldValue != selectedID {
+                scheduleProviderContextCount()
+            }
+        }
+    }
     @Published var choices: [ModelChoice] = []
     @Published var localModels: [LocalModel] = []
     @Published var choice = ModelChoice(provider: .local, id: Provider.local.defaultModel)
@@ -80,6 +87,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var cloudWorkerStatus = "Off"
     @Published private(set) var cloudEndpoint: String?
     @Published private(set) var activeRunSessionID: UUID?
+    @Published private(set) var providerContextTokens: Int?
+    @Published private(set) var providerContextLabel: String?
+    private var providerContextKey: String?
+    private var providerContextTask: Task<Void, Never>?
     @Published var showWorktreeSheet = false
 
     let settings = SettingsStore()
@@ -768,16 +779,105 @@ final class AppModel: ObservableObject {
         guard let session = selected else {
             return ContextUsage(used: 0, limit: contextLimit)
         }
-        let system = ChatMessage(role: .system, text: systemPrompt())
-        let messages = [system] + session.messages.filter {
-            $0.role != .system && !($0.role == .assistant && $0.text.isEmpty)
-        }
-        let used = exactTokenCount(messages) ?? TokenEstimator.estimate(messages)
+        let messages = currentContextMessages()
+        let providerCount = providerContextKey == contextFingerprint(messages)
+            ? providerContextTokens
+            : nil
+        let used = providerCount
+            ?? exactTokenCount(messages)
+            ?? TokenEstimator.estimate(messages)
         return ContextUsage(used: used, limit: contextLimit)
     }
 
     var tokenizerLabel: String {
-        TokenCounter.label(provider: choice.provider.rawValue, model: choice.id)
+        if let provider = providerTokenProvider {
+            let key = contextFingerprint(currentContextMessages())
+            if providerContextKey == key, let label = providerContextLabel {
+                return label
+            }
+            return provider.method
+        }
+        return TokenCounter.label(provider: choice.provider.rawValue, model: choice.id)
+    }
+
+    private var providerTokenProvider: TokenCounterProvider? {
+        switch choice.provider {
+        case .anthropic: return .anthropic
+        case .gemini: return .gemini
+        case .local: return .ollama
+        default: return nil
+        }
+    }
+
+    private func currentContextMessages() -> [ChatMessage] {
+        guard let session = selected else { return [] }
+        let system = ChatMessage(role: .system, text: systemPrompt())
+        return [system] + session.messages.filter {
+            $0.role != .system && !($0.role == .assistant && $0.text.isEmpty)
+        }
+    }
+
+    private func contextFingerprint(_ messages: [ChatMessage]) -> String {
+        var hasher = SHA256()
+        hasher.update(data: Data("\(choice.provider.rawValue)|\(choice.id)|".utf8))
+        for message in messages {
+            hasher.update(data: Data(
+                "\(message.role.rawValue)|\(message.text)|\(message.attachments.joined(separator: ","))".utf8
+            ))
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    func scheduleProviderContextCount() {
+        providerContextTask?.cancel()
+        guard settings.exactProviderTokenCounting,
+              let provider = providerTokenProvider else {
+            providerContextTokens = nil
+            providerContextLabel = nil
+            providerContextKey = nil
+            return
+        }
+        let messages = currentContextMessages()
+        guard !messages.isEmpty,
+              messages.allSatisfy({ $0.attachments.isEmpty && $0.attachmentPath == nil }) else {
+            providerContextTokens = nil
+            providerContextLabel = nil
+            providerContextKey = nil
+            return
+        }
+        let key = contextFingerprint(messages)
+        if providerContextKey == key, providerContextTokens != nil { return }
+
+        let baseURL: String
+        let apiKey: String
+        switch provider {
+        case .anthropic:
+            baseURL = settings.anthropicBase
+            apiKey = settings.key(for: .anthropic) ?? ""
+        case .gemini:
+            baseURL = settings.geminiBase
+            apiKey = settings.key(for: .gemini) ?? ""
+        case .ollama:
+            baseURL = settings.localURL
+            apiKey = ""
+        }
+        let model = choice.id
+        let targetChoice = choice
+        providerContextTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard let self, !Task.isCancelled else { return }
+            let result = await ProviderTokenCounter.count(
+                messages: messages,
+                provider: provider,
+                model: model,
+                baseURL: baseURL,
+                apiKey: apiKey
+            )
+            guard !Task.isCancelled, self.choice == targetChoice else { return }
+            self.providerContextKey = key
+            self.providerContextTokens = result?.count
+            self.providerContextLabel = result?.method
+        }
     }
 
     private func exactTokenCount(_ messages: [ChatMessage]) -> Int? {
@@ -1178,6 +1278,7 @@ final class AppModel: ObservableObject {
     }
 
     func refreshCapabilities() async {
+        defer { scheduleProviderContextCount() }
         let target = choice
         var info: OllamaModelInfo?
         if target.provider == .local {
@@ -1665,6 +1766,7 @@ final class AppModel: ObservableObject {
             "Skills: \(skills.enabled.count)",
             "MCP tools: \(mcpTools.count)",
             "Token counting: \(tokenizerLabel)",
+            providerContextTokens.map { "Provider count: \($0.formatted()) tokens" } ?? "Provider count: pending",
         ]
         if let fraction = usage.fraction {
             lines.append("Window used: \(Int(fraction * 100))%")
@@ -1951,6 +2053,7 @@ final class AppModel: ObservableObject {
                     sessionID: sessionID
                 )
             }
+            scheduleProviderContextCount()
             Task { await refreshGit() }
         }
 
@@ -2759,6 +2862,8 @@ extension AppModel: AppServerHost {
             "sessionId": activeRunSessionID?.uuidString ?? NSNull(),
             "approvalPolicy": settings.approvalPolicy.rawValue,
             "sandbox": settings.sandboxMode.rawValue,
+            "tokenCounting": tokenizerLabel,
+            "contextTokens": providerContextTokens ?? NSNull(),
         ]
     }
 }

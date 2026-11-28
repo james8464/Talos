@@ -72,6 +72,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Computer use | native CGEvent/AppKit actions; browser control offers accessibility/OCR and optional Chrome CDP rather than a packaged browser extension |
 | Images | attachments and tool screenshots are sent as native image blocks to models identified as vision-capable |
 | Vision override | Per-model Automatic / Send images and PDF pages / Text only override persisted by provider and model; drives native image payloads even when metadata reports no vision. Verified with an uncatalogued local model receiving one image plus one rendered PDF page, and no images when disabled |
+| Provider token counting | Exact Anthropic `count_tokens`, Gemini `countTokens`, and Ollama `prompt_eval` context counts when no attachments are present; cached by a context fingerprint and preferred over local estimates. Anthropic and Ollama verified against live provider results; Gemini verified against its countTokens protocol fixture |
 | PDF input | PDF attachments are text-extracted for every model and rendered page-by-page for vision models (8 pages, 16-image cap); image-only PDFs work through page rendering |
 | Reasoning | provider-specific options only where the transport exposes them |
 | Usage | provider-reported where available, otherwise clearly marked estimated |
@@ -90,7 +91,6 @@ scope. “Not yet” is deliberately not exposed as a working control.
 These are Codex features Talos does not claim to have:
 
 - Remote-control daemon and native mobile client
-- Exact tokenization for Anthropic, Gemini, Ollama, and other non-BPE families
 - Automatic retry/edit/fork of individual messages
 
 The remaining list is intentionally explicit. Talos labels unimplemented tools
