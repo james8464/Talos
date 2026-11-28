@@ -24,7 +24,7 @@ work.
 | Context meter and compaction | ✅ | ✅ | ✅ | ✅ | Live meter, auto/manual compaction |
 | Session persistence and resume | ✅ | ✅ | ✅ | ✅ | JSON sessions, archive, fork, rename |
 | Retry/edit/fork individual messages | 🟡 | 🟡 | ✅ | ✅ | Persisted lineage, selected-message actions |
-| Image and PDF input | ✅ | ✅ | ✅ | ✅ | Native images and rendered PDF pages |
+| Image and PDF input | ✅ | ✅ | ✅ | ✅ | Native images and selectable PDF text extraction; scanned pages are not OCR’d or rendered by the PDF tool |
 | Uncatalogued vision models | 🟡 | 🟡 | 🟡 | ✅ | Per-model vision override |
 | **Editing and repo workflow** | | | | | |
 | Shell and PTY-like commands | ✅ | ✅ | ✅ | ✅ | Sandboxed `shell` for one-shot commands plus a persistent PTY-backed `terminal` tool (`run`, `send`, `read`, `interrupt`, `close`) that keeps working directory, environment, and shell state across calls, reports exit codes, and returns partial output on timeout |
@@ -35,7 +35,7 @@ work.
 | PR creation and review comments | ✅ | 🟡 | ✅ | ✅ | GitHub service reads `origin`, uses the `gh` CLI token or `GITHUB_TOKEN`, and supports draft PR creation, open-PR lookup, inline review comments, and review submit from the Changes panel; verified against live GitHub and a mock API |
 | LSP diagnostics and refactors | ❌ | ❌ | ✅ | ✅ | JSON-RPC client for `sourcekit-lsp`, `clangd`, and installed TypeScript/Python/Go/Rust/JSON servers: diagnostics, document symbols, code actions with workspace-edit application, and formatting; model tool plus a Diagnostics panel in Changes; verified live against sourcekit-lsp and clangd |
 | Inline autocomplete/Tab | ❌ | ❌ | ✅ | ➖ | Out of scope: Talos is a model client, not an editor |
-| Semantic codebase index | 🟡 | ❌ | ✅ | ✅ | `search_codebase` builds a cached on-device index with `NLEmbedding` sentence vectors plus lexical ranking; verified on a sample workspace and through a live model session |
+| Semantic codebase index | 🟡 | ❌ | ✅ | ✅ | `search_codebase` builds a cached on-device index with `NLEmbedding` word vectors plus IDF, file-level, path, basename, and declaration ranking; 20/20 authored and 15/15 held-out acceptable top-1 results on this repository |
 | Debugger integration | ❌ | ❌ | ✅ | ➖ | Out of scope: no embedded editor/debug adapter |
 | Multi-file apply preview | ✅ | ✅ | ✅ | ✅ | `apply_patch` approvals render a parsed per-file preview with hunks, +/− counts, new/deleted markers, and colored lines before anything is written; verified live on a two-file patch through the approval flow |
 | IDE extensions | ✅ | ✅ | ✅ (IDE) | ➖ | Out of scope: Talos ships as an app, CLI, daemon, and iOS client |
@@ -114,8 +114,15 @@ work.
 - **Semantic codebase search** — a clean sample workspace ranked the right file
   first for three conceptual queries, detected a newly added file as stale,
   rebuilt incrementally, and honored a path filter. A live model session queried
-  the real Talos workspace (886 chunks from 86 files) and received approval
-  related files.
+  the real Talos workspace (1,006 chunks from 97 files) and received approval
+  related files. A held-out 15-query set scored 15/15 acceptable top-1 and 12/15
+  primary-file top-1; the first run scored 10/15 and drove the ranking fixes
+  documented in `HELDOUT_EVAL.md`.
+- **Held-out parity scenarios** — four repository questions were run through
+  Talos and Codex CLI 0.171.0. Talos initially scored 3/4 because a model
+  switched to native DSML tool markup; after adding DSML/XML parsing, multi-call
+  execution, and schema-based name recovery, both agents scored 4/4. Claude Code
+  and Cursor CLIs were not installed, so this is not a three-tool benchmark.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   Every remaining ❌ is a deliberate product boundary; the app focuses on
   provider-agnostic tools, a local-first workflow, and a polished macOS client.

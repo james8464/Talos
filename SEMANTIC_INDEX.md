@@ -31,17 +31,29 @@ performance, fallback behavior, and limitations.
    scored:
 
    ```text
-   base  = 0.45 × cosine + 0.50 × lexical + 0.05 × path + 0.15 × basename
-   score = base × 0.80 for markdown/text docs
-           + 0.02 × min(matching chunks in the file, 5)
+   lexical = 0.75 × token coverage + 0.25 × IDF-weighted coverage
+   base    = 0.40 × cosine
+           + 0.35 × lexical
+           + 0.08 × file-level IDF coverage
+           + 0.05 × path coverage
+           + 0.12 × basename coverage
+           + 0.10 × declaration-name coverage
+   score   = base × 0.80 for markdown/text docs
    ```
 
    Lexical overlap uses lowercased, camel-case-split, stopped, stemmed tokens
-   with prefix matching. The document penalty keeps READMEs and audits from
-   outranking implementation files, the basename term rewards component names
-   such as `Keychain` or `SessionPersistence`, and the file-hit term rewards
-   files with several independently relevant chunks. The tool returns the
-   top-ranked chunks with paths, line ranges, scores, and text.
+   with prefix matching. IDF is computed per file, so rare identifiers such as
+   `Ed25519` or `ensureWriteAllowed` outweigh words that appear everywhere.
+   File-level coverage rewards a file whose terms are spread across several
+   chunks. Declaration coverage extracts `func`, `struct`, `class`, `enum`,
+   `actor`, `protocol`, `extension`, and `init` names. The document penalty
+   keeps READMEs and audits from outranking implementation files, and the
+   basename term rewards component names such as `Keychain` or
+   `SessionPersistence`.
+
+   Results are collapsed to one entry per file, using that file’s best-scoring
+   chunk, so the top N are N distinct files rather than N overlapping windows
+   of the same file. The tool returns paths, line ranges, scores, and text.
 7. **Invalidation.** Each search/status call re-enumerates candidates and
    compares file count, sizes, and modification times. Unchanged files are
    loaded from the disk cache and only changed/new files are re-embedded. The
@@ -93,35 +105,32 @@ Mac (`/usr/bin/time -l`):
 ## Evaluation
 
 `make semantic-eval` runs a fixed 20-query regression set over the Talos
-workspace (`apps/macos/Tools/SemanticEval`). The fixture directory is skipped by
-the index so it cannot rank itself.
+workspace (`apps/macos/Tools/SemanticEval`). `make semantic-heldout` runs 15
+queries written afterwards, without using them to choose weights. The fixture
+directory is skipped by the index so it cannot rank itself.
 
-Current word-embedding hybrid:
-
-```text
-TOP1: 20/20
-TOP3: 20/20
-MRR: 1.000
-```
-
-The previous sentence-vector approach, re-scored with the same ranking terms:
+Current results on the 97-file / 1,006-chunk Talos workspace:
 
 ```text
-TOP1: 19/20
-TOP3: 20/20
-MRR: 0.975
+authored 20-query set     TOP1 20/20 · TOP3 20/20 · MRR 1.000
+held-out 15-query set     acceptable TOP1 15/15 · primary 12/15 · TOP3 15/15 · MRR 1.000
 ```
+
+The first held-out run scored 10/15 acceptable and exposed duplicate file hits,
+flat token weighting, and missing declaration names. The fixes are described in
+`HELDOUT_EVAL.md`, together with the three remaining primary-file ambiguities.
 
 The queries and relevance sets are documented in
-`apps/macos/Tools/SemanticEval/README.md`. This is a regression set, not an
-independent benchmark; relevance sets include the primary UI/tooling file as
-well as the implementation file.
+`apps/macos/Tools/SemanticEval/README.md` and `HELDOUT_EVAL.md`. This is a
+regression set, not an independent benchmark; relevance sets include every file
+that implements a piece of the behaviour, and the held-out set reports the most
+specific file separately.
 
 ## Fallback behavior
 
-- If `NLEmbedding.sentenceEmbedding` is unavailable, status reports
-  `unavailable`, search returns “On-device sentence embeddings are unavailable.
-  Use search_files instead.”, and no index is built.
+- If `NLEmbedding.wordEmbedding(for: .english)` is unavailable, status reports
+  `unavailable`, search returns “On-device word embeddings are unavailable for
+  this language. Use search_files instead.”, and no index is built.
 - If no supported files are found, status reports 0 chunks and search returns
   “No semantic matches”.
 - Files that fail to read, are binary, are too large, or are not UTF-8 are

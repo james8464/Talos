@@ -61,7 +61,7 @@ struct SubagentEngine {
                 estimated: usage.estimated || used.estimated
             )
 
-            guard let parsed = ToolParser.extract(from: raw) else {
+            guard let parsed = ToolParser.extractAll(from: raw), !parsed.calls.isEmpty else {
                 return SubagentOutcome(
                     label: label,
                     task: task,
@@ -72,30 +72,33 @@ struct SubagentEngine {
                 )
             }
 
+            let names = parsed.calls.map(\.name).joined(separator: ", ")
             messages.append(ChatMessage(
                 role: .assistant,
-                text: parsed.cleaned.isEmpty ? "Calling \(parsed.call.name)." : parsed.cleaned
+                text: parsed.cleaned.isEmpty ? "Calling \(names)." : parsed.cleaned
             ))
-            let result: ToolResult
-            if parsed.call.name == "subagent" {
-                if let nestedRunner, depth < maxDepth {
-                    result = await nestedRunner(parsed.call, depth + 1)
+            for call in parsed.calls.prefix(8) {
+                let result: ToolResult
+                if call.name == "subagent" {
+                    if let nestedRunner, depth < maxDepth {
+                        result = await nestedRunner(call, depth + 1)
+                    } else {
+                        result = .fail("Nested subagents are blocked at the depth limit (depth \(depth), limit \(maxDepth)).")
+                    }
                 } else {
-                    result = .fail("Nested subagents are blocked at the depth limit (depth \(depth), limit \(maxDepth)).")
+                    result = await runner.run(call)
                 }
-            } else {
-                result = await runner.run(parsed.call)
+                steps.append("\(call.name): \(result.status.rawValue) — \(result.output.prefix(120))")
+                let clipped = result.output.count > 12_000
+                    ? String(result.output.prefix(12_000)) + "\n…"
+                    : result.output
+                messages.append(ChatMessage(
+                    role: .tool,
+                    text: "Tool result (\(call.name)):\n\(clipped)",
+                    toolName: call.name,
+                    toolStatus: result.status
+                ))
             }
-            steps.append("\(parsed.call.name): \(result.status.rawValue) — \(parsed.call.summary)")
-            let clipped = result.output.count > 12_000
-                ? String(result.output.prefix(12_000)) + "\n…"
-                : result.output
-            messages.append(ChatMessage(
-                role: .tool,
-                text: "Tool result (\(parsed.call.name)):\n\(clipped)",
-                toolName: parsed.call.name,
-                toolStatus: result.status
-            ))
         }
 
         return SubagentOutcome(

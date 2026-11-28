@@ -2306,53 +2306,56 @@ final class AppModel: ObservableObject {
                     sessionID: sessionID
                 )
                 finishMessage(sessionID, assistantID)
-                guard let parsed = ToolParser.extract(from: raw) else {
+                guard let parsed = ToolParser.extractAll(from: raw), !parsed.calls.isEmpty else {
                     break
                 }
                 setMessageText(sessionID, assistantID, parsed.cleaned)
 
-                let pre = await runHooks(.preToolUse, tool: parsed.call, sessionID: sessionID)
-                if pre.blocked {
-                    appendToolMessage(
-                        sessionID,
-                        call: parsed.call,
-                        result: .denied("Blocked by hook: \(pre.reason ?? "no reason given").")
-                    )
-                    continue
-                }
+                for call in parsed.calls.prefix(8) {
+                    if Task.isCancelled { return }
+                    let pre = await runHooks(.preToolUse, tool: call, sessionID: sessionID)
+                    if pre.blocked {
+                        appendToolMessage(
+                            sessionID,
+                            call: call,
+                            result: .denied("Blocked by hook: \(pre.reason ?? "no reason given").")
+                        )
+                        continue
+                    }
 
-                let approved = await requestApproval(for: parsed.call, sessionID: sessionID)
-                guard approved else {
-                    appendToolMessage(sessionID, call: parsed.call, result: .denied("Denied by the user."))
-                    continue
-                }
+                    let approved = await requestApproval(for: call, sessionID: sessionID)
+                    guard approved else {
+                        appendToolMessage(sessionID, call: call, result: .denied("Denied by the user."))
+                        continue
+                    }
 
-                var result = await executeTool(parsed.call, sessionID: sessionID)
-                if result.status == .failed {
-                    chronicleRecord(
-                        .toolFailed,
-                        summary: "\(parsed.call.name): \(result.output.prefix(160))",
+                    var result = await executeTool(call, sessionID: sessionID)
+                    if result.status == .failed {
+                        chronicleRecord(
+                            .toolFailed,
+                            summary: "\(call.name): \(result.output.prefix(160))",
+                            sessionID: sessionID
+                        )
+                    }
+                    let post = await runHooks(
+                        .postToolUse,
+                        tool: call,
+                        toolResult: result,
                         sessionID: sessionID
                     )
+                    let contexts = pre.contexts + post.contexts
+                    if !contexts.isEmpty {
+                        result = ToolResult(
+                            status: result.status,
+                            output: result.output + "\n\nHook context:\n" + contexts.joined(separator: "\n"),
+                            attachmentPath: result.attachmentPath
+                        )
+                    }
+                    if call.name.hasPrefix("mcp__"), result.status == .succeeded {
+                        await presentMCPApp(for: call.name)
+                    }
+                    appendToolMessage(sessionID, call: call, result: result)
                 }
-                let post = await runHooks(
-                    .postToolUse,
-                    tool: parsed.call,
-                    toolResult: result,
-                    sessionID: sessionID
-                )
-                let contexts = pre.contexts + post.contexts
-                if !contexts.isEmpty {
-                    result = ToolResult(
-                        status: result.status,
-                        output: result.output + "\n\nHook context:\n" + contexts.joined(separator: "\n"),
-                        attachmentPath: result.attachmentPath
-                    )
-                }
-                if parsed.call.name.hasPrefix("mcp__"), result.status == .succeeded {
-                    await presentMCPApp(for: parsed.call.name)
-                }
-                appendToolMessage(sessionID, call: parsed.call, result: result)
             } catch {
                 if !Task.isCancelled {
                     runFailed = true

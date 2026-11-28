@@ -14,19 +14,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate localization catalog
         run: make localization-check
+      - name: Check localization coverage
+        run: make localization-coverage
       - name: Build Talos
         run: xcodebuild -project apps/macos/Talos.xcodeproj -scheme Talos -configuration Debug -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO build
       - name: Evaluate semantic search
         run: make semantic-eval
-      - name: Validate localization catalog
-        run: make localization-check
+      - name: Evaluate held-out semantic search
+        run: make semantic-heldout
       - name: Build Talos CLI
         run: xcodebuild -project apps/macos/Talos.xcodeproj -scheme TalosCLI -configuration Debug -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO build
-      - name: Validate localization catalog
-        run: make localization-check
       - name: Build Talos Mobile
         run: xcodebuild -project apps/macos/Talos.xcodeproj -scheme TalosMobile -configuration Debug -sdk iphonesimulator -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO build
-      - name: Validate localization catalog
-        run: make localization-check
       - name: Build Talos Mobile tests
         run: xcodebuild build-for-testing -project apps/macos/Talos.xcodeproj -scheme TalosMobile -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath apps/macos/.build CODE_SIGNING_ALLOWED=NO

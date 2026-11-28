@@ -5260,6 +5260,1286 @@
           }
         }
       }
+    },
+    "App server port": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منفذ خادم التطبيق"
+          }
+        }
+      }
+    },
+    "Example": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مثال"
+          }
+        }
+      }
+    },
+    "Behavior": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السلوك"
+          }
+        }
+      }
+    },
+    "Trusted (run without confirmation)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "موثوق (يعمل دون تأكيد)"
+          }
+        }
+      }
+    },
+    "Dismiss suggestion": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجاهل الاقتراح"
+          }
+        }
+      }
+    },
+    "Ambient suggestions": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقتراحات السياق"
+          }
+        }
+      }
+    },
+    "Record local activity history": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تسجيل سجل النشاط المحلي"
+          }
+        }
+      }
+    },
+    "Generate ambient suggestions": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إنشاء اقتراحات سياقية"
+          }
+        }
+      }
+    },
+    "Chronicle stays on this Mac. It stores short activity summaries and rule-based suggestions only; nothing is sent to a server. Suggestions appear as a dismissible strip above the composer.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يبقى Chronicle على هذا الـ Mac. يخزّن ملخصات نشاط قصيرة واقتراحات قائمة على القواعد فقط؛ ولا يُرسل شيء إلى خادم. تظهر الاقتراحات شريطًا قابلًا للإغلاق أعلى محرّر الرسائل."
+          }
+        }
+      }
+    },
+    "Generate Suggestions Now": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إنشاء الاقتراحات الآن"
+          }
+        }
+      }
+    },
+    "Clear History": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسح السجل"
+          }
+        }
+      }
+    },
+    "Clear Suggestions": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسح الاقتراحات"
+          }
+        }
+      }
+    },
+    "Active suggestions": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاقتراحات النشطة"
+          }
+        }
+      }
+    },
+    "No active suggestions.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد اقتراحات نشطة."
+          }
+        }
+      }
+    },
+    "Dismiss": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجاهل"
+          }
+        }
+      }
+    },
+    "Recent activity": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النشاط الأخير"
+          }
+        }
+      }
+    },
+    "No events recorded yet.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تُسجّل أحداث بعد."
+          }
+        }
+      }
+    },
+    "Task server port": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منفذ خادم المهام"
+          }
+        }
+      }
+    },
+    "Cloud task prompt": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلب مهمة سحابية"
+          }
+        }
+      }
+    },
+    "No cloud tasks yet.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد مهام سحابية بعد."
+          }
+        }
+      }
+    },
+    "Choose a task in the sidebar, or start a new one.\nPress ⌘K to search tasks and commands.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر مهمة من الشريط الجانبي أو ابدأ مهمة جديدة.\nاضغط ⌘K للبحث في المهام والأوامر."
+          }
+        }
+      }
+    },
+    "New Task (⌘N)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مهمة جديدة (⌘N)"
+          }
+        }
+      }
+    },
+    "Search tasks and commands (⌘K)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البحث في المهام والأوامر (⌘K)"
+          }
+        }
+      }
+    },
+    "Stop (⌘.)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إيقاف (⌘.)"
+          }
+        }
+      }
+    },
+    "Show or hide details (⌘⌥I)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار التفاصيل أو إخفاؤها (⌘⌥I)"
+          }
+        }
+      }
+    },
+    "Request Failed": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فشل الطلب"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف"
+          }
+        }
+      }
+    },
+    "This removes the task and its messages. This cannot be undone.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يؤدي هذا إلى حذف المهمة ورسائلها. لا يمكن التراجع عن ذلك."
+          }
+        }
+      }
+    },
+    "Review working tree changes": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مراجعة تغييرات شجرة العمل"
+          }
+        }
+      }
+    },
+    "Rename…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة تسمية…"
+          }
+        }
+      }
+    },
+    "Fork": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفرّع"
+          }
+        }
+      }
+    },
+    "Archive": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أرشفة"
+          }
+        }
+      }
+    },
+    "Unarchive": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إلغاء الأرشفة"
+          }
+        }
+      }
+    },
+    "Open settings": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح الإعدادات"
+          }
+        }
+      }
+    },
+    "Keyboard shortcuts": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختصارات لوحة المفاتيح"
+          }
+        }
+      }
+    },
+    "Refresh models": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحديث النماذج"
+          }
+        }
+      }
+    },
+    "Search models": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البحث في النماذج"
+          }
+        }
+      }
+    },
+    "Start Ollama or add a provider key in Settings.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ Ollama أو أضف مفتاح مزوّد في الإعدادات."
+          }
+        }
+      }
+    },
+    "Provider and tool settings": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعدادات المزوّدين والأدوات"
+          }
+        }
+      }
+    },
+    "Queued": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في الانتظار"
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسح"
+          }
+        }
+      }
+    },
+    "Remove queued message": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة الرسالة المنتظرة"
+          }
+        }
+      }
+    },
+    "Remove attachment": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة المرفق"
+          }
+        }
+      }
+    },
+    "Edit and Resend…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعديل وإعادة إرسال…"
+          }
+        }
+      }
+    },
+    "Retry This Message": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة محاولة هذه الرسالة"
+          }
+        }
+      }
+    },
+    "Fork From Here": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التفرّع من هنا"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نسخ"
+          }
+        }
+      }
+    },
+    "edited branch": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فرع معدّل"
+          }
+        }
+      }
+    },
+    "retry branch": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فرع إعادة المحاولة"
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح"
+          }
+        }
+      }
+    },
+    "New Worktree": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شجرة عمل جديدة"
+          }
+        }
+      }
+    },
+    "Create an isolated checkout for this task without disturbing the current working tree.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنشئ نسخة معزولة لهذه المهمة دون المساس بشجرة العمل الحالية."
+          }
+        }
+      }
+    },
+    "Worktree name": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسم شجرة العمل"
+          }
+        }
+      }
+    },
+    "Edit and Resend": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعديل وإعادة إرسال"
+          }
+        }
+      }
+    },
+    "The selected message and everything after it will be replaced by a new branch.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ستُستبدل الرسالة المحددة وكل ما يليها بفرع جديد."
+          }
+        }
+      }
+    },
+    "Rename Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة تسمية المهمة"
+          }
+        }
+      }
+    },
+    "Task name": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسم المهمة"
+          }
+        }
+      }
+    },
+    "This tool can affect files or the desktop. Talos will run it only after you allow it.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قد تؤثر هذه الأداة في الملفات أو سطح المكتب. لن يشغّلها Talos إلا بعد إذنك."
+          }
+        }
+      }
+    },
+    "Deny": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفض"
+          }
+        }
+      }
+    },
+    "Allow Once": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السماح مرة واحدة"
+          }
+        }
+      }
+    },
+    "Always Allow for This Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السماح دائمًا لهذه المهمة"
+          }
+        }
+      }
+    },
+    "Patch preview": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معاينة الرقعة"
+          }
+        }
+      }
+    },
+    "Talos could not parse this patch into files. Review the summary above before allowing it.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر على Talos تحليل هذه الرقعة إلى ملفات. راجع الملخص أعلاه قبل السماح بها."
+          }
+        }
+      }
+    },
+    "new": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جديد"
+          }
+        }
+      }
+    },
+    "deleted": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محذوف"
+          }
+        }
+      }
+    },
+    "Binary file — contents are not shown.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملف ثنائي — لا يُعرض محتواه."
+          }
+        }
+      }
+    },
+    "Preview truncated; the full patch will be applied.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المعاينة مقتطعة؛ ستُطبّق الرقعة كاملة."
+          }
+        }
+      }
+    },
+    "Reviewing this action in a separate read-only context…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتم مراجعة هذا الإجراء في سياق قراءة فقط منفصل…"
+          }
+        }
+      }
+    },
+    "Automatic review is off.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المراجعة التلقائية متوقفة."
+          }
+        }
+      }
+    },
+    "No changed files to check.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد ملفات معدّلة للفحص."
+          }
+        }
+      }
+    },
+    "Servers: ": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخوادم: "
+          }
+        }
+      }
+    },
+    "Repository": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المستودع"
+          }
+        }
+      }
+    },
+    "Default base": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الفرع الأساسي الافتراضي"
+          }
+        }
+      }
+    },
+    "Authentication": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المصادقة"
+          }
+        }
+      }
+    },
+    "Run `gh auth login` or set GITHUB_TOKEN before creating pull requests.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شغّل `gh auth login` أو عيّن GITHUB_TOKEN قبل إنشاء طلبات السحب."
+          }
+        }
+      }
+    },
+    "GitHub API base": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أساس GitHub API"
+          }
+        }
+      }
+    },
+    "GitHub API base URL": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان أساس GitHub API"
+          }
+        }
+      }
+    },
+    "Base": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأساس"
+          }
+        }
+      }
+    },
+    "Sandboxed web view": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض ويب معزول"
+          }
+        }
+      }
+    },
+    "This app runs in an isolated web view. External links open in your browser.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعمل هذا التطبيق في عرض ويب معزول. تُفتح الروابط الخارجية في متصفحك."
+          }
+        }
+      }
+    },
+    "Sandboxed web view. External links open in your browser.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض ويب معزول. تُفتح الروابط الخارجية في متصفحك."
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إغلاق"
+          }
+        }
+      }
+    },
+    "App Failed to Load": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر تحميل التطبيق"
+          }
+        }
+      }
+    },
+    "This server asked for confirmation without a form.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلب هذا الخادم تأكيدًا دون نموذج."
+          }
+        }
+      }
+    },
+    "required": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مطلوب"
+          }
+        }
+      }
+    },
+    "The server receives only these values.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يتلقى الخادم سوى هذه القيم."
+          }
+        }
+      }
+    },
+    "Decline": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفض"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متابعة"
+          }
+        }
+      }
+    },
+    "This MCP server asked Talos to run a completion. It sees only the response, not your conversation or workspace.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلب خادم MCP هذا من Talos تنفيذ إكمال. لا يرى سوى الرد، لا محادثتك أو مساحة عملك."
+          }
+        }
+      }
+    },
+    "Allow for This Session": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السماح لهذه الجلسة"
+          }
+        }
+      }
+    },
+    "Show Talos": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار Talos"
+          }
+        }
+      }
+    },
+    "Open Talos": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح Talos"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإعدادات…"
+          }
+        }
+      }
+    },
+    "Quit": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إنهاء"
+          }
+        }
+      }
+    },
+    "This policy does not lock any values.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا تقفل هذه السياسة أي قيم."
+          }
+        }
+      }
+    },
+    "The project folder is empty.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجلد المشروع فارغ."
+          }
+        }
+      }
+    },
+    "Local server": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خادم محلي"
+          }
+        }
+      }
+    },
+    "Credential": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بيانات الاعتماد"
+          }
+        }
+      }
+    },
+    "Import from OpenCode": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استيراد من OpenCode"
+          }
+        }
+      }
+    },
+    "Reads your local OpenCode login.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يقرأ تسجيل دخول OpenCode المحلي."
+          }
+        }
+      }
+    },
+    "Get an API key": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الحصول على مفتاح API"
+          }
+        }
+      }
+    },
+    "Base URL": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان URL الأساسي"
+          }
+        }
+      }
+    },
+    "Discover Models": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتشاف النماذج"
+          }
+        }
+      }
+    },
+    "Found models": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النماذج المكتشفة"
+          }
+        }
+      }
+    },
+    "Recent Documents": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المستندات الأخيرة"
+          }
+        }
+      }
+    },
+    "Files you preview, open, or attach appear here.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تظهر هنا الملفات التي تعاينها أو تفتحها أو ترفقها."
+          }
+        }
+      }
+    },
+    "Remove from Recent": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة من الأخيرة"
+          }
+        }
+      }
+    },
+    "Start Ollama or add a provider key in Providers.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ Ollama أو أضف مفتاح مزوّد في المزوّدين."
+          }
+        }
+      }
+    },
+    "Reveal plugin folder": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار مجلد الإضافات"
+          }
+        }
+      }
+    },
+    "Catalog URL": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان URL للكتالوج"
+          }
+        }
+      }
+    },
+    "Ed25519 public key": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المفتاح العام Ed25519"
+          }
+        }
+      }
+    },
+    "Catalogs are local JSON files. Installing copies the plugin folder into Talos; updates replace it; removing deletes the installed copy.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الكتالوجات ملفات JSON محلية. يؤدي التثبيت إلى نسخ مجلد الإضافة إلى Talos؛ وتستبدله التحديثات؛ ويحذف الإزالة النسخة المثبّتة."
+          }
+        }
+      }
+    },
+    "Connected servers": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخوادم المتصلة"
+          }
+        }
+      }
+    },
+    "The managed policy controls this server list.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتحكم السياسة المُدارة في قائمة الخوادم هذه."
+          }
+        }
+      }
+    },
+    "This server set exposes no standalone resources.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا تعرض مجموعة الخوادم هذه موارد مستقلة."
+          }
+        }
+      }
+    },
+    "MCP server name": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسم خادم MCP"
+          }
+        }
+      }
+    },
+    "MCP HTTP URL": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان HTTP لخادم MCP"
+          }
+        }
+      }
+    },
+    "MCP command": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أمر MCP"
+          }
+        }
+      }
+    },
+    "MCP arguments": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وسائط MCP"
+          }
+        }
+      }
+    },
+    "Add server": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إضافة خادم"
+          }
+        }
+      }
+    },
+    "Talos supports stdio servers and Streamable HTTP MCP endpoints. Their tools are offered to every model, so connector-style servers behave like native tools.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يدعم Talos خوادم stdio ونقاط Streamable HTTP في MCP. تُعرض أدواتها لكل نموذج، لذا تعمل خوادم الموصلات كالأدوات الأصلية."
+          }
+        }
+      }
+    },
+    "Phone control port": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منفذ التحكم بالهاتف"
+          }
+        }
+      }
+    },
+    "Open this on a phone on the same network. The token is the password.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح هذا على هاتف على الشبكة نفسها. الرمز هو كلمة المرور."
+          }
+        }
+      }
+    },
+    "Turn this on to serve a local control page for sending prompts, stopping, and compacting the current task.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فعّل هذا لخدمة صفحة تحكم محلية لإرسال الطلبات وإيقاف المهمة الحالية وضغطها."
+          }
+        }
+      }
+    },
+    "The control page stays on this Mac. It is not a cloud relay, and requests require the token shown above.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبقى صفحة التحكم على هذا الـ Mac. ليست وسيطًا سحابيًا، وتتطلب الطلبات الرمز أعلاه."
+          }
+        }
+      }
+    },
+    "Average active day": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متوسط اليوم النشط"
+          }
+        }
+      }
+    },
+    "Deletes saved conversation history from this Mac. Provider keys and settings are kept.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يحذف سجل المحادثات المحفوظ من هذا الـ Mac. تبقى مفاتيح المزوّدين والإعدادات."
+          }
+        }
+      }
+    },
+    "locked": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مقفل"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

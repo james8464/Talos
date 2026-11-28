@@ -84,7 +84,7 @@ applicable to a single-user, local-first macOS model client.
 | Icons | Use SF Symbols consistently | ✅ | SF Symbols throughout, consistent weights and scales |
 | Images | Show meaningful image content, provide alternatives | ✅ | Image attachments render thumbnails; filenames serve as textual alternatives |
 | Immersive experiences | Spatial/immersive UI | ➖ | Not a spatial app |
-| Inclusion | Avoid assumptions and stereotypes | ✅ | Removed build-assumptive wording; verified Arabic, Hebrew, Chinese, Japanese, emoji, combining accents, long titles, mixed-script input, RTL, Reduce Motion/Transparency, Increase Contrast, and VoiceOver. Added a 526-key String Catalog with Arabic localization for the main window, composer, sidebar, inspector, all Settings pages, and menus, verified by a live Arabic/RTL AX traversal with zero UI English strings and zero unlabeled controls. See `INCLUSION_AUDIT.md` and `LOCALIZATION.md` |
+| Inclusion | Avoid assumptions and stereotypes | ✅ | Removed build-assumptive wording; verified Arabic, Hebrew, Chinese, Japanese, emoji, combining accents, long titles, mixed-script input, RTL, Reduce Motion/Transparency, Increase Contrast, and VoiceOver. Added a 654-key String Catalog with Arabic localization for the main window, composer, sidebar, inspector, all Settings pages, and menus, verified by a live Arabic/RTL AX traversal with zero UI English strings and zero unlabeled controls. See `INCLUSION_AUDIT.md` and `LOCALIZATION.md` |
 | Layout | Resizable layouts, comfortable density, margins | ✅ | NavigationSplitView, resizable window (min 900×600), 24–32 pt content margins, 760 pt transcript measure |
 | Materials | Use materials purposefully and respect Reduce Transparency | ✅ | Materials used for chrome/status; solid fallback when Reduce Transparency is on |
 | Motion | Purposeful, optional motion | ✅ | Motion limited to scroll/collapse/status; skipped under Reduce Motion |
@@ -270,7 +270,7 @@ applicable to a single-user, local-first macOS model client.
 | iMessage apps and stickers | ➖ | Not an iMessage app |
 | Live Photos | ➖ | No photo library |
 | Mac Catalyst | ➖ | Native AppKit/SwiftUI app |
-| Machine learning | ✅ | On-device `NLEmbedding` word-vector index with a persisted per-file cache and a 20-query workspace regression set (20/20 top-1 vs 19/20 for sentence vectors). Measured 93 files/975 chunks: 7.3 s first-ever build, 0.6 s cached launch, 0.69 s after one file changed, 25 ms warm query, 65 MB peak; fallbacks, privacy, cache path, and limits documented in `SEMANTIC_INDEX.md` |
+| Machine learning | ✅ | On-device `NLEmbedding` word-vector index with IDF, file-level, path, basename, and declaration ranking, a persisted per-file cache, a 20-query regression set (20/20 top-1), and a held-out 15-query set (15/15 acceptable, 12/15 primary top-1). Measured 97 files/1,006 chunks: 7.3 s first-ever build, 0.6 s cached launch, 0.69 s after one file changed, 25 ms warm query, 65 MB peak; fallbacks, privacy, cache path, and limits documented in `SEMANTIC_INDEX.md` and `HELDOUT_EVAL.md` |
 | Maps | ➖ | No maps |
 | NFC | ➖ | No NFC |
 | Photo editing | ➖ | Attachments are not edited |

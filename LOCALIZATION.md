@@ -26,6 +26,10 @@ to the primary surfaces:
   toggles, pickers, permission rows, statuses, and export controls.
 - File, Task, Model, View, and Help menu commands; Quick Switcher commands;
   project, Git, worktree, GitHub, and recent-document surfaces.
+- Menu-bar menu, approval sheet, worktree sheet, GitHub panel, diagnostics
+  panel, recent documents, project browser, Chronicle strip, policy empty
+  state, and the MCP app, elicitation, and sampling views.
+- Accessibility labels and help text on every audited control.
 
 Provider names, model identifiers, session content, MCP tool names, file paths,
 and technical tokens such as `JSON-RPC` or `Authorization: Bearer` remain in
@@ -71,12 +75,21 @@ for strings that already use `Text`, `Button`, `Toggle`, `Picker`, or
 ## Automated tests
 
 ```sh
-make localization-check   # CI-safe String Catalog validation
-make localization-eval    # live Arabic AX traversal; needs Accessibility permission
+make localization-check      # CI-safe String Catalog validation
+make localization-coverage   # source scan for unlocalized UI literals
+make localization-eval       # live Arabic AX traversal; needs Accessibility permission
 ```
 
-`localization-check` verifies all 526 source keys have Arabic, Arabic script is
-present, and placeholders survive translation. CI runs this on every push.
+`localization-check` verifies all 654 source keys have Arabic, Arabic script is
+present, and placeholders survive translation. `localization-coverage` scans
+SwiftUI call sites for user-visible literals and fails when one has no Arabic
+entry. CI runs both on every push.
+
+The held-out coverage scan found 131 missing literals on its first run —
+including the menu-bar menu, approval sheet, worktree sheet, GitHub panel, MCP
+views, Chronicle controls, diagnostics panel, recent documents, and several
+accessibility labels. All were translated; the scan now reports 483 UI literals
+and 0 missing. Details and raw results are in `HELDOUT_EVAL.md`.
 
 `localization-eval` launches the built app with `AppleLanguages=ar`, creates a
 fresh task, opens Settings, visits all 20 pages, and fails on:
@@ -89,7 +102,7 @@ fresh task, opens Settings, visits all 20 pages, and fails on:
 Latest live result:
 
 ```text
-MAIN arabic=167 english=0 unlabeled=0
+MAIN arabic=133 english=0 unlabeled=0
 عام / المشاريع / النماذج / المزوّدون / الأدوات / التكوينات
 الخطافات / الذاكرة / السجل / السياسة / مهام السحابة / خادم التطبيق
 المهارات / الإضافات / MCP / التحكم عن بعد / المظهر / الاستخدام
@@ -104,7 +117,7 @@ FAILURES: 0
 - Arabic AX labels confirmed for sidebar, welcome, composer, inspector, and
   Settings (`مهمة جديدة`, `بحث في المهام`, `ماذا تريد أن تفعل؟`,
   `إرسال الرسالة`, `إيماءات لوحة التتبع`, `حجم نص المحادثة`).
-- Automated live traversal: main window Arabic labels 164, all 20 Settings
+- Automated live traversal: main window Arabic labels 133, all 20 Settings
   pages with zero UI-owned English and zero unlabeled controls.
 - AX audit with Arabic and Settings → Tools open: `APP_CONTROLS: 44`,
   `UNLABELED: 0`.
@@ -112,5 +125,5 @@ FAILURES: 0
   `الشريط الجانبي`, `إيماءات لوحة التتبع`, `السحب لليسار`, `السحب لليمين`,
   `السحب لأعلى`, `السحب لأسفل`.
 
-The catalog contains 526 keys. Arabic copy was authored for this project; a
+The catalog contains 654 keys. Arabic copy was authored for this project; a
 native-speaker review is still recommended before shipping broadly.

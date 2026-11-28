@@ -39,15 +39,28 @@ file set. Exit code is non-zero if top-1 falls below 20/20.
 | 19 | fork or edit a message branch | ConversationBranching, AppModel |
 | 20 | JSON-RPC dispatch for the app server | AppServer |
 
+## Held-out set
+
+`HeldOut/main.swift` is a second, 15-query set written after this one and not
+used to choose weights. Run it with:
+
+```sh
+make semantic-heldout
+```
+
+It records a `primary` file for each behaviour and accepts a wider set of
+implementation files, because several features span a caller, a service, and a
+view. It fails if any query’s top-1 is outside the accepted set, or if the
+primary file wins fewer than 80% of queries.
+
 ## Results
 
-Word-embedding hybrid with document penalty, basename boost, and file-hit
-aggregation:
+Word-embedding hybrid with document penalty, IDF, file-level coverage,
+declaration boost, and one-result-per-file aggregation:
 
 ```text
-TOP1: 20/20
-TOP3: 20/20
-MRR: 1.000
+authored:  TOP1 20/20 · TOP3 20/20 · MRR 1.000
+held-out:  acceptable TOP1 15/15 · primary 12/15 · TOP3 15/15 · MRR 1.000
 ```
 
 Previous sentence-vector hybrid, re-scored with the same penalty, basename
@@ -75,6 +88,7 @@ roughly one-tenth of the indexing cost.
   for a feature as well as the implementation file, because both are useful
   search results.
 - This is a regression set, not an independent benchmark; it should be extended
-  when new subsystems are added.
+  when new subsystems are added. The held-out results and residual ambiguities
+  are recorded in `HELDOUT_EVAL.md`.
 - Scores are still relative. A query outside the set may return plausible but
   not expected files.

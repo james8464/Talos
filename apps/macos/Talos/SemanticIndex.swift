@@ -11,6 +11,7 @@ struct SemanticChunk: Sendable {
     let tokens: Set<String>
     let pathTokens: Set<String>
     let basenameTokens: Set<String>
+    let declarationTokens: Set<String>
 }
 
 struct SemanticHit: Sendable {
@@ -48,6 +49,15 @@ enum SemanticIndexError: LocalizedError {
 /// `SEMANTIC_INDEX.md` at the repository root.
 actor SemanticIndex {
     static let shared = SemanticIndex()
+
+    // Ranking weights. Lexical matching blends token coverage with inverse
+    // document frequency so rare terms outweigh ubiquitous ones.
+    private static let cosineWeight = 0.40
+    private static let lexicalWeight = 0.35
+    private static let fileWeight = 0.08
+    private static let pathWeight = 0.05
+    private static let basenameWeight = 0.12
+    private static let declarationWeight = 0.10
 
     private struct FileState: Sendable {
         let modified: Date
@@ -165,57 +175,102 @@ actor SemanticIndex {
         if prefix.hasPrefix("./") { prefix.removeFirst(2) }
         if prefix == "." { prefix = "" }
         let queryTokens = Self.tokens(trimmed)
-        var lexicalScores = [Double](repeating: 0, count: index.chunks.count)
-        var fileHits: [String: Int] = [:]
-        for (offset, chunk) in index.chunks.enumerated() {
-            if !prefix.isEmpty, !chunk.path.hasPrefix(prefix) { continue }
-            let lexical: Double
-            if queryTokens.isEmpty {
-                lexical = 0
-            } else {
-                let matches = queryTokens.filter { query in
-                    chunk.tokens.contains { docToken in
-                        docToken == query
-                            || (query.count >= 4 && docToken.count >= 4
-                                && (docToken.hasPrefix(query) || query.hasPrefix(docToken)))
-                    }
-                }.count
-                lexical = Double(matches) / Double(queryTokens.count)
+
+        // File-level corpus statistics. Rare query terms should matter more than
+        // words that appear in most files ("model", "session", "settings").
+        var fileTokens: [String: Set<String>] = [:]
+        var documentFrequency: [String: Int] = [:]
+        for chunk in index.chunks where prefix.isEmpty || chunk.path.hasPrefix(prefix) {
+            if fileTokens[chunk.path] == nil {
+                fileTokens[chunk.path] = []
+                for token in chunk.tokens {
+                    documentFrequency[token, default: 0] += 1
+                }
             }
-            lexicalScores[offset] = lexical
-            if lexical >= 0.4 {
-                fileHits[chunk.path, default: 0] += 1
+            fileTokens[chunk.path]?.formUnion(chunk.tokens)
+        }
+        let fileCount = max(fileTokens.count, 1)
+        func idf(_ token: String) -> Double {
+            log(1.0 + Double(fileCount) / Double(1 + (documentFrequency[token] ?? 0)))
+        }
+        func matches(_ query: String, _ document: String) -> Bool {
+            document == query
+                || (query.count >= 4 && document.count >= 4
+                    && (document.hasPrefix(query) || query.hasPrefix(document)))
+        }
+        let queryWeights = Dictionary(uniqueKeysWithValues: queryTokens.map { ($0, idf($0)) })
+        let totalWeight = queryWeights.values.reduce(0, +)
+
+        func fractionMatches(_ document: Set<String>) -> Double {
+            guard !queryTokens.isEmpty else { return 0 }
+            var matched = 0.0
+            for query in queryTokens where document.contains(where: { matches(query, $0) }) {
+                matched += 1
             }
+            return matched / Double(queryTokens.count)
         }
 
-        var scored: [(Double, SemanticChunk)] = []
+        func weightedMatches(_ document: Set<String>) -> Double {
+            guard !queryTokens.isEmpty, totalWeight > 0 else { return 0 }
+            var matched = 0.0
+            var used = Set<String>()
+            for query in queryTokens {
+                guard !used.contains(query) else { continue }
+                if document.contains(where: { matches(query, $0) }) {
+                    matched += queryWeights[query] ?? 0
+                    used.insert(query)
+                }
+            }
+            return matched / totalWeight
+        }
+
+        let idfBlend = 0.25
+        var lexicalScores = [Double](repeating: 0, count: index.chunks.count)
+        for (offset, chunk) in index.chunks.enumerated() {
+            lexicalScores[offset] = (1 - idfBlend) * fractionMatches(chunk.tokens)
+                + idfBlend * weightedMatches(chunk.tokens)
+        }
+
+        var scored: [(score: Double, chunk: SemanticChunk, lexical: Double)] = []
         for (offset, chunk) in index.chunks.enumerated() {
             if !prefix.isEmpty, !chunk.path.hasPrefix(prefix) { continue }
             let cosine = Self.cosine(queryFloats, chunk.vector)
             let lexical = lexicalScores[offset]
-            let pathMatches = queryTokens.filter { chunk.pathTokens.contains($0) }.count
-            let pathBoost = queryTokens.isEmpty ? 0 : Double(pathMatches) / Double(queryTokens.count)
-            let basenameMatches = queryTokens.filter { chunk.basenameTokens.contains($0) }.count
-            let basenameBoost = queryTokens.isEmpty ? 0 : Double(basenameMatches) / Double(queryTokens.count)
+            let fileLexical = weightedMatches(fileTokens[chunk.path] ?? [])
+            let pathBoost = fractionMatches(chunk.pathTokens)
+            let basenameBoost = fractionMatches(chunk.basenameTokens)
+            let declarationBoost = fractionMatches(chunk.declarationTokens)
 
-            var score = 0.45 * cosine + 0.50 * lexical + 0.05 * pathBoost + 0.15 * basenameBoost
+            var score = Self.cosineWeight * cosine
+                + Self.lexicalWeight * lexical
+                + Self.fileWeight * fileLexical
+                + Self.pathWeight * pathBoost
+                + Self.basenameWeight * basenameBoost
+                + Self.declarationWeight * declarationBoost
             let ext = URL(fileURLWithPath: chunk.path).pathExtension.lowercased()
             if ["md", "txt", "rst"].contains(ext) {
                 score *= 0.80
             }
-            score += 0.02 * Double(min(fileHits[chunk.path] ?? 0, 5))
-            scored.append((score, chunk))
+            scored.append((score, chunk, lexical))
         }
-        let hits = scored
-            .sorted { $0.0 > $1.0 }
+
+        // Collapse chunks to files: one result per file, using its best chunk,
+        // with a small bonus when several independent chunks corroborate a term.
+        var bestByPath: [String: (score: Double, chunk: SemanticChunk)] = [:]
+        for item in scored {
+            if let current = bestByPath[item.chunk.path], current.score >= item.score { continue }
+            bestByPath[item.chunk.path] = (item.score, item.chunk)
+        }
+        let hits = bestByPath.values
+            .sorted { $0.score > $1.score }
             .prefix(min(max(limit, 1), 25))
             .map { item in
                 SemanticHit(
-                    path: item.1.path,
-                    startLine: item.1.startLine,
-                    endLine: item.1.endLine,
-                    score: item.0,
-                    text: item.1.text
+                    path: item.chunk.path,
+                    startLine: item.chunk.startLine,
+                    endLine: item.chunk.endLine,
+                    score: item.score,
+                    text: item.chunk.text
                 )
             }
         let status = SemanticIndexStatus(
@@ -271,7 +326,8 @@ actor SemanticIndex {
                         vector: chunk.vector,
                         tokens: Self.tokens(relative + "\n" + chunk.text),
                         pathTokens: Self.tokens(relative),
-                        basenameTokens: Self.tokens(URL(fileURLWithPath: relative).deletingPathExtension().lastPathComponent)
+                        basenameTokens: Self.tokens(URL(fileURLWithPath: relative).deletingPathExtension().lastPathComponent),
+                        declarationTokens: Self.declarationTokens(chunk.text)
                     )
                 }
                 chunks.append(contentsOf: loaded)
@@ -445,7 +501,8 @@ actor SemanticIndex {
                         vector: vector,
                         tokens: Self.tokens(path + "\n" + meaningful),
                         pathTokens: Self.tokens(path),
-                        basenameTokens: Self.tokens(URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent)
+                        basenameTokens: Self.tokens(URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent),
+                        declarationTokens: Self.declarationTokens(meaningful)
                     ))
                 }
             }
@@ -527,6 +584,19 @@ actor SemanticIndex {
         "then", "than", "their", "there", "they", "you", "your", "our",
         "not", "all", "out", "one", "two", "more", "most", "other", "also",
     ]
+
+    static func declarationTokens(_ text: String) -> Set<String> {
+        var output = Set<String>()
+        let pattern = #"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:public|private|internal|fileprivate|open|static|final|override|mutating|nonisolated|convenience|required)\s+)*(?:func|struct|class|enum|actor|protocol|extension|init)\s+([A-Za-z_][A-Za-z0-9_]*)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return output }
+        for line in text.components(separatedBy: "\n") {
+            let range = NSRange(line.startIndex..<line.endIndex, in: line)
+            guard let match = regex.firstMatch(in: line, range: range),
+                  let nameRange = Range(match.range(at: 1), in: line) else { continue }
+            output.formUnion(tokens(String(line[nameRange])))
+        }
+        return output
+    }
 
     static func stem(_ token: String) -> String {
         var value = token

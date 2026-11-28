@@ -173,40 +173,179 @@ struct ToolContext: Sendable {
 
 enum ToolParser {
     struct Parsed: Sendable {
-        let call: ToolCall
+        let calls: [ToolCall]
         let cleaned: String
     }
 
-    static func extract(from text: String) -> Parsed? {
-        var searchStart = text.startIndex
-        while let fenceStart = text.range(of: "```", range: searchStart..<text.endIndex) {
+    /// Extract every tool call from a reply. Models occasionally emit more than
+    /// one fenced block, or switch to their native markup mid-run (DeepSeek's
+    /// DSML tags are the common case). All recognised calls are returned in
+    /// order and every call block is removed from the visible text.
+    static func extractAll(from text: String) -> Parsed? {
+        var calls: [ToolCall] = []
+        var cleaned = text
+
+        // Fenced JSON blocks: ```tool {...} ``` or ```json {...} ```
+        var searchStart = cleaned.startIndex
+        while let fenceStart = cleaned.range(of: "```", range: searchStart..<cleaned.endIndex) {
             let afterFence = fenceStart.upperBound
-            let languageEnd = text[afterFence...].firstIndex(of: "\n") ?? text.endIndex
-            let language = text[afterFence..<languageEnd]
+            let languageEnd = cleaned[afterFence...].firstIndex(of: "\n") ?? cleaned.endIndex
+            let language = cleaned[afterFence..<languageEnd]
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .lowercased()
-            guard let fenceEnd = text.range(of: "```", range: languageEnd..<text.endIndex) else {
+            guard let fenceEnd = cleaned.range(of: "```", range: languageEnd..<cleaned.endIndex) else {
                 break
             }
-            let body = text[languageEnd..<fenceEnd.lowerBound]
+            let body = cleaned[languageEnd..<fenceEnd.lowerBound]
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if language.isEmpty || language == "tool" || language == "json",
-               let call = parse(body) {
-                var cleaned = text
-                cleaned.removeSubrange(fenceStart.lowerBound..<fenceEnd.upperBound)
-                return Parsed(call: call, cleaned: cleaned.trimmingCharacters(in: .whitespacesAndNewlines))
+            if language.isEmpty || language == "tool" || language == "json" {
+                if let call = parse(body) {
+                    calls.append(call)
+                    cleaned.removeSubrange(fenceStart.lowerBound..<fenceEnd.upperBound)
+                    searchStart = cleaned.startIndex
+                } else if language == "tool" {
+                    // An explicit ```tool block is always a failed call, so
+                    // hide the raw JSON. A ```json block may be illustrative
+                    // output and is left alone.
+                    cleaned.removeSubrange(fenceStart.lowerBound..<fenceEnd.upperBound)
+                    searchStart = cleaned.startIndex
+                } else {
+                    searchStart = fenceEnd.upperBound
+                }
+            } else {
+                searchStart = fenceEnd.upperBound
             }
-            searchStart = fenceEnd.upperBound
         }
-        return nil
+
+        // DeepSeek native markup:
+        // <|DSML|tool_calls><|DSML|invoke name="read_file">
+        //   <|DSML|parameter name="path" string="true">…</|DSML|parameter>
+        // </|DSML|invoke></|DSML|tool_calls>
+        // The vertical bar is U+FF5C, so match around the DSML token rather
+        // than hard-coding the full-width characters.
+        let invokePattern = #"<[^>]{0,40}DSML[^>]{0,40}invoke\s+name="([^"]+)"[^>]*>(.*?)</[^>]{0,40}DSML[^>]{0,40}invoke>"#
+        if let invokeRegex = try? NSRegularExpression(pattern: invokePattern, options: [.dotMatchesLineSeparators]) {
+            let ns = cleaned as NSString
+            let matches = invokeRegex.matches(in: cleaned, range: NSRange(location: 0, length: ns.length))
+            for match in matches {
+                guard match.numberOfRanges >= 3,
+                      let nameRange = Range(match.range(at: 1), in: cleaned),
+                      let bodyRange = Range(match.range(at: 2), in: cleaned) else { continue }
+                let name = String(cleaned[nameRange])
+                let body = String(cleaned[bodyRange])
+                calls.append(ToolCall(name: name, arguments: parseParameters(body)))
+            }
+            if !matches.isEmpty {
+                cleaned = invokeRegex.stringByReplacingMatches(
+                    in: cleaned,
+                    range: NSRange(location: 0, length: ns.length),
+                    withTemplate: ""
+                )
+            }
+        }
+        // Generic XML-ish tool tags emitted by some models:
+        // <tool>{"name":"read_file",…}</tool>
+        // <tool_call name="read_file">{…}</tool_call>
+        let tagPattern = #"<(tool|tool_call|tool_calls|function_call)(?:\s+name="([^"]+)")?[^>]*>\s*(\{.*?\})\s*</\1>"#
+        if let tagRegex = try? NSRegularExpression(pattern: tagPattern, options: [.dotMatchesLineSeparators]) {
+            let ns = cleaned as NSString
+            let matches = tagRegex.matches(in: cleaned, range: NSRange(location: 0, length: ns.length))
+            for match in matches {
+                guard match.numberOfRanges >= 4,
+                      let bodyRange = Range(match.range(at: 3), in: cleaned) else { continue }
+                let attributeName = match.range(at: 2).location == NSNotFound
+                    ? nil
+                    : Range(match.range(at: 2), in: cleaned).map { String(cleaned[$0]) }
+                let body = String(cleaned[bodyRange])
+                if let data = body.data(using: .utf8),
+                   let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let rawArguments: [String: Any]
+                    if let nested = object["arguments"] as? [String: Any] {
+                        rawArguments = nested
+                    } else {
+                        rawArguments = object.filter { $0.key != "name" && $0.key != "tool" }
+                    }
+                    let explicit = attributeName
+                        ?? (object["name"] as? String)
+                        ?? (object["tool"] as? String)
+                    if let name = explicit.flatMap({ $0.isEmpty ? nil : $0 }) ?? inferName(from: rawArguments) {
+                        calls.append(ToolCall(name: name, arguments: rawArguments.mapValues(ToolValue.init(any:))))
+                    }
+                }
+            }
+            if !matches.isEmpty {
+                cleaned = tagRegex.stringByReplacingMatches(
+                    in: cleaned,
+                    range: NSRange(location: 0, length: ns.length),
+                    withTemplate: ""
+                )
+            }
+        }
+
+        // Remove the now-empty wrapper tags and any orphaned DSML lines.
+        cleaned = cleaned.replacingOccurrences(
+            of: #"</?[^>]{0,40}DSML[^>]{0,40}(?:calls|tool_calls)>"#,
+            with: "",
+            options: .regularExpression
+        )
+        cleaned = cleaned
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("<") || !$0.contains("DSML") }
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !calls.isEmpty else { return nil }
+        return Parsed(calls: calls, cleaned: cleaned)
+    }
+
+    /// Backwards-compatible single-call helper for callers that only need the
+    /// first result.
+    static func extract(from text: String) -> (call: ToolCall, cleaned: String)? {
+        guard let parsed = extractAll(from: text), let call = parsed.calls.first else { return nil }
+        return (call, parsed.cleaned)
+    }
+
+    private static func parseParameters(_ body: String) -> [String: ToolValue] {
+        var arguments: [String: ToolValue] = [:]
+        let pattern = #"<[^>]{0,40}DSML[^>]{0,40}parameter\s+name="([^"]+)"([^>]*)>(.*?)</[^>]{0,40}DSML[^>]{0,40}parameter>"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else {
+            return arguments
+        }
+        let ns = body as NSString
+        for match in regex.matches(in: body, range: NSRange(location: 0, length: ns.length)) {
+            guard match.numberOfRanges >= 4,
+                  let nameRange = Range(match.range(at: 1), in: body),
+                  let attributesRange = Range(match.range(at: 2), in: body),
+                  let valueRange = Range(match.range(at: 3), in: body) else { continue }
+            let name = String(body[nameRange])
+            let attributes = String(body[attributesRange])
+            let raw = decodeEntities(String(body[valueRange]).trimmingCharacters(in: .whitespacesAndNewlines))
+            if attributes.contains("string=\"false\"") {
+                if let data = raw.data(using: .utf8),
+                   let value = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) {
+                    arguments[name] = ToolValue(any: value)
+                } else {
+                    arguments[name] = .string(raw)
+                }
+            } else {
+                arguments[name] = .string(raw)
+            }
+        }
+        return arguments
+    }
+
+    private static func decodeEntities(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&amp;", with: "&")
     }
 
     private static func parse(_ body: String) -> ToolCall? {
         guard let data = body.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let name = (object["name"] as? String) ?? (object["tool"] as? String),
-              !name.isEmpty else {
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
         let rawArguments: [String: Any]
@@ -217,8 +356,40 @@ enum ToolParser {
                 key != "name" && key != "tool"
             }
         }
+        let explicit = (object["name"] as? String) ?? (object["tool"] as? String)
+        guard let name = explicit.flatMap({ $0.isEmpty ? nil : $0 }) ?? inferName(from: rawArguments) else {
+            return nil
+        }
         let arguments = rawArguments.mapValues(ToolValue.init(any:))
         return ToolCall(name: name, arguments: arguments)
+    }
+
+    /// Recover the tool name from its schema when a model omits `name`.
+    /// Signatures are deliberately narrow and only cover unambiguous shapes.
+    static func inferName(from arguments: [String: Any]) -> String? {
+        func has(_ key: String) -> Bool { arguments[key] != nil }
+        if has("patch") { return "apply_patch" }
+        if has("steps") { return "update_plan" }
+        if has("task") { return "subagent" }
+        if has("content"), has("path") {
+            return has("format") ? "create_document" : "write_file"
+        }
+        if has("path"), has("start_line") || has("end_line") {
+            return "read_file"
+        }
+        let action = (arguments["action"] as? String)?.lowercased()
+        if has("path"), action == "list" { return "list_files" }
+        if has("path"), action == nil || action == "read" || action == "view" {
+            return "read_file"
+        }
+        if has("command") { return "shell" }
+        if has("query") {
+            if has("glob") { return "search_files" }
+            if has("path") || has("limit") { return "search_files" }
+            return "search_files"
+        }
+        if has("url") { return "web_fetch" }
+        return nil
     }
 }
 
@@ -231,7 +402,9 @@ enum ToolPrompt {
             "```tool",
             "{\"name\":\"tool_name\",\"arguments\":{...}}",
             "```",
-            "Use one tool per reply. The app runs it and sends you a message beginning with \"Tool result\". Then continue.",
+            "The object must always include a non-empty \"name\" field; a call without it cannot run.",
+            "Do not use native tool-call markup, XML tags, or DSML. Use only the fenced JSON block.",
+            "Put each call in its own fenced block. The app runs every block in order and sends a message beginning with \"Tool result\" for each. Then continue.",
             "Never invent or predict tool output. If a tool fails, read the error and adjust.",
             "Do not claim an action happened unless a tool result confirms it. When the task is complete, answer normally without a tool block.",
             "",
