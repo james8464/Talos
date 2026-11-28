@@ -234,7 +234,10 @@ struct ContentView: View {
         switch ProcessInfo.processInfo.environment["TALOS_LAYOUT_DIRECTION"]?.lowercased() {
         case "rtl": return .rightToLeft
         case "ltr": return .leftToRight
-        default: return layoutDirection
+        default:
+            let preferred = Locale.preferredLanguages.first ?? "en"
+            let language = Locale.Language(identifier: preferred)
+            return language.characterDirection == .rightToLeft ? .rightToLeft : layoutDirection
         }
     }
 }
@@ -322,7 +325,7 @@ private struct Sidebar: View {
         switch settings.sidebarGrouping {
         case .none:
             guard !sessions.isEmpty else { return [] }
-            return [SessionGroup(id: "all", title: "Tasks", sessions: sessions)]
+            return [SessionGroup(id: "all", title: String(localized: "Tasks"), sessions: sessions)]
         case .project:
             var buckets: [String: [Session]] = [:]
             for session in sessions {
@@ -355,9 +358,15 @@ private struct Sidebar: View {
                 }
                 buckets[key, default: []].append(session)
             }
+            let localizedTitles: [String: String] = [
+                "Today": String(localized: "Today"),
+                "Yesterday": String(localized: "Yesterday"),
+                "Previous 7 Days": String(localized: "Previous 7 Days"),
+                "Older": String(localized: "Older"),
+            ]
             return ["Today", "Yesterday", "Previous 7 Days", "Older"].compactMap { title in
                 guard let rows = buckets[title], !rows.isEmpty else { return nil }
-                return SessionGroup(id: title, title: title, sessions: rows)
+                return SessionGroup(id: title, title: localizedTitles[title] ?? title, sessions: rows)
             }
         }
     }
@@ -1466,12 +1475,16 @@ private struct ComposerView: View {
 
             HStack(spacing: 4) {
                 Image(systemName: model.choice.provider == .local ? "desktopcomputer" : "cloud")
-                Text(model.choice.provider == .local ? "Local · this Mac" : "Cloud · \(model.choice.provider.title)")
+                if model.choice.provider == .local {
+                    Text("Local · this Mac")
+                } else {
+                    Text("Cloud · \(model.choice.provider.title)")
+                }
                 Spacer()
                 Text(model.contextLabel)
                     .foregroundStyle(contextColor)
                 Text("·")
-                Text(model.isStreaming ? "Return to queue" : "Return to send")
+                Text(LocalizedStringKey(model.isStreaming ? "Return to queue" : "Return to send"))
                 Text("·")
                 Text("/ for commands")
             }
@@ -2002,7 +2015,7 @@ private struct MessageRow: View {
     }
 
     private var roleTitle: String {
-        message.role == .user ? "You" : (message.model ?? "Assistant")
+        message.role == .user ? String(localized: "You") : (message.model ?? String(localized: "Assistant"))
     }
 
     private var attributedText: AttributedString {
@@ -2079,9 +2092,9 @@ private struct ToolCard: View {
 
     private var statusTitle: String {
         switch status {
-        case .succeeded: return "Done"
-        case .failed: return "Failed"
-        case .denied: return "Denied"
+        case .succeeded: return String(localized: "Done")
+        case .failed: return String(localized: "Failed")
+        case .denied: return String(localized: "Denied")
         }
     }
 
@@ -2267,26 +2280,26 @@ private struct EmptyTask: View {
     private let suggestions = [
         Suggestion(
             symbol: "sparkles",
-            title: "Explore the codebase",
-            detail: "Map the architecture, entry points, and key files",
+            title: String(localized: "Explore the codebase"),
+            detail: String(localized: "Map the architecture, entry points, and key files"),
             prompt: "Explore this repository and explain its architecture, entry points, and the most important files."
         ),
         Suggestion(
             symbol: "ladybug",
-            title: "Fix a failing test",
-            detail: "Run the tests, find the failure, and patch it",
+            title: String(localized: "Fix a failing test"),
+            detail: String(localized: "Run the tests, find the failure, and patch it"),
             prompt: "Run the test suite, find the first failure, fix it, and rerun the tests."
         ),
         Suggestion(
             symbol: "arrow.triangle.pull",
-            title: "Review my changes",
-            detail: "Read the diff and flag bugs and missing tests",
+            title: String(localized: "Review my changes"),
+            detail: String(localized: "Read the diff and flag bugs and missing tests"),
             prompt: "Review my uncommitted changes for bugs, regressions, and missing tests."
         ),
         Suggestion(
             symbol: "wand.and.stars",
-            title: "Automate a workflow",
-            detail: "Use shell, files, browser, and MCP tools",
+            title: String(localized: "Automate a workflow"),
+            detail: String(localized: "Use shell, files, browser, and MCP tools"),
             prompt: "Look at this project and propose one workflow worth automating, then implement it."
         ),
     ]
@@ -2916,10 +2929,10 @@ private struct Inspector: View {
 
     private func toolRow(_ name: String, symbol: String, enabled: Bool) -> some View {
         LabeledContent {
-            Text(enabled ? "Enabled" : "Off")
+            Text(enabled ? String(localized: "Enabled") : String(localized: "Off"))
                 .foregroundStyle(.secondary)
         } label: {
-            Label(name, systemImage: symbol)
+            Label(LocalizedStringKey(name), systemImage: symbol)
         }
     }
 }

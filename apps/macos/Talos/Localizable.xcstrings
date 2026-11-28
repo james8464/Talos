@@ -1,0 +1,2056 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "AI tools for your Mac": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدوات الذكاء الاصطناعي لجهاز Mac"
+          }
+        }
+      }
+    },
+    "New Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مهمة جديدة"
+          }
+        }
+      }
+    },
+    "New task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مهمة جديدة"
+          }
+        }
+      }
+    },
+    "Customize sidebar": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تخصيص الشريط الجانبي"
+          }
+        }
+      }
+    },
+    "Search Tasks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بحث في المهام"
+          }
+        }
+      }
+    },
+    "No Tasks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد مهام"
+          }
+        }
+      }
+    },
+    "Press ⌘N to start one.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط ⌘N لبدء مهمة."
+          }
+        }
+      }
+    },
+    "Tasks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المهام"
+          }
+        }
+      }
+    },
+    "Today": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اليوم"
+          }
+        }
+      }
+    },
+    "Yesterday": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أمس"
+          }
+        }
+      }
+    },
+    "Previous 7 Days": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آخر 7 أيام"
+          }
+        }
+      }
+    },
+    "Older": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أقدم"
+          }
+        }
+      }
+    },
+    "Archived": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المؤرشفة"
+          }
+        }
+      }
+    },
+    "Hide Archived": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إخفاء المؤرشفة"
+          }
+        }
+      }
+    },
+    "Group by": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التجميع حسب"
+          }
+        }
+      }
+    },
+    "Date": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التاريخ"
+          }
+        }
+      }
+    },
+    "Project": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المشروع"
+          }
+        }
+      }
+    },
+    "None": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بلا"
+          }
+        }
+      }
+    },
+    "Show previews": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار المعاينات"
+          }
+        }
+      }
+    },
+    "Show message counts": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار عدد الرسائل"
+          }
+        }
+      }
+    },
+    "Show archived tasks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار المهام المؤرشفة"
+          }
+        }
+      }
+    },
+    "No messages yet": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا رسائل بعد"
+          }
+        }
+      }
+    },
+    "Waiting for reply": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بانتظار الرد"
+          }
+        }
+      }
+    },
+    "Reply": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رد"
+          }
+        }
+      }
+    },
+    "What would you like to do?": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ماذا تريد أن تفعل؟"
+          }
+        }
+      }
+    },
+    "Talos gives any model real tools on this Mac: shell, a persistent terminal, files, patches, browser, LSP, MCP, subagents, and the desktop.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمنح Talos أي نموذج أدوات حقيقية على هذا الجهاز: الصدفة، وطرفية دائمة، والملفات، والتعديلات، والمتصفح، وLSP، وMCP، والوكلاء الفرعيون، وسطح المكتب."
+          }
+        }
+      }
+    },
+    "Explore the codebase": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استكشف قاعدة الشيفرة"
+          }
+        }
+      }
+    },
+    "Map the architecture, entry points, and key files": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حدّد البنية ونقاط الدخول والملفات الرئيسية"
+          }
+        }
+      }
+    },
+    "Fix a failing test": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أصلح اختبارًا فاشلًا"
+          }
+        }
+      }
+    },
+    "Run the tests, find the failure, and patch it": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شغّل الاختبارات واعثر على الفشل وأصلحه"
+          }
+        }
+      }
+    },
+    "Review my changes": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "راجع تغييراتي"
+          }
+        }
+      }
+    },
+    "Read the diff and flag bugs and missing tests": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقرأ الفروقات وحدّد الأخطاء والاختبارات الناقصة"
+          }
+        }
+      }
+    },
+    "Automate a workflow": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أتمِت سير عمل"
+          }
+        }
+      }
+    },
+    "Use shell, files, browser, and MCP tools": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم أدوات الصدفة والملفات والمتصفح وMCP"
+          }
+        }
+      }
+    },
+    "Workspace": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مساحة العمل"
+          }
+        }
+      }
+    },
+    "⌘N new task · / for commands": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘N مهمة جديدة · / للأوامر"
+          }
+        }
+      }
+    },
+    "Ask Talos anything…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسأل Talos أي شيء…"
+          }
+        }
+      }
+    },
+    "Message": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرسالة"
+          }
+        }
+      }
+    },
+    "Attach files": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرفاق ملفات"
+          }
+        }
+      }
+    },
+    "Start dictation": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بدء الإملاء"
+          }
+        }
+      }
+    },
+    "Stop dictation": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إيقاف الإملاء"
+          }
+        }
+      }
+    },
+    "Send message": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال الرسالة"
+          }
+        }
+      }
+    },
+    "Queue message": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إدراج الرسالة في الانتظار"
+          }
+        }
+      }
+    },
+    "Stop response": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إيقاف الاستجابة"
+          }
+        }
+      }
+    },
+    "Drop files to attach": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أفلت الملفات لإرفاقها"
+          }
+        }
+      }
+    },
+    "Local · this Mac": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محلي · هذا الجهاز"
+          }
+        }
+      }
+    },
+    "Cloud · %@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحابي · %@"
+          }
+        }
+      }
+    },
+    "Return to send": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return للإرسال"
+          }
+        }
+      }
+    },
+    "Return to queue": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return للانتظار"
+          }
+        }
+      }
+    },
+    "/ for commands": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ للأوامر"
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ التفكير…"
+          }
+        }
+      }
+    },
+    "Working…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ العمل…"
+          }
+        }
+      }
+    },
+    "Plan": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخطة"
+          }
+        }
+      }
+    },
+    "Collapse plan": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طيّ الخطة"
+          }
+        }
+      }
+    },
+    "Expand plan": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توسيع الخطة"
+          }
+        }
+      }
+    },
+    "Show output": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار المخرجات"
+          }
+        }
+      }
+    },
+    "Hide output": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إخفاء المخرجات"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فشل"
+          }
+        }
+      }
+    },
+    "Denied": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مرفوض"
+          }
+        }
+      }
+    },
+    "You": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت"
+          }
+        }
+      }
+    },
+    "Copy message": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نسخ الرسالة"
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عام"
+          }
+        }
+      }
+    },
+    "Projects": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المشاريع"
+          }
+        }
+      }
+    },
+    "Models": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النماذج"
+          }
+        }
+      }
+    },
+    "Providers": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المزوّدون"
+          }
+        }
+      }
+    },
+    "Tools": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأدوات"
+          }
+        }
+      }
+    },
+    "Profiles": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التكوينات"
+          }
+        }
+      }
+    },
+    "Hooks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخطافات"
+          }
+        }
+      }
+    },
+    "Memory": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الذاكرة"
+          }
+        }
+      }
+    },
+    "Chronicle": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السجل"
+          }
+        }
+      }
+    },
+    "Policy": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السياسة"
+          }
+        }
+      }
+    },
+    "Cloud Tasks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مهام السحابة"
+          }
+        }
+      }
+    },
+    "App Server": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خادم التطبيق"
+          }
+        }
+      }
+    },
+    "Skills": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المهارات"
+          }
+        }
+      }
+    },
+    "Plugins": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإضافات"
+          }
+        }
+      }
+    },
+    "Remote": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التحكم عن بُعد"
+          }
+        }
+      }
+    },
+    "Appearance": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المظهر"
+          }
+        }
+      }
+    },
+    "Usage": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاستخدام"
+          }
+        }
+      }
+    },
+    "Advanced": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متقدم"
+          }
+        }
+      }
+    },
+    "About": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حول"
+          }
+        }
+      }
+    },
+    "Search Settings": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بحث في الإعدادات"
+          }
+        }
+      }
+    },
+    "Active model": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النموذج النشط"
+          }
+        }
+      }
+    },
+    "Model": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النموذج"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحديث"
+          }
+        }
+      }
+    },
+    "Reasoning": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاستدلال"
+          }
+        }
+      }
+    },
+    "Reasoning effort": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مستوى الاستدلال"
+          }
+        }
+      }
+    },
+    "Response": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاستجابة"
+          }
+        }
+      }
+    },
+    "Speed": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السرعة"
+          }
+        }
+      }
+    },
+    "Response speed": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سرعة الاستجابة"
+          }
+        }
+      }
+    },
+    "Window": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النافذة"
+          }
+        }
+      }
+    },
+    "Show details inspector": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار مفتش التفاصيل"
+          }
+        }
+      }
+    },
+    "Show Talos in the menu bar": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار Talos في شريط القوائم"
+          }
+        }
+      }
+    },
+    "Text": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النص"
+          }
+        }
+      }
+    },
+    "Transcript size": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حجم نص المحادثة"
+          }
+        }
+      }
+    },
+    "Applies to messages and tool output. Code stays monospaced.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ينطبق على الرسائل ومخرجات الأدوات. تبقى الشيفرة بخط ثابت العرض."
+          }
+        }
+      }
+    },
+    "Sidebar": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الشريط الجانبي"
+          }
+        }
+      }
+    },
+    "Group tasks by": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجميع المهام حسب"
+          }
+        }
+      }
+    },
+    "Show task previews": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار معاينات المهام"
+          }
+        }
+      }
+    },
+    "Trackpad gestures": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إيماءات لوحة التتبع"
+          }
+        }
+      }
+    },
+    "Enable custom swipe gestures": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمكين إيماءات السحب المخصصة"
+          }
+        }
+      }
+    },
+    "Require the Option key": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اشتراط مفتاح Option"
+          }
+        }
+      }
+    },
+    "Require the Option key for gestures": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اشتراط مفتاح Option للإيماءات"
+          }
+        }
+      }
+    },
+    "Swipe left": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السحب لليسار"
+          }
+        }
+      }
+    },
+    "Swipe right": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السحب لليمين"
+          }
+        }
+      }
+    },
+    "Swipe up": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السحب لأعلى"
+          }
+        }
+      }
+    },
+    "Swipe down": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السحب لأسفل"
+          }
+        }
+      }
+    },
+    "Swipe left action": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إجراء السحب لليسار"
+          }
+        }
+      }
+    },
+    "Swipe right action": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إجراء السحب لليمين"
+          }
+        }
+      }
+    },
+    "Swipe up action": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إجراء السحب لأعلى"
+          }
+        }
+      }
+    },
+    "Swipe down action": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إجراء السحب لأسفل"
+          }
+        }
+      }
+    },
+    "Next Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المهمة التالية"
+          }
+        }
+      }
+    },
+    "Previous Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المهمة السابقة"
+          }
+        }
+      }
+    },
+    "Toggle Inspector": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار/إخفاء المفتش"
+          }
+        }
+      }
+    },
+    "Quick Switcher": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المحوّل السريع"
+          }
+        }
+      }
+    },
+    "Stop Response": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إيقاف الاستجابة"
+          }
+        }
+      }
+    },
+    "Compact Conversation": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضغط المحادثة"
+          }
+        }
+      }
+    },
+    "Custom swipes supplement the keyboard shortcuts; every action remains available from the menu bar. Scrolling is never consumed.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تكمّل إيماءات السحب المخصصة اختصارات لوحة المفاتيح؛ ويبقى كل إجراء متاحًا من شريط القوائم. لا يتم استهلاك التمرير."
+          }
+        }
+      }
+    },
+    "Completion": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإكمال"
+          }
+        }
+      }
+    },
+    "Play a sound when a task finishes": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تشغيل صوت عند انتهاء المهمة"
+          }
+        }
+      }
+    },
+    "Notify when the app is in the background": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إشعار عندما يكون التطبيق في الخلفية"
+          }
+        }
+      }
+    },
+    "Notifications use the macOS notification center. The app asks for permission the first time you enable them.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تستخدم الإشعارات مركز إشعارات macOS. يطلب التطبيق الإذن عند تمكينها أول مرة."
+          }
+        }
+      }
+    },
+    "Tool access": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوصول إلى الأدوات"
+          }
+        }
+      }
+    },
+    "Shell commands": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أوامر الصدفة"
+          }
+        }
+      }
+    },
+    "File reads and edits": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قراءة الملفات وتعديلها"
+          }
+        }
+      }
+    },
+    "Computer use": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدام الحاسوب"
+          }
+        }
+      }
+    },
+    "Browser control": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التحكم بالمتصفح"
+          }
+        }
+      }
+    },
+    "Web fetch and search": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جلب الويب والبحث"
+          }
+        }
+      }
+    },
+    "Task plans": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خطط المهام"
+          }
+        }
+      }
+    },
+    "Language-server diagnostics and code actions": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تشخيصات خادم اللغة وإجراءات الشيفرة"
+          }
+        }
+      }
+    },
+    "Semantic codebase search (on-device embeddings)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البحث الدلالي في قاعدة الشيفرة (تضمينات على الجهاز)"
+          }
+        }
+      }
+    },
+    "These tools are provided by Talos and work with every model. The sandbox applies to shell and file tools.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توفّر Talos هذه الأدوات وتعمل مع كل نموذج. تنطبق بيئة العزل على أدوات الصدفة والملفات."
+          }
+        }
+      }
+    },
+    "Tokens": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرموز"
+          }
+        }
+      }
+    },
+    "Total": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإجمالي"
+          }
+        }
+      }
+    },
+    "Prompt": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المطالبة"
+          }
+        }
+      }
+    },
+    "Last 12 weeks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آخر 12 أسبوعًا"
+          }
+        }
+      }
+    },
+    "By model": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حسب النموذج"
+          }
+        }
+      }
+    },
+    "Audit": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التدقيق"
+          }
+        }
+      }
+    },
+    "Clear Usage History": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسح سجل الاستخدام"
+          }
+        }
+      }
+    },
+    "No usage recorded yet.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يُسجّل أي استخدام بعد."
+          }
+        }
+      }
+    },
+    "Export Audit Log…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصدير سجل التدقيق…"
+          }
+        }
+      }
+    },
+    "Export sessions, token usage, policy, and hook activity as JSON.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صدّر الجلسات واستخدام الرموز والسياسة ونشاط الخطافات بصيغة JSON."
+          }
+        }
+      }
+    },
+    "Daily token usage for the last 12 weeks": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدام الرموز اليومي خلال آخر 12 أسبوعًا"
+          }
+        }
+      }
+    },
+    "New Window": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نافذة جديدة"
+          }
+        }
+      }
+    },
+    "Browse Project Files…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استعراض ملفات المشروع…"
+          }
+        }
+      }
+    },
+    "Quick Switch…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التبديل السريع…"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إيقاف"
+          }
+        }
+      }
+    },
+    "Review Changes…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مراجعة التغييرات…"
+          }
+        }
+      }
+    },
+    "New Worktree…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شجرة عمل جديدة…"
+          }
+        }
+      }
+    },
+    "Manage Worktrees…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إدارة أشجار العمل…"
+          }
+        }
+      }
+    },
+    "Retry Last Turn": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة المحاولة الأخيرة"
+          }
+        }
+      }
+    },
+    "Fork Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفرّع المهمة"
+          }
+        }
+      }
+    },
+    "Archive Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أرشفة المهمة"
+          }
+        }
+      }
+    },
+    "Rename Task…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة تسمية المهمة…"
+          }
+        }
+      }
+    },
+    "Delete Task…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف المهمة…"
+          }
+        }
+      }
+    },
+    "Choose Model…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختيار النموذج…"
+          }
+        }
+      }
+    },
+    "Task": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المهمة"
+          }
+        }
+      }
+    },
+    "Model Settings…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعدادات النموذج…"
+          }
+        }
+      }
+    },
+    "No output": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا مخرجات"
+          }
+        }
+      }
+    },
+    "Browse Recent Documents…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استعراض المستندات الأخيرة…"
+          }
+        }
+      }
+    },
+    "Clear Menu": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسح القائمة"
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاسم"
+          }
+        }
+      }
+    },
+    "Folder": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المجلد"
+          }
+        }
+      }
+    },
+    "Branch": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الفرع"
+          }
+        }
+      }
+    },
+    "Changes": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التغييرات"
+          }
+        }
+      }
+    },
+    "Clean": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نظيف"
+          }
+        }
+      }
+    },
+    "Provider": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المزوّد"
+          }
+        }
+      }
+    },
+    "Vision": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرؤية"
+          }
+        }
+      }
+    },
+    "Images": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صور"
+          }
+        }
+      }
+    },
+    "Text only": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نص فقط"
+          }
+        }
+      }
+    },
+    "Context": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السياق"
+          }
+        }
+      }
+    },
+    "Token counting": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عدّ الرموز"
+          }
+        }
+      }
+    },
+    "Endpoint": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نقطة النهاية"
+          }
+        }
+      }
+    },
+    "This Mac": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الجهاز"
+          }
+        }
+      }
+    },
+    "API key": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مفتاح API"
+          }
+        }
+      }
+    },
+    "Stored in Keychain": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مخزّن في Keychain"
+          }
+        }
+      }
+    },
+    "Missing": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مفقود"
+          }
+        }
+      }
+    },
+    "Shell": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الصدفة"
+          }
+        }
+      }
+    },
+    "File edits": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعديل الملفات"
+          }
+        }
+      }
+    },
+    "Browser": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المتصفح"
+          }
+        }
+      }
+    },
+    "Web": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الويب"
+          }
+        }
+      }
+    },
+    "Sandbox": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بيئة العزل"
+          }
+        }
+      }
+    },
+    "Approvals": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الموافقات"
+          }
+        }
+      }
+    },
+    "On request": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند الطلب"
+          }
+        }
+      }
+    },
+    "Enabled": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ممكّن"
+          }
+        }
+      }
+    },
+    "Off": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متوقف"
+          }
+        }
+      }
+    },
+    "Index": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الفهرس"
+          }
+        }
+      }
+    },
+    "Semantic search": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البحث الدلالي"
+          }
+        }
+      }
+    },
+    "Not built": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غير مبني"
+          }
+        }
+      }
+    },
+    "Cached vectors": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المتجهات المخزنة"
+          }
+        }
+      }
+    },
+    "Messages": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرسائل"
+          }
+        }
+      }
+    },
+    "State": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الحالة"
+          }
+        }
+      }
+    },
+    "Running": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قيد التشغيل"
+          }
+        }
+      }
+    },
+    "Idle": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خامل"
+          }
+        }
+      }
+    },
+    "Created": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُنشئت"
+          }
+        }
+      }
+    },
+    "Privacy": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخصوصية"
+          }
+        }
+      }
+    },
+    "Rebuild Index": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة بناء الفهرس"
+          }
+        }
+      }
+    },
+    "Stale — rebuild to include recent edits.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قديم — أعد البناء لتضمين التعديلات الأخيرة."
+          }
+        }
+      }
+    },
+    "Checking index…": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ فحص الفهرس…"
+          }
+        }
+      }
+    },
+    "Output budget": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ميزانية المخرجات"
+          }
+        }
+      }
+    },
+    "Selected model": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النموذج المحدد"
+          }
+        }
+      }
+    },
+    "Context used": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السياق المستخدم"
+          }
+        }
+      }
+    },
+    "Cloud models": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نماذج سحابية"
+          }
+        }
+      }
+    },
+    "Subscriptions": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاشتراكات"
+          }
+        }
+      }
+    },
+    "Detected language servers:": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خوادم اللغة المكتشفة:"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

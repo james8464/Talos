@@ -15,14 +15,14 @@ enum GestureAction: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .none: return "None"
-        case .nextTask: return "Next Task"
-        case .previousTask: return "Previous Task"
-        case .toggleInspector: return "Toggle Inspector"
-        case .quickSwitcher: return "Quick Switcher"
-        case .newTask: return "New Task"
-        case .stop: return "Stop Response"
-        case .compact: return "Compact Conversation"
+        case .none: return String(localized: "None")
+        case .nextTask: return String(localized: "Next Task")
+        case .previousTask: return String(localized: "Previous Task")
+        case .toggleInspector: return String(localized: "Toggle Inspector")
+        case .quickSwitcher: return String(localized: "Quick Switcher")
+        case .newTask: return String(localized: "New Task")
+        case .stop: return String(localized: "Stop Response")
+        case .compact: return String(localized: "Compact Conversation")
         }
     }
 }

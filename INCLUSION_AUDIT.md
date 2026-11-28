@@ -15,6 +15,8 @@ system accessibility settings people choose.
   **Increase Contrast** enabled, then restored the system settings.
 - Reused the right-to-left and VoiceOver results from `HIG_AUDIT.md`,
   `VOICEOVER_AUDIT.md`, and `make ax-audit`.
+- Added a String Catalog with Arabic translations and launched the app in Arabic
+  to verify translated strings and RTL layout.
 
 ## Wording
 
@@ -56,6 +58,24 @@ Results:
   detail, inspector, composer, sheets, and tool output were verified in a forced
   RTL pass.
 
+## Localization
+
+`apps/macos/Talos/Localizable.xcstrings` now contains Arabic translations for
+the sidebar, welcome screen, composer, transcript states, inspector, Settings
+navigation, and the primary General, Appearance, Tools, and Usage controls.
+Launching with `AppleLanguages (ar)` renders those surfaces in Arabic and
+mirrors the layout:
+
+```text
+sidebar heading "اليوم"            x = 1319
+welcome "ماذا تريد أن تفعل؟"       x = 879
+send "إرسال الرسالة"              x = 462
+attach "إرفاق ملفات"              x = 1044
+AX_CONTROLS: 36  UNLABELED: 0
+```
+
+Full details and coverage gaps are in `LOCALIZATION.md`.
+
 ## Accessibility settings
 
 With Reduce Motion, Reduce Transparency, and Increase Contrast enabled and the
@@ -83,9 +103,11 @@ unlabeled controls were 0 across the main window, Settings, and a live MCP app.
 
 ## Limitations
 
-- UI strings are English-only; Talos does not currently ship localizations.
-  The review covers scripts, content direction, length, and accessibility
-  settings, not translated interface copy.
+- Arabic is the first non-English localization and covers the primary surfaces;
+  secondary Settings pages and some menu/provider metadata remain English
+  pending translation. The catalog supports adding them without code changes.
+- Arabic copy was authored for this project and should receive native-speaker
+  review before broad distribution.
 - This is a structured review rather than a formal study with a diverse panel
   of external participants.
 - Task suggestions remain oriented toward a coding agent (explore the codebase,

@@ -166,26 +166,26 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: return "General"
-        case .projects: return "Projects"
-        case .models: return "Models"
-        case .providers: return "Providers"
-        case .tools: return "Tools"
-        case .profiles: return "Profiles"
-        case .hooks: return "Hooks"
-        case .memory: return "Memory"
-        case .chronicle: return "Chronicle"
-        case .policy: return "Policy"
-        case .cloud: return "Cloud Tasks"
-        case .appServer: return "App Server"
-        case .skills: return "Skills"
-        case .plugins: return "Plugins"
+        case .general: return String(localized: "General")
+        case .projects: return String(localized: "Projects")
+        case .models: return String(localized: "Models")
+        case .providers: return String(localized: "Providers")
+        case .tools: return String(localized: "Tools")
+        case .profiles: return String(localized: "Profiles")
+        case .hooks: return String(localized: "Hooks")
+        case .memory: return String(localized: "Memory")
+        case .chronicle: return String(localized: "Chronicle")
+        case .policy: return String(localized: "Policy")
+        case .cloud: return String(localized: "Cloud Tasks")
+        case .appServer: return String(localized: "App Server")
+        case .skills: return String(localized: "Skills")
+        case .plugins: return String(localized: "Plugins")
         case .mcp: return "MCP"
-        case .remote: return "Remote"
-        case .appearance: return "Appearance"
-        case .usage: return "Usage"
-        case .advanced: return "Advanced"
-        case .about: return "About"
+        case .remote: return String(localized: "Remote")
+        case .appearance: return String(localized: "Appearance")
+        case .usage: return String(localized: "Usage")
+        case .advanced: return String(localized: "Advanced")
+        case .about: return String(localized: "About")
         }
     }
 
@@ -1403,7 +1403,7 @@ private struct AppearanceSettingsView: View {
         .padding()
     }
 
-    private func gesturePicker(_ title: String, selection: Binding<GestureAction>) -> some View {
+    private func gesturePicker(_ title: LocalizedStringKey, selection: Binding<GestureAction>) -> some View {
         Picker(title, selection: selection) {
             ForEach(GestureAction.allCases) { action in
                 Text(action.title).tag(action)

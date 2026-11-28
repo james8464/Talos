@@ -8,8 +8,9 @@ model that produced them.
 
 - See [`PARITY_MATRIX.md`](PARITY_MATRIX.md) for the cross-tool feature audit
   and [`HIG_AUDIT.md`](HIG_AUDIT.md) for the Apple Human Interface Guidelines
-  audit (with [`VOICEOVER_AUDIT.md`](VOICEOVER_AUDIT.md) for the spoken pass
-  and [`INCLUSION_AUDIT.md`](INCLUSION_AUDIT.md) for the inclusion review)
+  audit (with [`VOICEOVER_AUDIT.md`](VOICEOVER_AUDIT.md) for the spoken pass,
+  [`INCLUSION_AUDIT.md`](INCLUSION_AUDIT.md) for the inclusion review, and
+  [`LOCALIZATION.md`](LOCALIZATION.md) for Arabic/RTL localization)
 - Local models through Ollama, plus OpenCode Go, OpenAI, Anthropic, and Google Gemini
 - OpenCode Go subscription import from the local OpenCode login, with live
   context, vision, and reasoning metadata; chat-completions, Responses, and

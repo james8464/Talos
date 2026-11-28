@@ -207,12 +207,14 @@ struct Session: Identifiable, Codable, Equatable {
 
     var preview: String {
         guard let reply = messages.last(where: { $0.role == .assistant && !$0.text.isEmpty }) else {
-            return messages.isEmpty ? "No messages yet" : "Waiting for reply"
+            return messages.isEmpty
+                ? String(localized: "No messages yet")
+                : String(localized: "Waiting for reply")
         }
         let line = reply.text
             .replacingOccurrences(of: "\n", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return line.isEmpty ? "Reply" : String(line.prefix(90))
+        return line.isEmpty ? String(localized: "Reply") : String(line.prefix(90))
     }
 }
 
@@ -447,9 +449,9 @@ enum SidebarGrouping: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .date: return "Date"
-        case .project: return "Project"
-        case .none: return "None"
+        case .date: return String(localized: "Date")
+        case .project: return String(localized: "Project")
+        case .none: return String(localized: "None")
         }
     }
 }

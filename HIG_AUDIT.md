@@ -54,6 +54,9 @@ applicable to a single-user, local-first macOS model client.
   Reduce Motion/Transparency, Increase Contrast, RTL, and VoiceOver. Removed
   build-assumptive welcome/composer wording. Recorded in
   [`INCLUSION_AUDIT.md`](INCLUSION_AUDIT.md).
+- Added a String Catalog and Arabic localization for the main window, composer,
+  sidebar, inspector, and primary Settings surfaces; verified strings and RTL at
+  runtime. Recorded in [`LOCALIZATION.md`](LOCALIZATION.md).
 - Hardened the MCP web view: nonpersistent store, main-frame-only bridge,
   same-origin iframe sandboxing, blocked file/data/javascript navigation,
   external links only in the browser, no downloads or automatic windows, media
@@ -81,7 +84,7 @@ applicable to a single-user, local-first macOS model client.
 | Icons | Use SF Symbols consistently | ✅ | SF Symbols throughout, consistent weights and scales |
 | Images | Show meaningful image content, provide alternatives | ✅ | Image attachments render thumbnails; filenames serve as textual alternatives |
 | Immersive experiences | Spatial/immersive UI | ➖ | Not a spatial app |
-| Inclusion | Avoid assumptions and stereotypes | ✅ | Removed build-assumptive wording (“What would you like to do?”, “Ask Talos anything…”); verified Arabic, Hebrew, Chinese, Japanese, emoji, combining accents, long unbroken titles, mixed-script composer input, RTL, Reduce Motion/Transparency, Increase Contrast, and VoiceOver labels. UI strings remain English-only; structured review, not a formal external study. See `INCLUSION_AUDIT.md` |
+| Inclusion | Avoid assumptions and stereotypes | ✅ | Removed build-assumptive wording; verified Arabic, Hebrew, Chinese, Japanese, emoji, combining accents, long titles, mixed-script input, RTL, Reduce Motion/Transparency, Increase Contrast, and VoiceOver. Added a String Catalog with Arabic localization for the main window, composer, sidebar, inspector, and primary Settings surfaces, verified in an Arabic launch. Secondary pages remain English pending translation. See `INCLUSION_AUDIT.md` and `LOCALIZATION.md` |
 | Layout | Resizable layouts, comfortable density, margins | ✅ | NavigationSplitView, resizable window (min 900×600), 24–32 pt content margins, 760 pt transcript measure |
 | Materials | Use materials purposefully and respect Reduce Transparency | ✅ | Materials used for chrome/status; solid fallback when Reduce Transparency is on |
 | Motion | Purposeful, optional motion | ✅ | Motion limited to scroll/collapse/status; skipped under Reduce Motion |
