@@ -307,6 +307,7 @@ enum SlashCommands {
         SlashCommand(id: "/models", detail: "Configure models"),
         SlashCommand(id: "/skills", detail: "List local skills"),
         SlashCommand(id: "/plugins", detail: "List local plugins"),
+        SlashCommand(id: "/marketplace", detail: "Browse the plugin marketplace"),
         SlashCommand(id: "/profiles", detail: "Switch or edit config profiles"),
         SlashCommand(id: "/policy", detail: "Show the managed policy"),
         SlashCommand(id: "/cloud", detail: "Manage self-hosted cloud tasks"),

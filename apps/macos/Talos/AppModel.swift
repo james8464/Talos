@@ -215,6 +215,7 @@ final class AppModel: ObservableObject {
 
     func reloadPlugins() {
         plugins.reload()
+        plugins.reloadCatalogs()
         reloadSkills()
         Task { await reloadMCP() }
     }
@@ -1369,6 +1370,8 @@ final class AppModel: ObservableObject {
             openSettings(.cloud)
         case "/app-server", "/appserver":
             openSettings(.appServer)
+        case "/marketplace", "/catalog":
+            openSettings(.plugins)
         case "/hooks":
             openSettings(.hooks)
         case "/models":

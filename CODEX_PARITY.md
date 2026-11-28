@@ -47,6 +47,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Managed policy | Loads MDM/managed preferences (AnyUser/CurrentHost), an Ed25519-signed envelope, or a local policy; managed preferences override the file field by field and accept wrapped or flat keys; locks provider, model, reasoning, sandbox, approval, network, tool toggles, hook list, and MCP server list; read-only Policy pane with source, signature status, and locked values |
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
+| Plugin marketplace | Local JSON catalogs with install/update/remove, semantic numeric version ordering, a persisted installed registry, safe plugin IDs, and local-source validation; marketplace UI in Settings → Plugins |
 | MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, resources/list, resources/templates/list, resources/read, enable/disable, elicitation forms, OAuth discovery + dynamic registration + PKCE + refresh |
 | MCP sampling | `sampling/createMessage` is bridged to the active model with an approval sheet showing the server, prompt, system prompt, token/temperature limits, and image count; per-server session approval is supported |
 | MCP apps | Tool `_meta.ui.resourceUri` and `_meta.ui/resourceUri` are read, `resources/read` fetches text or base64 HTML, and a sandboxed WKWebView renders it with a scoped `window.talos.callTool` bridge to the owning server |
@@ -87,7 +88,7 @@ These are Codex features Talos does not claim to have:
 - Chronicle and ambient suggestions
 - Remote-control daemon and native mobile client
 - Packaged browser extension with native messaging
-- Plugin marketplaces and remote plugin catalogs
+- Remote plugin marketplaces, signatures, and dependency resolution
 - Dictation/voice input
 - Exact tokenization for Anthropic, Gemini, Ollama, and other non-BPE families
 - Image input for uncatalogued vision models

@@ -696,6 +696,8 @@ private struct SkillsSettingsView: View {
 
 private struct PluginsSettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var notice: String?
+    @State private var error: String?
 
     var body: some View {
         Form {
@@ -753,9 +755,136 @@ private struct PluginsSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Section {
+                HStack {
+                    Text("\(model.plugins.catalogs.reduce(0) { $0 + $1.plugins.count }) catalog plugins")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reload Catalogs") { model.reloadPlugins() }
+                    Button("Open Catalog Folder") { model.plugins.openCatalogFolder() }
+                }
+
+                if model.plugins.catalogs.isEmpty {
+                    Text("Add a catalog JSON file under \(model.plugins.catalogDirectory.path). Sources must be local plugin folders containing plugin.json.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(model.plugins.catalogs) { catalog in
+                    DisclosureGroup {
+                        ForEach(catalog.plugins) { plugin in
+                            marketplaceRow(plugin, catalog: catalog)
+                        }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(catalog.name)
+                            Text("\(catalog.plugins.count) plugin\(catalog.plugins.count == 1 ? "" : "s")")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                if let notice {
+                    Text(notice)
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+                if let error {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .textSelection(.enabled)
+                }
+            } header: {
+                Text("Marketplace")
+            } footer: {
+                Text("Catalogs are local JSON files. Installing copies the plugin folder into Talos; updates replace it; removing deletes the installed copy.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    @ViewBuilder
+    private func marketplaceRow(_ plugin: CatalogPlugin, catalog: PluginCatalog) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "shippingbox")
+                .foregroundStyle(.tint)
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(plugin.name)
+                        .font(.callout.weight(.medium))
+                    Text("v\(plugin.version)")
+                        .font(.caption2)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(.quaternary.opacity(0.6), in: Capsule())
+                }
+                if !plugin.description.isEmpty {
+                    Text(plugin.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                if let installed = model.plugins.installedPlugin(id: plugin.id) {
+                    Text("Installed \(installed.version)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                if let author = plugin.author, !author.isEmpty {
+                    Text(author)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            Spacer()
+            if let installed = model.plugins.installedPlugin(id: plugin.id) {
+                if model.plugins.updateAvailable(plugin) {
+                    Button("Update to \(plugin.version)") {
+                        do {
+                            try model.plugins.update(plugin, catalog: catalog.name)
+                            notice = "Updated \(plugin.name) to \(plugin.version)."
+                            error = nil
+                            model.reloadPlugins()
+                        } catch {
+                            self.error = error.localizedDescription
+                        }
+                    }
+                } else {
+                    Text("Up to date")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Button("Remove", role: .destructive) {
+                    do {
+                        try model.plugins.uninstall(id: installed.id)
+                        notice = "Removed \(plugin.name)."
+                        error = nil
+                        model.reloadPlugins()
+                    } catch {
+                        self.error = error.localizedDescription
+                    }
+                }
+            } else {
+                Button("Install") {
+                    do {
+                        try model.plugins.install(plugin, catalog: catalog.name)
+                        notice = "Installed \(plugin.name) \(plugin.version)."
+                        error = nil
+                        model.reloadPlugins()
+                    } catch {
+                        self.error = error.localizedDescription
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 3)
     }
 }
 
