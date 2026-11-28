@@ -16,7 +16,8 @@ model that produced them.
 - Project switcher, project-scoped tasks, a file browser with previews, a
   Git changes panel with colored diffs, staging, and commit, plus a worktree
   manager that creates, switches, merges, and cleans up task branches
-- Tools that work with every model: shell, file read/write, patch, file search,
+- Tools that work with every model: shell, a persistent PTY-backed terminal,
+  file read/write, patch, file search,
   document creation, web fetch/search, task plan, computer use, and browser
   control (page reading, indexed actions, navigation, and screenshot OCR),
   plus Chrome DevTools Protocol control with DOM selectors and JavaScript

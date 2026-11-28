@@ -31,6 +31,7 @@
 		59EFBCD216961E06356D37D5 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70913AB772F308657E509F42 /* Providers.swift */; };
 		5A14E9CF14B7A67B1070CDA6 /* CDPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7DBC90152307B91B738B5B /* CDPClient.swift */; };
 		5F0452CA07207E579213E584 /* LSPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761A8AA8BA11DD8257D24497 /* LSPService.swift */; };
+		636525DC5027C882107B839C /* TerminalSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D88102816CA6291EAA2799 /* TerminalSession.swift */; };
 		6790212F8FC205B737DC983A /* MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BD0AAE243B78A20C79D30 /* MCP.swift */; };
 		6CB95B1C0F86AD5D28BFE384 /* TalosCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA96C9B0EC118A88C99EE282 /* TalosCLI.swift */; };
 		701BC29FBF7EF758BF5205B5 /* AuditExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB6B7E92BE795429BBED743 /* AuditExport.swift */; };
@@ -136,6 +137,7 @@
 		98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalog.swift; sourceTree = "<group>"; };
 		9AD7B1C72AEDA1662CD00EAA /* GitPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitPanel.swift; sourceTree = "<group>"; };
 		9BE7EF9CF0A2D361264A1F30 /* PolicySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicySettings.swift; sourceTree = "<group>"; };
+		A3D88102816CA6291EAA2799 /* TerminalSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSession.swift; sourceTree = "<group>"; };
 		AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		AD1122852660CD8181149806 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B08CE26F73E0FB579C380729 /* TalosMobileApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalosMobileApp.swift; sourceTree = "<group>"; };
@@ -255,6 +257,7 @@
 				88120A756923F2A3457A372B /* Skills.swift */,
 				3C2A35D82393F85F067D06A9 /* Subagent.swift */,
 				5D2AC40CFA47F5E6168180BB /* TalosApp.swift */,
+				A3D88102816CA6291EAA2799 /* TerminalSession.swift */,
 				29816AA9A9DFB0CBFA35EE85 /* Tokenizer.swift */,
 				01B5B87B005EEE76F31442B1 /* Tools.swift */,
 				BDE40BA2F2E62D3115E531DD /* UsageStore.swift */,
@@ -601,6 +604,7 @@
 				2AA6E448839AB7AF61F37FFD /* Skills.swift in Sources */,
 				4DC5F71A4B9EEA16C3F3BC19 /* Subagent.swift in Sources */,
 				35D3CE818FD25C0AA143CD35 /* TalosApp.swift in Sources */,
+				636525DC5027C882107B839C /* TerminalSession.swift in Sources */,
 				195093A5F69935039358AA9E /* Tokenizer.swift in Sources */,
 				8BE9B17882E19D4CCC8FA01C /* Tools.swift in Sources */,
 				E1E61F33240469D831267B5C /* UsageStore.swift in Sources */,

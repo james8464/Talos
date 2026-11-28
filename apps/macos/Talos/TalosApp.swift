@@ -3,6 +3,7 @@ import SwiftUI
 final class TalosAppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         LSPManager.shared.stopAll()
+        Task { await TerminalManager.shared.closeAll() }
     }
 }
 

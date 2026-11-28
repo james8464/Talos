@@ -21,7 +21,7 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
 | Image and PDF input | ✅ | ✅ | ✅ | ✅ | Native images and rendered PDF pages |
 | Uncatalogued vision models | 🟡 | 🟡 | 🟡 | ✅ | Per-model vision override |
 | **Editing and repo workflow** | | | | | |
-| Shell and PTY-like commands | ✅ | ✅ | ✅ | 🟡 | Sandboxed non-interactive shell; no persistent terminal |
+| Shell and PTY-like commands | ✅ | ✅ | ✅ | ✅ | Sandboxed `shell` for one-shot commands plus a persistent PTY-backed `terminal` tool (`run`, `send`, `read`, `interrupt`, `close`) that keeps working directory, environment, and shell state across calls, reports exit codes, and returns partial output on timeout |
 | File read/write/search/patch | ✅ | ✅ | ✅ | ✅ | Native tools plus unified-diff apply |
 | Approvals and sandbox | ✅ | ✅ | ✅ | ✅ | Approval policies, sandbox-exec, network gate |
 | Git diff/stage/commit | ✅ | ✅ | ✅ | ✅ | Changes panel and Git service |
@@ -101,6 +101,10 @@ Legend: ✅ supported · 🟡 partial, preview, or workflow-dependent · ❌ not
   labels to icon-only composer controls, GitHub form fields, and General
   settings pickers/toggles. System scrollbar/window chrome and the menu bar are
   excluded.
+- **Persistent terminal** — a standalone harness verified cwd and environment
+  persistence, exit codes, multi-line output, timeouts, Ctrl-C recovery, and
+  `send`/`read`; a live model session executed `echo TERMINAL-CLEAN-OK` through
+  the tool and received exactly `exit 0` plus the output.
 - **Comprehensive parity** — this matrix is an audit, not proof of equivalence.
   The largest remaining deltas are IDE/LSP/editor integration, PR review
   workflows, vendor-hosted cloud agents, team/SSO/billing, cloud sync, and

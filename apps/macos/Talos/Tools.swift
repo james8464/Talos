@@ -87,6 +87,10 @@ struct ToolCall: Sendable {
         switch name {
         case "shell":
             return string("command") ?? "Run a shell command"
+        case "terminal":
+            return [string("action") ?? "run", string("command") ?? string("text")]
+                .compactMap { $0 }
+                .joined(separator: ": ")
         case "read_file", "write_file", "view_image", "create_document":
             return string("path") ?? name
         case "list_files":
@@ -231,6 +235,7 @@ enum ToolPrompt {
         ]
         if context.enabledShell {
             lines.append("- shell: {\"command\":\"...\",\"timeout_seconds\":30} Run a zsh command in the workspace.")
+            lines.append("- terminal: {\"action\":\"run\"|\"send\"|\"read\"|\"interrupt\"|\"close\", ...} Use a persistent interactive zsh session. run takes command and timeout_seconds and keeps cwd, environment, and shell state between calls; send writes raw input for REPLs; read returns unread output; interrupt sends Ctrl-C; close ends the session.")
         }
         if context.enabledFileEdits {
             lines.append("- read_file: {\"path\":\"...\",\"start_line\":1,\"end_line\":200} Read a text file.")
@@ -329,7 +334,7 @@ struct ToolRunner: Sendable {
 
     static func requiresApproval(_ call: ToolCall) -> Bool {
         switch call.name {
-        case "shell", "write_file", "apply_patch":
+        case "shell", "terminal", "write_file", "apply_patch":
             return true
         case "computer":
             let action = call.string("action") ?? ""
@@ -378,6 +383,8 @@ struct ToolRunner: Sendable {
             return await runBrowser(call)
         case "browser_cdp":
             return await runBrowserCDP(call)
+        case "terminal":
+            return await runTerminal(call)
         case "lsp":
             return await runLSP(call)
         default:
@@ -617,6 +624,55 @@ struct ToolRunner: Sendable {
     }
 
     @MainActor
+    private func runTerminal(_ call: ToolCall) async -> ToolResult {
+        guard context.enabledShell, !context.readOnly else {
+            return .fail("Shell access is disabled in Settings.")
+        }
+        let action = (call.string("action") ?? "run").lowercased()
+        do {
+            let session = try await TerminalManager.shared.session(for: context.workspace)
+            switch action {
+            case "run":
+                guard let command = call.string("command"), !command.isEmpty else {
+                    return .fail("terminal run requires a command.")
+                }
+                let timeout = min(max(call.int("timeout_seconds") ?? 30, 1), 120)
+                let result = try await session.run(command, timeout: TimeInterval(timeout))
+                let body = truncate(result.output)
+                if result.timedOut {
+                    return .fail(
+                        "Command still running after \(timeout)s. Use action \"read\" for more output, \"send\" for input, or \"interrupt\" to stop it.\n\n\(body)"
+                    )
+                }
+                let code = result.exitCode ?? -1
+                return ToolResult(
+                    status: code == 0 ? .succeeded : .failed,
+                    output: "exit \(code)\n\n\(body)"
+                )
+            case "send":
+                let text = call.string("text") ?? call.string("command") ?? ""
+                guard !text.isEmpty else {
+                    return .fail("terminal send requires text.")
+                }
+                try await session.send(text)
+                return .ok("Sent \(text.count) characters to the terminal.")
+            case "read":
+                let text = await session.read()
+                return .ok(text.isEmpty ? "(no output)" : truncate(text))
+            case "interrupt":
+                try await session.interrupt()
+                return .ok("Sent Ctrl-C to the terminal.")
+            case "close":
+                await TerminalManager.shared.close(for: context.workspace)
+                return .ok("Terminal closed.")
+            default:
+                return .fail("Unknown terminal action '\(action)'. Use run, send, read, interrupt, or close.")
+            }
+        } catch {
+            return .fail(error.localizedDescription)
+        }
+    }
+
     private func runLSP(_ call: ToolCall) async -> ToolResult {
         guard context.enabledLSP else {
             return .fail("Language-server tools are disabled in Settings.")

@@ -30,6 +30,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
   open-PR lookup, inline review comments, and review submission
 - `Talos/PatchPreview.swift` — parsed per-file diff preview for `apply_patch`
 - `Talos/AuditExport.swift` — JSON audit document for sessions, usage, policy, and hooks
+- `Talos/TerminalSession.swift` — persistent PTY-backed zsh session for the `terminal` tool
 - `Talos/LSPService.swift` and `DiagnosticsPanel.swift` — language-server
   JSON-RPC client, diagnostics, symbols, code actions, and formatting
 - `CLI/TalosCLI.swift` — headless `talos` client for the app server
@@ -112,6 +113,14 @@ automatic compaction is enabled, Talos summarizes older messages before the
 window fills. Providers that report token usage are recorded exactly; other
 counts are marked estimated. Settings → Usage shows the totals and a 12-week
 heatmap.
+
+## Persistent terminal
+
+The `terminal` tool keeps a live zsh session through `/usr/bin/script` (a PTY),
+so the working directory, environment, and shell state persist between tool
+calls. Actions: `run` (with timeout and exit code), `send` (raw input for
+REPLs), `read` (unread output), `interrupt` (Ctrl-C), and `close`. Like `shell`,
+it needs approval and respects the shell-access setting.
 
 ## Accessibility audit
 
