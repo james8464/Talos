@@ -52,7 +52,7 @@ enum ModelCatalog {
                 reasoningOptions: [],
                 defaultReasoning: nil,
                 contextWindow: nil,
-                summary: "Capabilities could not be read from Ollama for this model."
+                summary: String(localized: "Capabilities could not be read from Ollama for this model.")
             )
         }
 
@@ -67,14 +67,14 @@ enum ModelCatalog {
             : []
 
         var parts: [String] = []
-        if thinking { parts.append("thinking") }
-        if tools { parts.append("tool-aware") }
-        if vision { parts.append("vision") }
+        if thinking { parts.append(String(localized: "thinking")) }
+        if tools { parts.append(String(localized: "tool-aware")) }
+        if vision { parts.append(String(localized: "vision")) }
         if let context = info.contextLength {
-            parts.append("\(context.formatted()) context")
+            parts.append(String(localized: "\(context.formatted()) context"))
         }
         let summary = parts.isEmpty
-            ? "This local model does not advertise thinking or tools."
+            ? String(localized: "This local model does not advertise thinking or tools.")
             : parts.joined(separator: " · ")
 
         return ModelCapabilities(
@@ -99,7 +99,7 @@ enum ModelCatalog {
                 defaultReasoning: nil,
                 contextWindow: openAIContextWindow(id),
                 supportsVision: openAISupportsVision(id),
-                summary: "This OpenAI model does not expose a reasoning control through Chat Completions."
+                summary: String(localized: "This OpenAI model does not expose a reasoning control through Chat Completions.")
             )
         }
         return ModelCapabilities(
@@ -111,7 +111,7 @@ enum ModelCatalog {
             defaultReasoning: "medium",
             contextWindow: openAIContextWindow(id),
             supportsVision: openAISupportsVision(id),
-            summary: "OpenAI reasoning effort is available for this model."
+            summary: String(localized: "OpenAI reasoning effort is available for this model.")
         )
     }
 
@@ -126,7 +126,7 @@ enum ModelCatalog {
                 defaultReasoning: nil,
                 contextWindow: 200_000,
                 supportsVision: true,
-                summary: "This Claude model does not expose extended thinking."
+                summary: String(localized: "This Claude model does not expose extended thinking.")
             )
         }
         return ModelCapabilities(
@@ -139,7 +139,7 @@ enum ModelCatalog {
             defaultReasoning: "off",
             contextWindow: 200_000,
             supportsVision: true,
-            summary: "Anthropic extended thinking uses a token budget."
+            summary: String(localized: "Anthropic extended thinking uses a token budget.")
         )
     }
 

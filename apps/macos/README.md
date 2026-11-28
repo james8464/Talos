@@ -134,13 +134,9 @@ VoiceOver labels are audited with `make ax-audit`, and the spoken walkthrough
 of the main window, Settings, and an MCP app is recorded in
 [`VOICEOVER_AUDIT.md`](../../VOICEOVER_AUDIT.md). Multilingual, long-content,
 and accessibility-setting review is in
-[`INCLUSION_AUDIT.md`](../../INCLUSION_AUDIT.md). Arabic and RTL coverage,
+[`INCLUSION_AUDIT.md`](../../INCLUSION_AUDIT.md). English/French coverage,
 launch instructions, and remaining translation gaps are documented in
 [`LOCALIZATION.md`](../../LOCALIZATION.md).
-
-To verify right-to-left layout, launch with
-`TALOS_LAYOUT_DIRECTION=rtl` (or `ltr`) to force the direction without changing
-the system locale. Code and tool output stay left-to-right.
 
 The main window uses a task-first layout: a customizable sidebar (group by
 date, project, or none; preview and count toggles) with a model status footer,

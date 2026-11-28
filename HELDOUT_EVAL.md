@@ -13,7 +13,7 @@ make semantic-eval       # authored 20-query set
 make semantic-heldout    # held-out 15-query set
 make localization-check
 make localization-coverage
-make localization-eval   # live Arabic AX traversal
+make localization-eval   # live French AX traversal
 ```
 
 ## Semantic retrieval
@@ -93,83 +93,59 @@ Executed 9 tests, with 0 failures
 ** TEST SUCCEEDED **
 ```
 
-## Arabic localization
+## French localization
 
-`make localization-coverage` is a held-out source scan: it walks every SwiftUI
-call site (`Text`, `Button`, `Toggle`, `Picker`, `Section`, `LabeledContent`,
-`TextField`, `Stepper`, `Menu`, `Link`, `navigationTitle`, `help`,
-`accessibilityLabel`, alerts, and confirmation dialogs) and asserts that each
-user-visible literal has an Arabic catalog entry. It excludes interpolation,
-brand names, key caps, and technical tokens.
+`make localization-coverage` scans SwiftUI call sites, conditional titles,
+fallback strings, and explicit `String(localized:)`/`LocalizedStringKey`
+wrappers. It reports 654 UI literals and 0 missing French entries.
 
-| Check | Before | After |
-| --- | ---: | ---: |
-| UI literals found | 486 | 618 |
-| Missing Arabic | 131 | 0 |
-| Catalog keys | 526 | 685 |
+| Check | Result |
+| --- | ---: |
+| Catalog keys | 738 |
+| Missing French | 0 |
+| UI literals scanned | 654 |
+| Missing French literals | 0 |
 
-The 131 missing strings included the menu-bar menu, approval sheet, worktree
-sheet, GitHub panel, MCP app/elicitation/sampling views, Chronicle controls,
-recent documents, diagnostics panel, policy empty state, project browser, and
-most accessibility labels added in the previous pass. All were translated and
-added to `Localizable.xcstrings`.
-
-The scan was then extended to wrapped and conditional forms. That found a
-second class of bugs: strings that **had** Arabic catalog entries but rendered
-English because SwiftUI treated the expression as `String` instead of
-`LocalizedStringKey`. Examples:
-
-- `HelpView` passed `String` parameters to `section(_:text:)`, and built its
-  shortcut rows from raw tuple literals, so the whole Help sheet stayed English.
-- `Text(isNew ? "New Profile" : "Edit Profile")` and similar conditional titles.
-- `Text(branch ?? "No repository")`, `Text(selected?.path ?? "Diff")`.
-- `.help(recording ? "Stop dictation" : "Dictate a message")`.
-
-These now use `LocalizedStringKey(...)` or `String(localized:)`, and the source
-scanner checks wrapped literals as well. The catalog grew to 685 keys.
-
-A third runtime pass covered every remaining dialog and sheet with a normal or
-`DEBUG`-only test trigger:
-
-- rename task and delete task, opened from the Task menu;
-- approval sheet, MCP elicitation, and MCP sampling;
-- recent documents and the provider editor;
-- the menu bar (titles and every app menu item);
-- Quick Switcher, Help, Project Browser, Git panel, and worktree sheet;
-- all 20 Settings pages.
-
-It found and fixed:
-
-- missing catalog entries for the approval title `Allow %@?` and the
-  elicitation title `%@ needs input`;
-- unlabeled provider-editor `SecureField`/`TextField` controls for API key,
-  base URL, model, and server;
-- unlabeled MCP elicitation field editors (text, number, choice, boolean).
-
-The menu-bar pass skips the Apple menu, whose recent-item commands
-(“Messages”, “Clear Menu”) belong to the system, and checks the app’s own menus.
+The live traversal (`make localization-eval`) launches with `AppleLanguages=fr`
+and checks the main window, menu bar, twelve dialogs/sheets, and all 20 Settings
+pages. It fails on English UI strings, missing French labels, or unlabeled
+controls.
 
 ```text
-MAIN arabic=178 english=0 unlabeled=0
-MENUBAR arabic=98 english=0 items=106
-SURFACE Rename Task arabic=181 english=0 unlabeled=0
-SURFACE Delete Task arabic=182 english=0 unlabeled=0
-SURFACE Quick Switcher arabic=191 english=0 unlabeled=0
-SURFACE Help arabic=199 english=0 unlabeled=0
-SURFACE Project Browser arabic=181 english=0 unlabeled=0
-SURFACE Git Panel arabic=190 english=0 unlabeled=0
-SURFACE Approval Sheet arabic=182 english=0 unlabeled=0
-SURFACE MCP Elicitation arabic=184 english=0 unlabeled=0
-SURFACE MCP Sampling arabic=183 english=0 unlabeled=0
-SURFACE Recent Documents arabic=182 english=0 unlabeled=0
-SURFACE Provider Editor arabic=190 english=0 unlabeled=0
-SURFACE Worktree Sheet arabic=184 english=0 unlabeled=0
+MAIN french=117 english=0 unlabeled=0
+MENUBAR french=60 english=0 items=106
+SURFACE Rename Task french=120 english=0 unlabeled=0
+SURFACE Delete Task french=120 english=0 unlabeled=0
+SURFACE Quick Switcher french=128 english=0 unlabeled=0
+SURFACE Help french=138 english=0 unlabeled=0
+SURFACE Project Browser french=120 english=0 unlabeled=0
+SURFACE Git Panel french=128 english=0 unlabeled=0
+SURFACE Approval Sheet french=120 english=0 unlabeled=0
+SURFACE MCP Elicitation french=123 english=0 unlabeled=0
+SURFACE MCP Sampling french=121 english=0 unlabeled=0
+SURFACE Recent Documents french=121 english=0 unlabeled=0
+SURFACE Provider Editor french=132 english=0 unlabeled=0
+SURFACE Hook Trust french=121 english=0 unlabeled=0
+SURFACE MCP App french=119 english=0 unlabeled=0
+SURFACE Worktree Sheet french=123 english=0 unlabeled=0
 20 Settings pages: english=0 unlabeled=0
 FAILURES: 0
 ```
 
-This is still not a native-speaker review. Provider names, model identifiers,
-paths, user content, and technical tokens remain English by design.
+This pass also fixed custom-helper bypasses that a catalog-only check misses:
+
+- `ReasoningOption` now stores localization keys and resolves them at display
+  time, so picker titles are French even when capabilities are built early.
+- Provider-popover status/subtitle computed strings now use
+  `String(localized:)`.
+- `LabeledContent` fallbacks (`Project`, `Unknown`, cached-file counts) and the
+  hook-trust/server/elicitation message formats are localized.
+- Hook event titles and details, model reasoning summaries, and slash-command
+  details were localized at their source.
+
+French copy was authored with machine assistance and checked for UI
+consistency. A native-speaker review is still recommended. Provider names,
+model identifiers, paths, user content, and technical tokens remain English.
 
 ## Parity scenarios against Codex
 
@@ -219,7 +195,7 @@ failure surfaced to the user rather than silently executed.
 
 ## Open evidence gaps
 
-- No native-speaker Arabic review. The live traversal covers the main window,
+- No native-speaker French review. The live traversal covers the main window,
   the menu bar, twelve panels/dialogs/sheets, and all Settings pages, but not
   every possible dialog (for example MCP app web views and hook-trust prompts).
 - Some display-only strings passed as `String` to `LabeledContent` values or

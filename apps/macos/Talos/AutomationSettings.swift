@@ -384,9 +384,15 @@ struct HookTrustView: View {
                     .font(.title3.weight(.semibold))
             }
 
-            Text("**\(request.hook.name)** wants to run on \(request.event.title.lowercased()). Hook commands run shell code in your workspace.")
-                .font(.callout)
-                .fixedSize(horizontal: false, vertical: true)
+            Text(.init(
+                String(
+                    format: String(localized: "**%@** wants to run on %@. Hook commands run shell code in your workspace."),
+                    request.hook.name,
+                    request.event.title.lowercased()
+                )
+            ))
+            .font(.callout)
+            .fixedSize(horizontal: false, vertical: true)
 
             Text(request.hook.command)
                 .font(.system(.caption, design: .monospaced))
@@ -396,7 +402,7 @@ struct HookTrustView: View {
                 .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
 
             if let matcher = Optional(request.hook.matcher), !matcher.isEmpty {
-                Text("Matches tools: \(matcher)")
+                Text(String(format: String(localized: "Matches tools: %@"), matcher))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

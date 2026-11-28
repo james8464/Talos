@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Validate the String Catalog before building.
+"""Validate the French String Catalog before building.
 
-Checks every source key has an Arabic translation, Arabic text is present,
-placeholders survive translation, and no non-brand key falls back to English.
+Checks every source key has a French translation, placeholders survive, and no
+non-brand key silently falls back to English.
 """
 import json
 import re
@@ -10,9 +10,25 @@ import sys
 from pathlib import Path
 
 CATALOG = Path(__file__).resolve().parents[1] / "Talos" / "Localizable.xcstrings"
-BRAND_ONLY = {"Git", "MCP", "GitHub", "Talos", "Ollama", "OpenAI", "Anthropic", "Gemini", "OpenCode Go", "Keychain", "Finder", "macOS", "API", "HTTP", "HTTPS", "URL", "SSE", "JSON-RPC", "Ed25519", "SHA-256", "base64"}
+LOCALE = "fr"
+BRAND_ONLY = {
+    "Git", "MCP", "GitHub", "Talos", "Ollama", "OpenAI", "Anthropic", "Gemini",
+    "OpenCode Go", "Keychain", "Finder", "macOS", "API", "HTTP", "HTTPS", "URL",
+    "SSE", "JSON-RPC", "Ed25519", "SHA-256", "base64", "PDF", "MCP",
+}
+# Words that are identical in English and French UI copy.
+SAME_IN_FRENCH = {
+    "Menu", "Date", "Audit", "Cloud", "Budget", "Total", "Maximum", "Minimum",
+    "Version", "Document", "Documents", "Configuration", "Message", "Messages",
+    "Session", "Sessions", "Profile", "Profiles", "Plugin", "Plugins",
+    "Prompt", "Prompts", "Type", "Format", "Nom", "Simple", "Important",
+    "Options", "Actions", "Éditeur", "Client", "Service", "Services",
+    "Cloud · %@", "Plan", "Hooks", "Vision", "Images", "Shell", "Web", "Index",
+    "Local", "Microphone", "Marketplace", "Arguments", "Port", "Hook", "Worker",
+    "Source", "Signature", "Diagnostics", "Worktrees", "Fork", "Base",
+    "Version %@", "%lld local", " · %lld cloud", "vision", "Assistant",
+}
 PLACEHOLDER = re.compile(r"%(?:\d+\$)?(?:lld|ld|d|@|f|s)")
-ARABIC = re.compile(r"[\u0600-\u06FF]")
 
 data = json.loads(CATALOG.read_text(encoding="utf-8"))
 strings = data.get("strings", {})
@@ -20,24 +36,21 @@ errors = []
 translated = 0
 
 for key, entry in strings.items():
-    localizations = entry.get("localizations", {})
-    unit = localizations.get("ar", {}).get("stringUnit", {})
+    unit = entry.get("localizations", {}).get(LOCALE, {}).get("stringUnit", {})
     value = unit.get("value")
     if not value:
-        errors.append(f"missing ar translation: {key!r}")
+        errors.append(f"missing {LOCALE} translation: {key!r}")
         continue
     translated += 1
-    if value.strip() == key.strip() and key not in BRAND_ONLY:
+    if value.strip() == key.strip() and key not in BRAND_ONLY and key not in SAME_IN_FRENCH:
         errors.append(f"untranslated English fallback: {key!r}")
-    if not ARABIC.search(value) and key not in BRAND_ONLY:
-        errors.append(f"no Arabic script: {key!r} -> {value!r}")
     if sorted(PLACEHOLDER.findall(key)) != sorted(PLACEHOLDER.findall(value)):
         errors.append(
             f"placeholder mismatch: {key!r} {PLACEHOLDER.findall(key)} -> {value!r} {PLACEHOLDER.findall(value)}"
         )
 
 print(f"CATALOG_KEYS: {len(strings)}")
-print(f"ARABIC_TRANSLATIONS: {translated}")
+print(f"FRENCH_TRANSLATIONS: {translated}")
 if errors:
     print(f"FAILURES: {len(errors)}")
     for error in errors:

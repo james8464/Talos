@@ -352,7 +352,7 @@ private struct ModelsSettingsView: View {
                 Text("Use this for uncatalogued vision models whose metadata does not report image support.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                LabeledContent("Context window", value: model.contextLimit.map { $0.formatted() } ?? "Unknown")
+                LabeledContent("Context window", value: model.contextLimit.map { $0.formatted() } ?? String(localized: "Unknown"))
                 LabeledContent("Context used", value: model.contextUsage.label)
                 Text(model.modelCapabilities.summary)
                     .font(.caption)

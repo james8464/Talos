@@ -26,9 +26,8 @@ applicable to a single-user, local-first macOS model client.
 - Added a Help menu and a shortcut/reference sheet (⌘?).
 - Added File > New Window (⇧⌘N), backed by a second standard WindowGroup;
   verified as two independently resizable windows.
-- Verified right-to-left layout with a forced RTL pass: sidebar, detail,
-  inspector, composer, quick switcher, and modal sheets mirror correctly, and
-  tool output stays left-to-right for code and paths.
+- Direction resolution remains in code, but RTL is outside the supported
+  English/French set and is not claimed.
 - Added persisted sidebar customization: group by date, project, or none, with
   preview and message-count toggles in the sidebar menu and Settings.
 - Added a persisted recent-documents store, File > Open Recent, and a browser
@@ -49,13 +48,13 @@ applicable to a single-user, local-first macOS model client.
   mappings, an optional Option-key gate, and keyboard/menu equivalents. Live
   verification: left/right switched tasks, up opened Quick Switch, and down
   toggled the inspector.
-- Completed an inclusion review across Arabic/Hebrew/Chinese/Japanese/emoji/
-  combining-accent content, long unbroken titles, mixed-script composer input,
-  Reduce Motion/Transparency, Increase Contrast, RTL, and VoiceOver. Removed
+- Completed an inclusion review across mixed-script, emoji, and
+  combining-accent content, long unbroken titles, Reduce
+  Motion/Transparency, Increase Contrast, and VoiceOver. Removed
   build-assumptive welcome/composer wording. Recorded in
   [`INCLUSION_AUDIT.md`](INCLUSION_AUDIT.md).
-- Added a String Catalog and Arabic localization for the main window, composer,
-  sidebar, inspector, and primary Settings surfaces; verified strings and RTL at
+- Added a String Catalog and French localization for the main window, composer,
+  sidebar, inspector, dialogs, and Settings; verified strings at
   runtime. Recorded in [`LOCALIZATION.md`](LOCALIZATION.md).
 - Hardened the MCP web view: nonpersistent store, main-frame-only bridge,
   same-origin iframe sandboxing, blocked file/data/javascript navigation,
@@ -84,12 +83,12 @@ applicable to a single-user, local-first macOS model client.
 | Icons | Use SF Symbols consistently | ✅ | SF Symbols throughout, consistent weights and scales |
 | Images | Show meaningful image content, provide alternatives | ✅ | Image attachments render thumbnails; filenames serve as textual alternatives |
 | Immersive experiences | Spatial/immersive UI | ➖ | Not a spatial app |
-| Inclusion | Avoid assumptions and stereotypes | ✅ | Removed build-assumptive wording; verified Arabic, Hebrew, Chinese, Japanese, emoji, combining accents, long titles, mixed-script input, RTL, Reduce Motion/Transparency, Increase Contrast, and VoiceOver. Added a 685-key String Catalog with Arabic localization for the main window, composer, sidebar, inspector, all Settings pages, and menus, verified by a live Arabic/RTL AX traversal with zero UI English strings and zero unlabeled controls. See `INCLUSION_AUDIT.md` and `LOCALIZATION.md` |
+| Inclusion | Avoid assumptions and stereotypes | ✅ | Removed build-assumptive wording; verified mixed-script, emoji, combining accents, long titles, Reduce Motion/Transparency, Increase Contrast, and VoiceOver. Added a 738-key String Catalog with French localization for the main window, composer, sidebar, inspector, all Settings pages, and menus, verified by a live French AX traversal with zero UI English strings and zero unlabeled controls. See `INCLUSION_AUDIT.md` and `LOCALIZATION.md` |
 | Layout | Resizable layouts, comfortable density, margins | ✅ | NavigationSplitView, resizable window (min 900×600), 24–32 pt content margins, 760 pt transcript measure |
 | Materials | Use materials purposefully and respect Reduce Transparency | ✅ | Materials used for chrome/status; solid fallback when Reduce Transparency is on |
 | Motion | Purposeful, optional motion | ✅ | Motion limited to scroll/collapse/status; skipped under Reduce Motion |
 | Privacy | Local-first data, explicit provider disclosure | ✅ | Sessions/index/usage local; keys in Keychain; provider privacy note in Inspector |
-| Right to left | Leading/trailing layout, mirrored controls | ✅ | Forced-RTL verification: sidebar moved to the right edge (x=1308), detail/welcome to the left (x=807), composer mirrored (send x=462, attach x=1044), inspector moved left (x=305), quick switcher and sheets mirrored. Tool output is pinned LTR. UI strings remain English pending localization |
+| Right to left | Leading/trailing layout, mirrored controls | ➖ | Not part of the supported English/French set; direction resolution remains in code but RTL is not tested or claimed |
 | SF Symbols | System symbols, correct variants | ✅ | No custom bitmaps for controls; symbol weights match surrounding text |
 | Spatial layout | Spatial computing layout | ➖ | Not a visionOS app |
 | Typography | System fonts, text styles, monospaced digits | ✅ | Semantic styles in key surfaces, monospaced tool output, monospaced digits for metrics |

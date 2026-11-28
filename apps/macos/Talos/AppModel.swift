@@ -784,7 +784,7 @@ final class AppModel: ObservableObject {
     var reasoningTitle: String {
         guard let reasoningSelection,
               let option = modelCapabilities.reasoningOptions.first(where: { $0.id == reasoningSelection }) else {
-            return "Not exposed"
+            return String(localized: "Not exposed")
         }
         return option.title
     }
@@ -2276,6 +2276,23 @@ final class AppModel: ObservableObject {
             showRecentDocuments = true
         case "provider":
             editingProvider = .openAI
+        case "hooktrust":
+            pendingHookTrust = HookTrustRequest(
+                hook: HookDefinition(
+                    name: "format-check",
+                    event: .preToolUse,
+                    command: "swiftformat ."
+                ),
+                event: .preToolUse
+            )
+        case "mcpapp":
+            activeMCPApp = MCPUIApp(
+                uri: "ui://demo/app.html",
+                serverName: "demo-server",
+                title: "Demo App",
+                mimeType: "text/html",
+                html: "<html><body style='font-family: -apple-system'><h1>تطبيق تجريبي</h1></body></html>"
+            )
         default:
             break
         }

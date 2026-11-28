@@ -2,15 +2,16 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-// Live Arabic localization regression for Talos.
+// Live French localization regression for Talos.
 //
 // Usage (from the repository root):
 //   make localization-eval
 //
 // Requires Accessibility permission for the terminal. Launches the built app
-// with AppleLanguages=ar, creates a new task, opens Settings, visits every
-// Settings page, and fails on app-owned English UI strings, missing Arabic
-// labels, or unlabeled interactive controls. Restores English on exit.
+// with AppleLanguages=fr, then visits the main window, menu bar, dialogs,
+// sheets, and every Settings page. It fails on app-owned English UI strings,
+// missing French labels, or unlabeled interactive controls. Restores English
+// on exit.
 
 struct Violation {
     let page: String
@@ -18,11 +19,10 @@ struct Violation {
 }
 
 let bundleID = "app.talos.macos"
-let pageTitles = [
-    "عام", "المشاريع", "النماذج", "المزوّدون", "الأدوات", "التكوينات",
-    "الخطافات", "الذاكرة", "السجل", "السياسة", "مهام السحابة", "خادم التطبيق",
-    "المهارات", "الإضافات", "MCP", "التحكم عن بعد", "المظهر", "الاستخدام",
-    "متقدم", "حول",
+let pageTitleKeys = [
+    "General", "Projects", "Models", "Providers", "Tools", "Profiles",
+    "Hooks", "Memory", "Chronicle", "Policy", "Cloud Tasks", "App Server",
+    "Skills", "Plugins", "MCP", "Remote", "Appearance", "Usage", "Advanced", "About",
 ]
 let brandAllowlist: Set<String> = [
     "Talos", "MCP", "Git", "GitHub", "Ollama", "OpenAI", "Anthropic", "Gemini",
@@ -63,8 +63,11 @@ func normalized(_ text: String) -> String {
     }))
 }
 
-func containsArabic(_ text: String) -> Bool {
-    text.unicodeScalars.contains { (0x0600...0x06FF).contains($0.value) }
+var frenchValues = Set<String>()
+
+func isLocalized(_ text: String) -> Bool {
+    if frenchValues.contains(text) { return true }
+    return text.unicodeScalars.contains { (0x00C0...0x017F).contains($0.value) }
 }
 
 func run(_ executable: String, _ arguments: [String]) {
@@ -90,9 +93,11 @@ func activate(_ pid: pid_t) {
     NSRunningApplication(processIdentifier: pid)?.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
 }
 
-func setArabicDefaults() {
-    run("/usr/bin/defaults", ["write", bundleID, "AppleLanguages", "-array", "ar"])
-    run("/usr/bin/defaults", ["write", bundleID, "AppleLocale", "-string", "ar_SA"])
+func setFrenchDefaults() {
+    run("/usr/bin/defaults", ["write", bundleID, "AppleLanguages", "-array", "fr"])
+    run("/usr/bin/defaults", ["write", bundleID, "AppleLocale", "-string", "fr_FR"])
+    run("/usr/bin/killall", ["cfprefsd"])
+    usleep(600_000)
 }
 
 guard AXIsProcessTrusted() else {
@@ -109,18 +114,31 @@ guard let catalogData = try? Data(contentsOf: URL(fileURLWithPath: catalogPath))
     exit(2)
 }
 
-var englishKeys = Set<String>()
-for (key, raw) in strings {
-    guard let entry = raw as? [String: Any],
-          let localizations = entry["localizations"] as? [String: Any],
-          let arabic = localizations["ar"] as? [String: Any],
-          let unit = arabic["stringUnit"] as? [String: Any],
-          let value = unit["value"] as? String,
-          containsArabic(value),
-          key.rangeOfCharacter(from: CharacterSet.letters) != nil,
-          !brandAllowlist.contains(key) else { continue }
-    englishKeys.insert(key)
+func localizedValue(_ key: String) -> String? {
+    guard let entry = strings[key] as? NSDictionary,
+          let localizations = entry["localizations"] as? NSDictionary,
+          let french = localizations["fr"] as? NSDictionary,
+          let unit = french["stringUnit"] as? NSDictionary,
+          let value = unit["value"] as? String else { return nil }
+    return value
 }
+
+var englishKeys = Set<String>()
+for key in strings.keys {
+    guard let value = localizedValue(key) else { continue }
+    frenchValues.insert(value)
+    if value != key,
+       key.rangeOfCharacter(from: CharacterSet.letters) != nil,
+       !brandAllowlist.contains(key) {
+        englishKeys.insert(key)
+    }
+}
+
+func french(_ key: String) -> String {
+    localizedValue(key) ?? key
+}
+
+let pageTitles = pageTitleKeys.map(french)
 
 func restoreEnglish() {
     NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).forEach { $0.terminate() }
@@ -146,7 +164,7 @@ func finish(_ code: Int32) -> Never {
 
 NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).forEach { $0.terminate() }
 usleep(700_000)
-setArabicDefaults()
+setFrenchDefaults()
 
 
 let appPath = "\(FileManager.default.currentDirectoryPath)/apps/macos/.build/Build/Products/Debug/Talos.app"
@@ -195,9 +213,9 @@ func label(_ element: AXUIElement) -> String? {
         ?? string(element, kAXValueAttribute)
 }
 
-func collect(_ root: AXUIElement, page: String) -> (arabic: Int, english: Int, unlabeled: Int, labels: [String]) {
+func collect(_ root: AXUIElement, page: String) -> (localized: Int, english: Int, unlabeled: Int, labels: [String]) {
     visited.removeAll()
-    var arabic = 0
+    var localized = 0
     var english = 0
     var unlabeled = 0
     var labels: [String] = []
@@ -212,7 +230,7 @@ func collect(_ root: AXUIElement, page: String) -> (arabic: Int, english: Int, u
 
         if let text = label(element) {
             labels.append(text)
-            if containsArabic(text) { arabic += 1 }
+            if isLocalized(text) { localized += 1 }
             if englishKeys.contains(text) {
                 english += 1
                 violations.append(Violation(page: page, message: "English UI string: \(text)"))
@@ -235,7 +253,7 @@ func collect(_ root: AXUIElement, page: String) -> (arabic: Int, english: Int, u
         for child in children(element) { walk(child, depth + 1) }
     }
     walk(root, 0)
-    return (arabic, english, unlabeled, labels)
+    return (localized, english, unlabeled, labels)
 }
 
 // New task so the welcome screen is visible.
@@ -244,12 +262,16 @@ usleep(1_500_000)
 let mainWindows = windows(appElement)
 if let main = mainWindows.first {
     let result = collect(main, page: "Main")
-    let required = ["ماذا تريد أن تفعل؟", "إرسال الرسالة", "إرفاق ملفات", "بحث في المهام"]
+    let required = [
+        french("What would you like to do?"),
+        french("Send message"),
+        french("Attach files"),
+    ]
     let missing = required.filter { value in !result.labels.contains { $0.contains(value) } }
     if !missing.isEmpty {
-        violations.append(Violation(page: "Main", message: "Missing Arabic labels: \(missing.joined(separator: ", "))"))
+        violations.append(Violation(page: "Main", message: "Missing French labels: \(missing.joined(separator: ", "))"))
     }
-    print("MAIN arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
+    print("MAIN french=\(result.localized) english=\(result.english) unlabeled=\(result.unlabeled)")
 } else {
     violations.append(Violation(page: "Main", message: "No main window"))
 }
@@ -260,12 +282,12 @@ func checkMenuBar() {
         violations.append(Violation(page: "Menu Bar", message: "No menu bar"))
         return
     }
-    var arabic = 0
+    var localized = 0
     var english = 0
     var labels: [String] = []
     for item in children(menuBar).dropFirst() {
         let title = string(item, kAXTitleAttribute) ?? ""
-        if containsArabic(title) { arabic += 1 }
+        if isLocalized(title) { localized += 1 }
         if englishKeys.contains(title) {
             english += 1
             violations.append(Violation(page: "Menu Bar", message: "English menu title: \(title)"))
@@ -278,7 +300,7 @@ func checkMenuBar() {
                 let name = string(entry, kAXTitleAttribute) ?? string(entry, kAXDescriptionAttribute) ?? ""
                 if name.isEmpty { continue }
                 labels.append(name)
-                if containsArabic(name) { arabic += 1 }
+                if isLocalized(name) { localized += 1 }
                 if englishKeys.contains(name) {
                     english += 1
                     violations.append(Violation(page: "Menu Bar", message: "English menu item: \(name)"))
@@ -288,27 +310,30 @@ func checkMenuBar() {
         key(53, flags: [])
         usleep(150_000)
     }
-    if arabic < 3 {
-        violations.append(Violation(page: "Menu Bar", message: "Too few Arabic menu labels: \(arabic)"))
+    if localized < 3 {
+        violations.append(Violation(page: "Menu Bar", message: "Too few French menu labels: \(localized)"))
     }
-    print("MENUBAR arabic=\(arabic) english=\(english) items=\(labels.count)")
+    print("MENUBAR french=\(localized) english=\(english) items=\(labels.count)")
 }
 
 checkMenuBar()
 
 // Rename task from the Task menu.
-if pressMenuItem("إعادة تسمية المهمة…") {
+if pressMenuItem(french("Rename Task…")) {
     usleep(800_000)
-    checkSurface("Rename Task", required: ["إعادة تسمية المهمة", "اسم المهمة"])
+    checkSurface("Rename Task", required: [french("Rename Task"), french("Task name")])
     dismissSheet()
 } else {
     violations.append(Violation(page: "Rename Task", message: "Could not open from the Task menu"))
 }
 
 // Delete task confirmation from the Task menu.
-if pressMenuItem("حذف المهمة…") {
+if pressMenuItem(french("Delete Task…")) {
     usleep(800_000)
-    checkSurface("Delete Task", required: ["حذف", "لا يمكن التراجع"])
+    checkSurface("Delete Task", required: [
+        french("Delete"),
+        french("This removes the task and its messages. This cannot be undone."),
+    ])
     dismissSheet()
 } else {
     violations.append(Violation(page: "Delete Task", message: "Could not open from the Task menu"))
@@ -316,7 +341,7 @@ if pressMenuItem("حذف المهمة…") {
 
 // Sheets and panels outside Settings. These are held-out surfaces: the
 // Settings traversal below does not reach them, and the source scan cannot
-// prove that a sheet actually renders Arabic at runtime.
+// prove that a sheet actually renders French at runtime.
 func mainWindow() -> AXUIElement? {
     windows(appElement).first { window in
         let title = string(window, kAXTitleAttribute) ?? ""
@@ -349,7 +374,7 @@ func button(_ title: String) -> AXUIElement? {
 }
 
 func dismissSheet() {
-    for title in ["تم", "إغلاق"] {
+    for title in [french("Done"), french("Close")] {
         if let target = button(title) {
             press(target)
             usleep(700_000)
@@ -368,12 +393,12 @@ func checkSurface(_ name: String, required: [String]) {
     let result = collect(window, page: name)
     let missing = required.filter { value in !result.labels.contains { $0.contains(value) } }
     if !missing.isEmpty {
-        violations.append(Violation(page: name, message: "Missing Arabic labels: \(missing.joined(separator: ", "))"))
+        violations.append(Violation(page: name, message: "Missing French labels: \(missing.joined(separator: ", "))"))
     }
-    if result.arabic < 3 {
-        violations.append(Violation(page: name, message: "Too few Arabic labels: \(result.arabic)"))
+    if result.localized < 3 {
+        violations.append(Violation(page: name, message: "Too few French labels: \(result.localized)"))
     }
-    print("SURFACE \(name) arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
+    print("SURFACE \(name) french=\(result.localized) english=\(result.english) unlabeled=\(result.unlabeled)")
 }
 
 func menuItem(matching title: String) -> (AXUIElement) -> Bool {
@@ -427,13 +452,15 @@ func findAllElements(_ root: AXUIElement, _ depth: Int = 0, matching: (AXUIEleme
 // Quick Switcher (⌘K)
 key(40, flags: .maskCommand)
 usleep(900_000)
-checkSurface("Quick Switcher", required: ["مهمة جديدة", "مراجعة التغييرات", "الإعدادات"])
+checkSurface("Quick Switcher", required: [
+        french("New Task"), french("Review Changes"), french("Settings"),
+    ])
 dismissSheet()
 
 // Help sheet through the Help menu.
-if pressMenuItem("مساعدة Talos") {
+if pressMenuItem(french("Talos Help")) {
     usleep(900_000)
-    checkSurface("Help", required: ["البدء"])
+    checkSurface("Help", required: [french("Getting started")])
     dismissSheet()
 } else {
     violations.append(Violation(page: "Help", message: "Could not open from the Help menu"))
@@ -442,19 +469,19 @@ if pressMenuItem("مساعدة Talos") {
 // Project browser (⌘⇧O)
 key(31, flags: [.maskCommand, .maskShift])
 usleep(1_200_000)
-checkSurface("Project Browser", required: ["ملف جديد"])
+checkSurface("Project Browser", required: [french("New File")])
 dismissSheet()
 
 // Git panel (⌘⇧G)
 key(5, flags: [.maskCommand, .maskShift])
 usleep(1_000_000)
-checkSurface("Git Panel", required: ["التزام", "تحديث"])
+checkSurface("Git Panel", required: [french("Commit"), french("Refresh")])
 dismissSheet()
 
 // Dialogs that have no normal UI trigger in a fresh launch. The app exposes a
 // DEBUG-only TALOS_TEST_SURFACE seam for these deterministic checks.
 func dismissElement(_ element: AXUIElement) {
-    for title in ["رفض", "إلغاء", "إغلاق", "تم"] {
+    for title in [french("Skip"), french("Deny"), french("Cancel"), french("Close"), french("Done")] {
         if let target = findElement(element, matching: { candidate in
             guard string(candidate, kAXRoleAttribute) == "AXButton" else { return false }
             let name = string(candidate, kAXTitleAttribute)
@@ -487,12 +514,12 @@ func checkHookedSurface(_ key: String, name: String, required: [String]) {
     let result = collect(window, page: name)
     let missing = required.filter { value in !result.labels.contains { $0.contains(value) } }
     if !missing.isEmpty {
-        violations.append(Violation(page: name, message: "Missing Arabic labels: \(missing.joined(separator: ", "))"))
+        violations.append(Violation(page: name, message: "Missing French labels: \(missing.joined(separator: ", "))"))
     }
-    if result.arabic < 2 {
-        violations.append(Violation(page: name, message: "Too few Arabic labels: \(result.arabic)"))
+    if result.localized < 2 {
+        violations.append(Violation(page: name, message: "Too few French labels: \(result.localized)"))
     }
-    print("SURFACE \(name) arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
+    print("SURFACE \(name) french=\(result.localized) english=\(result.english) unlabeled=\(result.unlabeled)")
     dismissElement(element)
     terminateApp()
 }
@@ -502,11 +529,23 @@ func activateIfNeeded(_ app: NSRunningApplication) {
         .activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
 }
 
-checkHookedSurface("approval", name: "Approval Sheet", required: ["السماح", "رفض", "السماح مرة واحدة"])
-checkHookedSurface("elicitation", name: "MCP Elicitation", required: ["رفض", "متابعة", "يحتاج إلى إدخال"])
-checkHookedSurface("sampling", name: "MCP Sampling", required: ["رفض", "السماح لهذه الجلسة"])
-checkHookedSurface("recent", name: "Recent Documents", required: ["المستندات الأخيرة"])
-checkHookedSurface("provider", name: "Provider Editor", required: ["بيانات الاعتماد"])
+checkHookedSurface("approval", name: "Approval Sheet", required: [
+        french("Allow Once"), french("Deny"),
+    ])
+checkHookedSurface("elicitation", name: "MCP Elicitation", required: [
+        french("Decline"), french("Continue"),
+    ])
+checkHookedSurface("sampling", name: "MCP Sampling", required: [
+        french("Decline"), french("Allow for This Session"),
+    ])
+checkHookedSurface("recent", name: "Recent Documents", required: [french("Recent Documents")])
+checkHookedSurface("provider", name: "Provider Editor", required: [french("Credential")])
+checkHookedSurface("hooktrust", name: "Hook Trust", required: [
+        french("Trust this hook?"), french("Skip"),
+    ])
+checkHookedSurface("mcpapp", name: "MCP App", required: [
+        french("Reload"), french("Close"),
+    ])
 
 // Restore the normal app for the Settings traversal.
 guard let relaunched = launchApp() else {
@@ -518,9 +557,11 @@ appElement = AXUIElementCreateApplication(relaunched.processIdentifier)
 usleep(1_200_000)
 
 // Worktree sheet through the project menu.
-if pressMenuItem("شجرة عمل جديدة…") {
+if pressMenuItem(french("New Worktree…")) {
     usleep(1_000_000)
-    checkSurface("Worktree Sheet", required: ["اسم شجرة العمل", "إنشاء شجرة عمل"])
+    checkSurface("Worktree Sheet", required: [
+        french("Worktree name"), french("Create Worktree"),
+    ])
     dismissSheet()
 } else {
     violations.append(Violation(page: "Worktree Sheet", message: "Could not open from the project menu"))
@@ -589,10 +630,10 @@ for page in pageTitles {
     if normalized(title) != normalized(page) {
         violations.append(Violation(page: page, message: "Page did not switch (title: \(title))"))
     }
-    if result.arabic < 2 {
-        violations.append(Violation(page: page, message: "Too few Arabic labels: \(result.arabic)"))
+    if result.localized < 2 {
+        violations.append(Violation(page: page, message: "Too few French labels: \(result.localized)"))
     }
-    print("PAGE \(page) arabic=\(result.arabic) english=\(result.english) unlabeled=\(result.unlabeled)")
+    print("PAGE \(page) french=\(result.localized) english=\(result.english) unlabeled=\(result.unlabeled)")
 }
 
 print("SETTINGS_START_PAGE: \(settingsTitle)")

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Held-out localization coverage: find UI string literals missing Arabic.
+"""Held-out localization coverage: find UI string literals missing French.
 
 Unlike localization_check.py (which validates catalog entries that exist), this
-scans SwiftUI call sites for user-visible literals and asserts each has an
-Arabic entry. It catches surfaces the live traversal may not reach, such as
+scans SwiftUI call sites for user-visible literals and asserts each has a
+French entry. It catches surfaces the live traversal may not reach, such as
 panels, menus, sheets, and error states.
 """
 import json
@@ -52,10 +52,10 @@ HAS_WORD = re.compile(r'[A-Za-z]{3,}')
 catalog = json.loads(CATALOG.read_text(encoding="utf-8"))["strings"]
 
 
-def has_arabic(key: str) -> bool:
+def has_french(key: str) -> bool:
     entry = catalog.get(key, {})
-    value = entry.get("localizations", {}).get("ar", {}).get("stringUnit", {}).get("value")
-    return bool(value and re.search(r'[\u0600-\u06FF]', value))
+    value = entry.get("localizations", {}).get("fr", {}).get("stringUnit", {}).get("value")
+    return bool(value)
 
 
 missing = []
@@ -92,12 +92,12 @@ for path in sorted(ROOT.rglob("*.swift")):
         if literal in seen:
             continue
         seen.add(literal)
-        if not has_arabic(literal):
+        if not has_french(literal):
             line = text[:offset].count("\n") + 1
             missing.append((str(path.relative_to(REPO)), line, literal))
 
 print(f"UI_LITERALS: {len(seen)}")
-print(f"MISSING_ARABIC: {len(missing)}")
+print(f"MISSING_FRENCH: {len(missing)}")
 for path, line, literal in missing:
     print(f"  {path}:{line}  {literal!r}")
 sys.exit(1 if missing else 0)

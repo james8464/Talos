@@ -1270,7 +1270,7 @@ private struct ProviderPopoverRow: View {
                 Spacer()
                 Text(status)
                     .font(.caption)
-                    .foregroundStyle(status == "Ready" ? Color.secondary : Color.orange)
+                    .foregroundStyle(isReady ? Color.secondary : Color.orange)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -1283,16 +1283,22 @@ private struct ProviderPopoverRow: View {
 
     private var subtitle: String {
         if provider == .local {
-            return model.localModels.isEmpty ? "Ollama · offline" : "Ollama · \(model.localModels.count) models"
+            return model.localModels.isEmpty
+                ? String(localized: "Ollama · offline")
+                : String(localized: "Ollama · \(model.localModels.count) models")
         }
         return settings.model(for: provider)
     }
 
     private var status: String {
         if provider == .local {
-            return model.localModels.isEmpty ? "Offline" : "Ready"
+            return model.localModels.isEmpty ? String(localized: "Offline") : String(localized: "Ready")
         }
-        return settings.savedKeys.contains(provider) ? "Ready" : "No key"
+        return settings.savedKeys.contains(provider) ? String(localized: "Ready") : String(localized: "No key")
+    }
+
+    private var isReady: Bool {
+        provider == .local ? !model.localModels.isEmpty : settings.savedKeys.contains(provider)
     }
 }
 
@@ -2805,7 +2811,7 @@ private struct Inspector: View {
     var body: some View {
         Form {
             Section("Project") {
-                LabeledContent("Name", value: model.currentProject?.name ?? "Project")
+                LabeledContent("Name", value: model.currentProject?.name ?? String(localized: "Project"))
                 LabeledContent("Folder") {
                     Text(model.projectURL.path)
                         .font(.caption)
@@ -2874,7 +2880,9 @@ private struct Inspector: View {
                              : "\(status.chunks) chunks · \(status.files) files")
                             .foregroundStyle(.secondary)
                     }
-                    LabeledContent("Cached vectors", value: "\(status.cachedFiles) file\(status.cachedFiles == 1 ? "" : "s")")
+                    LabeledContent("Cached vectors", value: status.cachedFiles == 1
+                        ? String(localized: "1 file")
+                        : String(localized: "\(status.cachedFiles) files"))
                     if status.isStale {
                         Text("Stale — rebuild to include recent edits.")
                             .font(.caption)

@@ -220,8 +220,17 @@ struct Session: Identifiable, Codable, Equatable {
 
 struct ReasoningOption: Identifiable, Hashable {
     let id: String
-    let title: String
-    let detail: String
+    let titleKey: String
+    let detailKey: String
+
+    init(id: String, title: String, detail: String) {
+        self.id = id
+        self.titleKey = title
+        self.detailKey = detail
+    }
+
+    var title: String { String(localized: String.LocalizationValue(titleKey)) }
+    var detail: String { String(localized: String.LocalizationValue(detailKey)) }
 }
 
 struct ModelCapabilities: Equatable {
@@ -229,7 +238,7 @@ struct ModelCapabilities: Equatable {
     var defaultReasoning: String?
     var contextWindow: Int?
     var supportsVision = false
-    var summary: String = "Reasoning not exposed by this model."
+    var summary: String = String(localized: "Reasoning not exposed by this model.")
 
     static let none = ModelCapabilities()
 
@@ -238,8 +247,8 @@ struct ModelCapabilities: Equatable {
         var copy = self
         copy.supportsVision = value
         copy.summary += value
-            ? " · vision override: image input enabled"
-            : " · vision override: text only"
+            ? String(localized: " · vision override: image input enabled")
+            : String(localized: " · vision override: text only")
         return copy
     }
 }
@@ -304,14 +313,14 @@ struct SlashCommand: Identifiable {
 
 enum SlashCommands {
     static let all: [SlashCommand] = [
-        SlashCommand(id: "/new", detail: "Start a new task"),
-        SlashCommand(id: "/clear", detail: "Clear this task"),
-        SlashCommand(id: "/compact", detail: "Summarize earlier messages"),
-        SlashCommand(id: "/stop", detail: "Stop the current response"),
-        SlashCommand(id: "/retry", detail: "Retry the last turn"),
-        SlashCommand(id: "/fork", detail: "Fork this task"),
-        SlashCommand(id: "/archive", detail: "Archive this task"),
-        SlashCommand(id: "/rename", detail: "Rename this task"),
+        SlashCommand(id: "/new", detail: String(localized: "Start a new task")),
+        SlashCommand(id: "/clear", detail: String(localized: "Clear this task")),
+        SlashCommand(id: "/compact", detail: String(localized: "Summarize earlier messages")),
+        SlashCommand(id: "/stop", detail: String(localized: "Stop the current response")),
+        SlashCommand(id: "/retry", detail: String(localized: "Retry the last turn")),
+        SlashCommand(id: "/fork", detail: String(localized: "Fork this task")),
+        SlashCommand(id: "/archive", detail: String(localized: "Archive this task")),
+        SlashCommand(id: "/rename", detail: String(localized: "Rename this task")),
         SlashCommand(id: "/model", detail: "Open the model picker"),
         SlashCommand(id: "/queue", detail: "Show or add to the queue"),
         SlashCommand(id: "/context", detail: "Break down context usage"),

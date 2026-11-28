@@ -13,10 +13,9 @@ system accessibility settings people choose.
 - Entered mixed-script and long unbroken text into the composer.
 - Ran the interface with **Reduce Motion**, **Reduce Transparency**, and
   **Increase Contrast** enabled, then restored the system settings.
-- Reused the right-to-left and VoiceOver results from `HIG_AUDIT.md`,
-  `VOICEOVER_AUDIT.md`, and `make ax-audit`.
-- Added a String Catalog with Arabic translations and launched the app in Arabic
-  to verify translated strings and RTL layout.
+- Reused the VoiceOver results from `VOICEOVER_AUDIT.md` and `make ax-audit`.
+- Added a String Catalog with French translations and launched the app in French
+  to verify translated strings across menus, dialogs, and Settings.
 
 ## Wording
 
@@ -54,29 +53,19 @@ Results:
 - The composer accepted mixed Arabic, Chinese, Japanese, an emoji ZWJ sequence,
   accented Latin, and a long unbroken token. Its AX value exactly matched the
   input; the field did not resize the composer or push the send controls out.
-- Right-to-left layout is covered separately in `HIG_AUDIT.md`: sidebar,
-  detail, inspector, composer, sheets, and tool output were verified in a forced
-  RTL pass.
 
 ## Localization
 
-`apps/macos/Talos/Localizable.xcstrings` contains 685 Arabic keys covering the
-sidebar, welcome screen, composer, transcript states, inspector, all Settings
-pages, and the main menus. A CI catalog validator, a held-out source scan for unlocalized
-UI literals, and a live Arabic AX traversal (`make localization-check`,
-`make localization-coverage`, `make localization-eval`) guard the coverage.
-Launching with `AppleLanguages (ar)` renders those surfaces in Arabic and
-mirrors the layout:
+`apps/macos/Talos/Localizable.xcstrings` contains 738 French keys covering the
+sidebar, welcome screen, composer, transcript states, inspector, menu bar, all
+Settings pages, and the audited dialogs and sheets. A CI catalog validator, a
+held-out source scan for unlocalized UI literals, and a live French AX traversal
+(`make localization-check`, `make localization-coverage`,
+`make localization-eval`) guard the coverage.
 
-```text
-sidebar heading "اليوم"            x = 1319
-welcome "ماذا تريد أن تفعل؟"       x = 879
-send "إرسال الرسالة"              x = 462
-attach "إرفاق ملفات"              x = 1044
-AX_CONTROLS: 44  UNLABELED: 0
-```
-
-Full details and coverage gaps are in `LOCALIZATION.md`.
+Latest live result: 0 English UI strings and 0 unlabeled controls across the
+main window, menu bar, twelve dialogs/sheets, and all 20 Settings pages. Full
+details are in `LOCALIZATION.md`.
 
 ## Accessibility settings
 
@@ -105,11 +94,11 @@ unlabeled controls were 0 across the main window, Settings, and a live MCP app.
 
 ## Limitations
 
-- Arabic is the first non-English localization and covers all Settings pages
-  and menus. Provider/model identifiers, paths, technical tokens, and
-  user-generated content remain in English by design.
-- Arabic copy was authored for this project and should receive native-speaker
-  review before broad distribution.
+- French is the supported non-English localization and covers all Settings
+  pages, menus, and audited dialogs. Provider/model identifiers, paths,
+  technical tokens, and user-generated content remain in English by design.
+- French copy was authored with machine assistance and should receive
+  native-speaker review before broad distribution.
 - This is a structured review rather than a formal study with a diverse panel
   of external participants.
 - Task suggestions remain oriented toward a coding agent (explore the codebase,

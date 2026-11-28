@@ -12,21 +12,21 @@ enum HookEvent: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .sessionStart: return "Session start"
-        case .sessionEnd: return "Session end"
-        case .userPromptSubmit: return "Prompt submitted"
-        case .preToolUse: return "Before a tool"
-        case .postToolUse: return "After a tool"
+        case .sessionStart: return String(localized: "Session start")
+        case .sessionEnd: return String(localized: "Session end")
+        case .userPromptSubmit: return String(localized: "Prompt submitted")
+        case .preToolUse: return String(localized: "Before a tool")
+        case .postToolUse: return String(localized: "After a tool")
         }
     }
 
     var detail: String {
         switch self {
-        case .sessionStart: return "Runs when a new task is created."
-        case .sessionEnd: return "Runs when a task is archived."
-        case .userPromptSubmit: return "Runs before your message is sent. It can block the prompt or add context."
-        case .preToolUse: return "Runs before a tool executes. A non-zero exit or a block decision stops the tool."
-        case .postToolUse: return "Runs after a tool returns. It can add context to the tool result."
+        case .sessionStart: return String(localized: "Runs when a new task is created.")
+        case .sessionEnd: return String(localized: "Runs when a task is archived.")
+        case .userPromptSubmit: return String(localized: "Runs before your message is sent. It can block the prompt or add context.")
+        case .preToolUse: return String(localized: "Runs before a tool executes. A non-zero exit or a block decision stops the tool.")
+        case .postToolUse: return String(localized: "Runs after a tool returns. It can add context to the tool result.")
         }
     }
 
@@ -52,7 +52,7 @@ struct HookDefinition: Identifiable, Codable, Equatable, Sendable {
     var trusted = false
 
     var summary: String {
-        let scope = matcher.trimmingCharacters(in: .whitespaces).isEmpty ? "all tools" : matcher
+        let scope = matcher.trimmingCharacters(in: .whitespaces).isEmpty ? String(localized: "all tools") : matcher
         return "\(event.title) · \(scope)"
     }
 
