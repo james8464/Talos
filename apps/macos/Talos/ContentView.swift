@@ -110,6 +110,10 @@ struct ContentView: View {
             HookTrustView(request: request)
                 .environmentObject(model)
         }
+        .sheet(item: $model.pendingSampling) { request in
+            MCPSamplingView(request: request)
+                .environmentObject(model)
+        }
     }
 }
 

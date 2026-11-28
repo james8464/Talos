@@ -45,6 +45,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 | Skills | `SKILL.md` discovery, enable/disable, prompt exposure, `read_skill` |
 | Plugins | Local `plugin.json` bundles; skills are verified, declared stdio MCP servers are supported experimentally |
 | MCP | Real stdio and Streamable HTTP MCP client: initialize, tools/list, tools/call, enable/disable, elicitation forms, OAuth discovery + dynamic registration + PKCE + refresh |
+| MCP sampling | `sampling/createMessage` is bridged to the active model with an approval sheet showing the server, prompt, system prompt, token/temperature limits, and image count; per-server session approval is supported |
 | Connectors | Any stdio MCP server, including connector-style servers |
 | Phone control | Token-protected local page, QR, send/stop/compact/status |
 | Sessions | Persisted history with backwards-compatible decoding, archive, fork, rename, retry |
@@ -58,7 +59,7 @@ scope. “Not yet” is deliberately not exposed as a working control.
 
 | Area | Current scope |
 | --- | --- |
-| MCP | stdio and Streamable HTTP; elicitation and OAuth are implemented; MCP apps and server-initiated sampling are not |
+| MCP | stdio and Streamable HTTP; elicitation, OAuth, and sampling are implemented; MCP apps (UI resources) are not |
 | Plugins | local skill bundles and declared stdio MCP servers; plugin MCP is experimental, and there is no remote marketplace or installation UI |
 | OpenCode Go | all advertised models with a chat-completions, Responses, or Anthropic Messages endpoint are routed; other transports are filtered out |
 | Computer use | native CGEvent/AppKit actions; browser control uses accessibility and OCR rather than a browser extension/CDP |
@@ -79,7 +80,7 @@ These are Codex features Talos does not claim to have:
 - Memories, goals, Chronicle, ambient suggestions
 - App-server, remote-control daemon, mobile native client
 - Browser extension/Chrome control and full CDP access
-- MCP apps and server-initiated sampling
+- MCP apps and embedded UI resources
 - Plugin marketplaces and remote plugin catalogs
 - Dictation/voice and menu-bar mode
 - Exact tokenizer-based accounting; Talos uses reported counts plus estimates

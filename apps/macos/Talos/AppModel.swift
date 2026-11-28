@@ -47,6 +47,9 @@ final class AppModel: ObservableObject {
     @Published var mcpStatus = "No MCP servers"
     @Published var mcpElicitation: MCPElicitationRequest?
     private var mcpElicitationContinuation: CheckedContinuation<MCPElicitationResponse, Never>?
+    @Published var pendingSampling: MCPSamplingRequest?
+    @Published private(set) var samplingApprovedServers: Set<String> = []
+    private var samplingContinuation: CheckedContinuation<MCPSamplingApproval, Never>?
     @Published var pendingHookTrust: HookTrustRequest?
     private var hookTrustContinuation: CheckedContinuation<HookTrustDecision, Never>?
     @Published var approvalReview: ApprovalReview?
@@ -185,6 +188,10 @@ final class AppModel: ObservableObject {
             guard let self else { return .decline }
             return await self.promptForElicitation(request)
         }
+        await mcp.setSamplingHandler { [weak self] request in
+            guard let self else { return .decline }
+            return await self.handleSampling(request)
+        }
         guard !configured.isEmpty else {
             mcpTools = []
             mcpStatus = "No MCP servers"
@@ -220,6 +227,123 @@ final class AppModel: ObservableObject {
         mcpElicitation = nil
         mcpElicitationContinuation?.resume(returning: response)
         mcpElicitationContinuation = nil
+    }
+
+    private func handleSampling(_ request: MCPSamplingRequest) async -> MCPSamplingResult {
+        if !samplingApprovedServers.contains(request.serverName) {
+            switch await requestSamplingApproval(request) {
+            case .deny:
+                return .decline
+            case .once:
+                break
+            case .session:
+                samplingApprovedServers.insert(request.serverName)
+            }
+        }
+
+        var messages: [ChatMessage] = []
+        if let system = request.systemPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !system.isEmpty {
+            messages.append(ChatMessage(role: .system, text: system))
+        }
+        for message in request.messages {
+            let role: Role = message.role == "assistant" ? .assistant : .user
+            var attachments: [String] = []
+            if role == .user, !message.images.isEmpty {
+                attachments = writeSamplingImages(message.images)
+            }
+            messages.append(ChatMessage(role: role, text: message.text, attachments: attachments))
+        }
+        guard messages.contains(where: { $0.role == .user || $0.role == .assistant }) else {
+            return .failure("The sampling request contained no usable messages.")
+        }
+
+        var generation = settings.generation(reasoning: reasoningSelection)
+        if let maxTokens = request.maxTokens, maxTokens > 0 {
+            generation.maxTokens = min(maxTokens, generation.maxTokens)
+        }
+        if let temperature = request.temperature {
+            generation.temperature = min(max(temperature, 0), 1.5)
+        }
+        do {
+            let first = try await streamCompletion(
+                choice: choice,
+                messages: messages,
+                generation: generation
+            )
+            if let id = selectedID {
+                usage.record(first.1, provider: choice.provider, model: choice.id, sessionID: id)
+            }
+            var text = first.0.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Small sampling budgets can be consumed entirely by reasoning on
+            // modern models. Retry once with a larger budget instead of
+            // returning an empty message to the server.
+            if text.isEmpty,
+               let requested = request.maxTokens,
+               requested < settings.speed.maxTokens {
+                var retry = generation
+                retry.maxTokens = min(settings.speed.maxTokens, max(requested * 4, 256))
+                if retry.maxTokens > generation.maxTokens {
+                    let second = try await streamCompletion(
+                        choice: choice,
+                        messages: messages,
+                        generation: retry
+                    )
+                    if let id = selectedID {
+                        usage.record(second.1, provider: choice.provider, model: choice.id, sessionID: id)
+                    }
+                    text = second.0.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+
+            guard !text.isEmpty else {
+                return .failure("The model returned an empty sampling response.")
+            }
+            return .accept(text: text, model: choice.id)
+        } catch {
+            return .failure("Sampling failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func requestSamplingApproval(_ request: MCPSamplingRequest) async -> MCPSamplingApproval {
+        if let existing = samplingContinuation {
+            existing.resume(returning: .deny)
+            samplingContinuation = nil
+        }
+        return await withCheckedContinuation { continuation in
+            samplingContinuation = continuation
+            pendingSampling = request
+        }
+    }
+
+    func resolveSamplingApproval(_ approval: MCPSamplingApproval) {
+        pendingSampling = nil
+        samplingContinuation?.resume(returning: approval)
+        samplingContinuation = nil
+    }
+
+    private func writeSamplingImages(_ images: [MCPSamplingImage]) -> [String] {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("talos-sampling-images", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return images.prefix(4).compactMap { image in
+            guard let data = Data(base64Encoded: image.base64) else { return nil }
+            let ext: String
+            switch image.mediaType.lowercased() {
+            case "image/jpeg", "image/jpg": ext = "jpg"
+            case "image/gif": ext = "gif"
+            case "image/webp": ext = "webp"
+            default: ext = "png"
+            }
+            let url = folder.appendingPathComponent("sample-\(UUID().uuidString).\(ext)")
+            do {
+                try data.write(to: url)
+                return url.path
+            } catch {
+                return nil
+            }
+        }
     }
 
     func openProject(_ project: Project) {

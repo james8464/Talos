@@ -618,6 +618,114 @@ actor MCPOAuthClient {
     }
 }
 
+struct MCPSamplingImage: Sendable {
+    let mediaType: String
+    let base64: String
+}
+
+struct MCPSamplingMessage: Sendable {
+    let role: String
+    let text: String
+    let images: [MCPSamplingImage]
+}
+
+struct MCPSamplingRequest: Identifiable, Sendable {
+    let id = UUID()
+    let serverName: String
+    let messages: [MCPSamplingMessage]
+    let systemPrompt: String?
+    let maxTokens: Int?
+    let temperature: Double?
+    let modelHints: String?
+
+    var promptPreview: String {
+        messages.map { "\($0.role): \($0.text)" }.joined(separator: "\n\n")
+    }
+
+    static func make(serverName: String, params: [String: Any]) -> MCPSamplingRequest? {
+        guard let rawMessages = params["messages"] as? [[String: Any]], !rawMessages.isEmpty else {
+            return nil
+        }
+        var messages: [MCPSamplingMessage] = []
+        for raw in rawMessages {
+            guard let role = raw["role"] as? String else { continue }
+            var text = ""
+            var images: [MCPSamplingImage] = []
+            if let value = raw["content"] as? String {
+                text = value
+            } else if let block = raw["content"] as? [String: Any] {
+                parse(block, text: &text, images: &images)
+            } else if let blocks = raw["content"] as? [[String: Any]] {
+                for block in blocks {
+                    parse(block, text: &text, images: &images)
+                }
+            }
+            messages.append(MCPSamplingMessage(role: role, text: text, images: images))
+        }
+        let preferences = params["modelPreferences"] as? [String: Any]
+        let hints = (preferences?["hints"] as? [[String: Any]] ?? [])
+            .compactMap { $0["name"] as? String }
+        return MCPSamplingRequest(
+            serverName: serverName,
+            messages: messages,
+            systemPrompt: params["systemPrompt"] as? String,
+            maxTokens: (params["maxTokens"] as? NSNumber)?.intValue,
+            temperature: (params["temperature"] as? NSNumber)?.doubleValue,
+            modelHints: hints.isEmpty ? nil : hints.joined(separator: ", ")
+        )
+    }
+
+    private static func parse(
+        _ block: [String: Any],
+        text: inout String,
+        images: inout [MCPSamplingImage]
+    ) {
+        switch block["type"] as? String {
+        case "text":
+            if let value = block["text"] as? String {
+                text += text.isEmpty ? value : "\n" + value
+            }
+        case "image":
+            if let data = block["data"] as? String,
+               let mediaType = block["mimeType"] as? String {
+                images.append(MCPSamplingImage(mediaType: mediaType, base64: data))
+            }
+        default:
+            break
+        }
+    }
+}
+
+enum MCPSamplingApproval: Sendable {
+    case once
+    case session
+    case deny
+}
+
+enum MCPSamplingResult: Sendable {
+    case accept(text: String, model: String)
+    case decline
+    case cancel
+    case failure(String)
+}
+
+typealias MCPSamplingHandler = @Sendable (MCPSamplingRequest) async -> MCPSamplingResult
+
+/// Holds the current sampling handler so live connections always use the
+/// newest approval/model bridge.
+actor MCPSamplingBroker {
+    private var handler: MCPSamplingHandler?
+
+    func set(_ handler: MCPSamplingHandler?) {
+        self.handler = handler
+    }
+
+    func handle(_ request: MCPSamplingRequest) async -> MCPSamplingResult {
+        guard let handler else { return .decline }
+        return await handler(request)
+    }
+}
+
 /// Holds the current elicitation handler so a running connection always sees
 /// the newest UI bridge instead of the handler captured at connect time.
 actor MCPElicitationBroker {
@@ -647,6 +755,7 @@ enum MCPError: LocalizedError {
 actor MCPClient {
     private let config: MCPServerConfig
     private let elicit: MCPElicitationBroker?
+    private let sampling: MCPSamplingBroker?
     private var process: Process?
     private var input: FileHandle?
     private var output: FileHandle?
@@ -655,9 +764,14 @@ actor MCPClient {
     private var nextID = 1
     private var stopped = false
 
-    init(config: MCPServerConfig, elicit: MCPElicitationBroker? = nil) {
+    init(
+        config: MCPServerConfig,
+        elicit: MCPElicitationBroker? = nil,
+        sampling: MCPSamplingBroker? = nil
+    ) {
         self.config = config
         self.elicit = elicit
+        self.sampling = sampling
     }
 
     deinit {
@@ -691,8 +805,8 @@ actor MCPClient {
 
         let response = try await request("initialize", params: [
             "protocolVersion": "2024-11-05",
-            "capabilities": ["elicitation": [:]],
-            "clientInfo": ["name": "Talos", "version": "0.5"],
+            "capabilities": ["elicitation": [:], "sampling": [:]],
+            "clientInfo": ["name": "Talos", "version": "0.6"],
         ])
         guard response["result"] is [String: Any] else {
             throw MCPError.message("\(config.name) rejected the MCP initialize handshake.")
@@ -842,6 +956,36 @@ actor MCPClient {
                 "action": response.action.rawValue,
                 "content": content,
             ])
+        case "sampling/createMessage":
+            guard let request = MCPSamplingRequest.make(serverName: config.name, params: params),
+                  let sampling else {
+                try? sendResult(id: id, error: [
+                    "code": -32601,
+                    "message": "Sampling is not available in Talos.",
+                ])
+                return
+            }
+            switch await sampling.handle(request) {
+            case .accept(let text, let model):
+                try? sendResult(id: id, result: [
+                    "role": "assistant",
+                    "content": ["type": "text", "text": text],
+                    "model": model,
+                    "stopReason": "endTurn",
+                ])
+            case .decline:
+                try? sendResult(id: id, error: [
+                    "code": -1,
+                    "message": "The user declined the sampling request.",
+                ])
+            case .cancel:
+                try? sendResult(id: id, error: [
+                    "code": -1,
+                    "message": "The sampling request was cancelled.",
+                ])
+            case .failure(let message):
+                try? sendResult(id: id, error: ["code": -1, "message": message])
+            }
         case "ping":
             try? sendResult(id: id, result: [:])
         case "roots/list":
@@ -875,6 +1019,7 @@ actor MCPHTTPClient {
     private let config: MCPServerConfig
     private let endpoint: URL
     private let elicit: MCPElicitationBroker?
+    private let sampling: MCPSamplingBroker?
     private let oauth: MCPOAuthClient?
     private var sessionID: String?
     private var accessToken: String?
@@ -884,19 +1029,21 @@ actor MCPHTTPClient {
         config: MCPServerConfig,
         endpoint: URL,
         elicit: MCPElicitationBroker? = nil,
+        sampling: MCPSamplingBroker? = nil,
         oauth: MCPOAuthClient? = nil
     ) {
         self.config = config
         self.endpoint = endpoint
         self.elicit = elicit
+        self.sampling = sampling
         self.oauth = oauth
     }
 
     func start() async throws {
         let response = try await request("initialize", params: [
             "protocolVersion": "2024-11-05",
-            "capabilities": ["elicitation": [:]],
-            "clientInfo": ["name": "Talos", "version": "0.5"],
+            "capabilities": ["elicitation": [:], "sampling": [:]],
+            "clientInfo": ["name": "Talos", "version": "0.6"],
         ])
         guard response?["result"] is [String: Any] else {
             throw MCPError.message("\(config.name) rejected the MCP initialize handshake.")
@@ -1036,6 +1183,47 @@ actor MCPHTTPClient {
                 "id": id,
                 "result": ["action": response.action.rawValue, "content": content],
             ])
+        case "sampling/createMessage":
+            guard let request = MCPSamplingRequest.make(serverName: config.name, params: params),
+                  let sampling else {
+                try? await send([
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "error": ["code": -32601, "message": "Sampling is not available in Talos."],
+                ])
+                return
+            }
+            switch await sampling.handle(request) {
+            case .accept(let text, let model):
+                try? await send([
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": [
+                        "role": "assistant",
+                        "content": ["type": "text", "text": text],
+                        "model": model,
+                        "stopReason": "endTurn",
+                    ],
+                ])
+            case .decline:
+                try? await send([
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "error": ["code": -1, "message": "The user declined the sampling request."],
+                ])
+            case .cancel:
+                try? await send([
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "error": ["code": -1, "message": "The sampling request was cancelled."],
+                ])
+            case .failure(let message):
+                try? await send([
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "error": ["code": -1, "message": message],
+                ])
+            }
         case "ping":
             try? await send(["jsonrpc": "2.0", "id": id, "result": [:]])
         case "roots/list":
@@ -1092,9 +1280,14 @@ actor MCPManager {
     private var clients: [UUID: Connection] = [:]
     private(set) var tools: [MCPTool] = []
     private let elicit = MCPElicitationBroker()
+    private let sampling = MCPSamplingBroker()
 
     func setElicitationHandler(_ handler: MCPElicitationHandler?) async {
         await elicit.set(handler)
+    }
+
+    func setSamplingHandler(_ handler: MCPSamplingHandler?) async {
+        await sampling.set(handler)
     }
 
     func connect(_ configs: [MCPServerConfig]) async -> (tools: [MCPTool], errors: [String]) {
@@ -1116,13 +1309,14 @@ actor MCPManager {
                         config: config,
                         endpoint: url,
                         elicit: elicit,
+                        sampling: sampling,
                         oauth: MCPOAuthClient(serverName: config.name)
                     )
                     try await client.start()
                     serverTools = try await client.listTools()
                     connection = .http(client)
                 } else {
-                    let client = MCPClient(config: config, elicit: elicit)
+                    let client = MCPClient(config: config, elicit: elicit, sampling: sampling)
                     try await client.start()
                     serverTools = try await client.listTools()
                     connection = .stdio(client)

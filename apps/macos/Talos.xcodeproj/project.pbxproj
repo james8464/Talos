@@ -38,6 +38,7 @@
 		B6B2FE84EF1526A5A68B0F45 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C064999B0D1F92F7B32F537 /* SettingsStore.swift */; };
 		BFBCD7D4D218B55ACFEB0310 /* Talos.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6301A0926D7044DADE1CB7C2 /* Talos.icns */; };
 		C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */; };
+		CB37052B4F401B29A60DE5AC /* MCPSamplingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */; };
 		D09BDB49C1B54A27CDA5B80E /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DA27C786B558AC4F245F39 /* Brand.swift */; };
 		D343B0F24794835180D04C31 /* OpenCodeAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A2EC1118F5104E0CA50DAA /* OpenCodeAuth.swift */; };
 		DFD459169FB1E0015C0D0ABB /* SessionPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C66D7BB5C424AC23C10B0CB /* SessionPersistence.swift */; };
@@ -81,6 +82,7 @@
 		C7B210FBD6286CFA7711C157 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D7A74255A204F1A82DCD395D /* ProjectBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBrowser.swift; sourceTree = "<group>"; };
 		DD45CF04EACBD4E18E45E631 /* Profiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profiles.swift; sourceTree = "<group>"; };
+		E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPSamplingView.swift; sourceTree = "<group>"; };
 		E7B85C1FB17725B76F534C9F /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
 		EB1A617E407672D5729425D2 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		F062B95637FEC6883E592D35 /* ProviderEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderEditor.swift; sourceTree = "<group>"; };
@@ -114,6 +116,7 @@
 				EB1A617E407672D5729425D2 /* Keychain.swift */,
 				847BD0AAE243B78A20C79D30 /* MCP.swift */,
 				3D1CEC8C6675C8BC41F6C17C /* MCPElicitationView.swift */,
+				E06E2BE447A9FBFD0A49BDC0 /* MCPSamplingView.swift */,
 				98CBD9250FD131F3819D00D0 /* ModelCatalog.swift */,
 				29612E0C17BE1D0D3A380FCA /* Models.swift */,
 				AB3F50B3322DC5E3B5800DAC /* NotificationManager.swift */,
@@ -238,6 +241,7 @@
 				2BDF65C4A2E23AE5CA35FC97 /* Keychain.swift in Sources */,
 				6790212F8FC205B737DC983A /* MCP.swift in Sources */,
 				C7F69B34459C2EC750181E57 /* MCPElicitationView.swift in Sources */,
+				CB37052B4F401B29A60DE5AC /* MCPSamplingView.swift in Sources */,
 				96A64E75E7D7E5D33B4761ED /* ModelCatalog.swift in Sources */,
 				3F2A669C71F9ABF065D9BA97 /* Models.swift in Sources */,
 				0358BE42AA67F81EF744796C /* NotificationManager.swift in Sources */,

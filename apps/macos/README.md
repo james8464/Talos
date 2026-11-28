@@ -33,6 +33,7 @@ Or open `Talos.xcodeproj`. After changing `project.yml`, run `make project`.
 - `Talos/Subagent.swift` — isolated read-only child task loop and report
 - `Talos/MCP.swift` — stdio/HTTP MCP, OAuth, and elicitation
 - `Talos/MCPElicitationView.swift` — native form for server-requested input
+- `Talos/MCPSamplingView.swift` — approval sheet for server-initiated sampling
 - `Talos/Hooks.swift` — typed event hooks, trust, and execution log
 - `Talos/Profiles.swift` — named provider/model/safety profiles
 - `Talos/Reviewer.swift` — read-only auto-review for approval prompts
